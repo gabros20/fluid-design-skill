@@ -1,0 +1,6 @@
+[ERROR] length-times-unit  styles/fluid/scss/_fluid.scss:39
+  @error "fluid-design: #{$fn}() expects a unitless drawn number, got `#{$n}`. `64px * var(--fluid)` is invalid CSS (length * length) and silently drops the decla
+  why: A length (has a unit) multiplied by another length inside calc() is invalid CSS. The custom property goes guaranteed-invalid and the declaration silently reverts to its initial value (fluid-scale.md §4).
+  fix: The multiplied number must be unitless: store it as a bare number custom property (e.g. --mark-h-n: 64;) and multiply that, not a px/rem/em length.
+
+1 finding(s) — 1 error, 0 warn, 0 info.

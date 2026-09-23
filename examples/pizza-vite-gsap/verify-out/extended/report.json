@@ -1,0 +1,1430 @@
+{
+  "url": "http://localhost:4320",
+  "config": {
+    "prefix": "fluid",
+    "reference": {
+      "width": 1440,
+      "height": 900
+    },
+    "engageAt": 1024
+  },
+  "generatedAt": "2026-09-23T11:22:02.272Z",
+  "viewports": [
+    {
+      "width": 1024,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.9143,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1024x700.png"
+    },
+    {
+      "width": 1440,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1440x700.png"
+    },
+    {
+      "width": 1680,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1680x700.png"
+    },
+    {
+      "width": 2560,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-2560x700.png"
+    },
+    {
+      "width": 3840,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-3840x700.png"
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.7111,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1024x900.png"
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1440x900.png"
+    },
+    {
+      "width": 1680,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1680x900.png"
+    },
+    {
+      "width": 2560,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-2560x900.png"
+    },
+    {
+      "width": 3840,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-3840x900.png"
+    },
+    {
+      "width": 1024,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.4444,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1024x1440.png"
+    },
+    {
+      "width": 1440,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 0.625,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1440x1440.png"
+    },
+    {
+      "width": 1680,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1050,
+              "ratio": 0.7292,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1680x1440.png"
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-2560x1440.png"
+    },
+    {
+      "width": 3840,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-3840x1440.png"
+    },
+    {
+      "width": 1024,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.2963,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1024x2160.png"
+    },
+    {
+      "width": 1440,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 0.4167,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1440x2160.png"
+    },
+    {
+      "width": 1680,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "drift": 0.00001041666666679042,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1050,
+              "ratio": 0.4861,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-1680x2160.png"
+    },
+    {
+      "width": 2560,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.777765625,
+              "expected": 1.7777777777777777,
+              "drift": 0.000012152777777663104,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 0.6667,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-2560x2160.png"
+    },
+    {
+      "width": 3840,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.62 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))), calc(.33 * min(1.6px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 2.4,
+              "expected": 2.4,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 0.6667,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-3840x2160.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mobile": true,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "skipped": "below engageAt"
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-390x844-mobile.png"
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "mobile": true,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "skipped": "below engageAt"
+        },
+        "reveal": {
+          "pass": true,
+          "total": 36,
+          "hidden": []
+        }
+      },
+      "screenshot": "screenshot-375x667-mobile.png"
+    }
+  ]
+}

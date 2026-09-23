@@ -1,0 +1,15 @@
+{
+  "$schema": "./fluid.config.schema.json",
+  "prefix": "fluid",
+  "reference": { "width": 1440, "height": 900 },
+  "canvas": { "width": 1600, "gutter": 64 },
+  "engageAt": 1024,
+  "heightAxis": true,
+  "units": {
+    "fluid": { "floor": 0.58 },
+    "display": { "damping": 0.62, "floor": "auto" },
+    "copy": { "damping": 0.33, "floor": "auto" },
+    "chrome": { "enabled": true }
+  },
+  "ceiling": 1.6
+}

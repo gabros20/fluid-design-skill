@@ -1,0 +1,32 @@
+// Brand ramp → semantic roles. Components use the semantic names only.
+// There is no dark mode: sections choose a light or dark SURFACE, and the
+// header reads that choice through data-header-theme, not the OS setting.
+:root {
+  // Ramp
+  --flour-50: #fbf8f2;
+  --cream-100: #f3ece0;
+  --sand-300: #e2c9a0;
+  --tomato-600: #b8432b;
+  --tomato-300: #e89a7c;
+  --crust-900: #17120f;
+  --ink-900: #1f1a15;
+  --ink-600: #5b5046;
+  --stone-300: #b9ad9f;
+
+  // Semantic
+  --surface-light: var(--cream-100);
+  --surface-flour: var(--flour-50);
+  --surface-sand: var(--sand-300);
+  --surface-dark: var(--crust-900);
+  --text-heading: var(--ink-900);
+  --text-body: var(--ink-900);
+  --text-muted: var(--ink-600);
+  --text-accent: var(--tomato-600);
+  --text-inverse: var(--flour-50);
+  --text-muted-inverse: var(--stone-300);
+  --text-accent-inverse: var(--tomato-300);
+  --border-inverse: rgb(251 248 242 / 0.18);
+  --focus-ring: var(--tomato-600);
+
+  --font-sans: 'Inter Tight', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

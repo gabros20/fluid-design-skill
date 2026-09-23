@@ -1,0 +1,760 @@
+// Forno Aurelia — page styles on the fluid scale (SCSS stack).
+//
+// Every drawn desktop number goes through a unit function inside
+// `fd.fluid-up`: fluid() for layout, fluid-text() for type whose box scales,
+// fluid-display()/fluid-copy() for type in a fixed measure, fluid-chrome()
+// for the header and footer. Mobile (< engageAt) is authored plainly above
+// each fluid-up block. Off the scale on purpose: borders, radii, em
+// tracking, fixed text measures, entrance distances.
+
+@use 'fluid/scss/fluid' as fd;
+@use 'tokens';
+
+// ── Units ─────────────────────────────────────────────────────────────
+:root {
+  @include fd.fluid-units;
+
+  // WORKAROUND (SKILL-FEEDBACK.md #1): the generator's SCSS emitter ignores
+  // `ceiling` in fluid.config.json and emits an uncapped --fluid. This
+  // re-declares --fluid exactly as the vanilla/Tailwind emitters do for
+  // ceiling 1.6 (`min(1.6px, …)`). The type units read through --fluid, so
+  // they cap with it. Delete this block once the generator is fixed.
+  @include fd.fluid-up {
+    --fluid: min(1.6px, max(0.58px, min(calc(100svh / 900), calc(100vw / 1440))));
+  }
+}
+
+// ── The frame ─────────────────────────────────────────────────────────
+// One box: cap + gutter together. Mobile gets a plain 24px gutter and the
+// canvas as a px cap; the fluid-frame mixin is only included from the
+// breakpoint up, because on its own it would put fluid(64) = 64px of gutter
+// on a phone (SKILL-FEEDBACK.md #3).
+.frame {
+  width: 100%;
+  max-width: #{fd.$fluid-canvas-width}px;
+  margin-inline: auto;
+  padding-inline: 24px;
+
+  @include fd.fluid-up {
+    @include fd.fluid-frame;
+  }
+}
+
+// base.css assumes a reset already ran (it says "after your reset/
+// preflight"). The SCSS path has none, and without border-box the frame's
+// cap measures the CONTENT box, so the drawn 1600 frame renders 1728 wide
+// (SKILL-FEEDBACK.md #4).
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+em {
+  font-style: italic;
+  font-weight: 300;
+}
+
+.eyebrow {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(13, 16, copy);
+  }
+
+  &--inverse {
+    color: var(--text-accent-inverse);
+  }
+}
+
+// ── Load veil ─────────────────────────────────────────────────────────
+// motion.css positions it and holds it opaque; the colour is ours.
+.veil {
+  background: var(--surface-light);
+}
+
+// ── Header ────────────────────────────────────────────────────────────
+// Fixed and transparent; its ink follows the section beneath it
+// (headerTheme.ts writes data-theme only on change, and never writes the
+// base theme at load, so "no attribute" must look like the light theme).
+.site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  padding-top: calc(24px + var(--safe-top));
+  color: var(--header-ink, var(--text-heading));
+  transition: color 0.3s linear;
+  pointer-events: none;
+
+  &[data-theme='dark'] {
+    --header-ink: var(--text-inverse);
+  }
+
+  @include fd.fluid-up {
+    padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
+  }
+}
+
+.site-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  pointer-events: auto;
+
+  @include fd.fluid-up {
+    height: fd.fluid-chrome(48);
+    gap: fd.fluid-chrome(40);
+  }
+}
+
+.wordmark {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-chrome(24);
+  }
+}
+
+.site-nav {
+  display: none;
+
+  @include fd.fluid-up {
+    display: flex;
+    gap: fd.fluid-chrome(40);
+    margin-left: auto;
+    font-size: fd.fluid-chrome(15);
+    line-height: fd.fluid-chrome(20);
+
+    a {
+      text-decoration: none;
+    }
+  }
+}
+
+.site-header__cta {
+  font-size: 14px;
+  line-height: 18px;
+  padding: 7px 16px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  text-decoration: none;
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-chrome(15);
+    line-height: fd.fluid-chrome(20);
+    padding: fd.fluid-chrome(10) fd.fluid-chrome(22);
+  }
+}
+
+// ── 1. Hero ───────────────────────────────────────────────────────────
+// Drawn at the reference height: fluid(900) is exactly one screen whenever
+// height binds, and never taller than the window. The whole hero is one
+// fixed composition, so every piece of it (type included) spends the base
+// unit and scales as one drawing.
+.hero {
+  position: relative;
+  background: var(--surface-light);
+  overflow: clip;
+  // Mobile: the SCREEN is the height, in svh, with a landscape floor.
+  min-height: max(640px, 100svh);
+
+  @include fd.fluid-up {
+    min-height: 0;
+    height: fd.fluid(900);
+  }
+}
+
+.hero__frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  min-height: max(640px, 100svh);
+  padding-top: calc(var(--header-h) + 40px);
+  padding-bottom: 48px;
+
+  @include fd.fluid-up {
+    display: block;
+    min-height: 0;
+    height: 100%;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.hero__arc {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  translate: -50% 0;
+  width: 150vw;
+  height: 75vw;
+  max-height: 60%;
+  background: var(--surface-sand);
+  // A ratio, so the curve follows the box at any size (radii stay off the
+  // scale by rule; a percentage radius is not a length to scale).
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+
+  @include fd.fluid-up {
+    width: fd.fluid(1120);
+    height: fd.fluid(560);
+    max-height: none;
+  }
+}
+
+.hero__title {
+  position: relative;
+  z-index: 1;
+  font-size: 56px;
+  line-height: 56px;
+  font-weight: 300;
+  letter-spacing: -0.045em;
+  text-align: center;
+  color: var(--text-heading);
+
+  @include fd.fluid-up {
+    position: absolute;
+    top: fd.fluid(118);
+    left: 0;
+    right: 0;
+    @include fd.fluid-type(200, 184, text);
+  }
+}
+
+.hero__title-line {
+  display: block;
+}
+
+.hero__pizza {
+  position: relative;
+  z-index: 2;
+  width: min(86vw, 420px);
+  // The peel's handle runs off to the lower right; nudge the pizza itself
+  // onto the centre line.
+  margin-left: 6vw;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 18px 24px rgb(60 30 10 / 0.25));
+  }
+
+  @include fd.fluid-up {
+    position: absolute;
+    left: 50%;
+    top: fd.fluid(300);
+    margin-left: 0;
+    // -40%, not -50%: centres the pizza, not the pizza-plus-handle.
+    translate: -40% 0;
+    width: fd.fluid(700);
+  }
+}
+
+.hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 340px;
+  font-size: 15px;
+  line-height: 22px;
+  text-align: center;
+  color: var(--text-body);
+
+  @include fd.fluid-up {
+    position: absolute;
+    bottom: fd.fluid(96);
+    width: fd.fluid(272);
+    max-width: none;
+    text-align: left;
+    @include fd.fluid-type(16, 24, text);
+
+    &--left {
+      left: fd.fluid(64);
+    }
+
+    &--right {
+      right: fd.fluid(64);
+      text-align: right;
+    }
+  }
+}
+
+.hero__pill {
+  position: relative;
+  z-index: 3;
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+
+  // A control: its label AND the padding derived from its line box spend
+  // --fluid-copy together, or the label crowds its padding on a short window.
+  @include fd.fluid-up {
+    position: absolute;
+    top: fd.fluid(352);
+    right: fd.fluid(64);
+    writing-mode: vertical-rl;
+    padding: fd.fluid-copy(28) fd.fluid-copy(14);
+    @include fd.fluid-type(15, 20, copy);
+  }
+}
+
+// ── 2. Manifesto ──────────────────────────────────────────────────────
+.manifesto {
+  background: var(--surface-light);
+  padding-block: 96px;
+
+  @include fd.fluid-up {
+    padding-block: fd.fluid(160) fd.fluid(180);
+  }
+}
+
+// A text MEASURE inside the frame, never a second frame. Grow-only
+// (fluid-cap) so the authored lines keep their breaks above the reference.
+.manifesto__measure {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1100px;
+
+  @include fd.fluid-up {
+    max-width: fd.fluid-cap(1100);
+    gap: fd.fluid(28);
+  }
+}
+
+.manifesto__text {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--text-heading);
+
+  span {
+    display: block;
+  }
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(68, 76, display);
+  }
+}
+
+// ── 3. Menu ───────────────────────────────────────────────────────────
+.menu {
+  background: var(--surface-flour);
+  padding-block: 80px;
+
+  @include fd.fluid-up {
+    padding-block: fd.fluid(140);
+  }
+}
+
+.menu__head {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 40px;
+
+  @include fd.fluid-up {
+    gap: fd.fluid(20);
+    margin-bottom: fd.fluid(64);
+  }
+}
+
+.menu__title {
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--text-heading);
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(64, 72, display);
+  }
+}
+
+// The auto-fill minimum is a comparison constant: frozen, the column count
+// drifts with the monitor. 296 is the drawn 4-up card rounded to the
+// smallest minimum a 5th column can never beat at the canvas
+// (5·296 + 4·24 = 1576 > 1472 content) that still gives 4 at the
+// reference (4·296 + 3·24 = 1256 ≤ 1312).
+.menu__grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
+  gap: 28px 14px;
+
+  // The comparison box has to scale too. fluid-cap is GROW-ONLY, so on a
+  // height-bound wide window (1680x700, --fluid 0.78) the frame stays
+  // 1600px while the scaled minimum shrinks: measured 6 columns there.
+  // Stating the grid's own width on --fluid (the drawn 1472 content width,
+  // clamped to the frame) keeps both sides of the comparison on one scale
+  // (SKILL-FEEDBACK.md #6).
+  @include fd.fluid-up {
+    width: fd.fluid(1472);
+    max-width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(min(#{fd.fluid(296)}, 100%), 1fr));
+    gap: fd.fluid(48) fd.fluid(24);
+  }
+}
+
+// Cards live in a scaling grid track, so their type is fluid-text.
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  @include fd.fluid-up {
+    gap: fd.fluid(12);
+  }
+}
+
+.card__art {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  background: var(--plate, var(--surface-sand));
+  margin-bottom: 6px;
+
+  svg {
+    width: 72%;
+    height: auto;
+    filter: drop-shadow(0 10px 14px rgb(60 30 10 / 0.18));
+  }
+
+  @include fd.fluid-up {
+    margin-bottom: fd.fluid(8);
+  }
+}
+
+.card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+
+  @include fd.fluid-up {
+    gap: fd.fluid(12);
+  }
+}
+
+.card__name {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(22, 28, text);
+  }
+}
+
+.card__price {
+  font-size: 16px;
+  line-height: 26px;
+  color: var(--text-accent);
+  font-variant-numeric: tabular-nums;
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(18, 28, text);
+  }
+}
+
+.card__desc {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text-muted);
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(15, 22, text);
+  }
+}
+
+// ── 4. Numbers ────────────────────────────────────────────────────────
+.numbers {
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+  padding-block: 96px;
+
+  @include fd.fluid-up {
+    padding-block: fd.fluid(160);
+  }
+}
+
+.numbers__group {
+  // FadeOnExit range: the group is fully out by the time 60% of it has
+  // left the top of the viewport.
+  --exit-from: 0.1;
+  --exit-to: 0.6;
+}
+
+// The scaling box: its width is a drawn number on --fluid, so the stats
+// inside it spend fluid-text. On the gentle display curve they would
+// outgrow their cells on a short window and re-wrap.
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 20px;
+  margin-top: 40px;
+
+  @include fd.fluid-up {
+    width: fd.fluid(1312);
+    max-width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: fd.fluid(32);
+    margin-top: fd.fluid(72);
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-inverse);
+
+  @include fd.fluid-up {
+    gap: fd.fluid(16);
+    padding-top: fd.fluid(24);
+  }
+}
+
+.stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 56px;
+  line-height: 56px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+
+  @include fd.fluid-up {
+    gap: fd.fluid(8);
+    @include fd.fluid-type(128, 120, text);
+  }
+}
+
+.stat__unit {
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--text-accent-inverse);
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-text(24);
+  }
+}
+
+.stat__label {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-muted-inverse);
+
+  @include fd.fluid-up {
+    width: fd.fluid(240);
+    max-width: 100%;
+    @include fd.fluid-type(16, 22, text);
+  }
+}
+
+// ── 5. The scroll scene ───────────────────────────────────────────────
+// motion.css owns the pin (sticky, 100lvh) and the -100lvh cancel on the
+// content wrapper. Nothing here may put a transform, overflow or
+// content-visibility on the scene or its ancestors.
+.scene {
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+}
+
+.scene__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(23 18 15 / 0.82) 0%, rgb(23 18 15 / 0.35) 55%, rgb(23 18 15 / 0) 100%);
+}
+
+// Acts ride over the pin: no background, no overflow clipping.
+.act {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+
+  &--right {
+    .act__frame {
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+}
+
+.act__frame {
+  padding-block: 96px;
+
+  @include fd.fluid-up {
+    padding-block: fd.fluid(120);
+  }
+}
+
+.act__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 560px;
+
+  @include fd.fluid-up {
+    gap: fd.fluid(20);
+    max-width: fd.fluid-cap(640);
+  }
+}
+
+.act__title {
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+
+  @include fd.fluid-up {
+    @include fd.fluid-type(60, 66, display);
+  }
+}
+
+.act__body {
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--text-muted-inverse);
+  max-width: 440px;
+
+  @include fd.fluid-up {
+    max-width: fd.fluid-cap(460);
+    @include fd.fluid-type(18, 28, copy);
+  }
+}
+
+// ── 6. Footer (site chrome, --fluid-chrome) ───────────────────────────
+.footer {
+  background: var(--surface-dark);
+  color: var(--text-inverse);
+  border-top: 1px solid var(--border-inverse);
+}
+
+.footer__frame {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  padding-block: 72px 32px;
+
+  @include fd.fluid-up {
+    gap: fd.fluid-chrome(80);
+    padding-block: fd.fluid-chrome(112) fd.fluid-chrome(40);
+  }
+}
+
+.footer__cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+
+  @include fd.fluid-up {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: fd.fluid-chrome(32);
+  }
+}
+
+.footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text-muted-inverse);
+
+  a {
+    text-decoration: none;
+  }
+
+  @include fd.fluid-up {
+    gap: fd.fluid-chrome(12);
+    font-size: fd.fluid-chrome(16);
+    line-height: fd.fluid-chrome(24);
+  }
+}
+
+.footer__heading {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-accent-inverse);
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-chrome(13);
+    line-height: fd.fluid-chrome(16);
+  }
+}
+
+.footer__mark {
+  font-size: 64px;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  color: var(--text-inverse);
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-chrome(200);
+  }
+}
+
+.footer__small {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted-inverse);
+
+  @include fd.fluid-up {
+    font-size: fd.fluid-chrome(13);
+    line-height: fd.fluid-chrome(18);
+  }
+}

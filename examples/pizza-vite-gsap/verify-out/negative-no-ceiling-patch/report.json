@@ -1,0 +1,252 @@
+{
+  "url": "http://localhost:4321",
+  "config": {
+    "prefix": "fluid",
+    "reference": {
+      "width": 1440,
+      "height": 900
+    },
+    "engageAt": 1024
+  },
+  "generatedAt": "2026-09-23T11:09:28.492Z",
+  "viewports": [
+    {
+      "width": 2560,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "width": 3840,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "width": 2560,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": false,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1.777765625,
+              "expected": 1.6,
+              "drift": 0.17776562499999993,
+              "pass": false
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1.777765625,
+              "expected": 1.6,
+              "drift": 0.17776562499999993,
+              "pass": false
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1.777765625,
+              "expected": 1.6,
+              "drift": 0.17776562499999993,
+              "pass": false
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.777765625,
+              "expected": 1.7777777777777777,
+              "drift": 0.000012152777777663104,
+              "pass": true
+            }
+          ],
+          "staleStylesheet": "units resolve but drift from the config -- classic stale stylesheet: close the tab and open a fresh one, or rm -rf the build cache and restart the dev server"
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1600,
+              "ratio": 0.7407,
+              "pass": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "width": 3840,
+      "height": 2160,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": false,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 2.4,
+              "expected": 1.6,
+              "drift": 0.7999999999999998,
+              "pass": false
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 2.4,
+              "expected": 1.6,
+              "drift": 0.7999999999999998,
+              "pass": false
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 2.4,
+              "expected": 1.6,
+              "drift": 0.7999999999999998,
+              "pass": false
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 2.4,
+              "expected": 2.4,
+              "drift": 0,
+              "pass": true
+            }
+          ],
+          "staleStylesheet": "units resolve but drift from the config -- classic stale stylesheet: close the tab and open a fresh one, or rm -rf the build cache and restart the dev server"
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 2160,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

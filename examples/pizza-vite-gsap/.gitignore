@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# Evidence: reports and logs are kept; full-page PNGs are large and reproducible.
+verify-out/**/*.png
+verify-out/**/contact-sheet.html

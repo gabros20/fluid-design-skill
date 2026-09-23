@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.next/
+**/verify-out/**/*.png
+**/test-results/

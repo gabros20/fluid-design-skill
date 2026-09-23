@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Forno Aurelia — pinsa romana</title>
+    <meta name="description" content="Forno Aurelia, a modern pinsa romana kitchen. Seventy-two hour dough, ninety seconds of fire." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    />
+    <!-- The reveal safety net (base.css / motion.css): every [data-stage-item]
+         is authored in its hidden state, and the veil is opaque. Without JS
+         nothing else would ever clear them. -->
+    <noscript>
+      <style>
+        [data-stage-item] { opacity: 1 !important; transform: none !important; }
+        [data-stage-veil] { display: none !important; }
+      </style>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <!-- Load veil: a direct child of <body> so no sticky/fixed ancestor can
+         trap it under the header's stacking context (veil.ts). -->
+    <div class="veil" data-stage-veil aria-hidden="true"></div>
+
+    <!-- One pizza drawing, reused by every card via <use>. Topping colours
+         come in through custom properties, which inherit into the <use>
+         shadow tree. Inline, never <img src=*.svg> (Safari). -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="crust" cx="50%" cy="50%" r="50%">
+          <stop offset="82%" stop-color="#e7b877" />
+          <stop offset="93%" stop-color="#c98a45" />
+          <stop offset="100%" stop-color="#8e5a2b" />
+        </radialGradient>
+        <symbol id="pinsa" viewBox="0 0 200 200">
+          <ellipse cx="100" cy="100" rx="96" ry="78" fill="url(#crust)" />
+          <ellipse cx="100" cy="100" rx="82" ry="65" fill="var(--sauce, #c0432a)" />
+          <g fill="var(--cheese, #f6ecd6)">
+            <circle cx="70" cy="80" r="15" />
+            <circle cx="122" cy="72" r="13" />
+            <circle cx="96" cy="116" r="17" />
+            <circle cx="140" cy="118" r="12" />
+            <circle cx="58" cy="122" r="11" />
+          </g>
+          <g fill="var(--leaf, #3f6b3a)">
+            <ellipse cx="84" cy="96" rx="9" ry="4.5" transform="rotate(-30 84 96)" />
+            <ellipse cx="128" cy="96" rx="9" ry="4.5" transform="rotate(25 128 96)" />
+            <ellipse cx="110" cy="140" rx="8" ry="4" transform="rotate(-10 110 140)" />
+          </g>
+          <g fill="var(--dot, #7a2418)">
+            <circle cx="106" cy="88" r="4" />
+            <circle cx="80" cy="140" r="3.5" />
+            <circle cx="150" cy="96" r="3.5" />
+            <circle cx="48" cy="98" r="3" />
+          </g>
+        </symbol>
+      </defs>
+    </svg>
+
+    <header class="site-header" data-stage="mount">
+      <div class="frame site-header__row" data-stage-item data-variant="settleFade">
+        <a class="wordmark" href="#top">Forno <em>Aurelia</em></a>
+        <nav class="site-nav" aria-label="Principale">
+          <a href="#carta">La carta</a>
+          <a href="#numeri">Il forno</a>
+          <a href="#orari">Orari</a>
+        </nav>
+        <a class="site-header__cta" href="#orari">Prenota</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- 1. HERO — drawn at the reference height, so exactly one screen
+           from the engage breakpoint up (fluid(900)). -->
+      <section class="hero" data-header-theme="light" data-fit="screen">
+        <div class="frame hero__frame" data-stage="mount">
+          <div class="hero__arc" data-stage-item data-variant="growY" aria-hidden="true"></div>
+
+          <h1 class="hero__title">
+            <span class="hero__title-line" data-stage-item data-variant="liftFade">Pinsa romana</span>
+          </h1>
+
+          <div class="hero__pizza" data-stage-item data-variant="drop">
+            <!-- Transparent cut-out copied from the sibling build (examples/pizza-next,
+                 generated; see CREDITS.md). 1460 wide: with ceiling 1.6 it renders at
+                 most 700 x 1.6 = 1120 CSS px, which is why this build caps growth. -->
+            <img
+              src="/images/hero-pizza-peel.webp"
+              width="1460"
+              height="892"
+              alt="A pinsa margherita on a wooden peel"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </div>
+
+          <p class="hero__copy hero__copy--left" data-stage-item data-variant="liftFade" data-delay="0.134">
+            An oval of soy, rice and wheat flour, rested for three days and baked in ninety seconds. Light enough
+            that you finish it.
+          </p>
+          <p class="hero__copy hero__copy--right" data-stage-item data-variant="liftFade" data-delay="0.201">
+            Via Aurelia 118, Roma. Open Tuesday to Sunday from half past six, and until the dough runs out.
+          </p>
+
+          <a class="hero__pill" href="#orari" data-stage-item data-variant="settleFade" data-delay="0.268">
+            Réservation
+          </a>
+        </div>
+      </section>
+
+      <!-- 2. MANIFESTO — display type in a fixed measure, split at the
+           AUTHORED line breaks, one stage item per line. -->
+      <section class="manifesto" data-header-theme="light" id="storia">
+        <div class="frame">
+          <div class="manifesto__measure" data-stage="view">
+            <p class="eyebrow" data-stage-item data-variant="liftFade">Il manifesto</p>
+            <h2 class="manifesto__text">
+              <span data-stage-item data-variant="liftFade" data-delay="0.067">Pinsa is older than pizza.</span>
+              <span data-stage-item data-variant="liftFade" data-delay="0.134">We mix soy, rice and wheat,</span>
+              <span data-stage-item data-variant="liftFade" data-delay="0.201">rest it seventy-two hours,</span>
+              <span data-stage-item data-variant="liftFade" data-delay="0.268">and give it ninety seconds of fire.</span>
+            </h2>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MENU — an auto-fill grid whose minimum is on the scale, so the
+           column count never becomes a property of the monitor. -->
+      <section class="menu" data-header-theme="light" id="carta">
+        <div class="frame">
+          <div class="menu__head" data-stage="view">
+            <p class="eyebrow" data-stage-item data-variant="liftFade">La carta</p>
+            <h2 class="menu__title" data-stage-item data-variant="liftFade" data-delay="0.067">Eight pinse, no more.</h2>
+          </div>
+
+          <ul class="menu__grid" data-stage="view" role="list">
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0">
+              <div class="card__art" style="--plate: #ead8b8"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Margherita</h3><span class="card__price">€12</span></div>
+              <p class="card__desc">San Marzano, fior di latte, basil, Sabina oil.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.067">
+              <div class="card__art" style="--plate: #e3cfb0; --sauce: #f2e6cf; --dot: #3b2a1e"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Cacio e pepe</h3><span class="card__price">€14</span></div>
+              <p class="card__desc">Pecorino cream, three peppers, lemon zest.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.134">
+              <div class="card__art" style="--plate: #dccaa9; --sauce: #f4efe2; --leaf: #6b7f3a; --dot: #6f4a2f"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Patate e rosmarino</h3><span class="card__price">€13</span></div>
+              <p class="card__desc">Mandoline potato, rosemary, smoked provola.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.201">
+              <div class="card__art" style="--plate: #ecd9bb; --dot: #a1301f"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Diavola</h3><span class="card__price">€15</span></div>
+              <p class="card__desc">Spianata piccante, fior di latte, Calabrian honey.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.268">
+              <div class="card__art" style="--plate: #e2d3b6; --sauce: #e9dcc0; --leaf: #2f5a33; --dot: #d9b24a"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Fiori e alici</h3><span class="card__price">€16</span></div>
+              <p class="card__desc">Courgette flowers, Cetara anchovy, mozzarella.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.335">
+              <div class="card__art" style="--plate: #e8d6b5; --sauce: #8f2f22; --cheese: #f0e2c4"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Amatriciana</h3><span class="card__price">€15</span></div>
+              <p class="card__desc">Guanciale, tomato, pecorino, a little chilli.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.402">
+              <div class="card__art" style="--plate: #dfcdb0; --sauce: #efe3c9; --leaf: #4d7a3f; --dot: #5a3a22"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Funghi</h3><span class="card__price">€15</span></div>
+              <p class="card__desc">Porcini, thyme, stracciatella, black garlic.</p>
+            </li>
+            <li class="card" data-stage-item data-variant="liftFade" data-delay="0.469">
+              <div class="card__art" style="--plate: #ead7b4; --sauce: #f5ecd8; --cheese: #c9492f; --leaf: #2f5a33"><svg viewBox="0 0 200 200" aria-hidden="true"><use href="#pinsa" /></svg></div>
+              <div class="card__row"><h3 class="card__name">Nutella e sale</h3><span class="card__price">€9</span></div>
+              <p class="card__desc">For two. Hazelnut, flaked salt, strawberries.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 4. NUMBERS — stats in a box that itself scales (fluid(1312)), so
+           the type inside it spends the base unit (fluid-text), not the
+           damped display curve. The group fades out as it leaves. -->
+      <section class="numbers" data-header-theme="dark" id="numeri">
+        <div class="frame">
+          <div class="numbers__group" data-fade-on-exit>
+            <div data-stage="view">
+              <p class="eyebrow eyebrow--inverse" data-stage-item data-variant="liftFade">Il forno, in numeri</p>
+            </div>
+            <dl class="stats">
+              <div class="stat">
+                <dd class="stat__value"><span data-count-up="72">72</span><span class="stat__unit">h</span></dd>
+                <dt class="stat__label">of cold rest for every ball of dough</dt>
+              </div>
+              <div class="stat">
+                <dd class="stat__value"><span data-count-up="450">450</span><span class="stat__unit">°C</span></dd>
+                <dt class="stat__label">on the oven floor at service</dt>
+              </div>
+              <div class="stat">
+                <dd class="stat__value"><span data-count-up="90">90</span><span class="stat__unit">s</span></dd>
+                <dt class="stat__label">from peel to plate</dt>
+              </div>
+              <div class="stat">
+                <dd class="stat__value"><span data-count-up="3">3</span><span class="stat__unit">flours</span></dd>
+                <dt class="stat__label">soy, rice and wheat, milled in Lazio</dt>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. THE ONE SCROLL-DRIVEN SCENE — a pinned, scrubbed, all-intra
+           clip with three acts riding over it. data-motion-state is seeded
+           as "head" in the markup; scrubStage.ts only writes it on a
+           transition, so the initial mode would otherwise be absent
+           (SKILL-FEEDBACK.md). -->
+      <div class="scene" data-scrub-stage id="forno" data-header-theme="dark">
+        <div data-scrub-pin>
+          <video
+            data-scrub-video
+            data-motion-state="head"
+            muted
+            playsinline
+            preload="none"
+            disablepictureinpicture
+            disableremoteplayback
+            aria-hidden="true"
+            data-src="/video/oven-scrub.mp4"
+            poster="/video/oven-scrub-poster.jpg"
+          ></video>
+          <div class="scene__shade" aria-hidden="true"></div>
+        </div>
+        <div data-scrub-content>
+          <section class="act">
+            <div class="frame act__frame">
+              <div class="act__copy" data-stage="view">
+                <p class="eyebrow eyebrow--inverse" data-stage-item data-variant="liftFade">01 — Impasto</p>
+                <h2 class="act__title" data-stage-item data-variant="liftFade" data-delay="0.067">Three flours, a lot of water.</h2>
+                <p class="act__body" data-stage-item data-variant="liftFade" data-delay="0.134">
+                  Eighty percent hydration is what makes pinsa crisp outside and cloud-soft inside. It is also why
+                  the dough cannot be rushed.
+                </p>
+              </div>
+            </div>
+          </section>
+          <section class="act act--right">
+            <div class="frame act__frame">
+              <div class="act__copy" data-stage="view">
+                <p class="eyebrow eyebrow--inverse" data-stage-item data-variant="liftFade">02 — Riposo</p>
+                <h2 class="act__title" data-stage-item data-variant="liftFade" data-delay="0.067">Seventy-two hours, cold.</h2>
+                <p class="act__body" data-stage-item data-variant="liftFade" data-delay="0.134">
+                  The rest does the work a mixer cannot: it breaks the starches down, so the crust is lighter and
+                  kinder to eat.
+                </p>
+              </div>
+            </div>
+          </section>
+          <section class="act">
+            <div class="frame act__frame">
+              <div class="act__copy" data-stage="view">
+                <p class="eyebrow eyebrow--inverse" data-stage-item data-variant="liftFade">03 — Forno</p>
+                <h2 class="act__title" data-stage-item data-variant="liftFade" data-delay="0.067">Ninety seconds of fire.</h2>
+                <p class="act__body" data-stage-item data-variant="liftFade" data-delay="0.134">
+                  Stone at four hundred and fifty degrees. The edges blister, the middle stays tender, and it goes
+                  straight to your table.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- 6. FOOTER — site chrome, on --fluid-chrome: it never shrinks when a
+         short-but-wide window binds on height. Last group on the page, so
+         its trigger is the page-end margin (0px), not the inset reveal line. -->
+    <footer class="footer" data-header-theme="dark" id="orari">
+      <div class="frame footer__frame" data-stage="view" data-stage-margin="0px">
+        <div class="footer__cols">
+          <div class="footer__col" data-stage-item data-variant="liftFade">
+            <h2 class="footer__heading">Orari</h2>
+            <p>Tuesday – Sunday<br />18:30 – 23:30<br />Saturday lunch 12:30 – 15:00</p>
+          </div>
+          <div class="footer__col" data-stage-item data-variant="liftFade" data-delay="0.067">
+            <h2 class="footer__heading">Dove</h2>
+            <p>Via Aurelia 118<br />00165 Roma</p>
+          </div>
+          <div class="footer__col" data-stage-item data-variant="liftFade" data-delay="0.134">
+            <h2 class="footer__heading">Prenota</h2>
+            <p><a href="tel:+390600000000">+39 06 0000 0000</a><br /><a href="mailto:ciao@fornoaurelia.example">ciao@fornoaurelia.example</a></p>
+          </div>
+        </div>
+        <p class="footer__mark" data-stage-item data-variant="lift" data-delay="0.201">Forno <em>Aurelia</em></p>
+        <p class="footer__small">A fictional restaurant, built to test a design system.</p>
+      </div>
+    </footer>
+  </body>
+</html>
