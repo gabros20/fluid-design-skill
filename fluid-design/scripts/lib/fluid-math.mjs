@@ -214,7 +214,7 @@ function px(n) {
 
 /**
  * cssUnits(cfg) -> the exact custom-property strings, fixed names (§1 of
- * references/attribute-contract.md — the names never change with `prefix`; only utility/class
+ * references/contract.md — the names never change with `prefix`; only utility/class
  * names do). Returns the flat `:root` values, the engaged
  * `@media (width >= engageAt)` values, and the pieces needed to assemble
  * both blocks in any stack.

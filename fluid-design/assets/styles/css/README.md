@@ -59,7 +59,7 @@ CSS has no utility-class layer to generate into, and inventing one (a
 build step emitting thousands of single-property classes) would just be a
 worse, unmaintained copy of Tailwind's own `@utility` engine. Write the
 `calc()` at the one component rule that needs it; there is no second
-occurrence to justify a class for it (see references/motion-architecture.md §2 — "a
+occurrence to justify a class for it (the second-consumer rule, stated in the scroll-animation skill's references/motion-architecture.md §2 — "a
 pattern becomes reusable at its SECOND consumer, never its first").
 
 ## Why mobile values stay separate, not derived

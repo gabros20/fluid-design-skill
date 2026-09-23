@@ -72,7 +72,7 @@ Every function/mixin above is spelled with THIS config's `prefix`
 (`"fluid"`) — change `prefix` in `fluid.config.json` and regenerate to
 rename all of them together. The `--fluid*` custom properties they read
 (`var(--fluid)`, `var(--fluid-display)`, …) are fixed names and never
-change with `prefix` (references/attribute-contract.md §1).
+change with `prefix` (references/contract.md §1).
 
 ## The unit functions are the enforcement point
 

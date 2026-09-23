@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 // verify-matrix.mjs — drive a real browser across the desktop matrix (and
 // optional mobile sizes) and check the things that fail silently: horizontal
-// overflow, drifted/stale fluid units, one-screen sections that overrun the
-// viewport, and (optionally) stage items stuck invisible after a reveal
-// scroll. Full-page screenshots and a contact sheet are optional.
+// overflow, drifted/stale fluid units, and one-screen sections that overrun
+// the viewport. Full-page screenshots and a contact sheet are optional.
 //
-// This is Tier 1 from motion-design-system.md §9: "the browser harness" —
-// drive a real page and read numbers out of it, because the bugs that matter
-// are invisible in source.
+// This is Tier 1 from verification.md §7: "the browser harness" — drive a
+// real page and read numbers out of it, because the bugs that matter are
+// invisible in source. Reveal/scene verification (a triggered entrance
+// left stuck invisible, a scroll-driven scene's motion state) lives in the
+// scroll-animation skill's verify-motion.mjs, not here.
 //
 // Usage:
 //   node verify-matrix.mjs <url> [--config f] [--out dir]
 //     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
 //     [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
-//     [--reveal] [--screens]
+//     [--screens]
 //
 // Exit codes: 0 = every check passed, 1 = at least one failed, 2 = usage /
 // invocation error (including "playwright not found").
@@ -85,7 +86,6 @@ function parseArgs(argv) {
     heights: '640,700,800,900,1440',
     mobile: '390x844,375x667',
     fitSelector: '[data-fit=screen]',
-    reveal: false,
     screens: false,
     help: false
   }
@@ -98,7 +98,6 @@ function parseArgs(argv) {
     else if (a === '--heights') out.heights = argv[++i]
     else if (a === '--mobile') out.mobile = argv[++i]
     else if (a === '--fit-selector') out.fitSelector = argv[++i]
-    else if (a === '--reveal') out.reveal = true
     else if (a === '--screens') out.screens = true
     else if (a.startsWith('--')) { console.error(`[verify-matrix] unknown flag ${a}`); process.exit(2) }
     else out._.push(a)
@@ -107,13 +106,13 @@ function parseArgs(argv) {
 }
 
 const USAGE = `verify-matrix.mjs — drive a real browser across the desktop matrix (and mobile sizes)
-and check overflow, drifted/stale fluid units, one-screen sections and (optionally) reveal state.
+and check overflow, drifted/stale fluid units and one-screen sections.
 
 Usage:
   node verify-matrix.mjs <url> [--config f] [--out dir]
     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
     [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']
-    [--reveal] [--screens]
+    [--screens]
 
 Options:
   --config <file>     config file to load instead of the shipped defaults
@@ -122,9 +121,12 @@ Options:
   --heights <list>    comma-separated desktop heights (default: 640,700,800,900,1440)
   --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667), or "none" to disable
   --fit-selector <s>  selector checked against "height <= viewport" (default: [data-fit=screen])
-  --reveal            step-scroll and check every [data-stage-item] ends visible
   --screens           write a full-page screenshot per viewport + a contact sheet
   -h, --help          print this message and exit
+
+Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
+scene's data-motion-state across progress) live in the scroll-animation
+skill's verify-motion.mjs --reveal/--scenes, not here.
 
 When the config sets a \`ceiling\`, one extra desktop viewport is appended automatically — sized so
 the natural (uncapped) --fluid factor clears the ceiling by 25% — so the ceiling is always exercised
@@ -227,7 +229,7 @@ async function checkOverflow(page) {
 // The four custom properties are FIXED NAMES (`--fluid`, `--fluid-display`,
 // `--fluid-copy`, `--fluid-chrome`) regardless of `fluid.config.json`'s
 // `prefix` — only utility/class/function names move with `prefix`
-// (references/attribute-contract.md §1). `readUnits` therefore never takes a
+// (references/contract.md §1). `readUnits` therefore never takes a
 // prefix argument; reading `--${cfg.prefix}...` here would silently read
 // nothing at all on any project with a non-default prefix.
 async function readUnits(page) {
@@ -285,63 +287,6 @@ async function checkFit(page, selector, innerHeight) {
   }, { selector, innerHeight })
 }
 
-// Step-scroll to the bottom with rAF + 200ms per step -- a fast scroll
-// outruns IntersectionObserver and gives false blanks (learned the hard way,
-// per this skill's contract). Then report every [data-stage-item] still
-// under opacity 0.99.
-async function checkReveal(page) {
-  await page.evaluate(async () => {
-    // Force instant scrolling for the duration of this stepping. A page
-    // that sets `html { scroll-behavior: smooth }` (the default in
-    // assets/styles/shared/base.css) queues a smooth animation on every
-    // `scrollTo` below; the NEXT step's `scrollTo` then cancels that
-    // animation before it arrives — same mechanism as scrollPull's `instant`
-    // writes cancelling an anchor jump (references/scroll-scenes.md §8). The
-    // harness never actually reaches the lower steps, so everything past
-    // wherever it stalled reads as a reveal failure that has nothing to do
-    // with IntersectionObserver. Measured: this made `--reveal` fail in
-    // every cell (30/54 items hidden) on a page with smooth scrolling on.
-    const root = document.documentElement
-    const previousScrollBehavior = root.style.scrollBehavior
-    root.style.scrollBehavior = 'auto'
-    try {
-      const step = () => new Promise((resolve) => {
-        requestAnimationFrame(() => setTimeout(resolve, 200))
-      })
-      const max = document.documentElement.scrollHeight - innerHeight
-      const increment = Math.max(200, Math.round(innerHeight * 0.8))
-      for (let y = 0; y <= max; y += increment) {
-        window.scrollTo(0, y)
-        await step()
-      }
-      window.scrollTo(0, max)
-      // Final settle: the entrance transition runs up to 1.3s
-      // (references/attribute-contract.md §4), so a stage item triggered by the last step may still
-      // be mid-transition at the 200ms mark. Give it real room before reading
-      // opacity, or a perfectly working reveal reads as a false failure.
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-    } finally {
-      root.style.scrollBehavior = previousScrollBehavior
-    }
-  })
-
-  return page.evaluate(() => {
-    const items = [...document.querySelectorAll('[data-stage-item]')]
-    const hidden = []
-    items.forEach((el, i) => {
-      const op = Number(getComputedStyle(el).opacity)
-      if (op < 0.99) {
-        hidden.push({
-          index: i,
-          opacity: op,
-          selector: el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '')
-        })
-      }
-    })
-    return { pass: hidden.length === 0, total: items.length, hidden }
-  })
-}
-
 // ── one viewport ────────────────────────────────────────────────────────
 
 async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
@@ -396,12 +341,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
     result.checks.fit = { pass: true, skipped: 'below engageAt' }
   }
 
-  // (d) reveal
-  if (opts.reveal) {
-    result.checks.reveal = await checkReveal(page)
-  }
-
-  // (e') grid-cols — column count per [data-verify-grid] element. Compared
+  // (d) grid-cols — column count per [data-verify-grid] element. Compared
   // across desktop (non-mobile) viewports once every viewport has run; see
   // the summary/report assembly in main().
   result.checks.gridCols = await checkGridCols(page)
@@ -421,7 +361,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
 // ── reporting ───────────────────────────────────────────────────────────
 
 function viewportPass(v) {
-  return v.checks.overflow.pass && v.checks.units.pass && v.checks.fit.pass && (v.checks.reveal ? v.checks.reveal.pass : true)
+  return v.checks.overflow.pass && v.checks.units.pass && v.checks.fit.pass
 }
 
 // Aggregates each [data-verify-grid] element's column count ACROSS desktop
@@ -450,7 +390,7 @@ function buildGridColsReport(viewports) {
 }
 
 function printSummary(viewports) {
-  console.log('width  height  mobile  overflow  units  fit  reveal  overall')
+  console.log('width  height  mobile  overflow  units  fit  overall')
   for (const v of viewports) {
     const c = v.checks
     const cell = (b) => (b === undefined ? '-' : b ? 'PASS' : 'FAIL')
@@ -462,7 +402,6 @@ function printSummary(viewports) {
         cell(c.overflow.pass).padEnd(10),
         cell(c.units.pass).padEnd(7),
         cell(c.fit.pass).padEnd(5),
-        cell(c.reveal?.pass).padEnd(8),
         viewportPass(v) ? 'PASS' : 'FAIL'
       ].join('')
     )
@@ -501,9 +440,6 @@ function printSummary(viewports) {
       for (const f of v.checks.fit.elements.filter((f) => !f.pass)) {
         console.log(`  fit[${f.index}]: height ${f.height} > viewport ${v.height} (ratio ${f.ratio})`)
       }
-    }
-    if (v.checks.reveal && !v.checks.reveal.pass) {
-      for (const h of v.checks.reveal.hidden) console.log(`  reveal[${h.index}] ${h.selector}: opacity ${h.opacity}`)
     }
     console.log('')
   }
@@ -552,7 +488,7 @@ async function main() {
   }
   const url = args._[0]
   if (!url) {
-    console.error('usage: node verify-matrix.mjs <url> [--config f] [--out dir] [--widths …] [--heights …] [--mobile W1xH1,W2xH2|none] [--fit-selector sel] [--reveal] [--screens]')
+    console.error('usage: node verify-matrix.mjs <url> [--config f] [--out dir] [--widths …] [--heights …] [--mobile W1xH1,W2xH2|none] [--fit-selector sel] [--screens]')
     console.error('       node verify-matrix.mjs --help')
     process.exit(2)
   }

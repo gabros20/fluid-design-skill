@@ -5,6 +5,11 @@ Node 20+, ESM, zero runtime dependencies except `playwright` (only needed by
 below). All math comes from `lib/fluid-math.mjs`; these scripts are thin CLIs
 over it plus a static scanner.
 
+Animation/scroll-scene verification (a triggered entrance, a scrub scene's
+state, a real anchor click through smooth scrolling) lives in the
+`scroll-animation` skill's `scripts/` — `audit-motion.mjs`,
+`verify-motion.mjs`, `anchor-check.mjs` — not here.
+
 ## calc.mjs — the math, with no browser and no project
 
 ```
@@ -43,28 +48,26 @@ node audit.mjs --help
 Walks `<srcDir>` (skipping `node_modules`, `.git`, `.next`, `dist`, `build`)
 and reports rule violations, each with a rule id, `file:line`, the offending
 snippet, a one-line *why*, and a *fix*. Some rules need repo-wide context
-(e.g. whether `@custom-variant dark` is declared anywhere, whether
-`LazyMotion strict` is present, or whether `scroll-behavior: smooth` is set
-anywhere) — that context is computed once per scan root, over EVERY file
-including this skill's own generated output (`base.css` and friends), before
-per-file rules run. Generated files are then skipped by the per-file rules
-themselves (scanning generated output for hand-authoring mistakes is never
-meaningful) but still feed that shared context — the shipped `base.css` is
-where `scroll-behavior: smooth` is actually set, so `scroll-well-vs-smooth-scroll`
-would never fire on the canonical setup if generated files were dropped
-before context was built.
+(e.g. whether `@custom-variant dark` is declared anywhere, or whether a
+`--radius-*: 0` token is defined) — that context is computed once per scan
+root, over EVERY file including this skill's own generated output (`base.css`
+and friends), before per-file rules run. Generated files are then skipped by
+the per-file rules themselves (scanning generated output for hand-authoring
+mistakes is never meaningful) but still feed that shared context.
 
 Rules (severity in parens): `fixed-px-at-engage` (error; info for the
 deliberately-excluded border/radius/tracking/max-w properties),
 `fixed-px-at-engage-scss` (error/info, the SCSS/vanilla-CSS twin of the
 above), `length-times-unit` (error), `dvh-on-scaled` (warn),
 `overflow-hidden-x` (warn), `dark-variant` (warn), `rounded-with-zero-token`
-(info), `motion-strict` (error), `tw-breakpoint-units` (error — a mixed-unit
-or partial `--breakpoint-*` set, the Tailwind v4 variant-ordering trap),
-`scroll-well-vs-smooth-scroll` (info — a scroll well used alongside a
-page-wide `scroll-behavior: smooth`), `fractional-amount` (warn),
-`contents-reveal` (error), `img-svg` (warn), `video-attrs` (warn),
-`double-fluid-same-prop` (warn), `type-unit-mismatch` (info).
+(info), `tw-breakpoint-units` (error — a mixed-unit or partial
+`--breakpoint-*` set, the Tailwind v4 variant-ordering trap), `img-svg`
+(warn), `double-fluid-same-prop` (warn), `type-unit-mismatch` (info).
+
+Motion-specific rules (`motion-strict`, `scroll-well-vs-smooth-scroll`,
+`fractional-amount`, `contents-reveal`, `video-attrs`, plus
+`lenis-with-scroll-well` and `gsap-pin-with-sticky-scene`) moved to the
+`scroll-animation` skill's `scripts/audit-motion.mjs`.
 
 `--selftest` runs the scanner over `fixtures/audit/<rule-id>/{positive,negative}`
 for every rule and asserts each positive fixture trips the rule and each
@@ -106,7 +109,7 @@ Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
 node verify-matrix.mjs <url> [--config f] [--out dir]
   [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
   [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
-  [--reveal] [--screens]
+  [--screens]
 ```
 
 Drives every viewport in the `widths x heights` desktop matrix, plus each
@@ -121,14 +124,17 @@ exact `--mobile WxH` pair, and for each one checks:
   `height <= innerHeight + 1`, checked only at/above `engageAt` (below it the
   scale is a flat 1px and the check is meaningless). Reports the height
   ratio.
-- **(d) reveal** (`--reveal` only) — step-scrolls to the bottom using rAF +
-  200ms per step (a fast scroll outruns `IntersectionObserver` and gives
-  false blanks), waits ~1.5s to let the contract's up-to-1.3s entrance
-  transition settle, then reports every `[data-stage-item]` under opacity
-  `0.99`.
+- **(d) grid-cols** — `[data-verify-grid]` elements' computed
+  `grid-template-columns` track count, compared across every desktop
+  viewport (mobile excluded); a `data-verify-grid="responsive"` element is
+  reported but never fails the run.
 - **(e) screenshots** (`--screens` only) — a full-page PNG per viewport in
   `--out`, plus `contact-sheet.html` tiling all of them with pass/fail
   captions.
+
+Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
+scene's `data-motion-state` across progress) moved to the `scroll-animation`
+skill's `verify-motion.mjs --reveal --scenes`.
 
 Writes `report.json` (every check, every viewport) and prints a readable
 summary table plus a detail block per failing viewport. Playwright is
@@ -139,35 +145,6 @@ install, then a clear install hint if neither exists.
 Exit codes: `0` every check passed, `1` at least one failed, `2` usage error
 or playwright could not be resolved/launched.
 
-## anchor-check.mjs — the real-smooth-scroll anchor check
-
-```
-node anchor-check.mjs <url> [--selector 'a[href^="#"]']
-  [--viewports 1440x900,390x844] [--limit 5] [--header-var --header-h]
-  [--tolerance 2]
-node anchor-check.mjs --help
-```
-
-`verify-matrix.mjs --reveal` forces `document.documentElement.style.scrollBehavior = 'auto'` for the
-duration of its own stepped `scrollTo` calls, which is the right call for a fast, deterministic
-harness — but it means a green `--reveal` run proves nothing about whether a REAL anchor click
-survives the page's actual `scroll-behavior: smooth` and any scroll well sitting between the click
-and its target (`references/scroll-scenes.md` §8: an `instant`-writing scroll well cancels a smooth
-scroll passing through it one rAF at a time unless it suspends itself). This script is the one check
-that exercises that real path end to end.
-
-For each same-page anchor matching `--selector` (href starts with `#`, or its pathname/search match
-the current page's and it carries a hash), up to `--limit` per viewport (default 5, `0` = no limit):
-clicks it with the page's own `scroll-behavior` left alone, waits for `scrollend` or for `scrollY` to
-sit unchanged for 300ms (10s cap), then asserts the target's landed `rect.top` is within
-`--tolerance` px (default 2) of whichever offset mechanism it actually uses — `scroll-margin-top` (+
-the root's `scroll-padding-top`), or the `--header-var` custom property (default `--header-h`) read
-as a fallback when the CSS ones are both zero. A viewport width `<= 480` is emulated as touch/mobile.
-
-Exit codes: `0` every anchor in every viewport landed within tolerance, `1` at least one did not (or
-an anchor/target went missing mid-check), `2` usage error or playwright could not be
-resolved/launched. Playwright resolution matches `verify-matrix.mjs`.
-
 ## fixtures/
 
 - `fixtures/audit/<rule-id>/{positive,negative}/` — one isolated directory
@@ -176,18 +153,13 @@ resolved/launched. Playwright resolution matches `verify-matrix.mjs`.
   unit CSS generated by `lib/fluid-math.mjs`'s `cssUnits(loadConfig())` at
   the shipped defaults, pasted verbatim (regenerate and re-paste if the
   defaults change). It has one `data-fit="screen"` section sized
-  `calc(900 * var(--fluid))`, several `[data-stage-item]` elements made
-  visible by a small inline `IntersectionObserver`, and one deliberately
-  overflowing element gated behind a `?overflow` query flag. `html` sets
-  `scroll-behavior: smooth`, and a top `<nav>` holds two same-page anchors
-  (`#filler-2`, `#filler-4`) whose targets carry `scroll-margin-top:
-  var(--header-h)`, for `anchor-check.mjs`. Serve it with `python3 -m
-  http.server` from `fixtures/page/` and point `verify-matrix.mjs`,
-  `probe.mjs` or `anchor-check.mjs` at it:
+  `calc(900 * var(--fluid))`, a handful of filler sections, and one
+  deliberately overflowing element gated behind a `?overflow` query flag.
+  Serve it with `python3 -m http.server` from `fixtures/page/` and point
+  `verify-matrix.mjs` or `probe.mjs` at it:
 
   ```
   cd fixtures/page && python3 -m http.server 8934 &
-  node ../../verify-matrix.mjs http://localhost:8934/index.html --reveal --screens   # PASS
+  node ../../verify-matrix.mjs http://localhost:8934/index.html --screens            # PASS
   node ../../verify-matrix.mjs "http://localhost:8934/index.html?overflow"           # FAIL (overflow)
-  node ../../anchor-check.mjs http://localhost:8934/index.html                       # PASS
   ```

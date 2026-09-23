@@ -15,7 +15,7 @@
       "type": "string",
       "default": "fluid",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Utility, class and (SCSS) function/mixin name prefix — renames `fluid-*` utilities (Tailwind), the `.fluid-frame` class (vanilla CSS) and the `fluid()`/`fluid-display()`/`fluid-frame`/etc. Sass identifiers. It does NOT rename the `--fluid*` custom-property names the generator emits (`--fluid`, `--fluid-display`, `--fluid-copy`, `--fluid-chrome`, `--header-h`, ...) — those are fixed across every stack and every prefix; see references/attribute-contract.md §1."
+      "description": "Utility, class and (SCSS) function/mixin name prefix — renames `fluid-*` utilities (Tailwind), the `.fluid-frame` class (vanilla CSS) and the `fluid()`/`fluid-display()`/`fluid-frame`/etc. Sass identifiers. It does NOT rename the `--fluid*` custom-property names the generator emits (`--fluid`, `--fluid-display`, `--fluid-copy`, `--fluid-chrome`, `--header-h`, ...) — those are fixed across every stack and every prefix; see references/contract.md §1."
     },
     "reference": {
       "type": "object",

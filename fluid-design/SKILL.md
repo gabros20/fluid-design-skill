@@ -1,6 +1,6 @@
 ---
 name: fluid-design
-description: Build or convert a website onto a viewport-fluid design system, where layout, type, spacing and element sizes scale from BOTH viewport axes off one measured unit, so a desktop composition is a faithful proportional copy of the design frame at every screen size (one screen tall when height binds, never overflowing, and pixel-exact at the reference). It also ships the motion system and scroll-driven scenes (triggered entrances, pinned scrubbed video, scroll wells) and the hard-won iOS 26 Safari, video and animation-performance fixes that go with it. Use this skill whenever someone wants a site to "scale with the viewport", "fit one screen", "match the Figma at every size", "look the same on a 13-inch laptop and a 5K display", or wants fluid/responsive typography, clamp()/vw/svh sizing, container-based layouts converted to fluid, an editorial or marketing landing page with scroll animation, a pinned or scrubbed video section, or a Tailwind, SCSS, vanilla-CSS or StyleX token setup for any of this. Also use it when debugging symptoms of such a system: a scroll video stuck on its first frame, sections losing their height, type that jumps size mid-scroll, broken sticky, blank reveals on mobile, or Safari-only rendering bugs. Use it even if the user never says "fluid".
+description: Build or convert a website onto a viewport-fluid design system where layout, type, spacing and element sizes scale from BOTH viewport axes off one measured unit, so desktop stays a proportional copy of the design frame at every size (one screen tall when height binds, pixel-exact at the reference). Use it when a site should "scale with the viewport", "fit one screen", "match the Figma at every size" or look the same on a laptop and a 5K display; for fluid typography, clamp()/vw/svh sizing, one-screen sections, converting container layouts to fluid, or Tailwind/SCSS/CSS/StyleX tokens for it; for iOS/Safari viewport and render bugs (svh/lvh/dvh, toolbar tint, safe areas, dead sticky, empty SVGs); for image, SVG and video element sizing; and for debugging sections losing height, type jumping mid-scroll, grids re-flowing on big screens, or a stale stylesheet (a page or scroll scene that looks broken right after a CSS edit and a dev-server restart is almost always this — check it here before debugging animation code). Use it even if nobody says "fluid". Not for animation (entrances, scroll scenes, video playback, GSAP, Lenis): use the companion `scroll-animation` skill.
 ---
 
 # Fluid design
@@ -15,16 +15,17 @@ This skill is extracted from a production marketing site. Most of its rules were
 files say which one. When a rule seems fussy, read its why before bending it; the cheap-looking
 alternative has usually already been tried and removed.
 
+This skill contains no animation. For entrances, scroll scenes and video playback, see
+§Companion skill below.
+
 ## What you get
 
 | Piece | Where |
 |---|---|
 | The method, rules and the reasons behind them | `references/*.md` (read on demand, see the map below) |
 | Deterministic token generator + config | `scripts/generate-fluid.mjs`, `assets/fluid.config.json` |
-| Ready unit/utility layers per styling stack | `assets/styles/{tailwind-v4,css,scss,stylex,shared}/` |
-| Motion primitives, React + Motion | `assets/motion/react-motion/` |
-| Motion primitives, GSAP (any framework) | `assets/motion/gsap/` |
-| Static audit, viewport-matrix verifier, anchor-scroll check, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,anchor-check,calc,probe}.mjs` |
+| Ready unit/utility layers per styling stack | `assets/styles/{tailwind-v4,css,scss,stylex,ts,shared}/` |
+| Static audit, viewport-matrix verifier, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,calc,probe}.mjs` |
 
 Copy the prepared artifacts; do not regenerate them from memory. They encode measured numbers and
 comment trails that a from-scratch rewrite loses, which is the whole reason they are on disk.
@@ -34,21 +35,21 @@ comment trails that a from-scratch rewrite loses, which is the whole reason they
 ### 1. Preflight: inspect first, then ask only what you cannot infer
 
 Read the project before asking anything: `package.json`, the CSS entry, any Tailwind config or
-`@theme`, existing breakpoints and container widths, the animation libraries already installed, the
-framework and router, and whether the work is greenfield or brownfield. Then settle the decisions
-in `references/preflight.md`. Each one has a default. Ask the user only where the codebase does not
-already answer it and the choice matters.
+`@theme`, existing breakpoints and container widths, the framework and router, and whether the work
+is greenfield or brownfield. Then settle the decisions in `references/preflight.md`. Each one has a
+default. Ask the user only where the codebase does not already answer it and the choice matters.
 
 - **Styling stack**: Tailwind v4 (default), vanilla CSS, SCSS, StyleX, or CSS Modules (which uses the vanilla layer).
-- **Animation engine**: Motion for React (default in React projects) or GSAP (default outside React,
-  or when the user wants timeline/SplitText-class choreography). Use one engine per element, never both on the same element.
 - **Design frame**: the canvas width and height of the design (for example 1680×900) and the
-  **reference viewport** (default 1440×900). These differ on purpose; see `references/fluid-scale.md` §Reference.
+  **reference viewport** (default 1440×900). These differ on purpose; see `references/fluid-scale.md` §4.
 - **Engage breakpoint**: where the scale switches on (default 1024). Below it every unit is 1px.
 - **Height axis**: on by default. Turn it off only for document-like sites with no one-screen sections.
 - **Growth ceiling**: none by default. Set one if assets cannot survive upscaling.
 - **Scope**: the whole site from the breakpoint up (default), or specific routes first during a brownfield migration.
-- **Scroll-driven scene**: none, or one per page. The default is triggered entrances only.
+- **Mobile**: flat, authored per breakpoint (default).
+
+Installed motion libraries (Motion, GSAP, Lenis, a header script) are noted in `FLUID.md` for the
+`scroll-animation` skill and left alone here.
 
 Record the answers in `fluid.config.json` at the project root, together with a short `FLUID.md`
 decision log. A later agent or a later you will need both.
@@ -61,20 +62,21 @@ decision log. A later agent or a later you will need both.
    into its own `<out>/<stack>/` subfolder (`fluid.css`, plus `tokens.example.css`/`cn.ts`/`README.md`
    for `tailwind-v4`), and `<out>/shared/base.css` is always (re)written alongside it regardless of
    which `--stack` you asked for — see `scripts/generate-fluid.mjs --help` for the full layout.
+   `--stack ts` also emits `fluid.config.ts` (`ENGAGE_PX`, `ENGAGE_QUERY`) for any script that needs
+   the breakpoint.
 2. Add `assets/styles/shared/base.css`, which holds the iOS and sticky-safe base layer. Read its comments; several
    rules are deliberate absences (no body background, no `theme-color`, no `overflow-x` on body).
    **Tailwind v4 only: import it with `@import '.../shared/base.css' layer(base);`.** An unlayered
    import beats every declaration inside Tailwind's own `@layer` blocks regardless of specificity or
    source order, so `base.css`'s `:focus-visible` outline and `button { cursor: pointer }` would
    silently override utilities meant to win. See `assets/styles/tailwind-v4/README.md`.
-3. Put the `<noscript>` reveal safety net in the document head (see `base.css`).
-4. Set the engage breakpoint to the same value everywhere: the Tailwind `--breakpoint-lg`, SCSS
-   `$fluid-engage-at`, JS `ENGAGE_QUERY`. Three copies of one number drift; that is why the config exists.
-5. Tailwind only: register the fluid families with tailwind-merge (`assets/styles/tailwind-v4/cn.ts`),
+3. Set the engage breakpoint to the same value everywhere: the Tailwind `--breakpoint-lg`, SCSS
+   `$fluid-engage-at`, and any JS query (import `ENGAGE_QUERY` from the generated `fluid.config.ts`).
+   Three copies of one number drift; that is why the config exists.
+4. Tailwind only: register the fluid families with tailwind-merge (`assets/styles/tailwind-v4/cn.ts`),
    or `cn('lg:fluid-p-40', 'lg:fluid-p-24')` ships both classes and stylesheet order picks the winner.
-6. Copy the motion primitives for the chosen engine (step 5).
-7. **Restart the dev server and open a fresh tab**, then run `node <skill>/scripts/probe.mjs <url>`.
-   A stale stylesheet looks exactly like broken code; see `references/verification.md`.
+5. **Restart the dev server and open a fresh tab**, then run `node <skill>/scripts/probe.mjs <url>`.
+   A stale stylesheet looks exactly like broken code; see `references/verification.md` §6.
 
 ### 3. Build or convert sections, one at a time
 
@@ -99,52 +101,37 @@ core of it:
 ### 4. Tokens and theming
 
 Use semantic tokens (surface, text, border, icon roles) that alias a brand ramp. Components should
-use the semantic tokens, never the ramp. Read `references/tokens-and-theming.md` for four traps
+use the semantic tokens, never the ramp. Read `references/tokens-and-theming.md` for the traps
 that compile cleanly and render wrong: a radius token of 0 does not stop `rounded-*`; `dark:`
-without a custom variant fires on the OS setting; a missing token emits nothing; and a token name
-shared with another codebase can mean something different there. It also covers the header ink
-that follows the section beneath it (`data-header-theme`).
+without a custom variant fires on the OS setting; a missing token emits nothing; a token name
+shared with another codebase can mean something different there; and a px `--breakpoint-lg` among
+rem defaults reorders every variant.
 
-### 5. Motion
+### 5. Media
 
-Read `references/motion-architecture.md` before adding any animation. The decision order is:
-
-1. **Who owns the clock?** Trigger is the default and is almost free. Scroll-driven is a deliberate
-   decision with real cost. Media-driven is the most expensive. Allow at most one scroll-driven scene per
-   page, and only 1 to 3 on screen at once.
-2. Entrances use `Stage`/`StageItem`: translate plus opacity on the measured `entrance` curve, with distances in
-   CSS variables and one stage per arrival.
-3. Exits over a pinned render use `FadeOnExit` (a hand-written style write, never a bound value).
-4. A pinned, scrubbed video uses `ScrubStage`. It needs an all-intra asset, so read `references/video.md` and
-   `references/scroll-scenes.md` first.
-5. Components are extracted at their **second** consumer, never their first.
-
-Engine specifics: `assets/motion/react-motion/README.md` or `assets/motion/gsap/README.md`.
-
-### 6. Media
-
-Images, video and SVG each have Safari-specific rules. Summary:
-- Inline SVG (via svgr or equivalent) rather than `<img src=*.svg>`.
-- Give every video `muted playsInline` and a deliberate `preload`, plus IntersectionObserver gating.
-- Use an all-intra encode only for scrubbing.
+Images, video and SVG each have Safari-specific rules (`references/media.md`). Summary:
+- Size media in fluid units with CSS owning width and height; reserve every box against layout shift.
+- Image `sizes` must allow for growth above the reference: the frame grows to `1680·f`, so a
+  half-width image at f = 1.6 is about 1344px wide (`references/performance.md` §3). Write `sizes` in `vw`.
+- Inline SVG (via svgr or equivalent) rather than `<img src=*.svg>`; strip its `width`/`height`.
+- Every video that plays without a click gets `muted playsInline`, and `max-w-none` if it is
+  deliberately oversized.
 - A poster cannot be art-directed, so put a `<picture>` underneath the video instead.
 
-Details are in `references/video.md` and `references/ios-safari.md`.
+How a video *plays* (scrubbing, loops, preload tiers, encoding) is the `scroll-animation` skill.
 
-### 7. Verify: at a matrix of viewports, never one
+### 6. Verify: at a matrix of viewports, never one
 
 - `node scripts/audit.mjs src` is a static scan for the silent failure modes. Fix every error.
-- `node scripts/verify-matrix.mjs <url> --reveal --screens --fit-selector '[data-fit=screen]'`
+- `node scripts/verify-matrix.mjs <url> --screens --fit-selector '[data-fit=screen]'`
   covers widths 1024/1280/1440/1680/2560 × heights 640/700/800/900/1440, plus phones. It checks
   for horizontal overflow, compares the unit values against the maths, checks one-screen fit, and
-  checks that every reveal actually fired. Keep 2560 in the matrix: frame drift and grid re-flow
-  bugs only appear above the reference.
+  reports grid column counts (`data-verify-grid`). Keep 2560 in the matrix: frame drift and grid
+  re-flow bugs only appear above the reference.
 - At 1440×900 the page must match the design pixel for pixel. That point is the calibration check.
-- If the page has same-page anchor links and/or a scroll well, `node scripts/anchor-check.mjs <url>`
-  clicks them with real smooth scrolling on and asserts they land — `--reveal` above forces
-  `scroll-behavior: auto` while it steps, so it never proves an anchor jump actually arrives.
-- iOS toolbar tint, `lvh` shortfall and video compositing can only be verified on a real device.
+- iOS toolbar tint, `lvh` shortfall and safe-area padding can only be verified on a real device.
   Before asking for a device test, confirm the deployed build actually contains the fix.
+- Reveal, scene and anchor-jump checks are the `scroll-animation` skill's `verify-motion` script.
 
 ## Invariants: break one and the system stops working
 
@@ -155,7 +142,24 @@ Details are in `references/video.md` and `references/ios-safari.md`.
 5. There is one scale per page. Custom properties resolve where they are declared, so overriding `--fluid` on a section does not re-derive the type units.
 6. The number multiplied by a unit must be unitless. `64px * var(--fluid)` is invalid and drops the declaration without any error.
 7. Frame and gutter sit on one box. A text measure sits inside the frame and never replaces it.
-8. Nothing animates a transform on a sticky ancestor, a scene wrapper or a video ancestor.
+8. Never put `transform` or `overflow-x: hidden` on a sticky ancestor. Either one silently turns
+   sticky into static (`references/ios-safari.md` §6); use `overflow-x: clip`, and keep the
+   horizontal guard on `html` only.
+
+## Companion skill: `scroll-animation`
+
+This skill makes the page the right size. The `scroll-animation` skill makes it move: triggered
+entrances, pinned and scrubbed scenes, scroll wells, looping and scrubbed video playback, header ink
+that follows the section underneath, motion performance and motion verification, and coexistence
+with existing GSAP, Lenis and header scripts. Each skill works alone. When both are installed they
+meet at three points, all owned here (`references/contract.md` §4):
+
+- **The engage constant.** `engageAt` in `fluid.config.json`, emitted as `ENGAGE_QUERY` in
+  `fluid.config.ts` by `--stack ts`. `scroll-animation` reads it rather than keeping its own number.
+- **`--header-h`.** The fixed header's resting height. Anchor offsets, sticky tops and header-ink
+  probes read it.
+- **The `translate` property.** `fluid-translate-*` writes `translate`, so an engine's per-frame
+  `transform` composes with it. Entrance distances stay fixed px, because engines resolve `var()` once.
 
 ## Reference map
 
@@ -166,13 +170,11 @@ Details are in `references/video.md` and `references/ios-safari.md`.
 | `references/frame-and-gutter.md` | building any section frame, a row that will not fit, or grids that re-flow on big screens |
 | `references/section-recipe.md` | every section, greenfield or converted |
 | `references/typography.md` | choosing type units, line boxes, hard breaks, fonts |
-| `references/tokens-and-theming.md` | colour and semantic tokens, header theme, stack traps |
+| `references/tokens-and-theming.md` | colour and semantic tokens, stack traps |
 | `references/brownfield-migration.md` | converting an existing container-based site |
 | `references/stacks.md` | the differences between Tailwind v4, vanilla CSS, SCSS, StyleX and CSS Modules |
-| `references/attribute-contract.md` | the exact name of a config key, emitted custom property, utility, `data-*` attribute or motion constant |
-| `references/motion-architecture.md` | any animation |
-| `references/scroll-scenes.md` | pins, scrubbing, latches, scroll wells, header-theme probing |
-| `references/video.md` | any `<video>`, especially scrubbed or looping |
-| `references/ios-safari.md` | anything mobile, Safari, or the toolbar/tint |
-| `references/performance.md` | before shipping motion; budgets |
+| `references/contract.md` | the exact name of a config key, emitted custom property, utility or `data-*` attribute, and the interface with `scroll-animation` |
+| `references/media.md` | any image, SVG or `<video>` element: sizing, reserving, Safari SVG rules, posters |
+| `references/ios-safari.md` | anything mobile, Safari, full-height, sticky, or the toolbar/tint |
+| `references/performance.md` | before shipping: image `sizes` on a growing page, fonts, `content-visibility`, budgets |
 | `references/verification.md` | how to prove it works; the stale-stylesheet diagnosis |

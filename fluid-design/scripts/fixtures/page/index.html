@@ -33,15 +33,7 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #0b0b0c; color: #eee; font-family: system-ui, sans-serif; }
-  html { overflow-x: clip; scroll-behavior: smooth; } /* smooth is what anchor-check.mjs exercises; overflow-x:clip is the one allowed place for the root rule -- see audit.mjs's overflow-hidden-x */
-
-  nav { position: sticky; top: 0; z-index: 1; display: flex; gap: calc(16 * var(--fluid)); padding: calc(12 * var(--fluid)); background: #0b0b0c; border-bottom: 1px solid #333; }
-  nav a { color: #9cf; }
-
-  /* Anchor landing offset: this fixture uses scroll-margin-top rather than a
-     --header-h read in JS, so anchor-check.mjs's scroll-margin/padding
-     candidate is the one expected to match. */
-  .filler[id] { scroll-margin-top: var(--header-h); }
+  html { overflow-x: clip; } /* the one allowed place for the root rule -- see audit.mjs's overflow-hidden-x */
 
   .fit-section {
     height: calc(900 * var(--fluid));
@@ -60,14 +52,6 @@
     font-size: calc(24 * var(--fluid-display));
   }
 
-  [data-stage-item] {
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  [data-stage-item].is-visible {
-    opacity: 1;
-  }
-
   /* Deliberate overflow, gated behind ?overflow -- proves verify-matrix's
      overflow check actually fails when it should. */
   #overflow-trigger {
@@ -80,23 +64,15 @@
 </head>
 <body>
 
-  <!-- Two same-page anchors for anchor-check.mjs -- their targets carry
-       scroll-margin-top: var(--header-h), so a correct landing has the
-       target's rect.top equal to --header-h, not 0. -->
-  <nav>
-    <a href="#filler-2">Jump to filler 2</a>
-    <a href="#filler-4">Jump to filler 4</a>
-  </nav>
-
   <section class="fit-section" data-fit="screen">
-    <h1 data-stage-item style="font-size: calc(48 * var(--fluid-display))">one-screen section</h1>
+    <h1 style="font-size: calc(48 * var(--fluid-display))">one-screen section</h1>
   </section>
 
-  <section class="filler"><p data-stage-item>filler 1</p></section>
-  <section id="filler-2" class="filler"><p data-stage-item>filler 2</p></section>
-  <section class="filler"><p data-stage-item>filler 3</p></section>
-  <section id="filler-4" class="filler"><p data-stage-item>filler 4</p></section>
-  <section class="filler"><p data-stage-item>bottom filler — proves the reveal step-scroll reached here</p></section>
+  <section class="filler"><p>filler 1</p></section>
+  <section class="filler"><p>filler 2</p></section>
+  <section class="filler"><p>filler 3</p></section>
+  <section class="filler"><p>filler 4</p></section>
+  <section class="filler"><p>bottom filler</p></section>
 
   <div id="overflow-trigger"></div>
 
@@ -104,13 +80,6 @@
     if (location.search.includes('overflow')) {
       document.getElementById('overflow-trigger').style.display = 'block';
     }
-
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) entry.target.classList.add('is-visible');
-      });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('[data-stage-item]').forEach(function (el) { io.observe(el); });
   </script>
 </body>
 </html>

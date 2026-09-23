@@ -29,7 +29,7 @@ $fluid-copy-floor: 0.9;
 $fluid-chrome-enabled: true;
 
 // ── Functions ─────────────────────────────────────────────────────────
-// FUNCTION AND MIXIN NAMES MOVE WITH `prefix` (references/attribute-contract.md §1) — the
+// FUNCTION AND MIXIN NAMES MOVE WITH `prefix` (references/contract.md §1) — the
 // `--fluid*` CUSTOM-PROPERTY NAMES INSIDE THEM DO NOT, and are always the
 // literal strings cssUnits(cfg) emits. At the default prefix these read
 // identically either way, which is exactly why this bug shipped unnoticed:

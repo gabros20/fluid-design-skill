@@ -79,3 +79,13 @@ Author the breakpoint as a StyleX media-query key. See its README for the one li
 | uses CSS Modules or plain CSS | vanilla |
 | uses StyleX | StyleX |
 | mixes several | the one owning the section being built; the units are shared, so mixing is safe |
+
+## Traps
+
+- Overriding only `--breakpoint-lg` in px: the rem defaults for the other rungs sort the whole `lg:`
+  block before `sm:`. Ship the full ladder in px.
+- `lg: 64rem` as the "fix": a rem query follows the browser font-size, `fluid.css`'s px query does not.
+- Fluid classes without the breakpoint prefix: the mobile values differ from the drawn desktop ones.
+- Two classes for one property outside `cn()`: stylesheet order picks the winner (`frame-and-gutter.md` §5).
+- `64px * var(--fluid)` in vanilla or Tailwind arbitrary values: invalid and silently dropped. SCSS
+  turns it into a build error.

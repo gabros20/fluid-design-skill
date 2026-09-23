@@ -4,6 +4,14 @@ Read when: writing any section's outer structure, a row will not fit, a grid cha
 on big screens, or a section sits a few pixels off its neighbours' rail.
 Skip when: you are only adjusting type inside an existing frame.
 
+## Contents
+1. There is one page frame, and it is one box (cap and gutter on one box; frame is not measure; the drawn gutter)
+2. When a row will not fit the frame: use `cqw`, not a smaller gutter
+3. A constant compared against a scaled box will drift
+4. `fluid-gap-x`: horizontal space inside a scaling frame scales
+5. Two classes for one property
+6. Traps
+
 ## 1. There is one page frame, and it is one box
 
 ```tsx

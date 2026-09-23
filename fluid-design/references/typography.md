@@ -52,9 +52,9 @@ nearly do. Rounding moves the wrap: one line measured 12.48 columns at one facto
 so "…INFERENCE ON" fits at 58.9px in a 736px column and does not at 67.2px in an 840px one. The
 headline read three lines on one laptop and hung "ON" off the first line on another.
 
-Use a breakpoint-scoped hard break for drawn line breaks: `<br className="hidden lg:inline" />`. For
-line-by-line entrance animation, split at the **authored** break into block spans (one `StageItem` each),
-never at the rendered lines. Animating visual lines means measuring text layout, which is a different problem.
+Use a breakpoint-scoped hard break for drawn line breaks: `<br className="hidden lg:inline" />`, or
+author each drawn line as a block span. Never rely on the rendered wrap to reproduce a drawn break.
+Line-by-line entrances split at these authored breaks: see the `scroll-animation` skill.
 
 ## Type that must hold a drawn line count in an over-budget column
 
@@ -112,5 +112,5 @@ rem-anchored twin. Mobile type, below the breakpoint, is ordinary CSS and can us
 - [ ] The unit follows the container: `fluid-text-*` inside scaling boxes, never display type.
 - [ ] Tracking in `em`; line boxes via `/lh` or unitless ratios.
 - [ ] `text-*` before `leading-*` in merged class strings; no `leading-*` in a cva base.
-- [ ] Hard breaks are breakpoint-scoped; entrance splits follow authored breaks.
+- [ ] Hard breaks are breakpoint-scoped (or block spans); never trust the rendered wrap for a drawn break.
 - [ ] Shared atoms own their height contract; fluid is an opt-in prop.

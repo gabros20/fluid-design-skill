@@ -14,8 +14,9 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 8. Configuration knobs and how each derives
 9. Adding a role
 10. One scale: why sections may not re-anchor it
-11. Interaction with animation
+11. Interop with animation (if any)
 12. Limitations
+13. Traps
 
 ---
 
@@ -86,7 +87,7 @@ If a value must be a plain length below the breakpoint and a scaled one above it
   guarantee: **never taller than the window, and exactly one screen tall whenever height binds.**
 - **`svh`, not `dvh`.** The small viewport does not move when a mobile toolbar collapses. With `dvh`
   the type would resize mid-scroll, and over a scrubbed video that thrashes layout on the worst possible surface.
-  (Pinned layers use `lvh`; see `scroll-scenes.md`.)
+  (Pinned layers use `lvh`; see the `scroll-animation` skill, `references/scroll-scenes.md`.)
 - **`100vw` includes a classic scrollbar gutter.** That is harmless when scrollbars are hidden or overlay. If it bites,
   use `calc((100vw - var(--scrollbar-width)) / 1440)`.
 - **Floor 0.58** was *chosen*, not derived: "structure stops compressing at a 522px-tall section".
@@ -265,16 +266,20 @@ it a faithful proportional copy of the drawing. Making it fit is a drawing job: 
 its padding (622 of one 1198-tall section was whitespace). A second sizing ladder inside a section
 (for example a width-only `--stage` var with `xl:` rules) is the same mistake and must be removed.
 
-## 11. Interaction with animation
+## 11. Interop with animation (if any)
 
-- No property collides: animation writes `transform`/`opacity`, and the scale writes `font-size`, `padding`,
-  `gap`, `width` and `height`.
-- The units recompute on resize only, never per frame and never during a scroll.
-- `fluid-translate-*` writes the independent `translate` property, so it composes with an
+This skill ships no animation. If the companion `scroll-animation` skill (or any engine) animates
+the page, four facts keep the two from fighting:
+
+- **No property collides.** Animation writes `transform`/`opacity`; the scale writes `font-size`,
+  `padding`, `gap`, `width` and `height`. The units recompute on resize only, never per frame and
+  never during a scroll.
+- **`fluid-translate-*` writes the independent `translate` property**, so it composes with an
   engine's per-frame `transform` instead of fighting it for one declaration.
 - **Entrance offsets stay in fixed px.** Engines resolve `var()` once at animation start, so a scaled
   offset goes stale on resize. That is not worth it for a 24–40px offset.
-- A pin re-measures itself on `ResizeObserver` plus `resize`.
+- **A pin re-measures itself on `ResizeObserver` plus `resize`**, and reads the engage breakpoint and
+  `--header-h` from this skill's config. Details: the `scroll-animation` skill, `references/scroll-scenes.md`.
 
 ## 12. Limitations
 
@@ -288,3 +293,13 @@ its padding (622 of one 1198-tall section was whitespace). A second sizing ladde
    are out of scope.
 5. Resizing reflows type and remaps any pin. Scrolling never does.
 6. Only a section drawn at the reference height gets the one-screen guarantee. Others scale without landing on `100svh`.
+
+## 13. Traps
+
+- `max()` instead of `min()` to combine the arms: cover, not contain, and text overflows.
+- `dvh` in the unit: type resizes while the reader scrolls on mobile Safari.
+- Anchoring the reference to the canvas (1680) instead of the laptop viewport (1440).
+- An intercept in `--fluid` (`clamp(…, 1px)`, `a·vw + b`): `900 × --fluid` stops equalling `100svh`.
+- Overriding `--fluid` on one section: the type units resolved at `:root` do not re-derive (§10).
+- A length times a unit (`64px * var(--fluid)`): invalid, and the declaration drops silently.
+- A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).

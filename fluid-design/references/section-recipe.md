@@ -1,7 +1,8 @@
 # Section recipe: putting one section on the system
 
 Read when: building any section, greenfield or converted.
-Skip when: you are working only on motion or media inside an existing section. See those references instead.
+Skip when: you are working only on media inside an existing section (`media.md`), or only on its
+animation (the `scroll-animation` skill).
 
 ## The checklist
 
@@ -34,7 +35,7 @@ Skip when: you are working only on motion or media inside an existing section. S
    at each call site — see `typography.md`'s "height contract" note. Nothing in this skill ships a
    `Btn`/`Eyebrow`/etc. component; the anatomy example below inlines the classes a small label like
    that would carry, on purpose (an atom is extracted at its **second** consumer, never invented
-   ahead of one — `SKILL.md`'s motion section states the same rule for motion components).
+   ahead of one; the `scroll-animation` skill applies the same rule to motion components).
 10. **Scale the comparison constants:** any `auto-fill` minimum, `flex-wrap` basis or `min-w` inside
     the scaling box (`frame-and-gutter.md` §3).
 11. **Grep the finished file** for a fixed px value that has no fluid twin at the breakpoint. Anything drawn
@@ -47,36 +48,37 @@ Skip when: you are working only on motion or media inside an existing section. S
 ## Anatomy, as shipped
 
 ```tsx
-<section data-header-theme="dark" className="w-full bg-surface-dark">
+<section className="w-full bg-surface-dark">
   <div className="lg:fluid-cap-1680 lg:fluid-px-80 lg:fluid-h-900 lg:min-h-0 relative mx-auto
                   flex min-h-[max(640px,100svh)] w-full max-w-[1680px] flex-col justify-between
                   px-6 pt-20 pb-10 sm:px-8 lg:fluid-py-120">
-    <Stage trigger="view" className="lg:fluid-cap-800 lg:fluid-gap-16 flex max-w-[800px] flex-col gap-4">
-      <StageItem variant="liftFade" className="[--hero-lift:20px] lg:[--hero-lift:24px]">
-        {/* An "eyebrow" label inlined, not a shipped <Eyebrow> atom — see the
-            checklist's item 9. */}
-        <span className="lg:fluid-copy-14 text-xs font-semibold tracking-[0.08em] uppercase">
-          Label
-        </span>
-      </StageItem>
+    <div className="lg:fluid-cap-800 lg:fluid-gap-16 flex max-w-[800px] flex-col gap-4">
+      {/* An "eyebrow" label inlined, not a shipped <Eyebrow> atom — see the
+          checklist's item 9. */}
+      <span className="lg:fluid-copy-14 text-xs font-semibold tracking-[0.08em] uppercase">
+        Label
+      </span>
       <h2 className="font-heading lg:fluid-display-64/72 text-[40px] leading-[1.2] uppercase sm:text-[52px]">
-        <StageItem as="span" variant="liftFade" delay={0.067} className="block">First line</StageItem>
-        <StageItem as="span" variant="liftFade" delay={0.134} className="block">second line.</StageItem>
+        <span className="block">First line</span>
+        <span className="block">second line.</span>
       </h2>
-    </Stage>
-    <Stage trigger="view">{/* its own stage: it arrives a screen later */}
-      <StageItem variant="lift"><Logo className="lg:fluid-h-46 h-8 w-auto" /></StageItem>
-    </Stage>
+    </div>
+    <Logo className="lg:fluid-h-46 h-8 w-auto" />
   </div>
 </section>
 ```
 
 What to notice:
-- The section is a **server component**. Only `Stage`/`StageItem` are client leaves.
-- `data-header-theme` tells a transparent fixed header what ink to use over this section.
-- There are two stages, because the copy at the top and the mark on the baseline are two arrivals.
+- The section is plain markup and can stay a **server component**.
+- The copy group at the top and the mark on the baseline are separate children of a
+  `justify-between` column: two drawn positions, not one block.
+- The heading's drawn lines are authored as block spans, so a later entrance can split at the
+  authored break (`typography.md` §Hard breaks).
 - Mobile values are authored plainly (`text-[40px] sm:text-[52px]`). The fluid classes exist only from `lg`.
-- Entrance distances are fixed px in CSS variables, not fluid (engines resolve `var()` once).
+- Entrances: see the `scroll-animation` skill. It wraps these same elements (its `Stage`/`StageItem`
+  in React) without changing any class here. Its entrance distances are fixed px in CSS variables,
+  not fluid (engines resolve `var()` once), and a section whose header ink it drives also carries
+  `data-header-theme`.
 
 The same section in SCSS:
 
@@ -99,7 +101,7 @@ under it unless it subtracts the header's height. `--header-h` combines three te
 - Plate heroes: `pt-[calc(var(--header-h)+40px)] lg:pt-[calc(var(--header-h)+80*var(--fluid))]`.
 - Anchor targets and sticky rails: `scroll-margin-top: calc(var(--header-h) + 24px)`, `top: var(--header-h)`.
 - Full-viewport heroes: `min-h-[100svh]` on mobile, `lg:h-[100svh] lg:min-h-0` or `lg:fluid-h-900`.
-  iOS 26 measures even `100lvh` short of the physical screen; see `ios-safari.md` §Hero overshoot.
+  iOS 26 measures even `100lvh` short of the physical screen; see `ios-safari.md` §5.
 
 ## Mobile floors: use `svh`, and put the baseline on screen
 
@@ -110,8 +112,8 @@ both toolbar states, and 640 is the landscape floor.
 
 ## When a section rides over a pinned render
 
-Copy sections inside a scroll scene paint **no background** and use **no `overflow-hidden`**. An
-opaque background would cover the render, and clipping risks the pin. See `scroll-scenes.md`.
+Copy sections inside a pinned scene have extra rules (no background, no `overflow-hidden`): see the
+`scroll-animation` skill, `references/scroll-scenes.md`.
 
 ## Traps
 - [ ] `fluid-h-*` only for sections drawn at the reference height; `fluid-min-h-*` for taller ones.
@@ -119,4 +121,5 @@ opaque background would cover the render, and clipping risks the pin. See `scrol
 - [ ] Contents scale along with the whitespace: sizes, icons, controls, decorations.
 - [ ] No second sizing ladder inside a section (`xl:` rules on a private var).
 - [ ] Mobile floors in `svh`; fixed header subtracted via `--header-h`.
-- [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (`motion-architecture.md`).
+- [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (the `scroll-animation`
+      skill explains why; `audit.mjs` no longer checks it here).

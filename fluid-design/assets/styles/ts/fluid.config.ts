@@ -14,11 +14,12 @@
  */
 
 /** Min-width (px) where the fluid scale turns on. Mirrors `engageAt` in
- * `fluid.config.json`. Every hand-typed `ENGAGE_QUERY`/`ENGAGE_BREAKPOINT_PX`
- * literal in this skill's motion ports (GSAP's `config.ts`, React's
- * `lib/constants.ts`) should import THIS constant once your config's
- * `engageAt` stops matching the shipped default of 1024 — see each of
- * those files' own docblock for the literal this replaces. */
+ * `fluid.config.json`. If the scroll-animation skill is also installed,
+ * every hand-typed `ENGAGE_QUERY`/`ENGAGE_BREAKPOINT_PX` literal in its
+ * motion ports (GSAP's `config.ts`, React's `lib/constants.ts`) should
+ * import THIS constant once your config's `engageAt` stops matching the
+ * shipped default of 1024 — see each of those files' own docblock for the
+ * literal this replaces. */
 export const ENGAGE_PX = 1024
 
 /** `matchMedia`-ready form of ENGAGE_PX. */

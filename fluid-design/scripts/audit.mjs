@@ -106,7 +106,7 @@ function snippetAt(content, index, matchLen) {
 // `_fluid-assert-unitless` @error text, `64px * var(--fluid)`) also blanks
 // the CONTENT of string/template literals, not just skips over it. This is
 // deliberately NOT done for .tsx/.jsx/.html -- several rules there (img-svg,
-// video-attrs, dark-variant) need to read attribute string content itself.
+// dark-variant) need to read attribute string content itself.
 function maskComments(content, { blankStrings = false } = {}) {
   const chars = Array.from(content)
   const n = chars.length
@@ -180,8 +180,6 @@ function maskComments(content, { blankStrings = false } = {}) {
 function buildContext(files, contents) {
   let hasCustomVariantDark = false
   let hasZeroRadiusToken = false
-  let hasLazyMotionStrict = false
-  let hasSmoothScrollBehavior = false
 
   for (const f of files) {
     const ext = extname(f)
@@ -189,16 +187,10 @@ function buildContext(files, contents) {
     if (ext === '.css' || ext === '.scss') {
       if (/@custom-variant\s+dark\b/.test(c)) hasCustomVariantDark = true
       if (/--radius-[\w-]*\s*:\s*0\b/.test(c)) hasZeroRadiusToken = true
-      // Anywhere, not just on html/:root -- scroll-behavior only meaningfully
-      // applies to the scrolling root, and this skill's own shared/base.css
-      // sets it there. False positives on an unrelated element's rule are
-      // harmless: the finding below is informational, not an error.
-      if (/scroll-behavior\s*:\s*smooth\b/.test(c)) hasSmoothScrollBehavior = true
     }
-    if (/<LazyMotion\b[^>]*\bstrict\b/.test(c)) hasLazyMotionStrict = true
   }
 
-  return { hasCustomVariantDark, hasZeroRadiusToken, hasLazyMotionStrict, hasSmoothScrollBehavior }
+  return { hasCustomVariantDark, hasZeroRadiusToken }
 }
 
 // ── rule helpers ────────────────────────────────────────────────────────
@@ -226,16 +218,6 @@ function extractClassNames(content) {
     const value = m[1] ?? m[2] ?? m[3] ?? ''
     out.push({ value, index: m.index, matchLen: m[0].length })
   }
-  return out
-}
-
-// Extract top-level JSX-ish tags (from `<Tag` to its `>`), non-nesting, for
-// rules that need "does this one opening tag carry both X and Y".
-function extractTags(content) {
-  const out = []
-  const re = /<[A-Za-z][\w.]*(?:\s[^<>]*?)?\/?>/g
-  let m
-  while ((m = re.exec(content))) out.push({ text: m[0], index: m.index })
   return out
 }
 
@@ -299,7 +281,7 @@ const rules = [
     // `@media (width >= Npx)` / `(min-width: Npx)` block. Without this, "0
     // errors" from a SCSS/vanilla project said almost nothing about the one
     // thing this skill most wants checked (measured: entirely blind on a
-    // real SCSS+GSAP build).
+    // real SCSS-based build).
     id: 'fixed-px-at-engage-scss',
     ext: (e) => ['.css', '.scss'].includes(e),
     run(content, file, ctx, acc) {
@@ -395,7 +377,7 @@ const rules = [
       while ((m = re.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout over a scrubbed video or pin — the worst possible surface for a resize (fluid-scale.md §2).',
+          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout under the reader\'s thumb — the worst possible surface for a resize (fluid-scale.md §2; if the scroll-animation skill is also installed, this is worst of all over a pinned or scrubbed section).',
           fix: 'Use svh for the fluid scale itself, or lvh specifically for a pin that must not shrink under a collapsing toolbar.'
         })
       }
@@ -421,7 +403,7 @@ const rules = [
         }
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'overflow-x:hidden on an ancestor makes the other axis compute to auto, turning that ancestor into a scroll container with zero range — it silently kills every sticky pin beneath it (motion-design-system.md §8).',
+          why: 'overflow-x:hidden on an ancestor makes the other axis compute to auto, turning that ancestor into a scroll container with zero range — it silently kills every position: sticky element beneath it (SKILL.md\'s invariants; if the scroll-animation skill is also installed, this includes its pinned scroll scenes).',
           fix: 'Use overflow-x: clip instead (or overflow: clip on both axes), and keep overflow-x:hidden reserved for the root html rule only.'
         })
       }
@@ -468,104 +450,6 @@ const rules = [
   },
 
   {
-    id: 'motion-strict',
-    ext: (e) => ['.tsx', '.jsx'].includes(e),
-    run(content, file, ctx, acc) {
-      if (!ctx.hasLazyMotionStrict) return
-      const re = /\bmotion\.[a-z]+/g
-      let m
-      while ((m = re.exec(content))) {
-        pushFinding(acc, {
-          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
-          why: 'LazyMotion with strict is present in this project. Under strict mode, motion.* throws at runtime — only the m namespace is permitted.',
-          fix: `Import m from motion/react and use m.${m[0].split('.')[1]} instead of ${m[0]}.`
-        })
-      }
-    }
-  },
-
-  {
-    // A page-wide `scroll-behavior: smooth` (the shared base layer sets this
-    // on `html` by default) means the scroll well's own per-frame
-    // `behavior: 'instant'` writes cancel any smooth scroll passing through
-    // its target one rAF at a time -- an anchor click that should land 900px
-    // further away instead stalls at the well (references/scroll-scenes.md
-    // §8; `verify-matrix.mjs --reveal` failed in every cell this way on a
-    // real build). Both engines' scrollPull now suspend automatically on a
-    // same-page hash click/hashchange, and expose `suspend(ms)` for a
-    // caller driving its own programmatic scroll -- this rule is
-    // informational, not an error, as a reminder to call it for any OTHER
-    // kind of scroll (a router push, an imperative scrollIntoView outside a
-    // click handler) that would not be caught by those two listeners.
-    id: 'scroll-well-vs-smooth-scroll',
-    ext: (e) => ['.tsx', '.jsx', '.vue', '.astro', '.html'].includes(e),
-    run(content, file, ctx, acc) {
-      if (!ctx.hasSmoothScrollBehavior) return
-      const re = /<PullToCentre\b|\bdata-pull-to-centre\b|\bcreateScrollPull\s*\(|\binitPullToCentre\s*\(/g
-      let m
-      while ((m = re.exec(content))) {
-        pushFinding(acc, {
-          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
-          why: 'This project sets scroll-behavior: smooth somewhere and also uses a scroll well (PullToCentre/scrollPull). The well auto-suspends for a same-page hash click and hashchange, but any OTHER programmatic/smooth scroll (a router navigation, an imperative scrollIntoView outside a click handler) that passes through the well\'s target will still be cancelled one rAF at a time unless you call suspend() around it (references/scroll-scenes.md §8).',
-          fix: 'Call the returned controller\'s suspend(ms) immediately before driving any scroll of your own through this target, or confirm the only programmatic scrolls in this tree are same-page hash clicks/hashchange, which are already covered automatically.'
-        })
-      }
-    }
-  },
-
-  {
-    id: 'fractional-amount',
-    ext: (e) => ['.tsx', '.jsx'].includes(e),
-    run(content, file, ctx, acc) {
-      const blockRe = /\b(whileInView|viewport)\s*=\s*\{\{([^]*?)\}\}/g
-      let bm
-      while ((bm = blockRe.exec(content))) {
-        const amountRe = /amount\s*:\s*0?\.\d+/g
-        let am
-        while ((am = amountRe.exec(bm[2]))) {
-          const index = bm.index + bm[0].indexOf(am[0], bm[1].length)
-          pushFinding(acc, {
-            rule: this.id, file, content, index, matchLen: am[0].length, severity: 'warn',
-            why: 'A fractional viewport.amount is unsatisfiable once the element is taller than the viewport — the trigger can never see that fraction of the element at once, so it never fires on tall content (motion-design-system.md §8).',
-            fix: 'Use amount: "some" for a coarse trigger, or drive the reveal from a margin-based rootMargin instead of a fraction.'
-          })
-        }
-      }
-    }
-  },
-
-  {
-    id: 'contents-reveal',
-    ext: (e) => ['.tsx', '.jsx', '.css', '.scss'].includes(e),
-    run(content, file, ctx, acc) {
-      const ext = extname(file)
-      if (ext === '.css' || ext === '.scss') {
-        const re = /display\s*:\s*contents\b/g
-        let m
-        while ((m = re.exec(content))) {
-          pushFinding(acc, {
-            rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
-            why: 'display: contents generates no box, so IntersectionObserver has nothing to observe. If the element carrying this rule also has whileInView, data-stage or is a Stage, its reveal never fires (motion-design-system.md §8).',
-            fix: 'Give the element a real box (e.g. display: flex/block) or move the reveal trigger to an ancestor that does generate one.'
-          })
-        }
-        return
-      }
-      for (const tag of extractTags(content)) {
-        const hasContents = /\bcontents\b/.test(tag.text) && /className\s*=/.test(tag.text)
-        if (!hasContents) continue
-        const hasTrigger = /whileInView|data-stage\b|<Stage\b/.test(tag.text)
-        if (!hasTrigger) continue
-        pushFinding(acc, {
-          rule: this.id, file, content, index: tag.index, matchLen: tag.text.length, severity: 'error',
-          why: 'This element carries a contents class alongside a reveal trigger (whileInView/data-stage/Stage). display: contents generates no box, so the trigger never fires — a whole stat grid has shipped stuck at opacity 0 this way.',
-          fix: 'Drop contents from this element, or move whileInView/data-stage to a wrapping element that keeps a real box.'
-        })
-      }
-    }
-  },
-
-  {
     id: 'img-svg',
     ext: (e) => ['.tsx', '.jsx', '.vue', '.astro', '.html'].includes(e),
     run(content, file, ctx, acc) {
@@ -576,28 +460,6 @@ const rules = [
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
           why: 'An <img src="…svg"> does not paint reliably in Safari (clipPath, caching) and cannot be styled with currentColor.',
           fix: 'Import the SVG as a component (svgr) and render it inline instead of through an <img> tag.'
-        })
-      }
-    }
-  },
-
-  {
-    id: 'video-attrs',
-    ext: (e) => ['.tsx', '.jsx', '.vue', '.astro', '.html'].includes(e),
-    run(content, file, ctx, acc) {
-      const re = /<video\b[^>]*>/gi
-      let m
-      while ((m = re.exec(content))) {
-        const tag = m[0]
-        const missing = []
-        if (!/\bmuted\b/.test(tag)) missing.push('muted')
-        if (!/\bplaysInline\b/i.test(tag)) missing.push('playsInline')
-        if (!/\bpreload\s*=/.test(tag)) missing.push('preload')
-        if (missing.length === 0) continue
-        pushFinding(acc, {
-          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: `Missing ${missing.join(', ')}. Autoplay/scrub video needs all three to behave consistently across browsers (muted+playsInline for iOS autoplay, preload to control initial buffering).`,
-          fix: `Add the missing attribute(s): ${missing.join(', ')}.`
         })
       }
     }
@@ -705,15 +567,12 @@ const rules = [
 // against a prefix of the RAW file, before any masking.
 //
 // It still feeds buildContext(): buildContext computes repo-wide FACTS (is
-// `scroll-behavior: smooth` set anywhere, is `@custom-variant dark`
-// declared, ...), and this skill's own shared/base.css -- a generated file
-// -- is the canonical place `scroll-behavior: smooth` is set. Filtering
-// generated files out before buildContext ran meant `scroll-well-vs-
-// smooth-scroll` could never fire on the skill's own recommended setup
-// (shipped base.css + <PullToCentre>/data-pull-to-centre elsewhere): a
-// fixture of just those two files gave zero findings, while adding a
-// hand-written `html{scroll-behavior:smooth}` -- functionally identical --
-// tripped it correctly. Generated files are excluded from the PER-FILE loop
+// `@custom-variant dark` declared, is a `--radius-*: 0` token defined, ...),
+// and a generated stylesheet is a legitimate place either could live (e.g.
+// this skill's own `tokens.example.css` output). Filtering generated files
+// out of buildContext too would make `dark-variant`/`rounded-with-zero-
+// token` blind to a project that only ever declared these tokens inside
+// generated output. Generated files are excluded from the PER-FILE loop
 // only; buildContext always sees every file.
 const GENERATED_HEADER_RE = /generated/i
 const GENERATED_SKILL_RE = /fluid-design/i
@@ -730,7 +589,7 @@ export function scan(srcDir, opts = {}) {
   // Every rule sees comments blanked out (newlines preserved, so line numbers
   // are unaffected) -- a rule pattern mentioned in a docblock or JSX aside
   // must never count as a hit. Repo-wide context is built from the same
-  // masked text, so a commented-out @custom-variant/radius/LazyMotion line
+  // masked text, so a commented-out @custom-variant/radius line
   // doesn't count either. .css/.scss additionally blank STRING CONTENT (not
   // just skip over it) -- see maskComments' docblock.
   const contents = new Map(

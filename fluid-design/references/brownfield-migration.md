@@ -12,10 +12,11 @@ Skip when: greenfield. Go straight to `section-recipe.md`.
    - Existing fluid attempts (`clamp()`, `vw` font sizes, a `--scale` var). Each is a second ladder that
      will fight the new scale; they are removed per section as that section migrates, never globally first.
    - The shared atoms (button, chip, eyebrow, CTA, card) and their call-site counts.
-   - Motion libraries and scroll hijacks (Lenis, locomotive). Flag them for the user (`preflight.md` §2).
+   - Motion libraries and scroll hijacks (GSAP, Lenis, locomotive, a header script). Note them in
+     `FLUID.md` for the `scroll-animation` skill; do not touch them during this migration.
    - `overflow-x: hidden` on `body` or wrappers. This is often why `position: sticky` "doesn't work" (`ios-safari.md`).
 2. **Decide with the user** (`preflight.md`): the canvas (the widest frame the design is drawn in, or today's
-   container max-width if there is no design file), the reference (1440×900), the stack and the engine.
+   container max-width if there is no design file), the reference (1440×900) and the stack.
 3. **Install the foundation additively** (SKILL.md step 2). Adding units and utilities changes nothing
    until a class uses them. The base layer is the one exception; review each of its rules against the
    existing CSS. The body background and `overflow-x` removals are behaviour changes and need a visual check.
@@ -28,6 +29,10 @@ Skip when: greenfield. Go straight to `section-recipe.md`.
    `section-recipe.md`. Verify the matrix after each section, not at the end.
 7. **Queue the remaining routes.** Track per route: migrated, verified at the matrix, verified at 2560.
 8. **Header and footer last,** on `--fluid-chrome`. The chrome is shared by every route, so it moves once all routes can take it.
+   **Keep any existing header animation and colour logic, and take over only sizing**: the row
+   height, inset, type and gaps move onto the chrome unit and `--header-h`; the script that hides,
+   shows or re-inks the header stays as it is. Two writers on one property fight, so do not add a
+   second one here. Changing that behaviour is a `scroll-animation` decision.
 
 ## Converting a container
 
@@ -69,3 +74,5 @@ site looks right today (usually 1440×900).
 - [ ] Atoms are opt-in fluid and registered with the merger first.
 - [ ] One reference route, fully verified, before the rest.
 - [ ] Base-layer removals (body background, `overflow-x`, `theme-color`) get a visual check.
+- [ ] Header migration changes sizing only; its existing animation and colour logic are untouched.
+- [ ] Motion libraries are noted for `scroll-animation`, not removed.

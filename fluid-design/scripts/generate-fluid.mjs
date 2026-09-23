@@ -753,7 +753,7 @@ CSS has no utility-class layer to generate into, and inventing one (a
 build step emitting thousands of single-property classes) would just be a
 worse, unmaintained copy of Tailwind's own \`@utility\` engine. Write the
 \`calc()\` at the one component rule that needs it; there is no second
-occurrence to justify a class for it (see references/motion-architecture.md §2 — "a
+occurrence to justify a class for it (the second-consumer rule, stated in the scroll-animation skill's references/motion-architecture.md §2 — "a
 pattern becomes reusable at its SECOND consumer, never its first").
 
 ## Why mobile values stay separate, not derived
@@ -816,7 +816,7 @@ $fluid-copy-floor: ${num(floors.copy)};
 $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
 
 // ── Functions ─────────────────────────────────────────────────────────
-// FUNCTION AND MIXIN NAMES MOVE WITH \`prefix\` (references/attribute-contract.md §1) — the
+// FUNCTION AND MIXIN NAMES MOVE WITH \`prefix\` (references/contract.md §1) — the
 // \`--fluid*\` CUSTOM-PROPERTY NAMES INSIDE THEM DO NOT, and are always the
 // literal strings cssUnits(cfg) emits. At the default prefix these read
 // identically either way, which is exactly why this bug shipped unnoticed:
@@ -999,7 +999,7 @@ Every function/mixin above is spelled with THIS config's \`prefix\`
 (\`"${p}"\`) — change \`prefix\` in \`fluid.config.json\` and regenerate to
 rename all of them together. The \`--fluid*\` custom properties they read
 (\`var(--fluid)\`, \`var(--fluid-display)\`, …) are fixed names and never
-change with \`prefix\` (references/attribute-contract.md §1).
+change with \`prefix\` (references/contract.md §1).
 
 ## The unit functions are the enforcement point
 
@@ -1143,27 +1143,24 @@ node scripts/generate-fluid.mjs --stack stylex
 
 // ── ts (framework-agnostic constants) ─────────────────────────────────
 
-// The single source for the numbers every motion port (GSAP, React/Motion)
-// hand-typed as a duplicate literal before this existed — `ENGAGE_PX`/
-// `ENGAGE_QUERY` in `assets/motion/gsap/src/config.ts`, `ENGAGE_BREAKPOINT_PX`
-// in `assets/motion/react-motion/lib/constants.ts`. Those files keep their
-// own DEFAULT literal (1024) so they work with zero setup, but each carries
-// a comment pointing back here: regenerate this file with `--stack ts` and
-// import from it instead, the moment `engageAt` (or the reference/canvas
-// numbers) stop matching the default. GSAP's other modules (`eases.ts`,
-// `stage.ts`, `scrollPull.ts`, `scrubStage.ts`) import `ENGAGE_PX`/
-// `ENGAGE_QUERY` from `config.ts` rather than declaring their own copies, so
-// replacing that one file's body (or having it re-export from this
-// generated one) is the whole fix.
+// The single source for the numbers this skill's own consumers need without
+// a full stylesheet -- ENGAGE_PX/ENGAGE_QUERY, the reference viewport, and
+// the canvas frame. If the scroll-animation skill is also installed, its
+// motion ports (GSAP's `config.ts`, React's `lib/constants.ts`) each ship
+// their own DEFAULT literal (1024) so they work with zero setup, but each
+// carries a comment pointing back here: regenerate this file with
+// `--stack ts` and import from it instead, the moment `engageAt` (or the
+// reference/canvas numbers) stop matching the default.
 function buildFluidConfigTs(cfg) {
   return (
     tsHeader(cfg, 'ts') +
     `/** Min-width (px) where the fluid scale turns on. Mirrors \`engageAt\` in
- * \`fluid.config.json\`. Every hand-typed \`ENGAGE_QUERY\`/\`ENGAGE_BREAKPOINT_PX\`
- * literal in this skill's motion ports (GSAP's \`config.ts\`, React's
- * \`lib/constants.ts\`) should import THIS constant once your config's
- * \`engageAt\` stops matching the shipped default of 1024 — see each of
- * those files' own docblock for the literal this replaces. */
+ * \`fluid.config.json\`. If the scroll-animation skill is also installed,
+ * every hand-typed \`ENGAGE_QUERY\`/\`ENGAGE_BREAKPOINT_PX\` literal in its
+ * motion ports (GSAP's \`config.ts\`, React's \`lib/constants.ts\`) should
+ * import THIS constant once your config's \`engageAt\` stops matching the
+ * shipped default of 1024 — see each of those files' own docblock for the
+ * literal this replaces. */
 export const ENGAGE_PX = ${num(cfg.engageAt)}
 
 /** \`matchMedia\`-ready form of ENGAGE_PX. */
@@ -1187,12 +1184,14 @@ export const CANVAS_GUTTER = ${num(cfg.canvas.gutter)}
 function buildSharedBaseCss(cfg) {
   return (
     cssHeader(cfg, 'shared') +
-    `/* Stack-agnostic base layer: iOS/safe-area quirks, the sticky/overflow
-   trap, reduced motion's structural half, and the one @property this
-   system needs. Include it once, after your reset/preflight, in every
-   stack. Nothing here reads fluid.config.json — it has no config-driven
-   numbers — but it is generated (not hand-written) so it stays alongside
-   the rest of this skill's output and picks up fixes from one place. */
+    `/* Stack-agnostic base layer: box-sizing, iOS/safe-area quirks and the
+   sticky/overflow trap. Include it once, after your reset/preflight, in
+   every stack. Nothing here reads fluid.config.json — it has no
+   config-driven numbers — but it is generated (not hand-written) so it
+   stays alongside the rest of this skill's output and picks up fixes from
+   one place. This is the RENDER half only: if the scroll-animation skill
+   is also installed, also include its \`motion-base.css\` (scroll-behavior,
+   the reduced-motion structural collapse, --fill, the noscript rules). */
 
 /* Tailwind v4's own Preflight already sets this, so the tailwind-v4 stack
    needs nothing extra here. A non-Tailwind stack (this file, standalone, or
@@ -1208,21 +1207,18 @@ function buildSharedBaseCss(cfg) {
 }
 
 html {
-  /* Kill rubber-band / elastic overscroll so momentum can't bounce past a
-     scroll boundary and feed jitter into anything scroll-driven (a pinned
-     scrub, a parallax track). */
+  /* Kill rubber-band / elastic overscroll. The render reason: past a
+     scroll boundary an elastic bounce can pull the viewport past the
+     frame canvas and reveal a gap with nothing painted in it — there is
+     no content back there to show. If the scroll-animation skill is also
+     installed, this also removes a source of scroll jitter for anything
+     scroll-driven (a pinned scrub, a parallax track) — see its
+     \`references/\`. */
   overscroll-behavior: none;
-  scroll-behavior: smooth;
   /* The horizontal-overflow guard belongs HERE and ONLY here. See the note
      below body — putting it on body or any sticky ancestor silently kills
      position: sticky site-wide. */
   overflow-x: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 /*
@@ -1286,110 +1282,15 @@ button:disabled {
   outline: none;
 }
 
-/* Reduced motion, the STRUCTURAL half. A scroll-driven (scrubbed)
-   animation is not a CSS/JS "animation" that a motion library's own
-   prefers-reduced-motion handling can degrade by itself — it is a
-   transform written every frame as a pure function of scroll position.
-   The motion layer's JS half publishes a "reduced" flag so a scrubbed
-   track renders its settled end state; this is the other half, collapsing
-   the scroll scene's own shell so a visitor who asked for less motion
-   isn't left scrolling a multi-viewport runway past a frozen composition.
-   Written as a plain media query, not motion-reduce: utilities, so it
-   can't lose a specificity fight against a component's own runway rules —
-   a media query doesn't care which one was written last.
-
-   !important is required on all rules here, for a reason narrower than
-   "beat the runway rules" above: the React port (assets/motion/react-motion)
-   writes [data-scrub-pin]'s sticky geometry as an inline style, and an
-   inline style beats ANY non-!important stylesheet declaration regardless
-   of selector specificity or source order. The GSAP port keys the same
-   geometry off this same selector in its own motion.css (also
-   !important, same reason it has to win over a component's runway rules)
-   so both engines collapse identically under this one rule set.
-
-   [data-scrub-pin] gets height: 100svh, NOT height: auto. The pin holds the
-   settled frame (the JS half freezes the camera and the head-loop's first
-   frame — see the motion layer's "reduced" flag above), and that frame is
-   an absolutely-positioned <video> inside the pin. \`auto\` on a box whose
-   only content is absolutely positioned measures to ZERO — an
-   absolutely-positioned descendant is out of flow and contributes nothing
-   to its parent's auto height — so the held frame a reader is meant to see
-   collapses to a box with nothing in it. \`100svh\` gives the pin the exact
-   box the frame was framed for (the same unit ScrubStage's live geometry
-   uses), so the reduced-motion "no movement, but still see the shot" state
-   actually shows something instead of a blank strip.
-
-   [data-scrub-spacer] collapses to ZERO height, not auto. It marks an
-   empty pacing act inside the scene — an act with no camera move or copy
-   of its own, added only to give the FULL-MOTION composition room to
-   linger — so under reduced motion there is nothing in it worth the space:
-   collapsing it removes exactly the blank band a reader with no camera
-   movement would otherwise have to scroll through for no reason (measured:
-   an unmarked 2-viewport spacer left an 1800px empty dark band). Mark every
-   spacer act with this attribute — see references/attribute-contract.md and
-   references/scroll-scenes.md §10. */
-@media (prefers-reduced-motion: reduce) {
-  [data-scrub-stage] {
-    height: auto !important;
-  }
-  [data-scrub-pin] {
-    position: static !important;
-    height: 100svh !important;
-    overflow: visible !important;
-  }
-  [data-scrub-content] {
-    margin-top: 0 !important;
-  }
-  [data-scrub-spacer] {
-    height: 0 !important;
-  }
-}
-
-/* Registers --fill as a typed, animatable <number> instead of an opaque
-   string. Without this, a WebKit mask-gradient driven by --fill "pops"
-   between values instead of interpolating — Chromium animates an untyped
-   custom property fine either way, this is a WebKit-only gap.
-   syntax: '<number>' is what makes the browser treat updates as a typed,
-   animatable value. Use this shape for any other custom property that
-   feeds a gradient, filter or other property that needs to tween a
-   number, not just for --fill itself. */
-@property --fill {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 0;
-}
-
-/*
-  <noscript> RULE — put this in the document <head>, not in a stylesheet:
-  it has to apply even when this file never loads.
-
-    <noscript>
-      <style>
-        [data-stage-item] { opacity: 1 !important; transform: none !important; }
-        [data-stage-veil] { display: none !important; }
-      </style>
-    </noscript>
-
-  Every entrance-triggered element is server-rendered in its HIDDEN state
-  (opacity 0 + a transform) so the entrance is flash-free — that state is
-  only ever cleared by JS. Without this rule, a reader with JS disabled, or
-  whose script failed to load, gets the hero and then a permanently blank
-  page below it: a scrubbed track's opacity is a pure function of scroll,
-  so with no JS it has no way to ever leave 0. [data-stage-veil] is the
-  page-load overlay and must be hidden the same way, for the same reason.
-  !important is required on both — it has to beat inline styles a motion
-  library writes per frame.
-*/
-
 /*
   video { max-width: none } — documented here as a COMMENT, not shipped as
   a rule, because it must never be global. Most CSS resets (Tailwind
   Preflight included) cap \`video { max-width: 100% }\`, which silently
-  clamps a full-bleed or scroll-driven video to its container's width.
-  Undo it on the SPECIFIC element that needs to bleed past its container
-  (a utility class, or an id/data-attribute rule scoped to that one
-  video) — a blanket override reintroduces exactly the overflow the reset
-  existed to prevent, everywhere else on the site.
+  clamps a full-bleed video to its container's width. Undo it on the
+  SPECIFIC element that needs to bleed past its container (a utility
+  class, or an id/data-attribute rule scoped to that one video) — a
+  blanket override reintroduces exactly the overflow the reset existed to
+  prevent, everywhere else on the site.
 */
 `
   )

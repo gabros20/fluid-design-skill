@@ -1,7 +1,7 @@
 # Tokens and theming
 
-Read when: setting up colour, surface and type tokens; adding a dark section; theming a header over
-mixed sections; porting components from another codebase.
+Read when: setting up colour, surface and type tokens; adding a dark section; porting components
+from another codebase.
 Skip when: working on pure layout.
 
 ## Semantic names over the ramp
@@ -64,30 +64,12 @@ Keep every component on role names. A dark theme is then one extra block redefin
 under `[data-theme='dark']`, plus one `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *))`,
 and not an edit to thirty components.
 
-## Header ink that follows the section underneath
+## Header ink and `--header-h`
 
-A transparent fixed header has no surface of its own, so its ink cannot belong to the page. A black
-nav pinned over a black section disappears.
-
-- Sections declare themselves with `data-header-theme="light|dark"`. Only sections that depart from the
-  page's base theme need marking; leave light fields unmarked on a light-base page.
-- If the darkness changes by breakpoint, use a custom property that a plain utility can vary:
-  `data-header-theme="dark" className="[--header-theme:light] lg:[--header-theme:dark]"`. The variable
-  wins where it is set (for example, a section that is mid-grey on mobile and black from `lg`: white ink on that
-  grey measures 2.2:1 where black measures 5.6:1).
-- The probe measures section extents once into document coordinates (again on resize) and compares
-  them against the header row's vertical middle on scroll. React state changes only when the resolved theme
-  changes: a few times per page, never per frame. It subscribes to scroll rather than using an
-  IntersectionObserver because `rootMargin` takes no `calc()`, and a 1px band would have to be rebuilt every time
-  the mobile toolbar resizes the viewport.
-- Probe with layout metrics (`offsetTop`/`offsetHeight`), not `getBoundingClientRect`. The header is
-  mid-entrance-transform at first paint, and a rect probe reads about 100px too high.
-- Every themed part of the header uses one colour transition (`transition-colors duration-200 ease-out`).
-  200ms is the compromise between a theme dissolve (which wants 300+) and link hover (which must feel instant).
-  If different parts use different durations, the bar comes apart mid-flip.
-- An unmarked dark band is a bug: the nav keeps light-page ink over it. Check each dark section.
-
-Implementations: `assets/motion/react-motion/hooks/useHeaderTheme.ts`, `assets/motion/gsap/src/headerTheme.ts`.
+Header ink that follows the section underneath (`data-header-theme`, the scroll probe, the shared
+colour transition) is scroll behaviour: see the `scroll-animation` skill, `references/header-theme.md`.
+This skill owns only the header's size: `--header-h` (`section-recipe.md` §Heroes under a fixed,
+floating header), which that skill reads.
 
 ## Small hit targets in a drawn row
 
@@ -106,5 +88,5 @@ element, so `:hover` and `onMouseEnter` fire on it.
 - [ ] Components use role tokens only; there are no raw hexes in sections.
 - [ ] Brand hue as text uses an `-ink` step that clears AA.
 - [ ] No `dark:` without a custom variant; no `rounded-*` on a square design.
-- [ ] Every dark band either carries `data-header-theme` or sits on a dark-base page.
+- [ ] A fixed header's clearance comes from `--header-h`, never a hand-typed offset.
 - [ ] Foreign component sets are namespaced.
