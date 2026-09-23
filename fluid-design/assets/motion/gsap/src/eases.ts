@@ -49,7 +49,7 @@ export function registerEases(): void {
 }
 
 /**
- * The motion constants from CONTRACT.md §4 — identical in both engines. Keep
+ * The motion constants from `references/attribute-contract.md` §4 — identical in both engines. Keep
  * this the single source of these numbers; do not hand-copy one into a
  * component. Every duration/ease pair here was measured against a reference
  * capture (frame-by-frame ink-centroid tracking — see the reference build's
@@ -102,7 +102,7 @@ export const MOTION = {
 } as const
 
 /**
- * IntersectionObserver `rootMargin` strings — CONTRACT.md §4. Reads like
+ * IntersectionObserver `rootMargin` strings — `references/attribute-contract.md` §4. Reads like
  * GSAP's `start: 'top 80%'` convention. Keep these here rather than per
  * call site; they are a single editorial decision about pacing.
  */

@@ -519,7 +519,7 @@ registered:
 
 There is no \`tailwind.config\`; everything is \`@theme\`/\`@utility\` in CSS
 (v4's model). \`tokens.example.css\` shows the semantic-token convention this
-skill assumes elsewhere (references/tokens.md) and calls out the four traps
+skill assumes elsewhere (references/tokens-and-theming.md) and calls out the four traps
 that compile silently wrong: \`rounded-*\` still rounding past a 0 radius
 token, an unguarded \`dark:\`, a utility whose token doesn't exist, and a
 name that means something else in another codebase.
@@ -621,7 +621,7 @@ CSS has no utility-class layer to generate into, and inventing one (a
 build step emitting thousands of single-property classes) would just be a
 worse, unmaintained copy of Tailwind's own \`@utility\` engine. Write the
 \`calc()\` at the one component rule that needs it; there is no second
-occurrence to justify a class for it (see references/decisions.md — "a
+occurrence to justify a class for it (see references/motion-architecture.md §2 — "a
 pattern becomes reusable at its SECOND consumer, never its first").
 
 ## Why mobile values stay separate, not derived
@@ -1045,15 +1045,27 @@ button:disabled {
    isn't left scrolling a multi-viewport runway past a frozen composition.
    Written as a plain media query, not motion-reduce: utilities, so it
    can't lose a specificity fight against a component's own runway rules —
-   a media query doesn't care which one was written last. */
+   a media query doesn't care which one was written last.
+
+   !important is required on all three, for a reason narrower than "beat
+   the runway rules" above: the React port (assets/motion/react-motion)
+   writes [data-scrub-pin]'s sticky geometry as an inline style, and an
+   inline style beats ANY non-!important stylesheet declaration regardless
+   of selector specificity or source order. The GSAP port keys the same
+   geometry off this same selector in its own motion.css (also
+   !important, same reason it has to win over a component's runway rules)
+   so both engines collapse identically under this one rule set. */
 @media (prefers-reduced-motion: reduce) {
   [data-scrub-stage] {
     height: auto !important;
   }
-  [data-motion-scene-viewport] {
+  [data-scrub-pin] {
     position: static !important;
     height: auto !important;
     overflow: visible !important;
+  }
+  [data-scrub-content] {
+    margin-top: 0 !important;
   }
 }
 

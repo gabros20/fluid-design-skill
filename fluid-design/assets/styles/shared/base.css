@@ -109,15 +109,27 @@ button:disabled {
    isn't left scrolling a multi-viewport runway past a frozen composition.
    Written as a plain media query, not motion-reduce: utilities, so it
    can't lose a specificity fight against a component's own runway rules —
-   a media query doesn't care which one was written last. */
+   a media query doesn't care which one was written last.
+
+   !important is required on all three, for a reason narrower than "beat
+   the runway rules" above: the React port (assets/motion/react-motion)
+   writes [data-scrub-pin]'s sticky geometry as an inline style, and an
+   inline style beats ANY non-!important stylesheet declaration regardless
+   of selector specificity or source order. The GSAP port keys the same
+   geometry off this same selector in its own motion.css (also
+   !important, same reason it has to win over a component's runway rules)
+   so both engines collapse identically under this one rule set. */
 @media (prefers-reduced-motion: reduce) {
   [data-scrub-stage] {
     height: auto !important;
   }
-  [data-motion-scene-viewport] {
+  [data-scrub-pin] {
     position: static !important;
     height: auto !important;
     overflow: visible !important;
+  }
+  [data-scrub-content] {
+    margin-top: 0 !important;
   }
 }
 

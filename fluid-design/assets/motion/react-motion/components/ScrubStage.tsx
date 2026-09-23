@@ -1386,6 +1386,17 @@ export function ScrubStage({
           and every framing read — would resize on every collapse, which is a
           layout thrash a scrubbed video is the worst possible surface for. */}
       <div
+        data-scrub-pin
+        /* Inline styles beat ANY non-`!important` stylesheet rule, source
+           order and specificity notwithstanding. The reduced-motion
+           structural collapse in `shared/base.css` (keyed off
+           `[data-scrub-pin]`) therefore declares its overrides
+           `!important` rather than trying to out-order this — see that
+           file's comment for why `!important` was chosen over moving this
+           geometry into the scoped `<style>` tag below (`--frame-w/-h`):
+           the pin's `position`/`height`/`overflow` are the same on every
+           instance, so there is nothing per-instance here for a scoped
+           rule to buy. */
         style={{
           pointerEvents: 'none',
           position: 'sticky',
@@ -1438,7 +1449,9 @@ export function ScrubStage({
           not a viewport. Left in `svh` while the pin moved to `lvh`, the range
           would measure one toolbar-height too tall and the pin would overrun
           its runway at the bottom. */}
-      <div style={{ position: 'relative', marginTop: '-100lvh' }}>{children}</div>
+      <div data-scrub-content style={{ position: 'relative', marginTop: '-100lvh' }}>
+        {children}
+      </div>
     </div>
   )
 }

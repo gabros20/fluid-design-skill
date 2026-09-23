@@ -14,10 +14,11 @@ export interface FluidMotionOptions {
    * header that needs an inverse ink). */
   headerTheme?: HeaderThemeOptions
   /** Per-`[data-scrub-stage]` configuration. Return `undefined` to skip a
-   * given element (e.g. it isn't this page's scene). CONTRACT.md and
-   * MOTION-DESIGN-SYSTEM.md §2 both call out that a page should carry AT
-   * MOST one scroll-driven scene — this callback exists for the rare
-   * multi-scene page, not to encourage one. */
+   * given element (e.g. it isn't this page's scene). `references/performance.md`
+   * §3 ("Only 1–3 scroll-driven scenes should intersect the viewport at
+   * once") is why a page should carry AT MOST one scroll-driven scene —
+   * this callback exists for the rare multi-scene page, not to encourage
+   * one. */
   scrubStage?: (el: HTMLElement) => ScrubStageOptions | undefined
 }
 

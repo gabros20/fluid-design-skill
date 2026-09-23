@@ -71,7 +71,7 @@ just count-up numbers has no reason to pull in `scrubStage.ts`'s cost).
 
 ## The DOM attribute contract
 
-Shared with `../react-motion` — CONTRACT.md §3. This is the whole surface
+Shared with `../react-motion` — `references/attribute-contract.md` §3. This is the whole surface
 area; there is no separate props API.
 
 | Attribute | On | Meaning |
@@ -103,8 +103,8 @@ reads them with the reference build's own defaults). Scalar ranges for
 ## One scroll-driven scene per page
 
 `scrubStage.ts` is real main-thread cost: a gated rAF loop, a per-frame
-transform write, a decoder held ready. CONTRACT.md and the reference
-build's `MOTION-DESIGN-SYSTEM.md` §2 both size the whole system around
+transform write, a decoder held ready. `references/performance.md` §3
+sizes the whole system around
 **only 1–3 scroll-driven scenes intersecting the viewport at once** — in
 practice, on the reference build, exactly one per page. Everything else
 should be a triggered `[data-stage]`, which is close to free: it goes
@@ -119,7 +119,7 @@ asset, not separate clips).
 
 | File | Job | React/Motion counterpart |
 | --- | --- | --- |
-| `src/eases.ts` | CustomEase registration + the CONTRACT.md §4 motion constants | `lib/transitions.ts`, `lib/constants.ts` |
+| `src/eases.ts` | CustomEase registration + the `attribute-contract.md` §4 motion constants | `lib/transitions.ts`, `lib/constants.ts` |
 | `src/stage.ts` | Triggered entrances, IntersectionObserver-based | `components/Stage.tsx` |
 | `src/veil.ts` | The page-load overlay | `components/Stage.tsx`'s `StageVeil` |
 | `src/countUp.ts` | Counting numbers | `components/CountUp.tsx` |

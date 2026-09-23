@@ -62,7 +62,7 @@ decision log. A later agent or a later you will need both.
    rules are deliberate absences (no body background, no `theme-color`, no `overflow-x` on body).
 3. Put the `<noscript>` reveal safety net in the document head (see `base.css`).
 4. Set the engage breakpoint to the same value everywhere: the Tailwind `--breakpoint-lg`, SCSS
-   `$engage`, JS `ENGAGE_QUERY`. Three copies of one number drift; that is why the config exists.
+   `$fluid-engage-at`, JS `ENGAGE_QUERY`. Three copies of one number drift; that is why the config exists.
 5. Tailwind only: register the fluid families with tailwind-merge (`assets/styles/tailwind-v4/cn.ts`),
    or `cn('lg:fluid-p-40', 'lg:fluid-p-24')` ships both classes and stylesheet order picks the winner.
 6. Copy the motion primitives for the chosen engine (step 5).
@@ -159,6 +159,7 @@ Details are in `references/video.md` and `references/ios-safari.md`.
 | `references/tokens-and-theming.md` | colour and semantic tokens, header theme, stack traps |
 | `references/brownfield-migration.md` | converting an existing container-based site |
 | `references/stacks.md` | the differences between Tailwind v4, vanilla CSS, SCSS, StyleX and CSS Modules |
+| `references/attribute-contract.md` | the exact name of a config key, emitted custom property, utility, `data-*` attribute or motion constant |
 | `references/motion-architecture.md` | any animation |
 | `references/scroll-scenes.md` | pins, scrubbing, latches, scroll wells, header-theme probing |
 | `references/video.md` | any `<video>`, especially scrubbed or looping |

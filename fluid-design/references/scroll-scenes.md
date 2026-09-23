@@ -377,18 +377,20 @@ light below it needs no JS branch — just a class.
 
 ## 10. The attribute contract and reduced-motion structural collapse
 
-A scroll scene's range wrapper, mode machine and reveal groups all carry the same small set of data
-attributes documented in `SKILL.md` §3 (`data-scrub-stage`, `data-motion-state`, `data-header-theme`,
-etc.) — these exist so the verification harness (`verification.md`) and a debug-marker stylesheet
-can hook the DOM without touching layout, and so the two animation engines expose an identical shape
-to tooling regardless of which one drives them.
+A scroll scene's range wrapper, pin, content wrapper, mode machine and reveal groups all carry the
+same small set of data attributes documented in `references/attribute-contract.md` (`data-scrub-stage`,
+`data-scrub-pin`, `data-scrub-content`, `data-motion-state`, `data-header-theme`, etc.) — these exist
+so the verification harness (`verification.md`) and a debug-marker stylesheet can hook the DOM
+without touching layout, and so the two animation engines expose an identical shape to tooling
+regardless of which one drives them.
 
 **Reduced motion's structural half lives in the base stylesheet, not in component logic:**
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  [data-scrub-stage]         { height: auto !important; }
-  [data-scrub-stage-sticky]  { position: static !important; height: auto !important; overflow: visible !important; }
+  [data-scrub-stage]   { height: auto !important; }
+  [data-scrub-pin]     { position: static !important; height: auto !important; overflow: visible !important; }
+  [data-scrub-content] { margin-top: 0 !important; }
 }
 ```
 
@@ -397,6 +399,10 @@ released pin: several viewports of scrolling past a now-static composition, whic
 motion it replaced. A plain media query is deliberate rather than `motion-reduce:`-style utility
 classes — those collide with the pin's own responsive utilities at equal specificity, so which one
 wins becomes an accident of build output order; a media query doesn't care about order.
+
+`!important` on all three declarations is required, not decorative — see `attribute-contract.md`'s
+`data-scrub-pin` entry: the React port writes the pin's sticky geometry as an inline `style`, which
+beats any non-`!important` stylesheet rule regardless of selector specificity or source order.
 
 ## Traps
 

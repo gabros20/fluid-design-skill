@@ -168,10 +168,36 @@ function cmdBudget(cfg, args) {
   process.exitCode = 1
 }
 
+// ── help ────────────────────────────────────────────────────────────────
+
+const USAGE = `calc.mjs — a standalone calculator over fluid-math.mjs.
+
+Usage:
+  node calc.mjs [--config f] table [--w 1024,1280,1440,1680,2560] [--h 640,700,800,900,1440] [--raw]
+  node calc.mjs [--config f] px <N> --unit display|copy|chrome|fluid --at WxH
+  node calc.mjs [--config f] budget --widths 429,77,157,48,115,32,115,104,440
+
+Commands:
+  table   print the resolved factors (fluid/display/copy/chrome) at a matrix of viewports
+  px      render one drawn number through a unit at one viewport
+  budget  check whether a drawn row of widths fits the content budget at the reference viewport
+
+Options:
+  --config <file>   config file to load instead of the shipped defaults
+  -h, --help        print this message and exit
+
+Exit codes: 0 = ok, 1 = budget OVER, 2 = usage/invocation error.`
+
 // ── main ────────────────────────────────────────────────────────────────
 
 function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(USAGE)
+    process.exit(0)
+  }
+
+  const args = parseArgs(argv)
   const cmd = args._[0]
   if (!cmd) {
     console.error('usage: node calc.mjs [--config f] table|px|budget ...')

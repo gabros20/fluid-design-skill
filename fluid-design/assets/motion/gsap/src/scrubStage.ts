@@ -58,7 +58,7 @@
  * a mode test fed from anything eased flaps as it rings down. The three
  * boundaries use raw scroll progress and hysteresis — enter and exit are
  * different numbers, so incidental jitter can never flap a mode
- * (CONTRACT.md's "a spring never feeds a threshold").
+ * (`references/scroll-scenes.md` §5, "A spring never feeds a threshold").
  *
  * ## Scroll is durable truth; video time is derived
  *
@@ -140,8 +140,8 @@ export interface ScrubStageOptions {
    * pin range. Reference default: 320. */
   tailLeadPx?: number
   /** Hysteresis as a FRACTION of each end's lead — never a second absolute
-   * constant, or the two can be set into an invalid pair (CONTRACT.md /
-   * MOTION-DESIGN-SYSTEM.md §5.3). Reference default: 0.7. */
+   * constant, or the two can be set into an invalid pair (`references/scroll-scenes.md`
+   * §3, "The latch: a discrete crossing with hysteresis"). Reference default: 0.7. */
   hysteresisRatio?: number
   /** IntersectionObserver root margin (px) for starting the network fetch. */
   warmMarginPx?: number
@@ -372,7 +372,8 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   //     `getBoundingClientRect` read does not already give for free; (3) it
   //     keeps this file's "direct write, one clock, no library abstraction
   //     between the read and the write" style consistent with the rest of
-  //     the reference build's manual writers (CONTRACT.md §4.1).
+  //     the reference build's manual writers (`references/scroll-scenes.md` §6,
+  //     "The direct style write").
   const getProgress = (): number => {
     const rect = rangeEl.getBoundingClientRect()
     const total = rect.height - window.innerHeight

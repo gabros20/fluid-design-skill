@@ -157,7 +157,7 @@ images and icons never enter the client bundle.
 ```
 
 Both read the shared attribute contract (`data-stage`, `data-stage-item`, `data-variant`,
-`data-delay` — see `SKILL.md` §3 for the full table) so the verifier and the `<noscript>` safety net
+`data-delay` — see `references/attribute-contract.md` §3 for the full table) so the verifier and the `<noscript>` safety net
 (§12) work identically regardless of engine.
 
 ## 5. One stage per arrival
@@ -238,7 +238,7 @@ why it needs `transform-origin: bottom` (or `left`, for `growX`) or it grows fro
 
 `entrance` (a 1.3s move on `cubic-bezier(0.15, 0.6, 0.2, 1)`) and `entranceFade` (a 0.17s linear
 fade, delayed 0.13s) are not chosen — they're fitted frame-by-frame against a reference capture (see
-`SKILL.md`'s Motion constants table for the exact numbers, and `assets/motion/react-motion/lib/transitions.ts`
+`references/attribute-contract.md`'s Motion constants table (§4) for the exact numbers, and `assets/motion/react-motion/lib/transitions.ts`
 for the docblocked source of truth both engines share).
 
 Two things worth carrying into any project that adopts these tokens rather than re-measuring its

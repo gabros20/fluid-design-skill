@@ -188,7 +188,7 @@ async function checkReveal(page) {
     }
     window.scrollTo(0, max)
     // Final settle: the contract's entrance transition runs up to 1.3s
-    // (CONTRACT.md §4), so a stage item triggered by the last step may still
+    // (references/attribute-contract.md §4), so a stage item triggered by the last step may still
     // be mid-transition at the 200ms mark. Give it real room before reading
     // opacity, or a perfectly working reveal reads as a false failure.
     await new Promise((resolve) => setTimeout(resolve, 1500))

@@ -87,7 +87,7 @@ device with no extra tooling:
 :root[data-motion-debug~='markers'] [data-scroll-video] *      { outline: 2px solid #ef4444; }
 ```
 
-A machine's mode attribute (`data-motion-state` in the attribute contract, `SKILL.md` §3) is written
+A machine's mode attribute (`data-motion-state` in the attribute contract, `references/attribute-contract.md` §3) is written
 only **on transition**, not per frame, so a mode flipping is visible as a discrete colour change with
 nothing else open — exactly the observability this needs, at the cost this system otherwise polices
 against (`scroll-scenes.md` §3's "state per transition, not per frame" rule pays for this for free).

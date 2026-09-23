@@ -5,7 +5,7 @@
  * A header that paints no background of its own can no longer have its
  * colour be a property of the page once it leaves the flow — a black nav
  * pinned over a dark section would simply disappear. Sections opt in with
- * `data-header-theme="light" | "dark"` (CONTRACT.md §3); this module probes
+ * `data-header-theme="light" | "dark"` (`references/attribute-contract.md` §3); this module probes
  * whichever one sits under the header's own vertical middle and writes
  * `data-theme` on the header element, ONLY when it changes.
  *

@@ -1,3 +1,3 @@
 export function Logo() {
-  return <img src="/marks/logo.svg" alt="Eagle" />
+  return <img src="/marks/logo.svg" alt="Acme" />
 }

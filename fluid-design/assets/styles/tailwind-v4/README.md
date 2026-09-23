@@ -28,7 +28,7 @@ registered:
 
 There is no `tailwind.config`; everything is `@theme`/`@utility` in CSS
 (v4's model). `tokens.example.css` shows the semantic-token convention this
-skill assumes elsewhere (references/tokens.md) and calls out the four traps
+skill assumes elsewhere (references/tokens-and-theming.md) and calls out the four traps
 that compile silently wrong: `rounded-*` still rounding past a 0 radius
 token, an unguarded `dark:`, a utility whose token doesn't exist, and a
 name that means something else in another codebase.
