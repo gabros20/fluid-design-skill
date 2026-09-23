@@ -48,6 +48,7 @@ fluid-design/                      the skill: copy this folder into your skills 
     styles/                        pre-generated unit and utility layers for tailwind-v4 · css · scss ·
                                    stylex, the ts config constants, plus a shared iOS/sticky-safe base layer
     runtime/fluid-zoom.js (+ .d.ts) makes the fluid type follow browser zoom (inline it in <head>)
+    runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
   scripts/
     generate-fluid.mjs             config → stack layers (deterministic; --check guards drift)
     calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)

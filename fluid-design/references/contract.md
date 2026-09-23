@@ -103,7 +103,9 @@ The exact `@utility` set in `assets/styles/tailwind-v4/fluid.css`. Layout utilit
 - size: `fluid-w/h/size/min-w/min-h/max-h-*`
 - position: `fluid-inset/top/right/bottom/left-*`
 - translate: `fluid-translate-x/y-*` (writes the `translate` property, not `transform`, so it composes
-  with an animation engine's `transform`)
+  with Motion's `transform`. **Not with GSAP on the same element**: GSAP folds `translate` into its
+  own transform and freezes a px/`calc()` value at load size; put the offset on a child or wrapper
+  GSAP does not tween, `fluid-scale.md` §11)
 - `fluid-text-*` (font-size on `--fluid`, with the `/lh` modifier)
 - `fluid-cap-*`: `max-width: max(Npx, N*var(--fluid))` — grow-only
 
@@ -157,7 +159,7 @@ The two skills share exactly three things. Keep them in this skill's config and 
 - A second hand-typed engage breakpoint in JavaScript. Import `ENGAGE_QUERY` from the generated
   `fluid.config.ts` (§4).
 - `fluid-translate-*` and an engine both writing `transform`: they do not collide only because the
-  utility writes `translate` (§2).
+  utility writes `translate` (§2), and with GSAP only on an element GSAP never tweens (§2).
 - A hand-typed header offset instead of `--header-h` (§3).
 - Expecting `canvas.gutter` to exist as a custom property. It does not; it is used by the frame class
   and the budget check (§1).

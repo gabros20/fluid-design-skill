@@ -108,3 +108,4 @@ export {
 export { initHeaderTheme, type HeaderTheme, type HeaderThemeOptions, type HeaderThemeController } from './headerTheme'
 export { initInViewLoopVideos, type InViewLoopVideoController } from './inViewLoopVideo'
 export { createVideoController, type VideoController } from './videoController'
+export { fluidPx, fluidUnits, onFluidChange, fluidValue, fluidEnd, type FluidUnit, type FluidUnits } from './fluid'

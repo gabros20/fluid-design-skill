@@ -255,6 +255,19 @@ em {
     margin-left: 0;
     // -40%, not -50%: centres the pizza, not the pizza-plus-handle.
     translate: -40% 0;
+
+    // The scroll drift lives on the IMG, not here. GSAP's entrance tweens
+    // this element's transform, and GSAP folds an element's CSS translate/
+    // rotate/scale into its own transform on the first such tween (inline
+    // `translate: none`): a plain % survives as xPercent, but a calc() or px
+    // value is frozen at load size and later changes are ignored. The img is
+    // never tweened by GSAP, so its translate stays live CSS.
+    // --scene-p (0..1, written by main.ts as the hero scrolls away) adds a
+    // 240 drawn px drift and an 8° turn.
+    img {
+      translate: calc(var(--scene-p, 0) * #{fd.fluid(240)}) 0;
+      rotate: calc(var(--scene-p, 0) * 8deg);
+    }
     width: fd.fluid(700);
   }
 }

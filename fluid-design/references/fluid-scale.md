@@ -274,10 +274,26 @@ the page, four facts keep the two from fighting:
 - **No property collides.** Animation writes `transform`/`opacity`; the scale writes `font-size`,
   `padding`, `gap`, `width` and `height`. The units recompute on resize only, never per frame and
   never during a scroll.
-- **`fluid-translate-*` writes the independent `translate` property**, so it composes with an
-  engine's per-frame `transform` instead of fighting it for one declaration.
+- **`fluid-translate-*` writes the independent `translate` property**, so it composes with
+  Motion's per-frame `transform` instead of fighting it for one declaration.
+- **GSAP is different: it folds `translate` in.** On its first tween of an element's transform
+  (`x`, `y`, `scale`, `rotation`…), GSAP reads that element's CSS `translate`, `rotate` and `scale`,
+  bakes them into its own `transform` and sets them to `none` inline. A plain percentage survives
+  (as `xPercent`), so `translate: -50% 0` centring still works. A px or `calc()` value, which is
+  every `fluid-translate-*`, is frozen at the size the page had at that moment; a later resize or
+  a CSS-variable change is ignored. Measured on the Vite example (GSAP 3.15): every entrance-tweened
+  element carried an inline `translate: none`, and a `calc()` drift on one of them never moved.
+  With GSAP, put scaled offsets on a child or wrapper that GSAP never tweens.
 - **Entrance offsets stay in fixed px.** Engines resolve `var()` once at animation start, so a scaled
   offset goes stale on resize. That is not worth it for a 24–40px offset.
+- **Travel scales.** A drawn distance typed into motion code (`x: 600`, `end: '+=1800'`) is right
+  only at the reference: at 2560×1440 it is 1.6× too short. Script reads the units with
+  `assets/runtime/fluid-units.js`: `fluidPx(600)` is 600 drawn px in CSS px right now, `fluidUnits()`
+  returns all four, `onFluidChange(cb)` fires when they change. It resolves them through a hidden
+  probe element (`getPropertyValue('--fluid')` returns the formula text, not a number) and costs one
+  layout read per change. The engine recipes (GSAP function values, Motion `useFluidUnit`, and the
+  engine-neutral `--scene-p` pattern where CSS does the multiplying) are in the `scroll-animation`
+  skill's `references/fluid-interop.md` §3, which ships a mirror of this file so it works alone.
 - **A pin re-measures itself on `ResizeObserver` plus `resize`**, and reads the engage breakpoint and
   `--header-h` from this skill's config. Details: the `scroll-animation` skill, `references/scroll-scenes.md`.
 

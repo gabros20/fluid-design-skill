@@ -122,3 +122,19 @@ npm run build && npm run preview   # http://localhost:4320
 Chrome on a wide window, Cmd/Ctrl + to 125, 150, 200%.
 `getComputedStyle(document.documentElement).getPropertyValue('--fluid-zoom')` shows what the
 runtime detected.
+
+## Scaled travel (GSAP), added 2026-09-23
+
+`src/main.ts` + `src/styles/main.scss`: as the hero scrolls away the peel drifts 240 drawn px right
+and turns 8°. GSAP tweens only a unitless `--scene-p` (ScrollTrigger scrub, desktop and
+no-reduced-motion via `gsap.matchMedia`); CSS turns it into
+`translate: calc(var(--scene-p) * 240 * var(--fluid)) 0` (scroll-animation's `fluid-interop.md`
+§3, pattern 1). Same measurements as the Next build: 120.00 / 192.00 / 93.33 px at
+1440×900 / 2560×1440 / 1280×700, exact, through in-place resizes.
+
+**What this found.** The drift first sat at 0. GSAP folds an element's CSS `translate`/`rotate`/
+`scale` into its own transform on its first transform tween (inline `translate: none`), and the
+entrance tweens `.hero__pizza`. A plain % survives (the `-40%` centring), but a `calc()` does not.
+The drift now lives on the `<img>` inside, which GSAP never tweens. Both skills' docs are corrected
+(`motion-architecture.md` §7, `fluid-interop.md` §3, `fluid-scale.md` §11), and the
+scroll-animation smoke test carries a canary that fails if GSAP ever stops folding.

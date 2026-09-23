@@ -146,3 +146,20 @@ copy should grow with every step while the desktop layout holds; the big display
 their columns. In DevTools, `getComputedStyle(document.documentElement).getPropertyValue('--fluid-zoom')`
 shows the detected zoom. Compare with `zoomCompensation: false` (regenerate `src/styles/fluid.css`)
 to see the old behaviour: text that barely moves until the page falls to its mobile layout.
+
+## Scaled travel (Motion), added 2026-09-23
+
+`src/components/sections/HeroPeelDrift.tsx`: as the hero scrolls away the peel drifts 240 drawn px
+right and turns 8°, with `x = progress × 240 × useFluidUnit()` (scroll-animation's
+`fluid-interop.md` §3, pattern 3). Desktop only; off under reduced motion. Measured at half the
+hero scrolled, resizing in place without a reload:
+
+| Viewport | `--fluid` | Drift | Expected (0.5 × 240 × unit) |
+|---|--:|--:|--:|
+| 1440×900 | 1.000 | 120.00 | 120.00 |
+| 2560×1440 | 1.600 | 192.00 | 192.00 |
+| 1280×700 | 0.778 | 93.33 | 93.33 |
+
+No console errors or warnings. `verify-motion --reveal --scenes`: PASS at 1440×900 and 390×844.
+To see it: scroll the hero on a 1440 window, then on a 2560 one (or zoom the window out); the
+peel ends the same fraction of the way across the composition.

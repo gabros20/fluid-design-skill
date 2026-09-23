@@ -26,6 +26,7 @@ This skill contains no animation. For entrances, scroll scenes and video playbac
 | Deterministic token generator + config | `scripts/generate-fluid.mjs`, `assets/fluid.config.json` |
 | Ready unit/utility layers per styling stack | `assets/styles/{tailwind-v4,css,scss,stylex,ts,shared}/` |
 | Browser-zoom compensation for the type units | `assets/runtime/fluid-zoom.{js,d.ts}` |
+| The units as numbers for script (`fluidPx`, `onFluidChange`) | `assets/runtime/fluid-units.{js,d.ts}` |
 | Static audit, viewport-matrix verifier, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,calc,probe}.mjs` |
 
 Copy the prepared artifacts; do not regenerate them from memory. They encode measured numbers and
@@ -165,8 +166,11 @@ meet at three points, all owned here (`references/contract.md` §4):
   `fluid.config.ts` by `--stack ts`. `scroll-animation` reads it rather than keeping its own number.
 - **`--header-h`.** The fixed header's resting height. Anchor offsets, sticky tops and header-ink
   probes read it.
-- **The `translate` property.** `fluid-translate-*` writes `translate`, so an engine's per-frame
-  `transform` composes with it. Entrance distances stay fixed px, because engines resolve `var()` once.
+- **The `translate` property.** `fluid-translate-*` writes `translate`, so Motion's per-frame
+  `transform` composes with it. GSAP folds `translate` into its own transform and freezes a
+  px/`calc()` value, so with GSAP the offset goes on a child GSAP never tweens (`fluid-scale.md`
+  §11). Small entrance offsets stay fixed px; drawn travel scales (`fluidPx()`,
+  `assets/runtime/fluid-units.js`).
 
 ## Reference map
 

@@ -4,6 +4,8 @@ import { FRAME } from '@/lib/frame'
 import { cn } from '@/lib/cn'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
+import { HeroPeelDrift } from './HeroPeelDrift'
+
 import heroPeel from '../../../public/images/hero-pizza-peel.png'
 
 /**
@@ -78,13 +80,15 @@ export function Hero() {
             delay={0.1}
             className="relative order-1 [--hero-lift:40px] lg:order-none lg:fluid-h-560 lg:mt-[calc(-80*var(--fluid))]"
           >
-            <Image
-              src={heroPeel}
-              alt="A pinsa margherita on a wooden peel, seen from above"
-              priority
-              sizes="(min-width: 1024px) 56vw, 100vw"
-              className="mx-auto h-auto w-full max-w-[560px] object-contain object-bottom lg:size-full lg:max-w-none"
-            />
+            <HeroPeelDrift sectionId="top">
+              <Image
+                src={heroPeel}
+                alt="A pinsa margherita on a wooden peel, seen from above"
+                priority
+                sizes="(min-width: 1024px) 56vw, 100vw"
+                className="mx-auto h-auto w-full max-w-[560px] object-contain object-bottom lg:size-full lg:max-w-none"
+              />
+            </HeroPeelDrift>
           </StageItem>
 
           <StageItem
