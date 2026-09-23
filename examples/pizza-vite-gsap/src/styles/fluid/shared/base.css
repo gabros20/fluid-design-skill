@@ -20,6 +20,19 @@
    numbers — but it is generated (not hand-written) so it stays alongside
    the rest of this skill's output and picks up fixes from one place. */
 
+/* Tailwind v4's own Preflight already sets this, so the tailwind-v4 stack
+   needs nothing extra here. A non-Tailwind stack (this file, standalone, or
+   the vanilla-CSS/SCSS stacks) usually has NO reset that does, and without
+   it `max-width: max(1600px, ...)` caps the CONTENT box, not the border
+   box: the frame then renders at canvas + 2×gutter (e.g. 1600 + 2×64 =
+   1728) instead of 1600, and everything inside it overflows the intended
+   frame — measured: a header CTA and the hero copy cut off at the edge. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   /* Kill rubber-band / elastic overscroll so momentum can't bounce past a
      scroll boundary and feed jitter into anything scroll-driven (a pinned
@@ -109,15 +122,52 @@ button:disabled {
    isn't left scrolling a multi-viewport runway past a frozen composition.
    Written as a plain media query, not motion-reduce: utilities, so it
    can't lose a specificity fight against a component's own runway rules —
-   a media query doesn't care which one was written last. */
+   a media query doesn't care which one was written last.
+
+   !important is required on all rules here, for a reason narrower than
+   "beat the runway rules" above: the React port (assets/motion/react-motion)
+   writes [data-scrub-pin]'s sticky geometry as an inline style, and an
+   inline style beats ANY non-!important stylesheet declaration regardless
+   of selector specificity or source order. The GSAP port keys the same
+   geometry off this same selector in its own motion.css (also
+   !important, same reason it has to win over a component's runway rules)
+   so both engines collapse identically under this one rule set.
+
+   [data-scrub-pin] gets height: 100svh, NOT height: auto. The pin holds the
+   settled frame (the JS half freezes the camera and the head-loop's first
+   frame — see the motion layer's "reduced" flag above), and that frame is
+   an absolutely-positioned <video> inside the pin. `auto` on a box whose
+   only content is absolutely positioned measures to ZERO — an
+   absolutely-positioned descendant is out of flow and contributes nothing
+   to its parent's auto height — so the held frame a reader is meant to see
+   collapses to a box with nothing in it. `100svh` gives the pin the exact
+   box the frame was framed for (the same unit ScrubStage's live geometry
+   uses), so the reduced-motion "no movement, but still see the shot" state
+   actually shows something instead of a blank strip.
+
+   [data-scrub-spacer] collapses to ZERO height, not auto. It marks an
+   empty pacing act inside the scene — an act with no camera move or copy
+   of its own, added only to give the FULL-MOTION composition room to
+   linger — so under reduced motion there is nothing in it worth the space:
+   collapsing it removes exactly the blank band a reader with no camera
+   movement would otherwise have to scroll through for no reason (measured:
+   an unmarked 2-viewport spacer left an 1800px empty dark band). Mark every
+   spacer act with this attribute — see references/attribute-contract.md and
+   references/scroll-scenes.md §10. */
 @media (prefers-reduced-motion: reduce) {
   [data-scrub-stage] {
     height: auto !important;
   }
-  [data-motion-scene-viewport] {
+  [data-scrub-pin] {
     position: static !important;
-    height: auto !important;
+    height: 100svh !important;
     overflow: visible !important;
+  }
+  [data-scrub-content] {
+    margin-top: 0 !important;
+  }
+  [data-scrub-spacer] {
+    height: 0 !important;
   }
 }
 

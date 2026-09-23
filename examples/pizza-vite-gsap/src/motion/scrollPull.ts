@@ -59,6 +59,19 @@ import { ENGAGE_QUERY } from './eases'
  * before it. The explicit `instant` on each write keeps the pull a direct
  * position write regardless of that setting.
  *
+ * That protects the well's OWN writes from `smooth`, but not the reverse:
+ * an unrelated smooth scroll (a header anchor link, a router hash jump)
+ * that passes through the target gets cancelled one rAF at a time by this
+ * loop's `instant` writes and never arrives — measured, a `#menu` anchor
+ * click from the top landed 900px short, every time, on a page whose well
+ * sat between the click and the target. `suspend()` pauses writes (not the
+ * loop) for a bounded window so a programmatic/smooth scroll can run
+ * uncontested; a capture-phase `click` on same-page hash anchors and
+ * `hashchange` call it automatically, and it is exposed on the returned
+ * controller for a caller driving its own scroll. It clears on the earlier
+ * of `scrollend` or a fallback timeout (Safari does not fire `scrollend` as
+ * of this writing).
+ *
  * ## One rest state, or an interval of them
  *
  * A target that FITS the viewport has exactly one position worth resting
@@ -144,6 +157,13 @@ const MAX_FRAME_MS = 64
 const RESTED_QUIET_MS = 200
 
 /**
+ * How long `suspend()` pauses writes for when the browser never reports
+ * `scrollend` (Safari, as of this writing). A caller driving a longer
+ * scroll of its own should pass an explicit `ms` to `suspend()` instead.
+ */
+const SUSPEND_FALLBACK_MS = 1200
+
+/**
  * Read the fluid scale's own unit — 1 at the reference viewport, a flat 1
  * below the engage breakpoint.
  *
@@ -186,6 +206,14 @@ export interface ScrollPull {
   start(): void
   /** Stop attracting and reset the visit — the next `start` is a fresh visit. */
   stop(): void
+  /**
+   * Pause writes (not the loop) for `ms` (default `SUSPEND_FALLBACK_MS`), or
+   * until `scrollend` fires, whichever is sooner. Call before driving a
+   * programmatic or smooth scroll of your own through this pull's target —
+   * see §`behavior: 'instant'` is load-bearing. Safe to call repeatedly;
+   * each call only extends the suspension, never shortens it.
+   */
+  suspend(ms?: number): void
   /** Stop, drop listeners, release ownership. */
   destroy(): void
 }
@@ -218,6 +246,10 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
   let awayPx = 0
   let lastMove = 0
   let reclaims = 0
+  /** `performance.now()` timestamp writes stay paused until. 0 = not suspended. */
+  let suspendedUntil = 0
+  /** Listener for the `scrollend` that would end a suspension early. */
+  let scrollendAbort: AbortController | null = null
 
   let vw = window.innerWidth
   let vh = window.innerHeight
@@ -260,6 +292,17 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
     frame = 0
     const dt = Math.min(now - lastFrame, MAX_FRAME_MS) / 1000
     lastFrame = now
+
+    // Suspended: a programmatic/smooth scroll may be in flight through this
+    // target. Skip the write AND the away/reclaim bookkeeping — that scroll
+    // is not visitor motion to react to — but keep the loop alive so it
+    // resumes exactly where it left off once the suspension clears.
+    if (now < suspendedUntil) {
+      ownY = window.scrollY
+      frame = requestAnimationFrame(step)
+      return
+    }
+
     const y = window.scrollY
     const err = offset()
 
@@ -337,6 +380,42 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
     for (const resume of pending) resume()
   }
 
+  /**
+   * Pause writes for `ms` (or until `scrollend`, whichever is sooner). See
+   * the `ScrollPull.suspend` docblock.
+   */
+  const suspend = (ms = SUSPEND_FALLBACK_MS) => {
+    suspendedUntil = Math.max(suspendedUntil, performance.now() + ms)
+    if ('onscrollend' in window) {
+      scrollendAbort?.abort()
+      scrollendAbort = new AbortController()
+      window.addEventListener(
+        'scrollend',
+        () => {
+          suspendedUntil = 0
+        },
+        { once: true, signal: scrollendAbort.signal }
+      )
+    }
+  }
+
+  // Anchor navigation is the common source of a smooth scroll this loop did
+  // not initiate. Capture phase so this fires before any click handler on
+  // the anchor itself might call preventDefault(); `hashchange` also
+  // catches a browser back/forward that lands on a hash with no click.
+  window.addEventListener(
+    'click',
+    (e) => {
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || !a.hash) return
+      const isHashOnly = (a.getAttribute('href') ?? '').startsWith('#')
+      const isSamePathHash = a.pathname === window.location.pathname && a.search === window.location.search
+      if (isHashOnly || isSamePathHash) suspend()
+    },
+    { capture: true, passive: true, signal }
+  )
+  window.addEventListener('hashchange', () => suspend(), { passive: true, signal })
+
   window.addEventListener('touchstart', () => { touching = true }, { passive: true, signal })
   window.addEventListener('touchend', () => { touching = false }, { passive: true, signal })
   window.addEventListener('resize', remeasureViewport, { passive: true, signal })
@@ -344,8 +423,10 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
   return {
     start,
     stop,
+    suspend,
     destroy: () => {
       stop()
+      scrollendAbort?.abort()
       abort.abort()
     }
   }

@@ -28,7 +28,20 @@ interface CountUpProps {
   className?: string
   /** Seconds. Long enough to read as counting, short enough not to hold the eye. */
   duration?: number
-  /** Fraction of the element that must be visible before it starts. */
+  /**
+   * Fraction of the element that must be visible before it starts. Defaults
+   * to `0.6`, a plain fraction — which looks like exactly the trap
+   * `Stage`'s own `amount` prop warns against (`0.6` of an element taller
+   * than the viewport can never be satisfied, so the reveal never fires).
+   * It is safe here specifically because `CountUp`'s element is a single
+   * short inline number: it can never be taller than the viewport, so
+   * "60% visible" can always be satisfied and the trap's actual failure
+   * mode — a tall element whose fraction never resolves — cannot occur.
+   * `Stage` has no such guarantee (it wraps arbitrary, often tall, content),
+   * which is why IT defaults to `'some'` plus a `margin` trigger line
+   * instead. Do not copy this default onto `Stage` or any other component
+   * that might wrap something taller than a line of text.
+   */
   amount?: number
 }
 

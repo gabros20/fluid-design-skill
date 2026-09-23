@@ -17,8 +17,24 @@ Config:
 `_fluid.scss` gives you the same scale as functions and mixins instead of
 Tailwind's `@utility` classes.
 
+## The `--out` layout and the `@use` path
+
+`node scripts/generate-fluid.mjs --stack scss --out DIR` writes this file to
+`DIR/scss/_fluid.scss` (the stack name is its own folder under `DIR`;
+`DIR/shared/base.css` and `DIR/scss/README.md` land alongside it — see
+`scripts/README.md`'s "the --out layout" for the full tree). Sass's `@use`
+drops the leading underscore and the extension, so from a stylesheet that
+can resolve `DIR` on its Sass `loadPaths` (or via a relative `../` path),
+the import is `@use 'scss/fluid' as fd;` — NOT `@use 'fluid-design/fluid'`,
+which matches neither the `--out` layout nor the stack subfolder. Adjust the
+`scss/` segment if you copy the file somewhere else; the point is that the
+path must name the ACTUAL folder this file was written into, not the name of
+this skill.
+
 ```scss
-@use 'fluid-design/fluid' as fd;
+// e.g. with { loadPaths: ['src/styles'] } and this file copied to
+// src/styles/fluid/scss/_fluid.scss:
+@use 'fluid/scss/fluid' as fd;
 
 :root {
   @include fd.fluid-units;
@@ -30,11 +46,33 @@ Tailwind's `@utility` classes.
     @include fd.fluid-type(64, 72, $unit: display);
   }
 }
+```
 
-.page {
+Apply `fd.fluid-frame` inside each section's own inner wrapper (never once
+for the whole page, never stacked on a nested box in the same section —
+references/section-recipe.md):
+
+```scss
+.hero__inner {
   @include fd.fluid-frame;
 }
 ```
+
+## Box-sizing
+
+This stack ships no reset of its own. Include `shared/base.css` (or your
+own equivalent) before this file — its `*, *::before, *::after { box-sizing:
+border-box }` rule is what keeps `fluid-frame`'s `max-width` capping the
+border box; without it the frame renders at canvas + 2×gutter, wider than
+drawn.
+
+## Function and mixin names move with `prefix`; custom properties do not
+
+Every function/mixin above is spelled with THIS config's `prefix`
+(`"fluid"`) — change `prefix` in `fluid.config.json` and regenerate to
+rename all of them together. The `--fluid*` custom properties they read
+(`var(--fluid)`, `var(--fluid-display)`, …) are fixed names and never
+change with `prefix` (references/attribute-contract.md §1).
 
 ## The unit functions are the enforcement point
 

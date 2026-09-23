@@ -11,7 +11,7 @@ The numbers live in `fluid.config.json`. This file holds the reasons.
 | Framework | Vite 8, vanilla TS, one multi-section `index.html` | Brief. |
 | Design frame | canvas **1600 × 900**, gutter **64** | Non-default, to exercise the generator. |
 | Reference viewport | **1440 × 900** | The reference stays at the common laptop viewport, not the canvas (fluid-scale.md §Reference). Content budget: 1440 − 2·64 = **1312**. |
-| Engage breakpoint | **1024** | Same number in `$fluid-engage-at`, `ENGAGE_QUERY` (eases.ts) and scrubStage's `mobileBreakpoint` default. |
+| Engage breakpoint | **1024** | Same number in `$fluid-engage-at` and `ENGAGE_QUERY` (eases.ts), which scrubStage's `mobileBreakpoint` now defaults to. |
 | Height axis | **on** | The hero is a one-screen section (`fluid(900)`, `data-fit="screen"`). |
 | Growth ceiling | **1.6** | The hero pinsa is a 1460-wide raster, and the scrub clip is 1280×720. Uncapped, at 3840×2160 `--fluid` would be 2.4. |
 | Scope | the whole page from 1024 up, header and footer on `--fluid-chrome` | Default. |
@@ -19,19 +19,12 @@ The numbers live in `fluid.config.json`. This file holds the reasons.
 | Header | fixed and transparent, ink from `data-header-theme` (`headerTheme.ts`) | Default. |
 | Mobile | flat, authored plainly above each `fd.fluid-up` block | Default. |
 
-## Local deviations from the prepared artifacts (each one is in SKILL-FEEDBACK.md)
+## Local deviations from the prepared artifacts
 
-1. **Ceiling re-declared by hand** in `src/styles/main.scss` (`:root` block). The generator's
-   SCSS emitter drops `ceiling`. Delete the block once the generator is fixed.
-2. **`.frame` is not `@include fd.fluid-frame` alone.** The mixin is included only inside
-   `fd.fluid-up`, with a 24px mobile gutter and a px cap below it, because the bare mixin gives a
-   phone 64px gutters.
-3. **A `box-sizing: border-box` reset** has been added. base.css assumes a reset that the SCSS
-   path does not provide.
-4. **`data-motion-state="head"` is seeded in the markup.** `scrubStage.ts` only writes the
-   attribute on a transition.
-5. **`src/motion/scrubStage.ts` has one local patch.** It pauses the decoder on entry to scrub,
-   as the React port does. It is marked `LOCAL PATCH`.
+None. The five workarounds this build originally carried (hand-written ceiling, a guarded
+`.frame`, a local border-box reset, a markup-seeded `data-motion-state`, and a `LOCAL PATCH` in
+`scrubStage.ts`) were removed once the skill fixed them upstream. `REVALIDATION.md` records the
+re-sync and the checks that confirm it. `SKILL-FEEDBACK.md` is kept as the original report.
 
 ## Type-unit calls (typography.md's container question)
 

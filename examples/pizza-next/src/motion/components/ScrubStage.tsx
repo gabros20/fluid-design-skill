@@ -25,6 +25,31 @@ import { ENGAGE_BREAKPOINT_PX, ENGAGE_QUERY } from '../lib/constants'
 declare const process: { env: { NODE_ENV?: string } } | undefined
 
 /**
+ * `__scrub()` (below) used to be gated on `NODE_ENV !== 'production'` alone,
+ * which means it does not exist in a production build — the exact build a
+ * `next start`/production verification pass runs against. That is fine for
+ * screenshots, but a scripted sweep that wants ground truth (`targetTime`,
+ * raw mode) had nothing to read and had to fall back to inferring state from
+ * the DOM (`video[data-motion-state]`, `currentTime`) — workable, but a
+ * strictly weaker signal than the probe itself. This opt-in escape hatch
+ * keeps the probe OFF by default in production (it is not something to ship
+ * live) while letting a verification run turn it on deliberately: append
+ * `?fluid-debug` to the URL, or set `document.documentElement.dataset.
+ * fluidDebug` before this component mounts (e.g. from a tiny inline script
+ * in the document head, for a harness that cannot control the URL). See
+ * `references/verification.md`.
+ */
+function isFluidDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  if (document.documentElement.dataset.fluidDebug !== undefined) return true
+  try {
+    return new URLSearchParams(window.location.search).has('fluid-debug')
+  } catch {
+    return false
+  }
+}
+
+/**
  * A pinned background video that LOOPS at both ends and is SCRUBBED in between.
  *
  * Meant to be the ONE scroll-driven scene on a page. Everything else should
@@ -148,8 +173,17 @@ export interface CropRect {
   h: number
 }
 
-/** The point the camera aims at, in the CROP's own normalised coordinates
- * (0-1 across the cropped frame, not the master canvas). */
+/**
+ * The point the camera aims at, in the MASTER CANVAS's own normalised
+ * coordinates (0-1 across the full `canvas` square — the same space `crop`
+ * is defined in) — NOT the crop's own local space. `applyFraming` computes
+ * `(subject.x − crop.x) / crop.w`, which converts a master-space point INTO
+ * the crop's local 0-1 space; feeding it an already-crop-local point
+ * double-transforms it. A centred subject gives 0.5 either way, which is
+ * why this only bites once the subject is off-centre — measure and write
+ * pixel coordinates off the master canvas, then divide by `canvas` to get
+ * here, exactly like `crop` itself.
+ */
 export interface SubjectPoint {
   x: number
   y: number
@@ -186,7 +220,9 @@ export interface CameraConfig {
   canvas: number
   /** The two crops of that one canvas — the ffmpeg `crop=w:h:x:y`, normalised. */
   crop: { desktop: CropRect; mobile: CropRect }
-  /** The subject's position in each crop's own space, at both ends of the pan. */
+  /** The subject's position in the MASTER CANVAS's own normalised space
+   * (see `SubjectPoint`), at both ends of the pan — the same space `crop`
+   * is defined in, not `crop`'s own local space. */
   subject: { desktop: SubjectTierPoints; mobile: SubjectTierPoints }
   /** The two shots (head, tail) per tier; scroll interpolates between them. */
   shots: { desktop: CameraTierShots; mobile: CameraTierShots }
@@ -395,6 +431,16 @@ interface ScrubStageProps {
   /** Matches `mobileSrc`'s aspect — a landscape poster in a portrait box is a
    * stretch. */
   mobilePoster?: string
+  /**
+   * Classes on the range wrapper (the `[data-scrub-stage]` div). This is the
+   * ONLY prop forwarded to it — there is no `...rest` spread onto that
+   * element, so an arbitrary `data-*` attribute cannot be set here. In
+   * particular, a scene that should read as dark to the header
+   * (`data-header-theme="dark"`) cannot be marked once on the range
+   * wrapper; every act inside `children` — including an empty
+   * `data-scrub-spacer` act — has to carry its own `data-header-theme` or
+   * the header flips to light ink while scrolled over it.
+   */
   className?: string
   /** Extra classes on the video box. NOT a width cap — when a `camera` is
    * supplied it owns the size, and clamping it would break the framing rather
@@ -765,7 +811,8 @@ export function ScrubStage({
       t = clamp01((p - headExit) / span)
     }
 
-    // The subject, in the CROP's own normalised coordinates.
+    // Converts the subject from MASTER-canvas space (SubjectPoint's own
+    // coordinate space) into the CROP's own normalised coordinates.
     const sx = (lerp(subject.head.x, subject.tail.x, t) - crop.x) / crop.w
     const sy = (lerp(subject.head.y, subject.tail.y, t) - crop.y) / crop.h
 
@@ -1273,9 +1320,11 @@ export function ScrubStage({
 
   // The dev black box's readout. Call `__scrub()` in a frozen tab, then scroll
   // once and call it again — whichever counter did NOT advance is the dead
-  // layer. Dev only; production never defines it.
+  // layer. Off by default in production; `isFluidDebugEnabled()` above is the
+  // opt-in for a verification run against a production build.
   useEffect(() => {
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') return
+    const isProd = typeof process !== 'undefined' && process.env.NODE_ENV === 'production'
+    if (isProd && !isFluidDebugEnabled()) return
     const w = window as Window & { __scrub?: () => Record<string, unknown> }
     w.__scrub = () => {
       const video = videoRef.current

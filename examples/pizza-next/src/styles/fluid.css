@@ -72,7 +72,31 @@
    unitless number times a length (--fluid is 1px at the reference) resolves to
    a length. This is the single most common way to lose one of these utilities
    by hand-editing generated output — another reason not to.
+
+   TAILWIND v4's BREAKPOINT-ORDERING TRAP: there is no tailwind.config to read a
+   breakpoint LADDER from -- only whatever @theme tokens a project defines, with
+   Tailwind's own rem defaults filling in anything left undefined. Utilities are
+   then emitted in min-width order by comparing breakpoint LENGTHS, and a px
+   value cannot be compared against a rem one. Defining ONLY --breakpoint-lg (in
+   px) while sm/md/xl/2xl stay on Tailwind's rem defaults means the whole lg:
+   block sorts before the sm: block regardless of which is visually wider --
+   measured: sm:text-[64px] beat lg:fluid-display-112 even though 1024px > the
+   40rem sm breakpoint. The @theme block below defines the FULL ladder in one
+   unit (px) for exactly this reason -- not just the one rung this project
+   cares about.
 */
+
+@theme {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px; /* == engageAt. fluid.css's own media query is hand-written as
+       `@media (width >= 1024px)` -- it has no Tailwind config to read a
+       breakpoint from -- so if you move `engageAt` you must move this token by
+       hand too, or the two silently disagree about where the site turns into a
+       fixed 1px scale. */
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
 
 :root {
   --fluid: 1px;

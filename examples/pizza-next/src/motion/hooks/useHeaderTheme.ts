@@ -52,6 +52,18 @@ import type { HeaderTheme } from './header-theme'
  * only when the resolved theme actually CHANGES — a few times per page, not
  * per frame — which keeps the "never setState per scroll tick" rule intact.
  */
+/**
+ * `headerRef` is usually the fixed header's own root element, but it does
+ * not have to be — the probe (`measure` below) reads `offsetTop +
+ * offsetHeight / 2`, and for anything living inside a `position: fixed`
+ * header (a nav nested in a `StageItem` inside it, say), that stays a
+ * small, scroll-INDEPENDENT number either way, because `position: fixed`
+ * is what makes `offsetTop` resolve near the viewport rather than the
+ * document. Pointing this at the header itself or at an element nested
+ * inside it both land the probe line at roughly the same screen height —
+ * pick whichever element is convenient to hold a ref on; there is no need
+ * to hoist a ref up to the header's outermost element just for this.
+ */
 export function useHeaderTheme(
   base: HeaderTheme,
   headerRef: RefObject<HTMLElement | null>

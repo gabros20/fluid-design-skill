@@ -6,7 +6,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react'
 import { ENGAGE_QUERY } from '../lib/constants'
 import { transitions } from '../lib/transitions'
 import { entranceVariants, veilVariants, type EntranceVariant } from '../lib/variants'
-import { cn as cx } from '../../lib/cn'
+import { cx } from '../lib/cx'
 
 /**
  * `Stage` / `StageItem` / `StageVeil` — the PAGE-LOAD entrance system.

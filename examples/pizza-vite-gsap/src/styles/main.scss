@@ -13,41 +13,15 @@
 // ── Units ─────────────────────────────────────────────────────────────
 :root {
   @include fd.fluid-units;
-
-  // WORKAROUND (SKILL-FEEDBACK.md #1): the generator's SCSS emitter ignores
-  // `ceiling` in fluid.config.json and emits an uncapped --fluid. This
-  // re-declares --fluid exactly as the vanilla/Tailwind emitters do for
-  // ceiling 1.6 (`min(1.6px, …)`). The type units read through --fluid, so
-  // they cap with it. Delete this block once the generator is fixed.
-  @include fd.fluid-up {
-    --fluid: min(1.6px, max(0.58px, min(calc(100svh / 900), calc(100vw / 1440))));
-  }
 }
 
 // ── The frame ─────────────────────────────────────────────────────────
-// One box: cap + gutter together. Mobile gets a plain 24px gutter and the
-// canvas as a px cap; the fluid-frame mixin is only included from the
-// breakpoint up, because on its own it would put fluid(64) = 64px of gutter
-// on a phone (SKILL-FEEDBACK.md #3).
+// One box: cap + gutter together. The mixin carries its own mobile half
+// (fixed canvas cap, 24px gutter, 32px from 640) and engages the scaled cap
+// and gutter at the breakpoint. The border-box reset it relies on ships in
+// shared/base.css, imported ahead of this file in main.ts.
 .frame {
-  width: 100%;
-  max-width: #{fd.$fluid-canvas-width}px;
-  margin-inline: auto;
-  padding-inline: 24px;
-
-  @include fd.fluid-up {
-    @include fd.fluid-frame;
-  }
-}
-
-// base.css assumes a reset already ran (it says "after your reset/
-// preflight"). The SCSS path has none, and without border-box the frame's
-// cap measures the CONTENT box, so the drawn 1600 frame renders 1728 wide
-// (SKILL-FEEDBACK.md #4).
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+  @include fd.fluid-frame;
 }
 
 body {
@@ -103,8 +77,8 @@ em {
 
 // ── Header ────────────────────────────────────────────────────────────
 // Fixed and transparent; its ink follows the section beneath it
-// (headerTheme.ts writes data-theme only on change, and never writes the
-// base theme at load, so "no attribute" must look like the light theme).
+// (headerTheme.ts writes data-theme once at load and then on change; the
+// unset fallback below is the light theme, for the moment before JS runs).
 .site-header {
   position: fixed;
   inset: 0 0 auto;

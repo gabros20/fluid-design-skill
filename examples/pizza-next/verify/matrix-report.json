@@ -9,7 +9,7 @@
     "engageAt": 1024,
     "ceiling": null
   },
-  "generatedAt": "2026-09-23T12:48:25.536Z",
+  "generatedAt": "2026-09-23T13:17:44.114Z",
   "viewports": [
     {
       "width": 1024,
@@ -86,8 +86,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1024x640.png"
+      }
     },
     {
       "width": 1280,
@@ -164,8 +163,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1280x640.png"
+      }
     },
     {
       "width": 1440,
@@ -242,8 +240,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1440x640.png"
+      }
     },
     {
       "width": 1680,
@@ -320,8 +317,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1680x640.png"
+      }
     },
     {
       "width": 2560,
@@ -398,8 +394,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-2560x640.png"
+      }
     },
     {
       "width": 1024,
@@ -476,8 +471,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1024x700.png"
+      }
     },
     {
       "width": 1280,
@@ -554,8 +548,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1280x700.png"
+      }
     },
     {
       "width": 1440,
@@ -632,8 +625,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1440x700.png"
+      }
     },
     {
       "width": 1680,
@@ -710,8 +702,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1680x700.png"
+      }
     },
     {
       "width": 2560,
@@ -788,8 +779,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-2560x700.png"
+      }
     },
     {
       "width": 1024,
@@ -866,8 +856,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1024x800.png"
+      }
     },
     {
       "width": 1280,
@@ -944,8 +933,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1280x800.png"
+      }
     },
     {
       "width": 1440,
@@ -1022,8 +1010,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1440x800.png"
+      }
     },
     {
       "width": 1680,
@@ -1100,8 +1087,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1680x800.png"
+      }
     },
     {
       "width": 2560,
@@ -1178,8 +1164,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-2560x800.png"
+      }
     },
     {
       "width": 1024,
@@ -1256,8 +1241,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1024x900.png"
+      }
     },
     {
       "width": 1280,
@@ -1334,8 +1318,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1280x900.png"
+      }
     },
     {
       "width": 1440,
@@ -1412,8 +1395,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1440x900.png"
+      }
     },
     {
       "width": 1680,
@@ -1490,8 +1472,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1680x900.png"
+      }
     },
     {
       "width": 2560,
@@ -1568,8 +1549,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-2560x900.png"
+      }
     },
     {
       "width": 1024,
@@ -1646,8 +1626,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1024x1440.png"
+      }
     },
     {
       "width": 1280,
@@ -1724,8 +1703,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1280x1440.png"
+      }
     },
     {
       "width": 1440,
@@ -1802,8 +1780,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1440x1440.png"
+      }
     },
     {
       "width": 1680,
@@ -1880,8 +1857,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-1680x1440.png"
+      }
     },
     {
       "width": 2560,
@@ -1958,8 +1934,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-2560x1440.png"
+      }
     },
     {
       "width": 390,
@@ -2029,8 +2004,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-390x844-mobile.png"
+      }
     },
     {
       "width": 375,
@@ -2100,8 +2074,7 @@
           "hidden": []
         },
         "gridCols": []
-      },
-      "screenshot": "screenshot-375x667-mobile.png"
+      }
     }
   ],
   "gridCols": {

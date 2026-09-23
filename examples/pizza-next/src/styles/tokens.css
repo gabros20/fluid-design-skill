@@ -1,19 +1,9 @@
 /* Forno Aurelia tokens. Shape copied from the skill's tokens.example.css:
    a brand ramp, then semantic roles. Components use the ROLES only. */
 @theme {
-  /* MUST equal `engageAt` in fluid.config.json and ENGAGE_BREAKPOINT_PX in
-     src/motion/lib/constants.ts. fluid.css hard-codes the same 1024. */
-  --breakpoint-lg: 1024px;
-  /* ALL breakpoints in px, not just lg. Tailwind sorts breakpoint variants by
-     value and cannot order 1024px against its default 40rem/48rem: with only lg
-     in px, the whole `lg:` block was emitted BEFORE `sm:`, so every
-     `sm:text-[64px]` silently beat `lg:fluid-display-112`. Not rem either:
-     media-query rem follows the browser's font-size setting, fluid.css's
-     `(width >= 1024px)` does not, and the two would disagree. */
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
+  /* No --breakpoint-* here: the full px ladder (sm..2xl) ships in fluid.css's
+     own @theme block. Redeclaring any rung here is the mixed-unit ordering
+     trap fluid.css documents. */
 
   /* ── Brand ramp ─────────────────────────────────────────────────────── */
   --color-brand-white: #ffffff;

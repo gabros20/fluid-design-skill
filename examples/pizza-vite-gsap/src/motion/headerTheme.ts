@@ -5,7 +5,7 @@
  * A header that paints no background of its own can no longer have its
  * colour be a property of the page once it leaves the flow — a black nav
  * pinned over a dark section would simply disappear. Sections opt in with
- * `data-header-theme="light" | "dark"` (CONTRACT.md §3); this module probes
+ * `data-header-theme="light" | "dark"` (`references/attribute-contract.md` §3); this module probes
  * whichever one sits under the header's own vertical middle and writes
  * `data-theme` on the header element, ONLY when it changes.
  *
@@ -72,7 +72,17 @@ export function initHeaderTheme(root: ParentNode = document, options: HeaderThem
   const base: HeaderTheme = options.base ?? 'light'
   let bands: Band[] = []
   let probeY = 48
-  let current: HeaderTheme = base
+  // Not `base` — a sentinel outside HeaderTheme's own two values, so the
+  // FIRST resolve() always writes `data-theme`, even when it resolves to
+  // `base` itself. Initialising this to `base` meant a page that starts
+  // over a light (base) section never got `data-theme` at all until the
+  // first flip: resolve()'s `next !== current` guard was already true on
+  // load, so the write was skipped — the CSS then had to treat "no
+  // attribute" as meaning base, which is undocumented and easy to get
+  // wrong. The React port does not have this gap: `useState<HeaderTheme>
+  // (base)` returns `base` from the very first render, so the header
+  // always has a defined theme from render one.
+  let current: HeaderTheme | null = null
 
   const measure = () => {
     // offsetTop/offsetHeight are LAYOUT metrics, immune to a still-running

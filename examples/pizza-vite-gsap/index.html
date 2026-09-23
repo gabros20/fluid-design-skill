@@ -215,15 +215,12 @@
       </section>
 
       <!-- 5. THE ONE SCROLL-DRIVEN SCENE — a pinned, scrubbed, all-intra
-           clip with three acts riding over it. data-motion-state is seeded
-           as "head" in the markup; scrubStage.ts only writes it on a
-           transition, so the initial mode would otherwise be absent
-           (SKILL-FEEDBACK.md). -->
+           clip with three acts riding over it. scrubStage.ts writes
+           data-motion-state itself, once at mount and on every transition. -->
       <div class="scene" data-scrub-stage id="forno" data-header-theme="dark">
         <div data-scrub-pin>
           <video
             data-scrub-video
-            data-motion-state="head"
             muted
             playsinline
             preload="none"

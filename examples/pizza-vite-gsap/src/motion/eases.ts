@@ -6,6 +6,13 @@ import { CustomEase } from 'gsap/CustomEase'
  * `fluid.config.json`'s `engageAt` and the host project's own breakpoint
  * token. Three places, one number — the react-motion port hit duplicate,
  * hand-typed copies of this same fact before it was centralised here.
+ *
+ * This literal is the DEFAULT (`engageAt: 1024` unmodified). The moment a
+ * project's `fluid.config.json` sets a different `engageAt`, this constant
+ * silently stops matching it — nothing here reads the config file. Run
+ * `node scripts/generate-fluid.mjs --stack ts` and import `ENGAGE_QUERY`
+ * from the generated `fluid.config.ts` instead, replacing this literal at
+ * the one place it's declared.
  */
 export const ENGAGE_QUERY = '(min-width: 1024px)'
 
@@ -49,7 +56,7 @@ export function registerEases(): void {
 }
 
 /**
- * The motion constants from CONTRACT.md §4 — identical in both engines. Keep
+ * The motion constants from `references/attribute-contract.md` §4 — identical in both engines. Keep
  * this the single source of these numbers; do not hand-copy one into a
  * component. Every duration/ease pair here was measured against a reference
  * capture (frame-by-frame ink-centroid tracking — see the reference build's
@@ -102,7 +109,7 @@ export const MOTION = {
 } as const
 
 /**
- * IntersectionObserver `rootMargin` strings — CONTRACT.md §4. Reads like
+ * IntersectionObserver `rootMargin` strings — `references/attribute-contract.md` §4. Reads like
  * GSAP's `start: 'top 80%'` convention. Keep these here rather than per
  * call site; they are a single editorial decision about pacing.
  */

@@ -28,4 +28,4 @@ width  height  mobile  overflow  units  fit  reveal  overall
 375    667     yes     PASS      PASS   PASS PASS    PASS
 
 PASS
-report: verify-out/matrix/report.json
+report: verify-matrix-out/report.json

@@ -10,7 +10,7 @@ import { ENGAGE_QUERY, MOTION, prefersReducedMotion, registerEases, TRIGGERS } f
  * clock, so scrolling faster or slower changes nothing and scrolling back up
  * replays nothing (unless `data-stage-repeat` is set).
  *
- * ## The DOM contract (CONTRACT.md §3)
+ * ## The DOM contract (`references/attribute-contract.md` §3)
  *
  * ```html
  * <div data-stage="view" data-stage-margin="0px 0px -20% 0px">

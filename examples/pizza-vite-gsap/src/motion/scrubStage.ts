@@ -58,7 +58,7 @@
  * a mode test fed from anything eased flaps as it rings down. The three
  * boundaries use raw scroll progress and hysteresis — enter and exit are
  * different numbers, so incidental jitter can never flap a mode
- * (CONTRACT.md's "a spring never feeds a threshold").
+ * (`references/scroll-scenes.md` §5, "A spring never feeds a threshold").
  *
  * ## Scroll is durable truth; video time is derived
  *
@@ -70,8 +70,28 @@
  * Nothing here ever force-scrolls the visitor or reloads the page.
  */
 
-import { prefersReducedMotion } from './eases'
+import { ENGAGE_QUERY, prefersReducedMotion } from './eases'
 import { createVideoController } from './videoController'
+
+/**
+ * Gate for the `window.__scrub()` debug probe attached below. This module
+ * is framework-free and ships as plain ESM to whatever bundler consumes it,
+ * so unlike the React port there is no `process.env.NODE_ENV` to key a
+ * dev-vs-production default off (no bundler guarantee it gets replaced/
+ * stripped here at all). Rather than guess, the probe is opt-in everywhere
+ * — dev AND production — via the same flag: append `?fluid-debug` to the
+ * URL, or set `document.documentElement.dataset.fluidDebug` before this
+ * module mounts. See `references/verification.md`.
+ */
+function isFluidDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  if (document.documentElement.dataset.fluidDebug !== undefined) return true
+  try {
+    return new URLSearchParams(window.location.search).has('fluid-debug')
+  } catch {
+    return false
+  }
+}
 
 /** Source frame rate, exactly. */
 export interface LoopPoint {
@@ -111,9 +131,20 @@ export interface ScrubStageCrop {
  * own asset (Recipe 5/6 in the reference build's cookbook). */
 export interface ScrubStageTierGeometry {
   crop?: ScrubStageCrop
-  /** The subject point inside the CROP's own coordinates, normalised,
-   * at each end of the scrub band. Defaults to the crop's centre at both
-   * ends (no subject travel). */
+  /**
+   * The subject point, normalised to the shared MASTER CANVAS's own
+   * coordinates (the same space `crop` is defined in) — NOT the crop's own
+   * local space — at each end of the scrub band. `applyFraming` computes
+   * `(subject.x − crop.x) / crop.w`, which converts a master-space point
+   * INTO the crop's local 0-1 space; feeding it an already-crop-local point
+   * double-transforms it. A centred subject gives 0.5 either way, so this
+   * only bites once the subject is off-centre. This option's default,
+   * `{ x: 0.5, y: 0.5 }`, is the MASTER CANVAS's own centre (matching the
+   * default identity crop) — not necessarily the crop's centre once a
+   * non-identity `crop` is supplied without a matching `subject`. Measure
+   * and write pixel coordinates off the master canvas, then divide by the
+   * canvas size, exactly like `crop` itself.
+   */
   subject?: { head: { x: number; y: number }; tail: { x: number; y: number } }
   /** Where the subject should land in the pin, and the extra zoom, at each
    * end. Defaults to centred, zoom 1, at both ends. */
@@ -140,8 +171,8 @@ export interface ScrubStageOptions {
    * pin range. Reference default: 320. */
   tailLeadPx?: number
   /** Hysteresis as a FRACTION of each end's lead — never a second absolute
-   * constant, or the two can be set into an invalid pair (CONTRACT.md /
-   * MOTION-DESIGN-SYSTEM.md §5.3). Reference default: 0.7. */
+   * constant, or the two can be set into an invalid pair (`references/scroll-scenes.md`
+   * §3, "The latch: a discrete crossing with hysteresis"). Reference default: 0.7. */
   hysteresisRatio?: number
   /** IntersectionObserver root margin (px) for starting the network fetch. */
   warmMarginPx?: number
@@ -291,7 +322,13 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   const wakeMarginPx = options.wakeMarginPx ?? 200
   const glide = options.glide ?? 0.18
   const glideRest = options.glideRestSeconds ?? 0.5 / fps
-  const mobileBreakpoint = options.mobileBreakpoint ?? '(min-width: 1024px)'
+  // Default to the shared ENGAGE_QUERY (references/attribute-contract.md §4)
+  // rather than a hand-typed literal — the reference build's earlier
+  // '(min-width: 1024px)' here drifted silently from any project whose
+  // fluid.config.json engageAt wasn't 1024. See eases.ts's own docblock: a
+  // project with a non-default engageAt should regenerate fluid.config.ts
+  // (`--stack ts`) and pass its ENGAGE_QUERY through `mobileBreakpoint`.
+  const mobileBreakpoint = options.mobileBreakpoint ?? ENGAGE_QUERY
   const backdropStops = options.backdropStops ?? DEFAULT_BACKDROP
 
   const desktop = resolveTier(options.desktop)
@@ -372,7 +409,8 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   //     `getBoundingClientRect` read does not already give for free; (3) it
   //     keeps this file's "direct write, one clock, no library abstraction
   //     between the read and the write" style consistent with the rest of
-  //     the reference build's manual writers (CONTRACT.md §4.1).
+  //     the reference build's manual writers (`references/scroll-scenes.md` §6,
+  //     "The direct style write").
   const getProgress = (): number => {
     const rect = rangeEl.getBoundingClientRect()
     const total = rect.height - window.innerHeight
@@ -384,20 +422,40 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   let mode: Mode = 'head'
   let awake = false
 
+  // Write the initial mode ONCE at mount, rather than relying on setMode's
+  // own early-return-when-unchanged guard to do it. `mode` starts 'head' and
+  // the first real setMode('head') call would be a no-op under that guard,
+  // so a page loaded at progress 0 would never get `data-motion-state` at
+  // all — "head at progress 0" becomes unverifiable (the marker CSS in
+  // verification.md §3 has nothing to key off), and the React port has the
+  // same fact expressed for free by useState('head')'s first render.
+  video.setAttribute('data-motion-state', mode)
+
   const wake = (next: boolean) => {
     if (awake === next) return
     awake = next
+    // Mirrors the React port's wake-edge effect (`if (awake &&
+    // !wasAwakeRef.current) rehydrate('wake')`): re-derive mode/time/camera
+    // from scroll on every false->true transition, not only on mount/resize/
+    // visibility/focus. Without this, a scene that goes to sleep mid-scrub
+    // (scrolled far past, then back) can wake with a stale decoder state
+    // that nothing re-syncs until the next of those other triggers fires.
+    if (next) rehydrate('wake')
   }
 
   const setMode = (next: Mode) => {
     if (mode === next) return
     mode = next
     video.setAttribute('data-motion-state', next)
-    // LOCAL PATCH (SKILL-FEEDBACK.md, GSAP port): the React ScrubStage
-    // pauses the decoder when scrub takes over; this port did not, so the
-    // head loop kept PLAYING under the glide. Parked at progress 0.5 the
-    // presented frame alternated 171/172 at display rate (121 frames
-    // presented in 2s, measured with requestVideoFrameCallback).
+    // Mirrors the React port's playback effect (`if (!awake || reduced ||
+    // mode === 'scrub') { video.pause(); return }`): entering scrub hands
+    // the playhead to the scroll-driven glide in tick() below, and the
+    // decoder must not keep free-running under it. Without this, a reader
+    // arriving from the head loop keeps the decoder playing under the
+    // glide — measured via requestVideoFrameCallback: 121 presented frames
+    // in 2s at a PARKED scroll position, a visible shimmer plus wasted
+    // decode, invisible to the mode/attribute alone since the mode itself
+    // was already correct.
     if (next === 'scrub') video.pause()
   }
 
@@ -680,12 +738,27 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   }
 
   // ---- warm / wake observers -----------------------------------------
+  // NEVER call video.load() here (video.md §5: "on phones this aborts an
+  // in-progress play()"). This element is genuinely SRC-LESS until `pickTier`
+  // assigns it — unlike inViewLoopVideo.ts's warm tier, whose <source>
+  // children already exist at mount, so setting `preload='auto'` alone has
+  // nothing to hint the fetch toward here unless a src exists. Assigning the
+  // `src` IDL attribute directly is what starts the fetch (the browser's own
+  // resource-selection algorithm runs off that assignment, the same
+  // mechanism `.load()` would trigger) — no `.load()` call is needed on top
+  // of it, and nothing has played yet at this point for one to abort even if
+  // it were. If `pickTier`'s rAF has already run (the common case — it is
+  // scheduled at mount, long before this margin fires), `src` is already set
+  // and this is a no-op past the preload hint.
   const warmObserver = new IntersectionObserver(
     (entries) => {
       const entry = entries[0]
       if (!entry?.isIntersecting) return
+      if (!video.getAttribute('src')) {
+        const src = desktopTier ? video.dataset.src : video.dataset.mobileSrc
+        if (src) video.src = src
+      }
       video.preload = 'auto'
-      video.load()
       warmObserver.disconnect()
     },
     { rootMargin: `${warmMarginPx}px 0px` }
@@ -733,6 +806,35 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   // same division of labour as the reference build (ScrubStage owns its own
   // decoder rather than delegating to the shared controller).
 
+  // ---- debug probe: `window.__scrub()` -----------------------------------
+  // Call it in a frozen tab, then scroll once and call it again — whichever
+  // counter did not advance is the dead layer. Opt-in only (see
+  // isFluidDebugEnabled's docblock); most mounts never touch `window`.
+  let scrubProbeAttached = false
+  if (isFluidDebugEnabled()) {
+    const w = window as Window & { __scrub?: () => Record<string, unknown> }
+    w.__scrub = () => {
+      const rect = rangeEl.getBoundingClientRect()
+      const p = getProgress()
+      const b = boundsFromRangePx(rangePx)
+      return {
+        awake,
+        mode,
+        modeFromP: modeFromProgress(p, b),
+        targetTime: +targetTimeFromProgress(p, b).toFixed(3),
+        reduced,
+        travel: rangePx,
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        time: +video.currentTime.toFixed(3),
+        paused: video.paused,
+        ready: video.readyState,
+        duration: Number.isFinite(video.duration) ? +video.duration.toFixed(3) : null
+      }
+    }
+    scrubProbeAttached = true
+  }
+
   return () => {
     loopDisposed = true
     stopLoop()
@@ -751,5 +853,6 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
     window.removeEventListener('pageshow', onPageShow)
     window.removeEventListener('focus', onFocus)
     controller.dispose()
+    if (scrubProbeAttached) delete (window as Window & { __scrub?: () => Record<string, unknown> }).__scrub
   }
 }

@@ -6,26 +6,3 @@
    would out-rank every Tailwind utility (unlayered beats layered), so its
    `:focus-visible` outline would beat `outline-none` and friends. */
 @import '../styles/base.css' layer(base);
-
-/* Override base.css's `html { scroll-behavior: smooth }` for THIS page.
-   The dough scene's scroll well (PullToCentre) writes `scrollTo({behavior:
-   'instant'})` every frame while engaged, and an instant write CANCELS any
-   smooth scroll in flight. A smooth anchor jump (header "Menu" → #menu) passing
-   through act 3 was cut dead at act 3: measured scrollY 4263 against a target
-   of 5164, every time. With instant anchor jumps the well never sees the page
-   pass through it. See SKILL-FEEDBACK.md. */
-@layer base {
-  html {
-    scroll-behavior: auto;
-  }
-}
-
-/* Reduced motion: base.css releases the pin, but the EMPTY spacer act exists
-   only to give the scrub runway — with nothing scrubbing it is two viewports of
-   blank dark band. A media query, not a `motion-reduce:` utility, for the same
-   specificity reason base.css gives. */
-@media (prefers-reduced-motion: reduce) {
-  [data-scrub-spacer] {
-    display: none;
-  }
-}
