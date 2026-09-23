@@ -2,7 +2,7 @@
 
 This build re-syncs the example to the current `fluid-design/` artifacts, removes the local
 workarounds listed in `SKILL-FEEDBACK.md`, and checks that the upstream fixes hold in a real
-build. Nothing under `fluid-design/` was edited, and nothing was committed. The config is
+build. Nothing under `fluid-design/` was edited, and the revalidation agent itself committed nothing (the controller committed the result). The config is
 unchanged: canvas 1600/64, reference 1440×900, engageAt 1024, ceiling 1.6.
 
 ## Summary

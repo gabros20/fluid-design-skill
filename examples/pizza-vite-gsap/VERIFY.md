@@ -81,3 +81,7 @@ scrolled back.
 All of it was done in this session by lead-8 directly. No sub-workers were dispatched: the
 page is one `index.html` plus one stylesheet that every section shares, so there were no
 disjoint files to split.
+
+> Note on `screenshots/screenshot-1440x900.jpg`: it is a full-page capture, so the pinned scrub scene
+> appears as a long dark band. The video only paints inside the sticky viewport-sized pin while you
+> scroll; see `screenshots/scrub-*.jpg` for the scene at progress 0, 0.5 and 1.
