@@ -9,6 +9,7 @@ Config:
   copy.damping 0.33 (floor auto -> 0.9)
   chrome.enabled true
   ceiling 1.6
+  zoomCompensation true (fluid-text: full <= 24, none >= 48)
   prefix "fluid"
 -->
 
@@ -72,7 +73,7 @@ Every function/mixin above is spelled with THIS config's `prefix`
 (`"fluid"`) — change `prefix` in `fluid.config.json` and regenerate to
 rename all of them together. The `--fluid*` custom properties they read
 (`var(--fluid)`, `var(--fluid-display)`, …) are fixed names and never
-change with `prefix` (references/attribute-contract.md §1).
+change with `prefix` (references/contract.md §1).
 
 ## The unit functions are the enforcement point
 
@@ -91,3 +92,21 @@ Generated from `assets/fluid.config.json`:
 ```
 node scripts/generate-fluid.mjs --stack scss
 ```
+
+## Browser zoom
+
+The type units read `var(--fluid-zoom, 1)`, which
+`assets/runtime/fluid-zoom.js` sets to the detected browser zoom. Without
+it, type does not grow under Cmd/Ctrl + on wide displays (WCAG 1.4.4). Copy
+`fluid-zoom.js` and `fluid-zoom.d.ts` into the project and inline it in
+`<head>`, before first paint:
+
+```tsx
+import { FLUID_ZOOM_INLINE } from './fluid-zoom.js'
+// <head>
+<script dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />
+```
+
+Without React, put the string in a plain `<script>` in `<head>`, or call
+`installFluidZoom()` as early as your entry allows. Check it with
+`verify-matrix.mjs`'s zoom row (references/fluid-scale.md §12).

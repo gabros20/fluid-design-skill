@@ -139,6 +139,14 @@
       "default": true,
       "description": "Inside the two type units (`--fluid-display`, `--fluid-copy`), read the base as `var(--fluid) * var(--fluid-zoom, 1)` from the engage breakpoint up, which restores the unzoomed value so text zooms 1:1. Browser zoom shrinks the CSS viewport by the zoom factor, so vw/svh-derived type otherwise renders at the same physical size at every zoom level (a WCAG 1.4.4 failure on wide displays). `assets/runtime/fluid-zoom.js` sets `--fluid-zoom`; without it the fallback is 1 and nothing changes. Layout, chrome and `fluid-text-*` are never compensated: the layout keeps fitting the zoomed viewport and text reflows inside it."
     },
+    "zoomTextRange": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [24, 48],
+      "description": "With zoomCompensation on: how much of the browser zoom `fluid-text-*` takes, by drawn font size. All of it at or below the first number, none at or above the second, linear between. `fluid-text` is type inside a box that scales on --fluid, and that box does not zoom, so big type zoomed with it runs over its neighbours; reading-size text still zooms 1:1. The display and copy units always zoom fully."
+    },
     "ceiling": {
       "type": ["number", "null"],
       "default": null,

@@ -85,3 +85,40 @@ disjoint files to split.
 > Note on `screenshots/screenshot-1440x900.jpg`: it is a full-page capture, so the pinned scrub scene
 > appears as a long dark band. The video only paints inside the sticky viewport-sized pin while you
 > scroll; see `screenshots/scrub-*.jpg` for the scene at progress 0, 0.5 and 1.
+
+## Browser zoom (WCAG 1.4.4), added 2026-09-23
+
+Brought onto the post-review system (`docs/REVIEW-2026-09.md`):
+- `fluid.config.json`: `zoomCompensation: true`, `zoomTextRange: [24, 48]`; `src/styles/fluid/`
+  regenerated (SCSS layer and the render-only `shared/base.css`).
+- `src/motion/motion-base.css` (from the `scroll-animation` skill) carries the motion half the old
+  `base.css` held; imported right after it in `src/main.ts`.
+- `src/lib/fluid-zoom.js` (+ `.d.ts`) inlined at the top of `<head>` by a small Vite plugin in
+  `vite.config.ts` (`transformIndexHtml`), because a `<script type="module">` is deferred and a
+  zoomed page would paint small type first.
+
+`verify-matrix.mjs` on `vite preview`: full matrix PASS (including the ceiling viewport), zoom row
+with `--zoom-selector 'main p'` (the hero copy, `fluid-type(16, 22, text)`):
+
+| Window | 125% | 150% | 200% |
+|---|--:|--:|--:|
+| 1440×900 | 125% | 156% (mobile) | 208% (mobile) |
+| 1920×1080 | 125% | 150% | 170% (mobile handover) |
+| 2560×1440 | 125% | 150% | 200% |
+
+Before the size-weighted `fluid-text` rule, this build did not zoom at all on the desktop layout
+(100% at every level on 1920 and 2560), because 8 of its 14 type styles are `fluid-text`. Zooming
+`fluid-text` fully instead broke the hero at 2560×1440 and 200%: the 200px "Pinsa romana" wrapped onto
+two lines over the copy. By size, the title holds one line and the copy doubles. Known cosmetic
+issue: at 200% the fixed "Réservation" tab sits over the end of the right-hand hero copy.
+Captures: `verify/zoom/zoom-<window>-<pct>.jpg`.
+
+### Try it yourself
+
+```
+npm run build && npm run preview   # http://localhost:4320
+```
+
+Chrome on a wide window, Cmd/Ctrl + to 125, 150, 200%.
+`getComputedStyle(document.documentElement).getPropertyValue('--fluid-zoom')` shows what the
+runtime detected.

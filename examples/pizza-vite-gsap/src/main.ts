@@ -1,6 +1,8 @@
 // Order matters: the stack-agnostic base layer, then the motion layer's
 // pre-JS resting states, then the page.
 import './styles/fluid/shared/base.css'
+// The motion half of the old base.css, from the scroll-animation skill since the split.
+import './motion/motion-base.css'
 import './motion/motion.css'
 import './styles/main.scss'
 

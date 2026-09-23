@@ -10,7 +10,7 @@
  *   copy.damping 0.33 (floor auto -> 0.9)
  *   chrome.enabled true
  *   ceiling none
- *   zoomCompensation true
+ *   zoomCompensation true (fluid-text: full <= 24, none >= 48)
  *   prefix "fluid"
  */
 
@@ -294,7 +294,11 @@
    `fluid-display-*` and `fluid-copy-*` spend the damped type units;
    `fluid-text-*` spends the BASE unit, for type whose container scales on
    it too — type on the gentler curve inside a box on the steeper one
-   outgrows its box and re-wraps. */
+   outgrows its box and re-wraps.
+   Browser zoom: display and copy zoom 1:1 through their units. `fluid-text-*`
+   takes a share of the zoom by size — all of it up to 24px drawn,
+   none from 48px — because its box does not zoom, and big type
+   zoomed inside it runs over its neighbours (zoomTextRange, fluid-scale.md §12). */
 @utility fluid-display-* {
   font-size: calc(--value(number) * var(--fluid-display));
   line-height: calc(--modifier(number) * var(--fluid-display));
@@ -304,6 +308,6 @@
   line-height: calc(--modifier(number) * var(--fluid-copy));
 }
 @utility fluid-text-* {
-  font-size: calc(--value(number) * var(--fluid));
-  line-height: calc(--modifier(number) * var(--fluid));
+  font-size: calc(--value(number) * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (48 - --value(number)) / 24, 1)));
+  line-height: calc(--modifier(number) * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (48 - --value(number)) / 24, 1)));
 }

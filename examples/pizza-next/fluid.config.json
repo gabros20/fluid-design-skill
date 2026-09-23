@@ -26,5 +26,6 @@
     }
   },
   "ceiling": null,
-  "zoomCompensation": true
+  "zoomCompensation": true,
+  "zoomTextRange": [24, 48]
 }

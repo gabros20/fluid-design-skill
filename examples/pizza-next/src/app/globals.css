@@ -6,3 +6,6 @@
    would out-rank every Tailwind utility (unlayered beats layered), so its
    `:focus-visible` outline would beat `outline-none` and friends. */
 @import '../styles/base.css' layer(base);
+/* The motion half of the old base.css (scroll-behavior, reduced-motion collapse, --fill,
+   noscript): the scroll-animation skill's motion-base.css since the skill split. */
+@import '../styles/motion-base.css' layer(base);
