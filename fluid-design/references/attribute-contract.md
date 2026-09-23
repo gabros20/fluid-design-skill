@@ -195,9 +195,7 @@ Source of truth: `assets/motion/react-motion/lib/transitions.ts` + `lib/constant
 
 ## 5. Where this doc is cited from
 
-Every "the attribute contract" or "the DOM contract" pointer in this skill's `references/*.md`,
-`assets/motion/gsap/**`, `scripts/verify-matrix.mjs` and `scripts/lib/fluid-math.mjs` resolves here.
-If you find one that still names `SKILL.md` §3, `CONTRACT.md`, or `MOTION-DESIGN-SYSTEM.md` for
-material that lives above, that citation is stale — fix it to point here (or, for a motion-behaviour
-point rather than a name, to `motion-architecture.md`, `scroll-scenes.md` or `performance.md`,
-whichever actually holds it).
+Every "attribute contract" or "DOM contract" pointer in this skill's `references/*.md`,
+`assets/motion/**`, `scripts/verify-matrix.mjs` and `scripts/lib/fluid-math.mjs` resolves here. For a
+motion-behaviour point rather than a name, the home is `motion-architecture.md`, `scroll-scenes.md`
+or `performance.md`.
