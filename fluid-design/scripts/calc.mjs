@@ -31,7 +31,7 @@ function rawFactors(cfg, w, h) {
   const display = Math.max(floors.display, fluid, cfg.units.display.damping * fluid + (1 - cfg.units.display.damping))
   const copy = Math.max(floors.copy, fluid, cfg.units.copy.damping * fluid + (1 - cfg.units.copy.damping))
   let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
-  if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome) // Decision D4 — see fluid-math.mjs's factors()
+  if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome) // chrome does not read --fluid, so the ceiling wraps it separately — see fluid-math.mjs's factors()
 
   return { fluid, display, copy, chrome }
 }

@@ -57,9 +57,16 @@ decision log. A later agent or a later you will need both.
 
 1. `node <skill>/scripts/generate-fluid.mjs --config fluid.config.json --stack <stack> --out <styles dir>`
    generates the units and utilities for the configured numbers. With defaults you can copy the
-   pre-generated files directly.
+   pre-generated files directly. `--out` is a DIRECTORY, not the stylesheet path: each stack writes
+   into its own `<out>/<stack>/` subfolder (`fluid.css`, plus `tokens.example.css`/`cn.ts`/`README.md`
+   for `tailwind-v4`), and `<out>/shared/base.css` is always (re)written alongside it regardless of
+   which `--stack` you asked for — see `scripts/generate-fluid.mjs --help` for the full layout.
 2. Add `assets/styles/shared/base.css`, which holds the iOS and sticky-safe base layer. Read its comments; several
    rules are deliberate absences (no body background, no `theme-color`, no `overflow-x` on body).
+   **Tailwind v4 only: import it with `@import '.../shared/base.css' layer(base);`.** An unlayered
+   import beats every declaration inside Tailwind's own `@layer` blocks regardless of specificity or
+   source order, so `base.css`'s `:focus-visible` outline and `button { cursor: pointer }` would
+   silently override utilities meant to win. See `assets/styles/tailwind-v4/README.md`.
 3. Put the `<noscript>` reveal safety net in the document head (see `base.css`).
 4. Set the engage breakpoint to the same value everywhere: the Tailwind `--breakpoint-lg`, SCSS
    `$fluid-engage-at`, JS `ENGAGE_QUERY`. Three copies of one number drift; that is why the config exists.

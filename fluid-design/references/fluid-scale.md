@@ -191,7 +191,7 @@ It has no utility family: call sites spend it the long way, `lg:h-[calc(48*var(-
 The page rail (cap and gutter) and the header's inset from the top stay on `--fluid`, so the header
 stays in lockstep with the hero's top padding.
 
-**Decision D4 — `ceiling` also caps `--fluid-chrome`.** Chrome does not read `var(--fluid)` (it has
+**`ceiling` also caps `--fluid-chrome`.** Chrome does not read `var(--fluid)` (it has
 its own formula, not a damping of the base unit), so a `ceiling` on `--fluid` does nothing to it by
 itself: `--fluid-chrome` is wrapped in its own `min(<ceiling>px, …)`. Without this, chrome keeps
 growing past the point every other role on the page stopped — measured at 3840×2160 with `ceiling:
@@ -216,7 +216,7 @@ space. CSS pixels are not device pixels, which keeps this tamer than it sounds:
 The real ceiling is asset resolution. Inline SVG scales perfectly; a 1920-wide raster upscales. Either
 re-export at about 3000 wide or set `ceiling`. The generator then emits `min(<ceiling>px, …)` on the
 base unit, and the type units stop with it — and, separately, `min(<ceiling>px, …)` on
-`--fluid-chrome` too (§6, Decision D4), since chrome does not read `var(--fluid)` and would
+`--fluid-chrome` too (§6), since chrome does not read `var(--fluid)` and would
 otherwise keep growing past the cap on the very displays that set it.
 
 ## 8. Configuration knobs

@@ -189,4 +189,12 @@
   [data-scrub-content] {
     margin-top: 0;
   }
+  /* An empty pacing act (no camera move, no copy of its own — marked by
+     hand with data-scrub-spacer) has nothing left in it once the camera is
+     frozen. Collapse it, or a reduced-motion reader scrolls through however
+     many viewports of blank band it was drawn at for no reason (measured:
+     1800px on a 2-viewport spacer). See references/scroll-scenes.md §10. */
+  [data-scrub-spacer] {
+    height: 0;
+  }
 }

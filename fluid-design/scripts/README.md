@@ -48,11 +48,15 @@ before per-file rules run.
 
 Rules (severity in parens): `fixed-px-at-engage` (error; info for the
 deliberately-excluded border/radius/tracking/max-w properties),
-`length-times-unit` (error), `dvh-on-scaled` (warn), `overflow-hidden-x`
-(warn), `dark-variant` (warn), `rounded-with-zero-token` (info),
-`motion-strict` (error), `fractional-amount` (warn), `contents-reveal`
-(error), `img-svg` (warn), `video-attrs` (warn), `double-fluid-same-prop`
-(warn), `type-unit-mismatch` (info).
+`fixed-px-at-engage-scss` (error/info, the SCSS/vanilla-CSS twin of the
+above), `length-times-unit` (error), `dvh-on-scaled` (warn),
+`overflow-hidden-x` (warn), `dark-variant` (warn), `rounded-with-zero-token`
+(info), `motion-strict` (error), `tw-breakpoint-units` (error — a mixed-unit
+or partial `--breakpoint-*` set, the Tailwind v4 variant-ordering trap),
+`scroll-well-vs-smooth-scroll` (info — a scroll well used alongside a
+page-wide `scroll-behavior: smooth`), `fractional-amount` (warn),
+`contents-reveal` (error), `img-svg` (warn), `video-attrs` (warn),
+`double-fluid-same-prop` (warn), `type-unit-mismatch` (info).
 
 `--selftest` runs the scanner over `fixtures/audit/<rule-id>/{positive,negative}`
 for every rule and asserts each positive fixture trips the rule and each
@@ -92,7 +96,7 @@ Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
 
 ```
 node verify-matrix.mjs <url> [--config f] [--out dir]
-  [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900]
+  [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
   [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
   [--reveal] [--screens]
 ```

@@ -73,6 +73,26 @@
 import { ENGAGE_QUERY, prefersReducedMotion } from './eases'
 import { createVideoController } from './videoController'
 
+/**
+ * Gate for the `window.__scrub()` debug probe attached below. This module
+ * is framework-free and ships as plain ESM to whatever bundler consumes it,
+ * so unlike the React port there is no `process.env.NODE_ENV` to key a
+ * dev-vs-production default off (no bundler guarantee it gets replaced/
+ * stripped here at all). Rather than guess, the probe is opt-in everywhere
+ * — dev AND production — via the same flag: append `?fluid-debug` to the
+ * URL, or set `document.documentElement.dataset.fluidDebug` before this
+ * module mounts. See `references/verification.md`.
+ */
+function isFluidDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  if (document.documentElement.dataset.fluidDebug !== undefined) return true
+  try {
+    return new URLSearchParams(window.location.search).has('fluid-debug')
+  } catch {
+    return false
+  }
+}
+
 /** Source frame rate, exactly. */
 export interface LoopPoint {
   /** First frame of the loop body — the frame after the pixel match to the
@@ -111,9 +131,20 @@ export interface ScrubStageCrop {
  * own asset (Recipe 5/6 in the reference build's cookbook). */
 export interface ScrubStageTierGeometry {
   crop?: ScrubStageCrop
-  /** The subject point inside the CROP's own coordinates, normalised,
-   * at each end of the scrub band. Defaults to the crop's centre at both
-   * ends (no subject travel). */
+  /**
+   * The subject point, normalised to the shared MASTER CANVAS's own
+   * coordinates (the same space `crop` is defined in) — NOT the crop's own
+   * local space — at each end of the scrub band. `applyFraming` computes
+   * `(subject.x − crop.x) / crop.w`, which converts a master-space point
+   * INTO the crop's local 0-1 space; feeding it an already-crop-local point
+   * double-transforms it. A centred subject gives 0.5 either way, so this
+   * only bites once the subject is off-centre. This option's default,
+   * `{ x: 0.5, y: 0.5 }`, is the MASTER CANVAS's own centre (matching the
+   * default identity crop) — not necessarily the crop's centre once a
+   * non-identity `crop` is supplied without a matching `subject`. Measure
+   * and write pixel coordinates off the master canvas, then divide by the
+   * canvas size, exactly like `crop` itself.
+   */
   subject?: { head: { x: number; y: number }; tail: { x: number; y: number } }
   /** Where the subject should land in the pin, and the extra zoom, at each
    * end. Defaults to centred, zoom 1, at both ends. */
@@ -775,6 +806,35 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   // same division of labour as the reference build (ScrubStage owns its own
   // decoder rather than delegating to the shared controller).
 
+  // ---- debug probe: `window.__scrub()` -----------------------------------
+  // Call it in a frozen tab, then scroll once and call it again — whichever
+  // counter did not advance is the dead layer. Opt-in only (see
+  // isFluidDebugEnabled's docblock); most mounts never touch `window`.
+  let scrubProbeAttached = false
+  if (isFluidDebugEnabled()) {
+    const w = window as Window & { __scrub?: () => Record<string, unknown> }
+    w.__scrub = () => {
+      const rect = rangeEl.getBoundingClientRect()
+      const p = getProgress()
+      const b = boundsFromRangePx(rangePx)
+      return {
+        awake,
+        mode,
+        modeFromP: modeFromProgress(p, b),
+        targetTime: +targetTimeFromProgress(p, b).toFixed(3),
+        reduced,
+        travel: rangePx,
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        time: +video.currentTime.toFixed(3),
+        paused: video.paused,
+        ready: video.readyState,
+        duration: Number.isFinite(video.duration) ? +video.duration.toFixed(3) : null
+      }
+    }
+    scrubProbeAttached = true
+  }
+
   return () => {
     loopDisposed = true
     stopLoop()
@@ -793,5 +853,6 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
     window.removeEventListener('pageshow', onPageShow)
     window.removeEventListener('focus', onFocus)
     controller.dispose()
+    if (scrubProbeAttached) delete (window as Window & { __scrub?: () => Record<string, unknown> }).__scrub
   }
 }

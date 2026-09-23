@@ -91,6 +91,7 @@ area; there is no separate props API.
 | `data-scrub-video` | the `<video>` inside the pin | `data-src`/`data-mobile-src`, `poster`/`data-mobile-poster` |
 | `data-scrub-gutter` | optional backdrop element, inside the pin | painted from `backdropStops` |
 | `data-scrub-content` | the flow wrapper riding over the pin | cancels the pin's height contribution |
+| `data-scrub-spacer` | an empty pacing act inside `data-scrub-content` | mark any act with no camera move or copy of its own so `motion.css`'s/`shared/base.css`'s reduced-motion collapse can zero its height, instead of leaving a blank band the length of that act. Author it by hand — neither engine infers it |
 | `data-motion-state` | a machine root (the scrub video) | current mode, written only on transition |
 | `data-header-theme="light"\|"dark"` | a section | what a themed header should read while this section is under it; `--header-theme` overrides per breakpoint |
 | `data-loop-video` | a background loop `<video>` | optional `data-loop-from-frame` + `data-fps` for the seam-loop policy |

@@ -30,14 +30,18 @@ Skip when: you are working only on motion or media inside an existing section. S
    positioned decorations all have to move too.
 7. **Text measures stay measures:** `max-w-[753px]` (or a `fluid-cap-753` twin) inside the frame.
 8. **Route each run of type through the container question** (`typography.md`).
-9. **Shared elements take their `fluid` prop** rather than a hand-rolled `calc()`: `<Btn fluid>`, `<Eyebrow fluid>`.
+9. **A shared atom you've already extracted takes a `fluid` prop** rather than a hand-rolled `calc()`
+   at each call site — see `typography.md`'s "height contract" note. Nothing in this skill ships a
+   `Btn`/`Eyebrow`/etc. component; the anatomy example below inlines the classes a small label like
+   that would carry, on purpose (an atom is extracted at its **second** consumer, never invented
+   ahead of one — `SKILL.md`'s motion section states the same rule for motion components).
 10. **Scale the comparison constants:** any `auto-fill` minimum, `flex-wrap` basis or `min-w` inside
     the scaling box (`frame-and-gutter.md` §3).
 11. **Grep the finished file** for a fixed px value that has no fluid twin at the breakpoint. Anything drawn
     in the frame that still reads as a constant is either a deliberate exclusion or a miss. What stays fixed on
     purpose: border and stroke widths (a scaled 1px hairline is a blurry 1.5px one), radii, `em`
     tracking, and text measures. `scripts/audit.mjs` does this grep for you.
-12. **Verify the matrix, not one window:** 1024/1280/1440/1680/2560 wide × 640/700/800/900 tall.
+12. **Verify the matrix, not one window:** 1024/1280/1440/1680/2560 wide × 640/700/800/900/1440 tall.
     Nothing overflows, no heading changes line count, and 1440×900 is pixel-identical to the frame.
 
 ## Anatomy, as shipped
@@ -49,7 +53,11 @@ Skip when: you are working only on motion or media inside an existing section. S
                   px-6 pt-20 pb-10 sm:px-8 lg:fluid-py-120">
     <Stage trigger="view" className="lg:fluid-cap-800 lg:fluid-gap-16 flex max-w-[800px] flex-col gap-4">
       <StageItem variant="liftFade" className="[--hero-lift:20px] lg:[--hero-lift:24px]">
-        <Eyebrow fluid>Label</Eyebrow>
+        {/* An "eyebrow" label inlined, not a shipped <Eyebrow> atom — see the
+            checklist's item 9. */}
+        <span className="lg:fluid-copy-14 text-xs font-semibold tracking-[0.08em] uppercase">
+          Label
+        </span>
       </StageItem>
       <h2 className="font-heading lg:fluid-display-64/72 text-[40px] leading-[1.2] uppercase sm:text-[52px]">
         <StageItem as="span" variant="liftFade" delay={0.067} className="block">First line</StageItem>

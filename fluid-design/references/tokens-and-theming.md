@@ -31,7 +31,7 @@ measures 1.52:1 on white. Give roles explicit names: `-ink` is text *in* the hue
 that clears 4.5:1), `on-` is text *on* the hue. The focus ring is not brand gold on light grounds
 either (1.29:1); a dark ring at 16:1 is the one that shows where you are.
 
-## Four traps that compile and render plausibly wrong
+## Five traps that compile and render plausibly wrong
 
 1. **`rounded-*` still rounds.** A `--radius-custom: 0` token *adds* a utility; it does not reset
    Tailwind's radius scale. A ported `rounded-xl` still rounds on a square-cornered design.
@@ -44,8 +44,19 @@ either (1.29:1); a dark ring at 16:1 is the one that shows where you are.
    both define `border-secondary` resolve it to different colours. Ported markup compiles and draws a
    near-invisible hairline. Namespace a second component set's tokens (`app-*`) so a foreign name
    either exists or fails, and never silently means something else.
+5. **A `--breakpoint-*` token defined in px while the rest stay on Tailwind's rem defaults reorders
+   every variant.** Tailwind v4 sorts breakpoint variants by comparing their lengths, and cannot
+   compare px against rem. Overriding only `--breakpoint-lg` (to match `engageAt`) leaves
+   `sm`/`md`/`xl`/`2xl` on the stock rem values, so the whole `lg:` block gets emitted before the
+   `sm:` block regardless of pixel width — measured: `sm:text-[64px]` beat `lg:fluid-display-112`
+   even though 1024px is wider than the 40rem `sm` breakpoint. It compiles, the classes are present,
+   and it renders like a plausible design choice. Fix: define the FULL ladder in one unit — this is
+   exactly what `assets/styles/tailwind-v4/fluid.css`'s generated `@theme` block does (`sm 640, md
+   768, lg = engageAt, xl 1280, 2xl 1536`, nudged to stay monotonic if `engageAt` collides with a
+   default rung). Never redeclare `--breakpoint-lg` alone in a second `@theme` block (see
+   `references/stacks.md`).
 
-`scripts/audit.mjs` catches 1 and 2; a lint list of banned token families catches 4.
+`scripts/audit.mjs` catches 1, 2 and 5 (`tw-breakpoint-units`); a lint list of banned token families catches 4.
 
 ## A dark theme later without touching components
 

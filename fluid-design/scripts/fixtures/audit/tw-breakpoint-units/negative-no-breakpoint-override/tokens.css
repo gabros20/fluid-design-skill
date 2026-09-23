@@ -1,0 +1,5 @@
+@theme {
+  --color-brand-gold-500: #fccc36;
+  /* No --breakpoint-lg mentioned here: --breakpoint-lg: 1024px; would be a
+     false positive inside this comment and must not trigger the rule. */
+}

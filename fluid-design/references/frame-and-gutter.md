@@ -22,7 +22,7 @@ Vanilla and SCSS use the `.fluid-frame` class or the `fluid-frame` mixin, which 
   the breakpoint"). That objection described a case that cannot happen:
   - Width arm binds: the gutter is `80·W/1440`, a fixed **5.6% of the viewport**, which is exactly what you want.
   - Height arm binds (a short, wide window): `fluid-cap-*` is **grow-only**
-    (Decision D5) — `max(1680px, 1680·f)` — and `f < 1` here, so the `max()`
+    (`max(1680px, 1680·f)`), and `f < 1` here, so the `max()`
     resolves to the constant `1680px`, not to `1680·f`. **The frame stays
     canvas-wide in px; it does not get narrower.** `mx-auto` centres that
     canvas-wide box inside a window wider than the canvas (measured: a
@@ -120,7 +120,7 @@ content; 1440 has 1280. Below about 1500 the grid is 3-up, and that is arithmeti
 
 ### A scaled minimum alone still re-flows on a short, wide window
 
-§1's Decision D5 is the trap here: `minmax(min(calc(330*var(--fluid)),100%),1fr)` inside a
+The grow-only cap above is the trap here: `minmax(min(calc(330*var(--fluid)),100%),1fr)` inside a
 `fluid-cap-*` frame holds four columns everywhere the CAP is the thing binding — but the moment
 *height* binds (a short, wide window), the frame's own `max-width` stops shrinking (it is
 grow-only) while the grid's minimum, sitting directly on `--fluid`, keeps shrinking with `f`. The

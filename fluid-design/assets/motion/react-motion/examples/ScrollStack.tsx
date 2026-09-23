@@ -53,8 +53,14 @@ export function ScrollStack() {
 
       {/* Act 2 — TWO viewports, and deliberately empty. It exists only to
           give the scrub band two viewports of scroll to spend while the
-          render transforms underneath — see the geometry rule above. */}
-      <section aria-hidden="true" className="h-[200svh]" />
+          render transforms underneath — see the geometry rule above.
+          `data-scrub-spacer` marks it as exactly that: an empty pacing act,
+          not content. Under reduced motion there is no camera move left to
+          give this space to, so `shared/base.css` collapses it to zero
+          height instead of leaving an 1800px blank band for a reduced-motion
+          reader to scroll through for nothing (references/scroll-scenes.md
+          §10, references/attribute-contract.md). */}
+      <section aria-hidden="true" data-scrub-spacer className="h-[200svh]" />
 
       {/* Act 3 — one viewport. The tail loop's composition is the one frame a
           reader actually stops on, so if you bring a `camera` config, its

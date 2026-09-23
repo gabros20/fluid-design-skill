@@ -17,16 +17,16 @@
    the ramp and the role aliases with your own palette. This is what "reach
    for the semantic name, not the brand ramp" (surface/text/border/icon
    roles aliasing a brand ramp) looks like wired up.
+
+   The --breakpoint-* ladder does NOT live here. It is infrastructure, not
+   brand, so it ships in fluid.css's own @theme block (the full sm/md/lg/xl/
+   2xl ladder, all in px — see the trap note there). Defining a lone
+   --breakpoint-lg in a second @theme block is exactly the bug that trap
+   note describes: it would leave sm/md/xl/2xl on Tailwind's rem defaults,
+   mixing units and breaking Tailwind's variant ordering. Never redeclare
+   --breakpoint-* here.
 */
 @theme {
-  /* MUST equal `engageAt` in fluid.config.json (1024 by default).
-     fluid.css's own media query is hand-written as
-     `@media (width >= 1024px)` — it has no Tailwind config
-     to read a breakpoint from — so if you move `engageAt` you must move
-     this token by hand too, or the two silently disagree about where the
-     site turns into a fixed 1px scale. */
-  --breakpoint-lg: 1024px;
-
   /* ── Brand ramp — replace ──────────────────────────────────────────── */
   --color-brand-navy-900: #0b1220;
   --color-brand-navy-700: #1c2b45;

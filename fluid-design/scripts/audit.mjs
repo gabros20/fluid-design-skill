@@ -162,6 +162,7 @@ function buildContext(files, contents) {
   let hasCustomVariantDark = false
   let hasZeroRadiusToken = false
   let hasLazyMotionStrict = false
+  let hasSmoothScrollBehavior = false
 
   for (const f of files) {
     const ext = extname(f)
@@ -169,11 +170,16 @@ function buildContext(files, contents) {
     if (ext === '.css' || ext === '.scss') {
       if (/@custom-variant\s+dark\b/.test(c)) hasCustomVariantDark = true
       if (/--radius-[\w-]*\s*:\s*0\b/.test(c)) hasZeroRadiusToken = true
+      // Anywhere, not just on html/:root -- scroll-behavior only meaningfully
+      // applies to the scrolling root, and this skill's own shared/base.css
+      // sets it there. False positives on an unrelated element's rule are
+      // harmless: the finding below is informational, not an error.
+      if (/scroll-behavior\s*:\s*smooth\b/.test(c)) hasSmoothScrollBehavior = true
     }
     if (/<LazyMotion\b[^>]*\bstrict\b/.test(c)) hasLazyMotionStrict = true
   }
 
-  return { hasCustomVariantDark, hasZeroRadiusToken, hasLazyMotionStrict }
+  return { hasCustomVariantDark, hasZeroRadiusToken, hasLazyMotionStrict, hasSmoothScrollBehavior }
 }
 
 // ── rule helpers ────────────────────────────────────────────────────────
@@ -460,6 +466,35 @@ const rules = [
   },
 
   {
+    // A page-wide `scroll-behavior: smooth` (the shared base layer sets this
+    // on `html` by default) means the scroll well's own per-frame
+    // `behavior: 'instant'` writes cancel any smooth scroll passing through
+    // its target one rAF at a time -- an anchor click that should land 900px
+    // further away instead stalls at the well (references/scroll-scenes.md
+    // §8; `verify-matrix.mjs --reveal` failed in every cell this way on a
+    // real build). Both engines' scrollPull now suspend automatically on a
+    // same-page hash click/hashchange, and expose `suspend(ms)` for a
+    // caller driving its own programmatic scroll -- this rule is
+    // informational, not an error, as a reminder to call it for any OTHER
+    // kind of scroll (a router push, an imperative scrollIntoView outside a
+    // click handler) that would not be caught by those two listeners.
+    id: 'scroll-well-vs-smooth-scroll',
+    ext: (e) => ['.tsx', '.jsx', '.vue', '.astro', '.html'].includes(e),
+    run(content, file, ctx, acc) {
+      if (!ctx.hasSmoothScrollBehavior) return
+      const re = /<PullToCentre\b|\bdata-pull-to-centre\b|\bcreateScrollPull\s*\(|\binitPullToCentre\s*\(/g
+      let m
+      while ((m = re.exec(content))) {
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
+          why: 'This project sets scroll-behavior: smooth somewhere and also uses a scroll well (PullToCentre/scrollPull). The well auto-suspends for a same-page hash click and hashchange, but any OTHER programmatic/smooth scroll (a router navigation, an imperative scrollIntoView outside a click handler) that passes through the well\'s target will still be cancelled one rAF at a time unless you call suspend() around it (references/scroll-scenes.md §8).',
+          fix: 'Call the returned controller\'s suspend(ms) immediately before driving any scroll of your own through this target, or confirm the only programmatic scrolls in this tree are same-page hash clicks/hashchange, which are already covered automatically.'
+        })
+      }
+    }
+  },
+
+  {
     id: 'fractional-amount',
     ext: (e) => ['.tsx', '.jsx'].includes(e),
     run(content, file, ctx, acc) {
@@ -571,6 +606,55 @@ const rules = [
           })
         }
       }
+    }
+  },
+
+  {
+    // Tailwind v4 sorts breakpoint variants by comparing their `--breakpoint-*`
+    // lengths and cannot compare px against rem. A project that overrides only
+    // SOME of the standard rungs (typically just `lg`, to match `engageAt`) in
+    // px while the rest stay on Tailwind's rem defaults gets its whole `lg:`
+    // block sorted before `sm:` regardless of pixel width -- see
+    // references/stacks.md and tokens-and-theming.md's trap list. This rule
+    // flags either symptom statically: mixed units across the declared
+    // `--breakpoint-*` tokens in one file, or a px override that covers only
+    // part of the standard sm/md/lg/xl/2xl set (the rest silently fall back
+    // to rem).
+    id: 'tw-breakpoint-units',
+    ext: (e) => ['.css', '.scss'].includes(e),
+    run(content, file, ctx, acc) {
+      const re = /--breakpoint-([\w-]+)\s*:\s*(-?\d+(?:\.\d+)?)(px|rem|em)\b/g
+      const found = new Map() // name -> unit
+      const matches = []
+      let m
+      while ((m = re.exec(content))) {
+        found.set(m[1], m[3])
+        matches.push({ name: m[1], unit: m[3], index: m.index, len: m[0].length })
+      }
+      if (matches.length === 0) return
+
+      const STANDARD = ['sm', 'md', 'lg', 'xl', '2xl']
+      const units = new Set(found.values())
+      const definedStandard = STANDARD.filter((n) => found.has(n))
+      const missingStandard = STANDARD.filter((n) => !found.has(n))
+      const mixedUnits = units.size > 1
+      const partialPx =
+        !mixedUnits &&
+        units.has('px') &&
+        definedStandard.length > 0 &&
+        missingStandard.length > 0
+
+      if (!mixedUnits && !partialPx) return
+
+      const first = matches[0]
+      const why = mixedUnits
+        ? `--breakpoint-* tokens mix units in this file (${[...units].sort().join(', ')}). Tailwind v4 sorts breakpoint variants by comparing their lengths and cannot compare px against rem, so the block on one unit is emitted out of min-width order relative to the other -- measured: sm:text-[64px] beat lg:fluid-display-112 because only --breakpoint-lg was in px while sm stayed on Tailwind's rem default (tokens-and-theming.md's trap list).`
+        : `Only some standard breakpoints (${definedStandard.join(', ')}) are overridden in px while the rest (${missingStandard.join(', ')}) stay on Tailwind's rem defaults -- the same mixed-unit ordering bug by omission.`
+      pushFinding(acc, {
+        rule: this.id, file, content, index: first.index, matchLen: first.len, severity: 'error',
+        why,
+        fix: 'Define the FULL breakpoint ladder in one unit (px): sm 640, md 768, lg = engageAt, xl 1280, 2xl 1536 (nudge to stay monotonic if engageAt collides with a default rung). See assets/styles/tailwind-v4/fluid.css\'s generated @theme block, and references/stacks.md.'
+      })
     }
   },
 

@@ -138,7 +138,7 @@
       "type": ["number", "null"],
       "default": null,
       "exclusiveMinimum": 0,
-      "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent. It also wraps `--fluid-chrome` directly in its own `min(Npx, ...)` (Decision D4) — chrome does not read `var(--fluid)`, so without this it keeps growing past N on exactly the large displays the ceiling exists for, while the floor (`units.fluid.floor`) still does not apply to chrome."
+      "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent. It also wraps `--fluid-chrome` directly in its own `min(Npx, ...)` — chrome does not read `var(--fluid)`, so without this it keeps growing past N on exactly the large displays the ceiling exists for, while the floor (`units.fluid.floor`) still does not apply to chrome."
     }
   }
 }

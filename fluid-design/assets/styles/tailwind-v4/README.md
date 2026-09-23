@@ -24,7 +24,17 @@ registered:
 @import 'tailwindcss';
 @import './fluid.css';
 @import './tokens.example.css'; /* optional — replace with your own tokens */
+@import '../shared/base.css' layer(base);
 ```
+
+**`shared/base.css` needs `layer(base)`, or it beats every Tailwind utility.**
+An import with no `layer(...)` is unlayered CSS, and unlayered CSS wins
+against every declaration inside Tailwind's own `@layer` blocks regardless
+of selector specificity or source order — so `base.css`'s `:focus-visible`
+outline, its `button { cursor: pointer }`, etc. would silently override
+component-level utilities meant to win. Assigning it to the `base` layer
+puts it exactly where Tailwind's own Preflight resets live, so ordinary
+utility-beats-base cascade rules apply instead.
 
 There is no `tailwind.config`; everything is `@theme`/`@utility` in CSS
 (v4's model). `tokens.example.css` shows the semantic-token convention this

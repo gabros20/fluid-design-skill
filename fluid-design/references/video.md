@@ -54,11 +54,40 @@ quality signal.** A large file is not necessarily a good one.
 
 ```bash
 ffmpeg -i IN.mp4 -c:v libx264 -preset slow -crf 22 \
-  -x264-params "keyint=1:min-keyint=1:scenecut=0" \
+  -x264-params "keyint=1:min-keyint=1:scenecut=0:qcomp=1" \
   -pix_fmt yuv420p -movflags +faststart -an OUT.mp4
 
 # verify — every single frame must report key_frame=1
 ffprobe -v error -select_streams v:0 -show_entries frame=key_frame -of csv=p=0 OUT.mp4 | sort | uniq -c
+```
+
+**`qcomp=1` matters for a looping or scrubbed clip specifically, and is easy to miss because
+nothing about the command looks wrong without it.** CRF is not a fixed quantizer — `qcomp`
+("quantizer compression", x264's default 0.6) lets the rate controller spend a *different* QP on
+different frames of the same encode, biasing bits toward frames it judges more important (a
+scene's first frame typically gets the most). Two byte-identical MASTER frames — the two ends of a
+loop, deliberately built to match — can therefore decode to measurably *different* output: one
+measured case put the two encoded ends of a loop at ~32dB PSNR against each other, entirely from
+CRF's own per-frame QP variance, with nothing else different about the source. That reads as a
+visible sharpness pop at every wrap, on a clip whose master was verified pixel-identical at the seam
+(§2) — the master check passed and the shipped asset still popped. `qcomp=1` disables the
+per-frame bias (identical input quantizes identically, so identical input decodes identically);
+constant-QP (`-qp N` instead of `-crf N`) is the more extreme version of the same fix, at the cost
+of losing CRF's content-adaptive bit allocation entirely. Either raises the effective CRF/QP needed
+to hit a given file size versus content-adaptive `qcomp` — budget for that, not for identical size
+at identical CRF.
+
+**Seams are verified on the ENCODED file, not the master — decode both frames and compare.** §2's
+PSNR/motion-floor method is for *deriving* the loop points from source material; it works on
+whatever frames you feed it, master or otherwise. But confirming the SHIPPED asset is actually
+seamless is a different check, and it must decode the delivered file to do it — a `qcomp`-induced
+pop like the one above exists only in the encoded bitstream's output, invisible to any comparison
+run against the pre-encode master:
+
+```bash
+ffmpeg -i OUT.mp4 -vf "select=eq(n\,LAST_FRAME)" -vsync 0 -frames:v 1 last.png
+ffmpeg -i OUT.mp4 -vf "select=eq(n\,0)"           -vsync 0 -frames:v 1 first.png
+ffmpeg -i last.png -i first.png -lavfi psnr -f null -
 ```
 
 ## 2. Loop-point derivation by PSNR / motion floor
@@ -111,6 +140,19 @@ check (confirm the two ends actually match, since a construction bug can still b
 instead of a search. Reach for it whenever you control the generator; the PSNR/motion-floor method
 above is for when you don't — a filmed or hand-animated clip that already exists and must have its
 seam found after the fact.
+
+**"The parameters match at both ends" is not the same guarantee as "the pixels match."** A
+procedurally rendered loop can be POSE-periodic — every parameter driving the render (camera angle,
+light position, a sway term) genuinely returns to its starting value — and still not be
+PIXEL-periodic, because the renderer used to turn that pose into pixels is not guaranteed to be
+resample-identical at every value along the sweep. Measured: a PIL `Image.rotate()` call in a frame
+generator returns an UNRESAMPLED copy at exact multiples of 90°, so the frames where a sway term
+happened to land on 0 — pose-identical to the frames around them — came out visibly SHARPER than
+their resampled neighbours, a periodic flicker with nothing wrong in the render's own parameters. The
+general lesson: verify the pixels a construction-guaranteed loop actually produced (the sanity check
+above), not just the parameter sweep that was supposed to guarantee them — a renderer, filter or
+resampling step in the pipeline can reintroduce exactly the non-periodicity "build it periodic by
+construction" was meant to avoid.
 
 On the web, a `loop` attribute forces re-entry at frame 0 and suppresses the `ended` event — for a
 mid-clip loop point, don't use it:
@@ -411,14 +453,18 @@ ffprobe -v error -select_streams v:0 \
   -show_entries stream=width,height,r_frame_rate,nb_frames,duration,codec_name,pix_fmt \
   -of default=noprint_wrappers=1 IN.mp4
 
-# All-intra, for a scrub asset only (§1)
+# All-intra, for a scrub asset only (§1). qcomp=1 is required for a LOOPING or
+# SCRUBBED clip (§1) -- without it, CRF's per-frame rate control can quantize
+# two byte-identical master frames differently and pop at every wrap.
 ffmpeg -i IN.mp4 -c:v libx264 -preset slow -crf 22 \
-  -x264-params "keyint=1:min-keyint=1:scenecut=0" \
+  -x264-params "keyint=1:min-keyint=1:scenecut=0:qcomp=1" \
   -pix_fmt yuv420p -movflags +faststart -an OUT.mp4
 
-# Extract a candidate loop segment with a forced keyframe at the seam (§10)
+# Extract a candidate loop segment with a forced keyframe at the seam (§10),
+# qcomp=1 again for the same reason
 ffmpeg -i IN.mp4 -vf "select='between(n\,73\,162)',setpts=PTS-STARTPTS,format=yuv420p" \
-  -an -c:v libx264 -profile:v high -crf 20 -preset veryslow -g 90 -movflags +faststart OUT.mp4
+  -an -c:v libx264 -profile:v high -crf 20 -preset veryslow -g 90 \
+  -x264-params "qcomp=1" -movflags +faststart OUT.mp4
 
 # Colour-match a render's background to a CSS surface: pin black/white, grade the midpoint
 ffmpeg -i IN.mp4 -vf "curves=\
@@ -453,6 +499,12 @@ Practical notes that came out of using these on real assets:
   large jump (an order of magnitude) is worth raising before committing — a version-control system
   keeps every blob forever, so an oversized asset's clone-time cost doesn't come back once optimised
   later; it just becomes permanent history.
+- `qcomp=1` (or `-qp` constant-QP) costs bitrate versus content-adaptive `qcomp` at the same
+  visual quality — expect to raise CRF a few points to hold a target size once it's on. One measured
+  loop held ~9MB by moving from CRF 22 to CRF 33 with `qcomp=1`; the flat-field CRF-budget note
+  above still applies on top of that.
+- Verify a loop or scrub asset's seam on the ENCODED output specifically (§2's `ffmpeg … -lavfi psnr`
+  pair), never on the master alone — a `qcomp`-induced pop exists only in the delivered bitstream.
 
 ## Traps
 
@@ -465,6 +517,9 @@ Practical notes that came out of using these on real assets:
   `max-w-none` (§7).
 - A poster pulled from the pre-encode master, not the delivered file, visibly mismatches the decoded
   first frame (§9).
+- ★ A loop/scrub encode without `qcomp=1` (or constant-QP) can pop visibly at the wrap even when the
+  MASTER frames at the seam are byte-identical — CRF's rate control quantizes them differently.
+  Verify seams on the encoded output, never the master (§1, §2).
 - `<video>` evaluates `<source media>` once, at load — not on every resize like `<picture>` — so a
   video paired with a resize-reactive poster needs an explicit `.load()` resync on tier flips (§8).
 - A loop re-encoded without its forced keyframe at the seam reintroduces the mid-GOP rewind hitch (§10).

@@ -109,6 +109,83 @@ viewport. A composition drawn taller than the reference is legitimately
 more than one screen, at every viewport, by construction — making it fit is
 a layout/content decision, not a units one.`
 
+// Tailwind v4 has no tailwind.config to read a breakpoint LADDER from; it
+// only has whatever `--breakpoint-*` tokens a project's own `@theme` block
+// defines, and it falls back to its built-in defaults (in rem) for any name
+// left undefined. It then orders every variant's generated CSS by comparing
+// breakpoint LENGTHS. Two lengths in different units (a px override sitting
+// next to Tailwind's rem defaults) cannot be compared, so Tailwind cannot
+// place them in min-width order — measured: with only `--breakpoint-lg` set
+// (in px), the entire `lg:` block was emitted BEFORE the `sm:` block, so
+// `sm:text-[64px]` beat `lg:fluid-display-112` even though 1024px is wider
+// than the 40rem `sm` breakpoint. The fix is not "use rem for lg too" (a
+// media query in rem follows the visitor's browser font-size setting, while
+// `fluid.css`'s own hand-written `(width >= engageAt px)` query does not, so
+// the two would silently disagree at any zoom level other than 100%) — it
+// is to define the WHOLE ladder in one unit, px, so every value is
+// comparable and sorts correctly regardless of which one a project happens
+// to override.
+//
+// `lg` is pinned to `engageAt` (see the invariant elsewhere in this file:
+// the Tailwind breakpoint and the scale's own engage point must be one
+// number, not three copies that can drift). The other four rungs keep
+// Tailwind's own px-equivalents of its defaults (sm 640, md 768, xl 1280,
+// 2xl 1536) UNLESS `engageAt` collides with or crosses one of them, in which
+// case that rung (and any rung past it, cascading) is nudged just past its
+// neighbour so the ladder stays strictly increasing. `lg` itself never
+// moves — only the stock rungs around it do.
+function buildBreakpointLadder(engageAt) {
+  const lg = engageAt
+  let sm = 640
+  let md = 768
+  let xl = 1280
+  let xxl = 1536
+  const notes = []
+
+  if (md >= lg) {
+    const adjusted = Math.max(1, lg - 1)
+    notes.push(`md (default 768px) would land at or past lg/engageAt (${lg}px); narrowed to ${adjusted}px to keep sm < md < lg.`)
+    md = adjusted
+  }
+  if (sm >= md) {
+    const adjusted = Math.max(1, md - 1)
+    notes.push(`sm (default 640px) would land at or past md (${md}px); narrowed to ${adjusted}px to keep sm < md.`)
+    sm = adjusted
+  }
+  if (xl <= lg) {
+    const adjusted = lg + 1
+    notes.push(`xl (default 1280px) would land at or before lg/engageAt (${lg}px); widened to ${adjusted}px to keep lg < xl < 2xl.`)
+    xl = adjusted
+  }
+  if (xxl <= xl) {
+    const adjusted = xl + 1
+    notes.push(`2xl (default 1536px) would land at or before xl (${xl}px); widened to ${adjusted}px to keep xl < 2xl.`)
+    xxl = adjusted
+  }
+
+  return { sm, md, lg, xl, xxl, notes }
+}
+
+function breakpointThemeBlock(cfg) {
+  const ladder = buildBreakpointLadder(cfg.engageAt)
+  const lines = [
+    `--breakpoint-sm: ${num(ladder.sm)}px;`,
+    `--breakpoint-md: ${num(ladder.md)}px;`,
+    `--breakpoint-lg: ${num(ladder.lg)}px; /* == engageAt. fluid.css's own media query is hand-written as`,
+    `     \`@media (width >= ${num(cfg.engageAt)}px)\` -- it has no Tailwind config to read a`,
+    `     breakpoint from -- so if you move \`engageAt\` you must move this token by`,
+    `     hand too, or the two silently disagree about where the site turns into a`,
+    `     fixed 1px scale. */`,
+    `--breakpoint-xl: ${num(ladder.xl)}px;`,
+    `--breakpoint-2xl: ${num(ladder.xxl)}px;`
+  ]
+  const noteBlock =
+    ladder.notes.length > 0
+      ? `\n  /* Ladder adjusted to stay monotonic for this engageAt:\n${ladder.notes.map((n) => `     - ${n}`).join('\n')}\n  */`
+      : ''
+  return { lines, noteBlock, ladder }
+}
+
 function floorAndArmNote(cfg) {
   const floors = resolveFloors(cfg)
   const ratio = num(cfg.engageAt / cfg.reference.width)
@@ -329,8 +406,21 @@ ${NOT_SCALED_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
 `
 }
 
+const BREAKPOINT_TRAP_NOTE = `TAILWIND v4's BREAKPOINT-ORDERING TRAP: there is no tailwind.config to read a
+breakpoint LADDER from -- only whatever @theme tokens a project defines, with
+Tailwind's own rem defaults filling in anything left undefined. Utilities are
+then emitted in min-width order by comparing breakpoint LENGTHS, and a px
+value cannot be compared against a rem one. Defining ONLY --breakpoint-lg (in
+px) while sm/md/xl/2xl stay on Tailwind's rem defaults means the whole lg:
+block sorts before the sm: block regardless of which is visually wider --
+measured: sm:text-[64px] beat lg:fluid-display-112 even though 1024px > the
+40rem sm breakpoint. The @theme block below defines the FULL ladder in one
+unit (px) for exactly this reason -- not just the one rung this project
+cares about.`
+
 function buildTailwindFluidCss(cfg) {
   const units = cssUnits(cfg)
+  const bp = breakpointThemeBlock(cfg)
   return (
     cssHeader(cfg, 'tailwind-v4') +
     `/* Import this AFTER "tailwindcss": @import 'tailwindcss'; @import './fluid.css';
@@ -345,7 +435,13 @@ ${FOUR_INVARIANTS_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
 ${floorAndArmNote(cfg).split('\n').map((l) => '   ' + l).join('\n')}
 
 ${UNITLESS_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
+
+${BREAKPOINT_TRAP_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
 */
+
+@theme {
+  ${bp.lines.join('\n  ')}${bp.noteBlock}
+}
 
 ${rootBlock(units)}
 ${engagedBlock(units)}
@@ -361,16 +457,16 @@ function buildTokensExampleCss(cfg) {
    the ramp and the role aliases with your own palette. This is what "reach
    for the semantic name, not the brand ramp" (surface/text/border/icon
    roles aliasing a brand ramp) looks like wired up.
+
+   The --breakpoint-* ladder does NOT live here. It is infrastructure, not
+   brand, so it ships in fluid.css's own @theme block (the full sm/md/lg/xl/
+   2xl ladder, all in px — see the trap note there). Defining a lone
+   --breakpoint-lg in a second @theme block is exactly the bug that trap
+   note describes: it would leave sm/md/xl/2xl on Tailwind's rem defaults,
+   mixing units and breaking Tailwind's variant ordering. Never redeclare
+   --breakpoint-* here.
 */
 @theme {
-  /* MUST equal \`engageAt\` in fluid.config.json (${num(cfg.engageAt)} by default).
-     fluid.css's own media query is hand-written as
-     \`@media (width >= ${num(cfg.engageAt)}px)\` — it has no Tailwind config
-     to read a breakpoint from — so if you move \`engageAt\` you must move
-     this token by hand too, or the two silently disagree about where the
-     site turns into a fixed 1px scale. */
-  --breakpoint-lg: ${num(cfg.engageAt)}px;
-
   /* ── Brand ramp — replace ──────────────────────────────────────────── */
   --color-brand-navy-900: #0b1220;
   --color-brand-navy-700: #1c2b45;
@@ -516,7 +612,17 @@ registered:
 @import 'tailwindcss';
 @import './fluid.css';
 @import './tokens.example.css'; /* optional — replace with your own tokens */
+@import '../shared/base.css' layer(base);
 \`\`\`
+
+**\`shared/base.css\` needs \`layer(base)\`, or it beats every Tailwind utility.**
+An import with no \`layer(...)\` is unlayered CSS, and unlayered CSS wins
+against every declaration inside Tailwind's own \`@layer\` blocks regardless
+of selector specificity or source order — so \`base.css\`'s \`:focus-visible\`
+outline, its \`button { cursor: pointer }\`, etc. would silently override
+component-level utilities meant to win. Assigning it to the \`base\` layer
+puts it exactly where Tailwind's own Preflight resets live, so ordinary
+utility-beats-base cascade rules apply instead.
 
 There is no \`tailwind.config\`; everything is \`@theme\`/\`@utility\` in CSS
 (v4's model). \`tokens.example.css\` shows the semantic-token convention this
@@ -1188,25 +1294,50 @@ button:disabled {
    can't lose a specificity fight against a component's own runway rules —
    a media query doesn't care which one was written last.
 
-   !important is required on all three, for a reason narrower than "beat
-   the runway rules" above: the React port (assets/motion/react-motion)
+   !important is required on all rules here, for a reason narrower than
+   "beat the runway rules" above: the React port (assets/motion/react-motion)
    writes [data-scrub-pin]'s sticky geometry as an inline style, and an
    inline style beats ANY non-!important stylesheet declaration regardless
    of selector specificity or source order. The GSAP port keys the same
    geometry off this same selector in its own motion.css (also
    !important, same reason it has to win over a component's runway rules)
-   so both engines collapse identically under this one rule set. */
+   so both engines collapse identically under this one rule set.
+
+   [data-scrub-pin] gets height: 100svh, NOT height: auto. The pin holds the
+   settled frame (the JS half freezes the camera and the head-loop's first
+   frame — see the motion layer's "reduced" flag above), and that frame is
+   an absolutely-positioned <video> inside the pin. \`auto\` on a box whose
+   only content is absolutely positioned measures to ZERO — an
+   absolutely-positioned descendant is out of flow and contributes nothing
+   to its parent's auto height — so the held frame a reader is meant to see
+   collapses to a box with nothing in it. \`100svh\` gives the pin the exact
+   box the frame was framed for (the same unit ScrubStage's live geometry
+   uses), so the reduced-motion "no movement, but still see the shot" state
+   actually shows something instead of a blank strip.
+
+   [data-scrub-spacer] collapses to ZERO height, not auto. It marks an
+   empty pacing act inside the scene — an act with no camera move or copy
+   of its own, added only to give the FULL-MOTION composition room to
+   linger — so under reduced motion there is nothing in it worth the space:
+   collapsing it removes exactly the blank band a reader with no camera
+   movement would otherwise have to scroll through for no reason (measured:
+   an unmarked 2-viewport spacer left an 1800px empty dark band). Mark every
+   spacer act with this attribute — see references/attribute-contract.md and
+   references/scroll-scenes.md §10. */
 @media (prefers-reduced-motion: reduce) {
   [data-scrub-stage] {
     height: auto !important;
   }
   [data-scrub-pin] {
     position: static !important;
-    height: auto !important;
+    height: 100svh !important;
     overflow: visible !important;
   }
   [data-scrub-content] {
     margin-top: 0 !important;
+  }
+  [data-scrub-spacer] {
+    height: 0 !important;
   }
 }
 

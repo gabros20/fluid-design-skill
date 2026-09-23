@@ -337,6 +337,31 @@ duration in milliseconds (a gesture doesn't get faster because the window is sho
 smooth-scroll behaviour globally (`ios-safari.md`, `performance.md`) — left to a smooth default,
 every frame of the well's own loop would queue a new smooth animation against the one before it.
 
+**Trap: that same `instant` write cancels a smooth scroll the well did not start.** `instant`
+protects the well's OWN writes from a page-wide `scroll-behavior: smooth`, but it does nothing for
+the reverse case — a header anchor link, a router hash jump, or any other programmatic
+`scrollTo`/`scrollIntoView` that happens to pass through the well's target gets cancelled one rAF at
+a time by the well's per-frame writes, and never arrives. Measured: a "Menu" anchor click from the
+top of the page landed 900px short of its target, every time, because a scroll well sat between the
+click and the destination. The same mechanism made a headless verification harness's stepped
+`scrollTo` calls stall partway down the page — every cell below the well read as a reveal failure
+that had nothing to do with `IntersectionObserver` (see `verification.md`'s note on
+`verify-matrix.mjs --reveal`).
+
+The fix is to suspend the well's writes — not the loop, which still has to keep watching for the
+away-meter and reclaim logic to stay correct — for the duration of any scroll it did not initiate.
+Both engines' `scrollPull` expose `suspend(ms?)` on the returned controller for a caller that is
+about to drive its own scroll, and call it automatically from two listeners registered in capture
+phase: a `click` on `a[href^="#"]` or any same-path hash link, and `hashchange`. The suspension
+clears on the earlier of a `scrollend` event or a fallback timeout (Safari does not fire `scrollend`
+as of this writing), so it never outlives the scroll it was covering for.
+
+`scripts/audit.mjs`'s `scroll-well-vs-smooth-scroll` rule flags (informationally, not as an error) a
+project that uses a scroll well alongside a page-wide `scroll-behavior: smooth` — a reminder that the
+two automatic listeners cover anchor clicks and `hashchange` only; a router navigation or an
+imperative `scrollIntoView` outside a click handler still needs an explicit `suspend()` call around
+it.
+
 ## 9. The header theme probe
 
 A `fixed` header that paints no background of its own — floating over whatever section is currently
@@ -379,18 +404,19 @@ light below it needs no JS branch — just a class.
 
 A scroll scene's range wrapper, pin, content wrapper, mode machine and reveal groups all carry the
 same small set of data attributes documented in `references/attribute-contract.md` (`data-scrub-stage`,
-`data-scrub-pin`, `data-scrub-content`, `data-motion-state`, `data-header-theme`, etc.) — these exist
-so the verification harness (`verification.md`) and a debug-marker stylesheet can hook the DOM
-without touching layout, and so the two animation engines expose an identical shape to tooling
-regardless of which one drives them.
+`data-scrub-pin`, `data-scrub-content`, `data-scrub-spacer`, `data-motion-state`, `data-header-theme`,
+etc.) — these exist so the verification harness (`verification.md`) and a debug-marker stylesheet can
+hook the DOM without touching layout, and so the two animation engines expose an identical shape to
+tooling regardless of which one drives them.
 
 **Reduced motion's structural half lives in the base stylesheet, not in component logic:**
 
 ```css
 @media (prefers-reduced-motion: reduce) {
   [data-scrub-stage]   { height: auto !important; }
-  [data-scrub-pin]     { position: static !important; height: auto !important; overflow: visible !important; }
+  [data-scrub-pin]     { position: static !important; height: 100svh !important; overflow: visible !important; }
   [data-scrub-content] { margin-top: 0 !important; }
+  [data-scrub-spacer]  { height: 0 !important; }
 }
 ```
 
@@ -400,9 +426,23 @@ motion it replaced. A plain media query is deliberate rather than `motion-reduce
 classes — those collide with the pin's own responsive utilities at equal specificity, so which one
 wins becomes an accident of build output order; a media query doesn't care about order.
 
-`!important` on all three declarations is required, not decorative — see `attribute-contract.md`'s
+`!important` on every declaration is required, not decorative — see `attribute-contract.md`'s
 `data-scrub-pin` entry: the React port writes the pin's sticky geometry as an inline `style`, which
 beats any non-`!important` stylesheet rule regardless of selector specificity or source order.
+
+**`[data-scrub-pin]` collapses to `100svh`, not `auto`.** The pin holds the settled frame under
+reduced motion — the head loop's first frame, camera frozen — and that frame is an
+absolutely-positioned `<video>` inside the pin. `height: auto` on a box whose only content is
+absolutely positioned measures to **zero**, since an out-of-flow descendant contributes nothing to
+its parent's auto height: the reduced-motion state that is supposed to show the settled shot instead
+collapses to an empty strip. `100svh` gives the pin the box the frame was actually framed for.
+
+**Mark any empty pacing act with `data-scrub-spacer`.** A scene sometimes includes an act with no
+camera move and no copy of its own — added purely to give the full-motion composition room to
+linger on a beat. Under reduced motion there is nothing left in it worth scrolling through, so it
+must collapse to zero height rather than leaving that runway behind as dead space — measured: an
+unmarked 2-viewport spacer left 1800px of empty dark band a reduced-motion reader had to scroll past
+for no reason. Neither engine infers this automatically; a spacer act has to be marked by hand.
 
 ## Traps
 

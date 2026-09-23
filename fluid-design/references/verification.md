@@ -60,6 +60,20 @@ compares neighbours automatically.
 falsifiable claim: "`offsetWidth` is 402 where it should be 1128." Every real bug found this way (§2)
 was found by reading one of these, not by looking harder at a screenshot.
 
+**`window.__scrub()` needs `?fluid-debug` against a production build.** `ScrubStage`'s debug
+readout (both engines) is off by default in production — it is internal state, not something to
+ship live — which means it does not exist on the exact build a `next start`/production verification
+pass runs against, only on a dev server. Append `?fluid-debug` to the URL being probed, or set
+`document.documentElement.dataset.fluidDebug` before the component/module mounts (e.g. a tiny inline
+script in the document head, for a harness that cannot control the URL), and the probe attaches
+regardless of environment. The React port additionally exposes it unconditionally on a dev build
+with no flag needed; the GSAP port is framework-free and has no reliable dev/production signal to
+key off, so it requires the flag in both. Without either the probe, a sweep script still has a
+fallback: read the DOM contract directly (`video[data-motion-state]`, `currentTime`, the computed
+camera `transform`) rather than calling `__scrub()`. `scripts/verify-matrix.mjs` does not probe
+scrub scenes itself today, so it has no need to append the flag; a script that does scrub-specific
+verification should.
+
 ## 2. The three bugs it caught
 
 Concrete, because "measure state, not pixels" is abstract until you see what it actually found:
@@ -128,7 +142,7 @@ width and only appear once a viewport exceeds it. Sweep a matrix, not a line:
 - **Widths:** 1024 / 1280 / 1440 / 1680, plus **one width well above the reference — 2560.** The
   2560 row specifically exists because several drift bugs (a frozen gutter, a frozen grid-column
   minimum) are exactly zero at and below the reference width and only accumulate past it.
-- **Heights:** 640 / 700 / 800 / 900, crossed against the widths above.
+- **Heights:** 640 / 700 / 800 / 900 / 1440, crossed against the widths above.
 
 At each cell, check: nothing overflows, no heading's line count changes unexpectedly, and the design
 reference cell (1440×900, or whatever a project's `fluid.config.json` reference is) renders
@@ -159,7 +173,14 @@ intent rather than by a frozen flag list — check each script's own `--help` fo
   matrix (§5) against a running dev server, capturing a contact sheet per viewport. `--reveal` steps
   through a scene's progress the way §1's snippet does; `--screens` controls which matrix cells run;
   `--fit-selector` targets the element whose fit against its design frame is being checked (the
-  pixel-identical-at-reference assertion in §5).
+  pixel-identical-at-reference assertion in §5). `--reveal`'s stepping forces
+  `document.documentElement.style.scrollBehavior = 'auto'` for the duration of its stepped
+  `scrollTo` calls and restores whatever value was there afterward — a page with
+  `html { scroll-behavior: smooth }` (the shared base layer's default) would otherwise have each
+  step's `scrollTo` cancel the previous step's still-in-flight smooth animation, the same mechanism
+  `scroll-scenes.md` §8 documents for the scroll well, and the harness would stall partway down the
+  page. Measured: this made `--reveal` fail in every cell (30/54 items read as hidden) on a page that
+  set `scroll-behavior: smooth` globally, with no reveal bug in the actual components.
 - **`scripts/probe.mjs <url>`** — a single-viewport, single-pass version of the same read-state
   discipline in §1: dumps computed custom properties, key element rects and any scene's current
   mode/progress for one URL, useful as a fast sanity check between matrix runs.

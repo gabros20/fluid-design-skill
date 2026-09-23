@@ -167,8 +167,8 @@ export function resolveFloors(cfg) {
  *
  * `ceiling`, if set, wraps `--fluid` in min(ceiling, ...) BEFORE the type
  * units read it, so display/copy inherit the cap through `fluid` the same
- * way they do in the generated CSS (`var(--fluid)`). Decision D4: the
- * ceiling ALSO wraps `--fluid-chrome` directly (chrome does not read
+ * way they do in the generated CSS (`var(--fluid)`). The ceiling ALSO wraps
+ * `--fluid-chrome` directly (chrome does not read
  * `var(--fluid)`, so it needs its own `min(ceiling, ...)`) — without this,
  * chrome keeps growing past the point every other role on the page stopped,
  * which reads as site chrome (header, footer) visibly outgrowing the
@@ -235,7 +235,7 @@ export function cssUnits(cfg) {
   const displayExpr = `max(${px(floors.display)}, var(--fluid), calc(${num(d)} * var(--fluid) + ${px(1 - d)}))`
   const copyExpr = `max(${px(floors.copy)}, var(--fluid), calc(${num(c)} * var(--fluid) + ${px(1 - c)}))`
   // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
-  // (Decision D4) — otherwise chrome keeps growing past the point the rest
+  // — otherwise chrome keeps growing past the point the rest
   // of the page's ceiling-capped units stopped.
   const chromeExprRaw = `min(${widthArm}, max(1px, ${heightArm}))`
   const chromeExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${chromeExprRaw})` : chromeExprRaw

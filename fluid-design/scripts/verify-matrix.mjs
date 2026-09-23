@@ -11,7 +11,7 @@
 //
 // Usage:
 //   node verify-matrix.mjs <url> [--config f] [--out dir]
-//     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900]
+//     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
 //     [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
 //     [--reveal] [--screens]
 //
@@ -274,21 +274,38 @@ async function checkFit(page, selector, innerHeight) {
 // under opacity 0.99.
 async function checkReveal(page) {
   await page.evaluate(async () => {
-    const step = () => new Promise((resolve) => {
-      requestAnimationFrame(() => setTimeout(resolve, 200))
-    })
-    const max = document.documentElement.scrollHeight - innerHeight
-    const increment = Math.max(200, Math.round(innerHeight * 0.8))
-    for (let y = 0; y <= max; y += increment) {
-      window.scrollTo(0, y)
-      await step()
+    // Force instant scrolling for the duration of this stepping. A page
+    // that sets `html { scroll-behavior: smooth }` (the default in
+    // assets/styles/shared/base.css) queues a smooth animation on every
+    // `scrollTo` below; the NEXT step's `scrollTo` then cancels that
+    // animation before it arrives — same mechanism as scrollPull's `instant`
+    // writes cancelling an anchor jump (references/scroll-scenes.md §8). The
+    // harness never actually reaches the lower steps, so everything past
+    // wherever it stalled reads as a reveal failure that has nothing to do
+    // with IntersectionObserver. Measured: this made `--reveal` fail in
+    // every cell (30/54 items hidden) on a page with smooth scrolling on.
+    const root = document.documentElement
+    const previousScrollBehavior = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    try {
+      const step = () => new Promise((resolve) => {
+        requestAnimationFrame(() => setTimeout(resolve, 200))
+      })
+      const max = document.documentElement.scrollHeight - innerHeight
+      const increment = Math.max(200, Math.round(innerHeight * 0.8))
+      for (let y = 0; y <= max; y += increment) {
+        window.scrollTo(0, y)
+        await step()
+      }
+      window.scrollTo(0, max)
+      // Final settle: the entrance transition runs up to 1.3s
+      // (references/attribute-contract.md §4), so a stage item triggered by the last step may still
+      // be mid-transition at the 200ms mark. Give it real room before reading
+      // opacity, or a perfectly working reveal reads as a false failure.
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+    } finally {
+      root.style.scrollBehavior = previousScrollBehavior
     }
-    window.scrollTo(0, max)
-    // Final settle: the contract's entrance transition runs up to 1.3s
-    // (references/attribute-contract.md §4), so a stage item triggered by the last step may still
-    // be mid-transition at the 200ms mark. Give it real room before reading
-    // opacity, or a perfectly working reveal reads as a false failure.
-    await new Promise((resolve) => setTimeout(resolve, 1500))
   })
 
   return page.evaluate(() => {

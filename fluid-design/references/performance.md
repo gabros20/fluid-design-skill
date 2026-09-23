@@ -185,6 +185,15 @@ Enforceable numeric targets, worth wiring into CI rather than trusting review to
 - **Image and video formats:** modern, well-compressed formats sized to their actual display
   dimensions — never ship a source asset's native resolution to a container a fraction of its size.
   `video.md` §13 has the specific encode recipes and the SSIM-before-upscaling check.
+- **All-intra re-pays background texture every frame — budget for it before shooting/rendering, not
+  after.** Inter-frame compression is what normally makes a mostly-static background nearly free; an
+  all-intra scrub asset (`video.md` §1) has none of that, so a textured, high-frequency background
+  (flour on slate, visible film grain, a busy procedural pattern) is encoded from scratch on every
+  single frame and the file size follows directly. Measured: a textured ground cost 37MB at CRF 22 /
+  1600×900; softening the texture and dropping to 1440×676 brought the same shot to 9MB — the
+  softening did more than the resolution cut. Prefer a flatter, less textured background for anything
+  that will be scrub-encoded, and treat "the background looks a little too clean" as a deliberate
+  trade against file size rather than a rendering mistake.
 - **A stray large asset is a permanent cost in version control**, not just a one-time download —
   most VCS systems keep every blob forever, so an oversized commit's clone-time cost never comes back
   once someone "fixes" it later by re-encoding. Catch it before the commit, not after.

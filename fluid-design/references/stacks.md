@@ -19,6 +19,22 @@ drawn number: `lg:fluid-py-120`, `lg:fluid-display-64/72`, `lg:fluid-cap-1680`.
   `lg:px-[calc(24*var(--fluid-copy))]`.
 - Register the families with tailwind-merge (`cn.ts`).
 - `--breakpoint-lg` in `@theme` must equal `engageAt`.
+- **Define the whole breakpoint ladder in px, never `lg` alone.** Tailwind v4 has no
+  `tailwind.config` to read a breakpoint order from — only whatever `--breakpoint-*` tokens a
+  project's `@theme` defines, with Tailwind's own rem defaults filling in anything left undefined.
+  It then emits variants in min-width order by comparing breakpoint LENGTHS, and a px value is not
+  comparable against a rem one. Override only `--breakpoint-lg` (in px, to match `engageAt`) and the
+  `sm`/`md`/`xl`/`2xl` rungs stay on the rem defaults: the whole `lg:` block sorts before `sm:`
+  regardless of pixel width — measured, `sm:text-[64px]` beat `lg:fluid-display-112` even though
+  1024px is wider than the 40rem `sm` breakpoint. It compiles clean and looks like a design mistake,
+  not a units bug. `lg: 64rem` instead of `1024px` is not the fix either: a rem media query follows
+  the visitor's browser font-size setting, while `fluid.css`'s own hand-written
+  `(width >= 1024px)` query does not — the two would silently disagree at any zoom other than 100%.
+  The generated `assets/styles/tailwind-v4/fluid.css` ships the full ladder for this reason (`sm
+  640, md 768, lg = engageAt, xl 1280, 2xl 1536px`, nudged to stay monotonic if `engageAt` collides
+  with a default rung); `tokens.example.css` must never redeclare `--breakpoint-lg` on its own.
+  `scripts/audit.mjs`'s `tw-breakpoint-units` rule flags a mixed-unit or partial `--breakpoint-*`
+  block as an error.
 
 **Tailwind v3**: there is no functional `@utility`. Either upgrade, or add the vanilla layer and write arbitrary
 values `lg:py-[calc(120*var(--fluid))]`. That works, but it is verbose and easy to get wrong. Recommend the
