@@ -1,0 +1,6 @@
+html {
+  overflow-x: hidden;
+}
+.wrapper {
+  overflow-x: clip;
+}

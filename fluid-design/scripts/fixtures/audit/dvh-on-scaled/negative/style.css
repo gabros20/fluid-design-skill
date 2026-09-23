@@ -1,0 +1,13 @@
+.pin {
+  height: 100svh;
+}
+.tall {
+  height: 100lvh;
+}
+
+/* Do not use 100dvh here -- see fluid-scale.md. This mention of dvh is
+   inside a comment and must not trigger the rule. */
+.also-safe {
+  // a trailing single-line comment mentioning dvh should not trigger either
+  height: 100svh;
+}

@@ -1,0 +1,19 @@
+:root {
+  --mark-h-n: 64;
+}
+.mark {
+  height: calc(var(--mark-h-n) * var(--fluid));
+}
+.plain {
+  width: calc(24 * var(--fluid-display));
+}
+
+/* Comment-only mentions must never trigger this rule, even though the text
+   looks exactly like the bug:
+   height: calc(var(--mark-h) * var(--fluid));
+   width: calc(24px * var(--fluid-display));
+*/
+.safe {
+  /* single-line form: height: calc(var(--mark-h) * var(--fluid)); */
+  width: calc(24 * var(--fluid-display));
+}

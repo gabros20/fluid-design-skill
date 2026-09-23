@@ -1,0 +1,14 @@
+:root {
+  --mark-h: 64px;
+}
+.mark {
+  height: calc(var(--mark-h) * var(--fluid));
+}
+.bad-literal {
+  width: calc(24px * var(--fluid-display));
+}
+/* A real violation sitting right next to a comment must still be caught --
+   masking comments must not eat adjacent real code. */
+.also-bad { /* trailing comment on the same line as real code */
+  height: calc(var(--mark-h) * var(--fluid-copy));
+}
