@@ -11,5 +11,6 @@
     "copy": { "damping": 0.33, "floor": "auto" },
     "chrome": { "enabled": true }
   },
-  "ceiling": null
+  "ceiling": null,
+  "zoomCompensation": true
 }

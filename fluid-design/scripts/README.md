@@ -109,7 +109,8 @@ Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
 node verify-matrix.mjs <url> [--config f] [--out dir]
   [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
   [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
-  [--screens]
+  [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
+  [--zoom-selector 'main p, p'] [--zoom-strict]
 ```
 
 Drives every viewport in the `widths x heights` desktop matrix, plus each
@@ -131,6 +132,17 @@ exact `--mobile WxH` pair, and for each one checks:
 - **(e) screenshots** (`--screens` only) — a full-page PNG per viewport in
   `--out`, plus `contact-sheet.html` tiling all of them with pass/fail
   captions.
+- **(f) zoom row** (WCAG 1.4.4) — for each `--zoom-bases` window, the page is
+  loaded under REAL browser zoom: a throwaway Chromium profile whose
+  `Preferences` set `partition.default_zoom_level` (factor = 1.2^level). The
+  `--zoom-selector` text's font-size × zoom is its physical size; a cell
+  passes at >= 0.9 × zoom (capped at 2×) with no horizontal overflow. Needs
+  `channel: 'chromium'` (Playwright's full Chromium, i.e. the new headless):
+  the headless shell ignores the zoom preference, and the row is skipped with
+  a note if the zoom visibly did not apply. Warns by default;
+  `--zoom-strict` gates the exit code. Measured on `fixtures/page`: with the
+  runtime every cell passes at 110–300%; with `?nozoom` the 1920 and 2560
+  windows stay at 100–124% (warns).
 
 Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
 scene's `data-motion-state` across progress) moved to the `scroll-animation`
@@ -155,6 +167,9 @@ or playwright could not be resolved/launched.
   defaults change). It has one `data-fit="screen"` section sized
   `calc(900 * var(--fluid))`, a handful of filler sections, and one
   deliberately overflowing element gated behind a `?overflow` query flag.
+  A `<main><p>` of body copy on `--fluid-copy` is what the zoom row measures;
+  the page loads `fluid-zoom.js` (a symlink to `assets/runtime/`) unless the
+  URL has `?nozoom`.
   Serve it with `python3 -m http.server` from `fixtures/page/` and point
   `verify-matrix.mjs` or `probe.mjs` at it:
 
@@ -162,4 +177,5 @@ or playwright could not be resolved/launched.
   cd fixtures/page && python3 -m http.server 8934 &
   node ../../verify-matrix.mjs http://localhost:8934/index.html --screens            # PASS
   node ../../verify-matrix.mjs "http://localhost:8934/index.html?overflow"           # FAIL (overflow)
+  node ../../verify-matrix.mjs "http://localhost:8934/index.html?nozoom" --zoom-strict # FAIL (zoom row)
   ```

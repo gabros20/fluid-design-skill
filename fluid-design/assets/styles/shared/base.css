@@ -10,6 +10,7 @@
  *   copy.damping 0.33 (floor auto -> 0.9)
  *   chrome.enabled true
  *   ceiling none
+ *   zoomCompensation true
  *   prefix "fluid"
  */
 

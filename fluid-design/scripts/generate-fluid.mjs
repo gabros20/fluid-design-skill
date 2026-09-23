@@ -39,6 +39,7 @@ function configSummary(cfg) {
     `copy.damping ${num(cfg.units.copy.damping)} (floor ${cfg.units.copy.floor === 'auto' ? `auto -> ${num(floors.copy)}` : num(floors.copy)})`,
     `chrome.enabled ${cfg.units.chrome.enabled}`,
     `ceiling ${cfg.ceiling === null ? 'none' : num(cfg.ceiling)}`,
+    `zoomCompensation ${cfg.zoomCompensation}`,
     `prefix "${cfg.prefix}"`
   ]
   return lines
@@ -1371,10 +1372,47 @@ function buildFiles(cfg, stacks) {
   if (stacks.includes('ts')) {
     files['ts/fluid.config.ts'] = buildFluidConfigTs(cfg)
   }
+  // Every stack README ends with the same browser-zoom install note, so no
+  // stack's instructions can silently leave the runtime out.
+  for (const rel of Object.keys(files)) {
+    if (rel.endsWith('/README.md')) files[rel] = files[rel].replace(/\n*$/, '\n') + zoomReadmeNote(cfg)
+  }
   // shared/base.css is stack-agnostic and always (re)generated, regardless
   // of which stack(s) were requested.
   files['shared/base.css'] = buildSharedBaseCss(cfg)
   return files
+}
+
+function zoomReadmeNote(cfg) {
+  if (!cfg.zoomCompensation) {
+    return `
+## Browser zoom
+
+\`zoomCompensation\` is off in this config, so the type units ignore browser
+zoom from the engage breakpoint up: vw/svh-derived type renders at the same
+physical size at every zoom level, a WCAG 1.4.4 failure on wide displays.
+That should be a recorded, informed decision (references/fluid-scale.md §12).
+`
+  }
+  return `
+## Browser zoom
+
+The type units read \`var(--fluid-zoom, 1)\`, which
+\`assets/runtime/fluid-zoom.js\` sets to the detected browser zoom. Without
+it, type does not grow under Cmd/Ctrl + on wide displays (WCAG 1.4.4). Copy
+\`fluid-zoom.js\` and \`fluid-zoom.d.ts\` into the project and inline it in
+\`<head>\`, before first paint:
+
+\`\`\`tsx
+import { FLUID_ZOOM_INLINE } from './fluid-zoom.js'
+// <head>
+<script dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />
+\`\`\`
+
+Without React, put the string in a plain \`<script>\` in \`<head>\`, or call
+\`installFluidZoom()\` as early as your entry allows. Check it with
+\`verify-matrix.mjs\`'s zoom row (references/fluid-scale.md §12).
+`
 }
 
 // The last `--fluid:` declaration in a stack's unit output — the root block
@@ -1407,6 +1445,10 @@ function checkFixtureInvariants(cfg, files, label, mismatches) {
     }
     if (cfg.ceiling !== null && !content.includes(`min(${num(cfg.ceiling)}px`)) {
       mismatches.push(`${label}: ${rel} has no min(${num(cfg.ceiling)}px — ceiling is set but this stack does not cap --fluid`)
+    }
+    const zoomed = content.includes('var(--fluid-zoom, 1)')
+    if (cfg.zoomCompensation !== zoomed) {
+      mismatches.push(`${label}: ${rel} ${zoomed ? 'multiplies by' : 'does not multiply by'} var(--fluid-zoom, 1) but zoomCompensation is ${cfg.zoomCompensation}`)
     }
     const expr = extractFluidExpr(content)
     if (expr === null) {

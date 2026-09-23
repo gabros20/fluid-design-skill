@@ -1,6 +1,6 @@
 ---
 name: fluid-design
-description: Build or convert a website onto a viewport-fluid design system where layout, type, spacing and element sizes scale from BOTH viewport axes off one measured unit, so desktop stays a proportional copy of the design frame at every size (one screen tall when height binds, pixel-exact at the reference). Use it when a site should "scale with the viewport", "fit one screen", "match the Figma at every size" or look the same on a laptop and a 5K display; for fluid typography, clamp()/vw/svh sizing, one-screen sections, converting container layouts to fluid, or Tailwind/SCSS/CSS/StyleX tokens for it; for iOS/Safari viewport and render bugs (svh/lvh/dvh, toolbar tint, safe areas, dead sticky, empty SVGs); for image, SVG and video element sizing; and for debugging sections losing height, type jumping mid-scroll, grids re-flowing on big screens, or a stale stylesheet (a page or scroll scene that looks broken right after a CSS edit and a dev-server restart is almost always this — check it here before debugging animation code). Use it even if nobody says "fluid". Not for animation (entrances, scroll scenes, video playback, GSAP, Lenis): use the companion `scroll-animation` skill.
+description: Build or convert a website onto a viewport-fluid design system where layout, type, spacing and element sizes scale from BOTH viewport axes off one measured unit, so desktop stays a proportional copy of the design frame at every size (one screen tall when height binds, pixel-exact at the reference). Use it when a site should "scale with the viewport", "fit one screen", "match the Figma at every size" or look the same on a laptop and a 5K display; for fluid typography, clamp()/vw/svh sizing, one-screen sections, converting container layouts to fluid, or Tailwind/SCSS/CSS/StyleX tokens for it; for iOS/Safari viewport and render bugs (svh/lvh/dvh, toolbar tint, safe areas, dead sticky, empty SVGs); for image, SVG and video element sizing; for making fluid type follow browser zoom (WCAG 1.4.4); and for debugging sections losing height, type jumping mid-scroll, grids re-flowing on big screens, or a stale stylesheet (a page or scroll scene that looks broken right after a CSS edit and a dev-server restart is almost always this — check it here before debugging animation code). Use it even if nobody says "fluid". Not for animation (entrances, scroll scenes, video playback, GSAP, Lenis): use the companion `scroll-animation` skill.
 ---
 
 # Fluid design
@@ -25,6 +25,7 @@ This skill contains no animation. For entrances, scroll scenes and video playbac
 | The method, rules and the reasons behind them | `references/*.md` (read on demand, see the map below) |
 | Deterministic token generator + config | `scripts/generate-fluid.mjs`, `assets/fluid.config.json` |
 | Ready unit/utility layers per styling stack | `assets/styles/{tailwind-v4,css,scss,stylex,ts,shared}/` |
+| Browser-zoom compensation for the type units | `assets/runtime/fluid-zoom.{js,d.ts}` |
 | Static audit, viewport-matrix verifier, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,calc,probe}.mjs` |
 
 Copy the prepared artifacts; do not regenerate them from memory. They encode measured numbers and
@@ -47,6 +48,7 @@ default. Ask the user only where the codebase does not already answer it and the
 - **Growth ceiling**: none by default. Set one if assets cannot survive upscaling.
 - **Scope**: the whole site from the breakpoint up (default), or specific routes first during a brownfield migration.
 - **Mobile**: flat, authored per breakpoint (default).
+- **Browser zoom**: compensated (default). Ask only if the site carries a legal accessibility obligation.
 
 Installed motion libraries (Motion, GSAP, Lenis, a header script) are noted in `FLUID.md` for the
 `scroll-animation` skill and left alone here.
@@ -75,7 +77,11 @@ decision log. A later agent or a later you will need both.
    Three copies of one number drift; that is why the config exists.
 4. Tailwind only: register the fluid families with tailwind-merge (`assets/styles/tailwind-v4/cn.ts`),
    or `cn('lg:fluid-p-40', 'lg:fluid-p-24')` ships both classes and stylesheet order picks the winner.
-5. **Restart the dev server and open a fresh tab**, then run `node <skill>/scripts/probe.mjs <url>`.
+5. Inline `assets/runtime/fluid-zoom.js` in `<head>` (copy it with its `.d.ts`; in Next,
+   `<script dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />`). Viewport-derived type does
+   not grow under browser zoom on its own; with this script and `zoomCompensation` on, it zooms 1:1.
+   See `references/fluid-scale.md` §12, Browser zoom.
+6. **Restart the dev server and open a fresh tab**, then run `node <skill>/scripts/probe.mjs <url>`.
    A stale stylesheet looks exactly like broken code; see `references/verification.md` §6.
 
 ### 3. Build or convert sections, one at a time
@@ -127,7 +133,8 @@ How a video *plays* (scrubbing, loops, preload tiers, encoding) is the `scroll-a
   covers widths 1024/1280/1440/1680/2560 × heights 640/700/800/900/1440, plus phones. It checks
   for horizontal overflow, compares the unit values against the maths, checks one-screen fit, and
   reports grid column counts (`data-verify-grid`). Keep 2560 in the matrix: frame drift and grid
-  re-flow bugs only appear above the reference.
+  re-flow bugs only appear above the reference. Its zoom row loads the page under real browser zoom
+  and checks that text grows with it (point `--zoom-selector` at body copy).
 - At 1440×900 the page must match the design pixel for pixel. That point is the calibration check.
 - iOS toolbar tint, `lvh` shortfall and safe-area padding can only be verified on a real device.
   Before asking for a device test, confirm the deployed build actually contains the fix.

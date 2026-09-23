@@ -134,6 +134,11 @@
         }
       }
     },
+    "zoomCompensation": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inside the two type units (`--fluid-display`, `--fluid-copy`), read the base as `var(--fluid) * var(--fluid-zoom, 1)` from the engage breakpoint up, which restores the unzoomed value so text zooms 1:1. Browser zoom shrinks the CSS viewport by the zoom factor, so vw/svh-derived type otherwise renders at the same physical size at every zoom level (a WCAG 1.4.4 failure on wide displays). `assets/runtime/fluid-zoom.js` sets `--fluid-zoom`; without it the fallback is 1 and nothing changes. Layout, chrome and `fluid-text-*` are never compensated: the layout keeps fitting the zoomed viewport and text reflows inside it."
+    },
     "ceiling": {
       "type": ["number", "null"],
       "default": null,

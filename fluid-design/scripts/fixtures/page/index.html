@@ -7,7 +7,8 @@
 <style>
   /* Unit block below is generated verbatim from lib/fluid-math.mjs
      cssUnits(loadConfig()) at the shipped defaults (reference 1440x900,
-     engageAt 1024, floors .58/.82/.90, damping .62/.33, chrome enabled) --
+     engageAt 1024, floors .58/.82/.90, damping .62/.33, chrome enabled,
+     zoomCompensation on) --
      do not hand-edit the numbers without re-running cssUnits() and pasting
      the result, or this fixture stops being a faithful check of the lib. */
   :root {
@@ -24,8 +25,8 @@
   @media (width >= 1024px) {
     :root {
       --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
-      --fluid-display: max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px));
-      --fluid-copy: max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px));
+      --fluid-display: max(0.82px, calc(var(--fluid) * var(--fluid-zoom, 1)), calc(0.62 * calc(var(--fluid) * var(--fluid-zoom, 1)) + 0.38px));
+      --fluid-copy: max(0.9px, calc(var(--fluid) * var(--fluid-zoom, 1)), calc(0.33 * calc(var(--fluid) * var(--fluid-zoom, 1)) + 0.67px));
       --fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
       --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
     }
@@ -52,6 +53,10 @@
     font-size: calc(24 * var(--fluid-display));
   }
 
+  main { max-width: calc(640 * var(--fluid)); margin: 0 auto; padding: 48px 0; }
+  .copy { font-size: 16px; line-height: 1.5; margin: 0; }
+  @media (width >= 1024px) { .copy { font-size: calc(16 * var(--fluid-copy)); } }
+
   /* Deliberate overflow, gated behind ?overflow -- proves verify-matrix's
      overflow check actually fails when it should. */
   #overflow-trigger {
@@ -63,10 +68,23 @@
 </style>
 </head>
 <body>
+  <!-- assets/runtime/fluid-zoom.js's installFluidZoom, inlined as FLUID_ZOOM_INLINE
+       would emit it. ?nozoom leaves it out, to prove the zoom row fails without it. -->
+  <script type="module">
+    if (!location.search.includes('nozoom')) {
+      const { installFluidZoom } = await import('./fluid-zoom.js');
+      installFluidZoom();
+    }
+  </script>
 
   <section class="fit-section" data-fit="screen">
     <h1 style="font-size: calc(48 * var(--fluid-display))">one-screen section</h1>
   </section>
+
+  <main>
+    <p class="copy">Body copy on --fluid-copy, measured by the zoom row. It sits in a fixed
+    text measure, the way running copy does on a real page, so larger text reflows inside it.</p>
+  </main>
 
   <section class="filler"><p>filler 1</p></section>
   <section class="filler"><p>filler 2</p></section>

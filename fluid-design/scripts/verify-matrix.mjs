@@ -14,13 +14,15 @@
 //   node verify-matrix.mjs <url> [--config f] [--out dir]
 //     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
 //     [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
-//     [--screens]
+//     [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
+//     [--zoom-selector 'main p'] [--zoom-strict]
 //
 // Exit codes: 0 = every check passed, 1 = at least one failed, 2 = usage /
 // invocation error (including "playwright not found").
 
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { loadConfig, factors, cssUnits } from './lib/fluid-math.mjs'
 
 const UNIT_TOLERANCE = 0.002
@@ -87,6 +89,10 @@ function parseArgs(argv) {
     mobile: '390x844,375x667',
     fitSelector: '[data-fit=screen]',
     screens: false,
+    zoom: '1.25,1.5,2',
+    zoomBases: '1440x900,1920x1080,2560x1440',
+    zoomSelector: 'main p, p',
+    zoomStrict: false,
     help: false
   }
   for (let i = 0; i < argv.length; i++) {
@@ -99,6 +105,10 @@ function parseArgs(argv) {
     else if (a === '--mobile') out.mobile = argv[++i]
     else if (a === '--fit-selector') out.fitSelector = argv[++i]
     else if (a === '--screens') out.screens = true
+    else if (a === '--zoom') out.zoom = argv[++i]
+    else if (a === '--zoom-bases') out.zoomBases = argv[++i]
+    else if (a === '--zoom-selector') out.zoomSelector = argv[++i]
+    else if (a === '--zoom-strict') out.zoomStrict = true
     else if (a.startsWith('--')) { console.error(`[verify-matrix] unknown flag ${a}`); process.exit(2) }
     else out._.push(a)
   }
@@ -112,7 +122,8 @@ Usage:
   node verify-matrix.mjs <url> [--config f] [--out dir]
     [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
     [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']
-    [--screens]
+    [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
+    [--zoom-selector 'main p, p'] [--zoom-strict]
 
 Options:
   --config <file>     config file to load instead of the shipped defaults
@@ -122,6 +133,10 @@ Options:
   --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667), or "none" to disable
   --fit-selector <s>  selector checked against "height <= viewport" (default: [data-fit=screen])
   --screens           write a full-page screenshot per viewport + a contact sheet
+  --zoom <list>       browser zoom levels for the zoom row (default: 1.25,1.5,2), or "none"
+  --zoom-bases <list> window sizes the zoom row runs on (default: 1440x900,1920x1080,2560x1440)
+  --zoom-selector <s> the body text measured at each zoom (default: "main p, p"; first visible match)
+  --zoom-strict       a zoom-row failure fails the run (default: reported as a warning)
   -h, --help          print this message and exit
 
 Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
@@ -136,6 +151,16 @@ ceiling bug in generate-fluid.mjs ship unnoticed: the shipped defaults never cro
 [data-verify-grid] elements get a column-count report: the computed grid-template-columns track
 count at every desktop viewport must match, unless the element is marked
 data-verify-grid="responsive", in which case it is reported but never fails the run.
+
+The zoom row (WCAG 1.4.4, resize text): for each base window it loads the page under REAL
+browser zoom (a throwaway Chromium profile with Preferences default_zoom_level, which shrinks
+the CSS viewport exactly as Cmd/Ctrl + does), measures the --zoom-selector font-size, and
+converts it to physical size (CSS px × zoom). It passes when the text grows at least 90% of
+proportionally (>= 0.9 × zoom, capped at the WCAG target of 2×, against the same window at
+100%) with no horizontal overflow.
+Pure vw/svh type fails this on wide windows unless assets/runtime/fluid-zoom.js is installed
+(fluid-scale.md §12). Needs Playwright's full Chromium (npx playwright install chromium): the
+headless shell ignores the zoom preference, and the row is skipped with a note without it.
 
 Exit codes: 0 = every check passed, 1 = at least one failed, 2 = usage / invocation error
 (including "playwright not found").`
@@ -358,6 +383,145 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
   return result
 }
 
+// ── zoom row ─────────────────────────────────────────────────────────────
+
+// Chromium stores page zoom as a level where factor = 1.2^level.
+const zoomLevel = (z) => Math.log(z) / Math.log(1.2)
+const ZOOM_PASS_RATIO = 0.9
+
+async function measureAtZoom(chromium, url, base, z, selector) {
+  const dir = mkdtempSync(join(tmpdir(), 'fluid-zoom-'))
+  mkdirSync(join(dir, 'Default'), { recursive: true })
+  writeFileSync(join(dir, 'Default', 'Preferences'), JSON.stringify({ partition: { default_zoom_level: { x: zoomLevel(z) } } }))
+  let ctx
+  try {
+    ctx = await chromium.launchPersistentContext(dir, {
+      headless: true,
+      channel: 'chromium', // the new headless: the headless shell ignores default_zoom_level
+      viewport: null,
+      args: [`--window-size=${base.width},${base.height}`]
+    })
+    const page = ctx.pages()[0] ?? (await ctx.newPage())
+    await page.goto(url, { waitUntil: 'networkidle' })
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 150)))
+    const m = await page.evaluate((selector) => {
+      const el = [...document.querySelectorAll(selector)].find((e) => {
+        const r = e.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'
+      })
+      return {
+        innerWidth,
+        innerHeight,
+        dpr: devicePixelRatio,
+        fluidZoom: getComputedStyle(document.documentElement).getPropertyValue('--fluid-zoom').trim(),
+        fontSize: el ? parseFloat(getComputedStyle(el).fontSize) : null,
+        target: el ? el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '') : null
+      }
+    }, selector)
+    const overflow = await checkOverflow(page)
+    return { ...m, overflow }
+  } finally {
+    if (ctx) await ctx.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+async function runZoomRow(chromium, url, cfg, opts) {
+  const zooms = parseNumberList(opts.zoom)
+  const bases = parseWxHList(opts.zoomBases).filter((b) => b.width >= cfg.engageAt)
+  const rows = []
+  for (const base of bases) {
+    const ref = await measureAtZoom(chromium, url, base, 1, opts.zoomSelector)
+    if (ref.fontSize === null) {
+      rows.push({ base, zoom: 1, pass: false, note: `no visible element matches ${opts.zoomSelector}` })
+      continue
+    }
+    if (Math.abs(ref.innerWidth - base.width) > 2) {
+      return { skipped: `window-size did not apply (innerWidth ${ref.innerWidth} for ${base.width}): is the full Chromium installed?`, rows: [] }
+    }
+    rows.push({ base, zoom: 1, ...ref, physical: ref.fontSize, ratio: 1, pass: ref.overflow.pass })
+    for (const z of zooms) {
+      const m = await measureAtZoom(chromium, url, base, z, opts.zoomSelector)
+      if (Math.abs(m.innerWidth * z - base.width) > base.width * 0.02) {
+        return { skipped: `zoom did not apply (innerWidth ${m.innerWidth} at ${z * 100}%): the headless shell ignores zoom; run npx playwright install chromium`, rows: [] }
+      }
+      const physical = m.fontSize === null ? null : m.fontSize * z
+      const ratio = physical === null ? null : physical / ref.fontSize
+      // WCAG 1.4.4 asks for 200%, so the target is proportional growth up to
+      // 2x: at 300% text must reach 180%, not 270%. Past the engage handover
+      // the mobile copy size decides it, which is legitimately smaller than
+      // the scaled desktop copy on a wide display.
+      const textPass = ratio !== null && ratio >= ZOOM_PASS_RATIO * Math.min(z, 2)
+      rows.push({
+        base,
+        zoom: z,
+        ...m,
+        physical,
+        ratio,
+        engaged: m.innerWidth >= cfg.engageAt,
+        textPass,
+        pass: textPass && m.overflow.pass
+      })
+    }
+  }
+  return { rows, pass: rows.every((r) => r.pass) }
+}
+
+function printZoomRow(zoom, strict) {
+  if (!zoom) return
+  if (zoom.skipped) {
+    console.log(`zoom row: skipped — ${zoom.skipped}`)
+    console.log('')
+    return
+  }
+  console.log(`zoom row (WCAG 1.4.4; text must reach >= ${ZOOM_PASS_RATIO} x zoom, capped at 2x; no horizontal overflow)${strict ? '' : ' — warning only, --zoom-strict to gate'}:`)
+  console.log('window      zoom  css viewport  scale     --fluid-zoom  text px  on screen  growth  overflow  result')
+  for (const r of zoom.rows) {
+    if (r.note) {
+      console.log(`${r.base.width}x${r.base.height}  ${r.note}`)
+      continue
+    }
+    console.log(
+      [
+        `${r.base.width}x${r.base.height}`.padEnd(12),
+        `${Math.round(r.zoom * 100)}%`.padEnd(6),
+        `${r.innerWidth}x${r.innerHeight}`.padEnd(14),
+        (r.zoom === 1 ? 'fluid' : r.engaged ? 'fluid' : 'mobile').padEnd(10),
+        (r.fluidZoom || '(unset)').padEnd(14),
+        r.fontSize.toFixed(2).padEnd(9),
+        r.physical.toFixed(2).padEnd(11),
+        `${Math.round(r.ratio * 100)}%`.padEnd(8),
+        (r.overflow.pass ? 'none' : `+${r.overflow.scrollWidth - r.overflow.innerWidth}px`).padEnd(10),
+        r.pass ? 'PASS' : strict ? 'FAIL' : 'WARN'
+      ].join('')
+    )
+  }
+  if (!zoom.pass) {
+    const failed = zoom.rows.filter((r) => !r.note && !r.pass)
+    const engagedTextFails = failed.filter((r) => r.engaged && !r.textPass)
+    const mobileTextFails = failed.filter((r) => !r.engaged && !r.textPass)
+    if (engagedTextFails.some((r) => r.fluidZoom === '')) {
+      console.log('  -> --fluid-zoom is unset: assets/runtime/fluid-zoom.js is not installed on this page. Inline')
+      console.log('     FLUID_ZOOM_INLINE in <head> (fluid-scale.md §12).')
+    } else if (engagedTextFails.some((r) => r.fluidZoom === '1')) {
+      console.log('  -> fluid-zoom.js is installed but detected no zoom. Check it runs in the top window and that')
+      console.log('     the config has zoomCompensation: true (the type units must read var(--fluid-zoom, 1)).')
+    } else if (engagedTextFails.length > 0) {
+      console.log('  -> --fluid-zoom is set but type did not grow: the stylesheet predates zoomCompensation (regenerate')
+      console.log('     it), or this text is on --fluid / fluid-text-*, which are never compensated.')
+    }
+    if (mobileTextFails.length > 0) {
+      console.log('  -> mobile handover: at these zoom levels the CSS viewport dropped below engageAt and the page uses')
+      console.log('     its mobile type, which is smaller than the desktop type had grown to on this window. Draw mobile')
+      console.log('     body copy no smaller than the desktop reference size (fluid-scale.md §12, "The mobile handover").')
+    }
+    if (failed.some((r) => !r.overflow.pass)) {
+      console.log('  -> horizontal overflow at zoom is a reflow bug (WCAG 1.4.10): a fixed width that the larger text broke out of.')
+    }
+  }
+  console.log('')
+}
+
 // ── reporting ───────────────────────────────────────────────────────────
 
 function viewportPass(v) {
@@ -551,23 +715,35 @@ async function main() {
     await browser.close()
   }
 
+  let zoom = null
+  if (args.zoom && args.zoom.trim().toLowerCase() !== 'none') {
+    try {
+      zoom = await runZoomRow(chromium, url, cfg, args)
+    } catch (err) {
+      zoom = { skipped: `could not launch Chromium with a zoom profile (${err.message.split('\n')[0]}); run npx playwright install chromium`, rows: [] }
+    }
+  }
+
   const gridColsReport = buildGridColsReport(viewports)
 
   mkdirSync(args.out, { recursive: true })
   const report = {
     url,
-    config: { prefix: cfg.prefix, reference: cfg.reference, engageAt: cfg.engageAt, ceiling: cfg.ceiling },
+    config: { prefix: cfg.prefix, reference: cfg.reference, engageAt: cfg.engageAt, ceiling: cfg.ceiling, zoomCompensation: cfg.zoomCompensation },
     generatedAt: new Date().toISOString(),
     viewports,
-    gridCols: gridColsReport
+    gridCols: gridColsReport,
+    zoom
   }
   writeFileSync(join(args.out, 'report.json'), JSON.stringify(report, null, 2))
   if (args.screens) writeContactSheet(args.out, viewports)
 
   printSummary(viewports)
   printGridColsReport(gridColsReport)
+  printZoomRow(zoom, args.zoomStrict)
 
-  const anyFail = viewports.some((v) => !viewportPass(v)) || !gridColsReport.pass
+  const zoomFail = args.zoomStrict && zoom && !zoom.skipped && !zoom.pass
+  const anyFail = viewports.some((v) => !viewportPass(v)) || !gridColsReport.pass || zoomFail
   console.log(anyFail ? 'FAIL' : 'PASS')
   console.log(`report: ${join(args.out, 'report.json')}`)
   process.exit(anyFail ? 1 : 0)

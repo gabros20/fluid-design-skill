@@ -42,7 +42,8 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
     "copy":    { "damping": 0.33, "floor": "auto" },
     "chrome":  { "enabled": true }
   },
-  "ceiling": null
+  "ceiling": null,
+  "zoomCompensation": true
 }
 ```
 
@@ -59,6 +60,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 | `units.display.floor` / `units.copy.floor` | `"auto"` = `round2(damping * engageAt/reference.width + (1 - damping))` (0.82 and 0.90 at the shipped defaults) — or a number override |
 | `units.chrome.enabled` | emit `--fluid-chrome`, a width-fit/height-floored fourth role for site chrome. Default `true` |
 | `ceiling` | `null` (default) = uncapped growth. A number N wraps `--fluid` in `min(Npx, …)`; the type units inherit the cap through it |
+| `zoomCompensation` | `true` (default): the display and copy units read their base as `var(--fluid) * var(--fluid-zoom, 1)`, so text follows browser zoom once `assets/runtime/fluid-zoom.js` sets `--fluid-zoom` (`fluid-scale.md` §12, Browser zoom). Without the script the fallback is 1. `false` emits plain `var(--fluid)` |
 
 ### Emitted custom properties
 
@@ -68,14 +70,19 @@ Only utility/class *names* move with `prefix`; these do not.
 
 ```
 --fluid          max(<floor>px, min(calc(100svh / H), calc(100vw / W)))      [heightAxis:false → max(floor, 100vw/W)]
---fluid-display  max(<dfloor>px, var(--fluid), calc(d * var(--fluid) + (1-d)px))
---fluid-copy     max(<cfloor>px, var(--fluid), calc(c * var(--fluid) + (1-c)px))
+--fluid-display  max(<dfloor>px, B, calc(d * B + (1-d)px))
+--fluid-copy     max(<cfloor>px, B, calc(c * B + (1-c)px))
+                 where B = calc(var(--fluid) * var(--fluid-zoom, 1))   [zoomCompensation:false → B = var(--fluid)]
 --fluid-chrome   min(calc(100vw / W), max(1px, calc(100svh / H)))            [only emitted when units.chrome.enabled]
 --safe-top       env(safe-area-inset-top, 0px)
 --safe-bottom    env(safe-area-inset-bottom, 0px)
 --browser-bar    calc(100lvh - 100svh)
 --header-h       calc(24 * var(--fluid) + var(--safe-top) + <rowH>)   (rowH: 34px below engageAt, 48*var(--fluid-chrome) above when chrome is enabled, else 48*var(--fluid); overridable)
 ```
+
+`--fluid-zoom` is **not** emitted by the stylesheet. `assets/runtime/fluid-zoom.js` writes it as an
+inline style on `<html>` (the detected browser zoom, 1 when unzoomed or undetectable); the `, 1`
+fallback keeps every unit valid without it.
 
 All properties are `1px` in `:root` (or omitted, for `--fluid-chrome`, when `units.chrome.enabled`
 is `false`) and are redefined inside `@media (width >= engageAt)`.

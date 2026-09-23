@@ -102,11 +102,19 @@ in `em` so it tracks the ink, and never on the chip, which would move the backgr
   swap that silently changed typefaces. Name it for what it draws.
 - Measure fallback metrics if CLS matters; `size-adjust` on a fallback `@font-face` keeps the swap still.
 
-## Browser font-size setting
+## Browser font-size setting, and browser zoom
 
-The type units resolve in px from the breakpoint up, so they ignore the browser's default font size
-there. This is deliberate: the composition's proportions are the point. Do not add a
-rem-anchored twin. Mobile type, below the breakpoint, is ordinary CSS and can use rem.
+These are two different things.
+
+- **The default font-size setting** (Settings → Appearance → Font size). The type units resolve in px
+  from the breakpoint up, so they ignore it there. This is deliberate: the composition's proportions
+  are the point. Do not add a rem-anchored twin. Mobile type, below the breakpoint, is ordinary CSS
+  and can use rem.
+- **Browser zoom** (Cmd/Ctrl +). This one must work: it is what WCAG 1.4.4 tests. Viewport-derived
+  type cancels zoom on its own, so the type units read a `--fluid-zoom` factor that
+  `assets/runtime/fluid-zoom.js` measures (`fluid-scale.md` §12, Browser zoom). Install the script,
+  keep running copy on `fluid-copy-*`/`fluid-display-*` (`fluid-text-*` does not zoom), and draw
+  mobile body copy no smaller than its desktop reference size.
 
 ## Traps
 - [ ] The unit follows the container: `fluid-text-*` inside scaling boxes, never display type.
@@ -114,3 +122,4 @@ rem-anchored twin. Mobile type, below the breakpoint, is ordinary CSS and can us
 - [ ] `text-*` before `leading-*` in merged class strings; no `leading-*` in a cva base.
 - [ ] Hard breaks are breakpoint-scoped (or block spans); never trust the rendered wrap for a drawn break.
 - [ ] Shared atoms own their height contract; fluid is an opt-in prop.
+- [ ] `fluid-zoom.js` is inlined in `<head>`, and the verifier's zoom row passes.

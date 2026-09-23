@@ -9,7 +9,9 @@ pixel-exact at the reference, and still correct on a 5K display.
 
 It also covers what that scale has to survive in a real browser: iOS 26 Safari viewport units,
 toolbar tint and safe areas, sticky pitfalls, Safari's SVG rendering bugs, image `sizes` on a page
-that grows past the reference, video element sizing and posters, and a viewport-matrix verifier.
+that grows past the reference, video element sizing and posters, browser zoom (viewport-derived type
+does not grow under Cmd/Ctrl + on its own; a small runtime restores 1:1 text zoom), and a
+viewport-matrix verifier with a real-browser-zoom row.
 
 **Scope: fluid design only.** This skill contains no animation. Triggered entrances, pinned and
 scrubbed scenes, scroll wells, video playback, header ink that follows the section underneath, and
@@ -45,6 +47,7 @@ fluid-design/                      the skill: copy this folder into your skills 
                                    dampings, floors, ceiling
     styles/                        pre-generated unit and utility layers for tailwind-v4 · css · scss ·
                                    stylex, the ts config constants, plus a shared iOS/sticky-safe base layer
+    runtime/fluid-zoom.js (+ .d.ts) makes the fluid type follow browser zoom (inline it in <head>)
   scripts/
     generate-fluid.mjs             config → stack layers (deterministic; --check guards drift)
     calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
@@ -87,7 +90,8 @@ in your project.
 `--fluid = max(0.58px, min(100svh/900, 100vw/1440))` from the engage breakpoint (1024) up, and 1px
 below it. Display type uses `max(0.82px, --fluid, 0.62·--fluid + 0.38px)` and copy uses
 `max(0.90px, --fluid, 0.33·--fluid + 0.67px)`, so type shrinks more gently than the layout, while
-above the reference everything grows as one. Site chrome uses a width-led unit that height never
+above the reference everything grows as one. The type units read `--fluid × --fluid-zoom` so text
+still follows browser zoom. Site chrome uses a width-led unit that height never
 shrinks. Each section has one frame box: `fluid-cap-<canvas>` (grow-only) plus a scaled gutter.
 Rows that exceed the `1440 − 2·gutter` content budget move to `cqw`, and any constant compared
 against a scaling box (an auto-fill minimum, a wrap basis) is scaled too. Read

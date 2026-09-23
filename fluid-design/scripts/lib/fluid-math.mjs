@@ -27,7 +27,8 @@ export const DEFAULT_CONFIG = Object.freeze({
     copy: Object.freeze({ damping: 0.33, floor: 'auto' }),
     chrome: Object.freeze({ enabled: true })
   }),
-  ceiling: null
+  ceiling: null,
+  zoomCompensation: true
 })
 
 export const DEFAULT_CONFIG_PATH = resolvePath(__dirname, '../../assets/fluid.config.json')
@@ -64,7 +65,7 @@ function assertFloor(v, path) {
  * ignored.
  */
 export function mergeConfig(partial = {}) {
-  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling'])
+  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'zoomCompensation'])
   for (const key of Object.keys(partial)) {
     assert(known.has(key), `unknown top-level key "${key}"`)
   }
@@ -81,7 +82,8 @@ export function mergeConfig(partial = {}) {
       copy: { ...DEFAULT_CONFIG.units.copy, ...(partial.units?.copy ?? {}) },
       chrome: { ...DEFAULT_CONFIG.units.chrome, ...(partial.units?.chrome ?? {}) }
     },
-    ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling
+    ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling,
+    zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation
   }
 
   validateConfig(cfg)
@@ -115,6 +117,8 @@ export function validateConfig(cfg) {
   if (cfg.ceiling !== null) {
     assertPositiveNumber(cfg.ceiling, 'ceiling')
   }
+
+  assert(typeof cfg.zoomCompensation === 'boolean', 'zoomCompensation must be a boolean')
 }
 
 /**
@@ -177,7 +181,7 @@ export function resolveFloors(cfg) {
  * "independent of floor/ceiling" stands: chrome's own height-never-below-1
  * clause already does that role's floor job.
  */
-export function factors(cfg, w, h) {
+export function factors(cfg, w, h, zoom = 1) {
   if (w < cfg.engageAt) {
     return { fluid: 1, display: 1, copy: 1, chrome: 1 }
   }
@@ -190,8 +194,12 @@ export function factors(cfg, w, h) {
   if (cfg.ceiling !== null) fluid = Math.min(cfg.ceiling, fluid)
 
   const floors = resolveFloors(cfg)
-  const display = Math.max(floors.display, fluid, cfg.units.display.damping * fluid + (1 - cfg.units.display.damping))
-  const copy = Math.max(floors.copy, fluid, cfg.units.copy.damping * fluid + (1 - cfg.units.copy.damping))
+  // `zoom` is the value fluid-zoom.js writes to --fluid-zoom (1 when the
+  // runtime is absent or no zoom is detected); `w`/`h` are CSS px, i.e.
+  // already divided by the browser zoom.
+  const tf = cfg.zoomCompensation ? fluid * zoom : fluid
+  const display = Math.max(floors.display, tf, cfg.units.display.damping * tf + (1 - cfg.units.display.damping))
+  const copy = Math.max(floors.copy, tf, cfg.units.copy.damping * tf + (1 - cfg.units.copy.damping))
 
   let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
   if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome)
@@ -232,8 +240,20 @@ export function cssUnits(cfg) {
   const fluidExprFloored = `max(${px(floors.fluid)}, ${fluidExprRaw})`
   const fluidExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${fluidExprFloored})` : fluidExprFloored
 
-  const displayExpr = `max(${px(floors.display)}, var(--fluid), calc(${num(d)} * var(--fluid) + ${px(1 - d)}))`
-  const copyExpr = `max(${px(floors.copy)}, var(--fluid), calc(${num(c)} * var(--fluid) + ${px(1 - c)}))`
+  // Browser zoom shrinks the CSS viewport by the zoom factor z, so --fluid
+  // (built only from vw/svh) comes out z times smaller and type renders at
+  // the same physical size at every zoom level (fluid-scale.md §12).
+  // assets/runtime/fluid-zoom.js writes the detected z to --fluid-zoom.
+  // Inside the TYPE units only, the base is read as `--fluid × z`, which is
+  // exactly the unzoomed value, so each type unit resolves to the same CSS
+  // px it had at 100% and renders z times larger: text zooms 1:1, floors
+  // and dampings included. Layout (`--fluid` itself), chrome and
+  // `fluid-text-*` stay uncompensated on purpose: they keep fitting the
+  // zoomed viewport, and the larger text reflows inside them. Without the
+  // script the fallback is 1 and the expressions equal the plain ones.
+  const base = cfg.zoomCompensation ? 'calc(var(--fluid) * var(--fluid-zoom, 1))' : 'var(--fluid)'
+  const displayExpr = `max(${px(floors.display)}, ${base}, calc(${num(d)} * ${base} + ${px(1 - d)}))`
+  const copyExpr = `max(${px(floors.copy)}, ${base}, calc(${num(c)} * ${base} + ${px(1 - c)}))`
   // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
   // — otherwise chrome keeps growing past the point the rest
   // of the page's ceiling-capped units stopped.

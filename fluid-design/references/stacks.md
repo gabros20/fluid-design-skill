@@ -29,7 +29,8 @@ drawn number: `lg:fluid-py-120`, `lg:fluid-display-64/72`, `lg:fluid-cap-1680`.
   1024px is wider than the 40rem `sm` breakpoint. It compiles clean and looks like a design mistake,
   not a units bug. `lg: 64rem` instead of `1024px` is not the fix either: a rem media query follows
   the visitor's browser font-size setting, while `fluid.css`'s own hand-written
-  `(width >= 1024px)` query does not — the two would silently disagree at any zoom other than 100%.
+  `(width >= 1024px)` query does not — the two would silently disagree for any visitor whose default
+  font size is not 16px. (Browser zoom is not the cause: it scales px and em media queries alike.)
   The generated `assets/styles/tailwind-v4/fluid.css` ships the full ladder for this reason (`sm
   640, md 768, lg = engageAt, xl 1280, 2xl 1536px`, nudged to stay monotonic if `engageAt` collides
   with a default rung); `tokens.example.css` must never redeclare `--breakpoint-lg` on its own.

@@ -15,7 +15,7 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 9. Adding a role
 10. One scale: why sections may not re-anchor it
 11. Interop with animation (if any)
-12. Limitations
+12. Limitations, and browser zoom
 13. Traps
 
 ---
@@ -288,11 +288,58 @@ the page, four facts keep the two from fighting:
    render, but it changes a pinned scene's act maths: 3.42 viewports at 1024×900 instead of 4.00.
 3. **Type ignores the user's browser font-size setting from the breakpoint up.** This is deliberate:
    type is anchored to the viewport so the composition keeps its proportions. Do not "fix" it
-   with a rem-anchored twin.
+   with a rem-anchored twin. The font-size setting is not browser zoom; zoom is handled below.
 4. Below the floors both arms go flat, and a `fluid-h-900` section stops matching the viewport. Windows that small
    are out of scope.
 5. Resizing reflows type and remaps any pin. Scrolling never does.
 6. Only a section drawn at the reference height gets the one-screen guarantee. Others scale without landing on `100svh`.
+
+### Browser zoom (WCAG 1.4.4, resize text)
+
+**The problem.** Desktop zoom (Cmd/Ctrl +) makes a CSS pixel bigger and shrinks the CSS viewport by
+the same factor. A length built only from `vw`/`svh` shrinks by exactly that factor, so it renders
+at the **same physical size at every zoom level**. `--fluid` has no px or rem term, so without help,
+type does not grow at all until zoom pushes the CSS viewport below `engageAt` and the mobile CSS
+takes over. Where that happens depends on the window: about 141% on a 1440-wide window, 188% on 1920,
+250% on 2560. Measured with real Chromium zoom, body text on an uncompensated build reached 100% of
+its size at 150% zoom on 2560×1440, and 122% at 200%. That fails WCAG 1.4.4 on every display wider
+than about 1440, and worst on the large displays this system is proudest of.
+
+**The fix, on by default.** `zoomCompensation: true` in `fluid.config.json` makes the two type units
+read their base as `var(--fluid) * var(--fluid-zoom, 1)`. `assets/runtime/fluid-zoom.js` detects the
+zoom factor and writes it to `--fluid-zoom` on `<html>`. Multiplying the zoomed-down `--fluid` by the
+zoom gives back exactly the unzoomed value, so each type unit resolves to the CSS px it had at 100%
+and renders z times larger: **text zooms 1:1, floors and dampings included.** Measured on the same
+build after installing it: 110/125/150/200% zoom gives 110/125/150/200% text wherever the desktop
+layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
+
+- **Only type is compensated.** `--fluid` (layout), `--fluid-chrome` and `fluid-text-*` stay as they
+  are. Scaling the layout by the zoom would make the composition z times wider than the zoomed
+  viewport. Instead the layout keeps fitting, and the larger text reflows inside its columns, which
+  is what zoom is for. Text in a box that scales on `--fluid` (`fluid-text-*`) does not zoom; keep
+  running copy on the copy and display units.
+- **Install it inline in `<head>`**, before first paint, or a page opened at a remembered zoom
+  level renders small type and then jumps. Next: `<script dangerouslySetInnerHTML={{ __html:
+  FLUID_ZOOM_INLINE }} />`; anywhere else, the same string in a plain `<script>`. Copy both
+  `fluid-zoom.js` and `fluid-zoom.d.ts` (TypeScript with `allowJs: false` needs the types).
+- **How it detects zoom, and when it gives up.** No browser exposes the page zoom. Two signals carry
+  it in Chromium and Firefox: `outerWidth / innerWidth`, and `devicePixelRatio` over the native ratio.
+  Each is ambiguous alone (a side panel inflates the first; dpr 2 is a Retina screen or 200% on a 1x
+  one), so zoom is accepted only when both agree within 4%. A side panel, docked devtools, an
+  iframe, device emulation or a browser that keeps dpr fixed under zoom all read as 1, which is the
+  old behaviour. It can fail to compensate; it does not inflate type on an unzoomed page. Zoom-out is
+  not compensated. `outerWidth` reads 0 until the first frame in Chromium, so the script retries on
+  the next frames. Verified with real Chromium zoom; **Safari and Firefox are unverified**, so check
+  them on the real browser before promising compliance to a client.
+- **The mobile handover.** When zoom pushes the CSS viewport below `engageAt`, the page switches to
+  its mobile CSS, and text becomes *mobile size × zoom*. On a window wider than the reference the
+  desktop type had grown past its drawn size, so the handover is a step down. Measured: body copy
+  drawn 15px on mobile against 17.65px on a 1920 desktop reached 170% at 200% zoom (255% at 300%).
+  Keep mobile body copy no smaller than its desktop reference size to shrink that step. The runtime
+  cannot help here, because mobile type is plain px with nothing to multiply.
+- **Check it** with `scripts/verify-matrix.mjs`: its zoom row loads the page under real browser zoom
+  and reports physical text growth (`verification.md`). `zoomCompensation: false` turns the unit
+  change off; do that only with the client's informed agreement, and record it in `FLUID.md`.
 
 ## 13. Traps
 
@@ -303,3 +350,7 @@ the page, four facts keep the two from fighting:
 - Overriding `--fluid` on one section: the type units resolved at `:root` do not re-derive (§10).
 - A length times a unit (`64px * var(--fluid)`): invalid, and the declaration drops silently.
 - A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).
+- Shipping without `fluid-zoom.js`: vw/svh type does not grow under browser zoom, a WCAG 1.4.4
+  failure on wide displays (§12, Browser zoom).
+- Multiplying the whole type unit by the zoom instead of its `--fluid` base: the unit's px term
+  already zooms, so the text overshoots (146% at 125% zoom on a 1440 window, by the unit maths).

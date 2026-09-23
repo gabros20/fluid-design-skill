@@ -76,6 +76,16 @@ Default: **flat**. Mobile stays authored per breakpoint and is not scaled.
 - A mobile fluid arm is possible (a second media block with a 390-wide reference), but it is not the
   default and was never validated in production. Offer it only if asked, and say so.
 
+### 8. Browser zoom
+Default: **compensated** (`zoomCompensation: true`, plus `assets/runtime/fluid-zoom.js` inlined in `<head>`).
+- Viewport-derived type does not grow under browser zoom on its own, which fails WCAG 1.4.4 on
+  displays wider than about 1440 (`fluid-scale.md` §12, Browser zoom). The runtime restores 1:1 text
+  zoom in Chromium; Safari and Firefox are unverified.
+- Ask when: the site has a legal accessibility obligation (public sector, the EU Accessibility Act,
+  a WCAG AA contract). Then say plainly that compliance must be checked in the client's target
+  browsers, and that mobile body copy should be drawn no smaller than the desktop size.
+- Turn it off only with the client's informed agreement, recorded in `FLUID.md`.
+
 ## Writing the result
 
 `fluid.config.json` (schema: `assets/fluid.config.schema.json`) holds the numbers. `FLUID.md` holds
@@ -96,5 +106,6 @@ Batch the questions, give each one its default, and let the user answer only the
 - Asking one question per turn. Batch them, each with its default.
 - Anchoring the reference to the canvas width (1680) instead of the laptop viewport (1440).
 - Recording the engage breakpoint in more than one place. Three copies of one number drift.
+- Treating "ignores the browser font-size setting" as covering zoom. They are different; zoom must work.
 - Removing or rewiring an installed motion library during preflight. That decision belongs to the
   `scroll-animation` skill; here you only note it.

@@ -47,6 +47,27 @@ A layout change is never verified at one window: sweep the matrix in §5 with
 `scripts/verify-matrix.mjs`. It is scripted like tier 1 but broader, and it is what catches the
 drift bugs that exist only above the reference.
 
+### The zoom row (WCAG 1.4.4)
+
+`verify-matrix.mjs` also loads the page under **real** browser zoom: a throwaway Chromium profile
+with the zoom preference set, which shrinks the CSS viewport exactly as Cmd/Ctrl + does (viewport
+emulation cannot run the zoom detector, so it is not used). By default it runs 125/150/200% on
+1440×900, 1920×1080 and 2560×1440, measures the `--zoom-selector` text (default `main p, p`, first
+visible match; point it at running body copy), and converts it to physical size. A cell passes when
+text grows at least 0.9× proportionally, capped at the WCAG target of 2×, with no horizontal
+overflow. It warns by default; `--zoom-strict` makes it gate the run.
+
+Reading a failure:
+- `--fluid-zoom (unset)` on desktop cells: `fluid-zoom.js` is not installed.
+- set, but text flat: the stylesheet predates `zoomCompensation` (regenerate it), or the text is on
+  `--fluid`/`fluid-text-*`, which never zooms.
+- only the `mobile` cells of a wide window: the mobile handover (`fluid-scale.md` §12). The page
+  switched to mobile type that is smaller than the desktop type had grown to. Draw mobile body copy
+  no smaller than its desktop reference size.
+
+It needs Playwright's full Chromium (`npx playwright install chromium`). The headless shell ignores
+the zoom preference, and the row is then skipped with a note rather than reporting false passes.
+
 ## 3. Tier 3 — a real device
 
 Connect a physical phone, hit a dev server by local IP, use the browser's own remote-debugging
@@ -119,7 +140,8 @@ surface:
   `--screens` writes a full-page screenshot per viewport plus a contact sheet. When the config sets
   a `ceiling`, one extra viewport is appended automatically, sized so the natural factor clears the
   ceiling by 25%, so the ceiling is always exercised (this is what let an SCSS ceiling bug ship
-  unnoticed: the shipped defaults never crossed it). Exit codes: 0 pass, 1 a check failed, 2 usage
+  unnoticed: the shipped defaults never crossed it). The zoom row (§2) checks text growth under
+  real browser zoom (`--zoom`, `--zoom-bases`, `--zoom-selector`, `--zoom-strict`). Exit codes: 0 pass, 1 a check failed, 2 usage
   error or Playwright not found. Reveal checking and anchor-jump checking are not here: they are
   the `scroll-animation` skill's `verify-motion` script.
 - **`scripts/probe.mjs <url>`** — a single-viewport, single-pass version of the same read-state
@@ -141,5 +163,7 @@ surface:
 - Debugging layout before ruling out a stale stylesheet (§6).
 - Asking for a device test before confirming the deployed build contains the fix (§4).
 - Trusting emulation for toolbar tint. It does not attempt Liquid Glass sampling at all.
+- Testing zoom by shrinking the viewport. It reproduces the CSS but not `devicePixelRatio`, so the
+  zoom detector cannot run; use the zoom row, which applies real browser zoom.
 - A debug tool that changes what it measures: no `border`, no added `position: relative`, no wrapper
   elements, no `overflow: hidden` (it kills sticky, `ios-safari.md` §6). Outlines only.
