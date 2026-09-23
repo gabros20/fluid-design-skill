@@ -1,0 +1,10 @@
+.hero {
+  padding: 16px;
+}
+
+@media (width >= 1024px) {
+  .hero {
+    padding-block: 120px;
+    gap: 48px;
+  }
+}

@@ -20,6 +20,19 @@
    numbers — but it is generated (not hand-written) so it stays alongside
    the rest of this skill's output and picks up fixes from one place. */
 
+/* Tailwind v4's own Preflight already sets this, so the tailwind-v4 stack
+   needs nothing extra here. A non-Tailwind stack (this file, standalone, or
+   the vanilla-CSS/SCSS stacks) usually has NO reset that does, and without
+   it `max-width: max(1680px, ...)` caps the CONTENT box, not the border
+   box: the frame then renders at canvas + 2×gutter (e.g. 1680 + 2×80 =
+   1840) instead of 1680, and everything inside it overflows the intended
+   frame — measured: a header CTA and the hero copy cut off at the edge. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   /* Kill rubber-band / elastic overscroll so momentum can't bounce past a
      scroll boundary and feed jitter into anything scroll-driven (a pinned

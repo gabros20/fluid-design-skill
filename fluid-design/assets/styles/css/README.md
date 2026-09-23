@@ -15,8 +15,19 @@ Config:
 # fluid-design — vanilla CSS stack
 
 `fluid.css` is framework-free: the `:root` units, the engage media query,
-`--header-h`, and `.fluid-frame` (the drawn frame as a cap + a scaled
-gutter, on one box).
+`--header-h`, and `.fluid-frame` (the drawn frame as a cap + a
+scaled gutter, on one box).
+
+## Include `shared/base.css` too — box-sizing
+
+This stack ships no reset of its own, so `shared/base.css`'s `*, *::before,
+*::after { box-sizing: border-box }` rule is not optional here the way it
+is under Tailwind (whose own Preflight already sets it). Without it,
+`.fluid-frame`'s `max-width` caps the CONTENT box instead of the
+border box, and the frame renders at canvas + 2×gutter — wider than drawn,
+with its contents overflowing the intended edge. Include `shared/base.css`
+before this file, or add the box-sizing rule yourself if you already reset
+some other way.
 
 ## The authoring convention
 

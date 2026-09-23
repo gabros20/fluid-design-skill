@@ -41,7 +41,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 
 | Key | Meaning |
 |---|---|
-| `prefix` | utility/class-name and custom-property prefix; renames every `fluid-*` utility and `--fluid*` property |
+| `prefix` | utility/class-name and (SCSS) function/mixin prefix; renames `fluid-*` utilities, the `.fluid-frame` class and the `fluid()`-family Sass identifiers. Does **not** rename `--fluid*` custom properties — those are fixed, see §1 below |
 | `reference.width` / `reference.height` | the viewport where 1 unit = 1px — a content budget, not the design canvas (`fluid-scale.md` §2) |
 | `canvas.width` | the drawn frame width, emitted as the `fluid-cap-*` grow-only ceiling |
 | `canvas.gutter` | the drawn page gutter, for documentation/example use; not baked into a custom property by itself |

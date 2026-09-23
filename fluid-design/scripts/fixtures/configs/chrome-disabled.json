@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../assets/fluid.config.schema.json",
+  "units": {
+    "chrome": { "enabled": false }
+  }
+}

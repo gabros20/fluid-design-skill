@@ -88,10 +88,23 @@
 /* by hand-editing generated output — another reason not to. */
 
 /* .fluid-frame — the drawn frame, cap + scaled gutter on ONE box. Apply it
-   to the page's single outermost content wrapper, not to every section:
-   the cap and the gutter are properties of the FRAME, and stacking it on
-   nested boxes compounds the padding. Below engageAt it emits nothing —
-   bring your own mobile padding for that box. */
+   ONCE PER SECTION, to that section's own single inner wrapper — never to
+   the page as a whole, and never stacked on a second box nested inside the
+   same section: the section itself carries full-bleed colour, and this box
+   carries the frame (references/section-recipe.md). Below engageAt it is a
+   plain full-width box with a fixed measure and a fixed gutter (32px from
+   640px up); the cap and the scaled gutter both engage together above it. */
+.fluid-frame {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 1680px;
+  padding-inline: 24px;
+}
+@media (width >= 640px) {
+  .fluid-frame {
+    padding-inline: 32px;
+  }
+}
 @media (width >= 1024px) {
   .fluid-frame {
     margin-inline: auto;

@@ -21,8 +21,20 @@ Vanilla and SCSS use the `.fluid-frame` class or the `fluid-frame` mixin, which 
 - **The gutter scales** (`lg:fluid-px-80`). This reverses an earlier rule ("a gutter is chrome; it follows
   the breakpoint"). That objection described a case that cannot happen:
   - Width arm binds: the gutter is `80·W/1440`, a fixed **5.6% of the viewport**, which is exactly what you want.
-  - Height arm binds (a short window): the frame is `1680·f`, narrower than the window, so it floats centred.
-    The gutter is then interior padding, and whether it is 71 or 80 is invisible.
+  - Height arm binds (a short, wide window): `fluid-cap-*` is **grow-only**
+    (Decision D5) — `max(1680px, 1680·f)` — and `f < 1` here, so the `max()`
+    resolves to the constant `1680px`, not to `1680·f`. **The frame stays
+    canvas-wide in px; it does not get narrower.** `mx-auto` centres that
+    canvas-wide box inside a window wider than the canvas (measured: a
+    1600-wide canvas produced a 1600px-wide frame in a 1680-wide, 700-tall
+    window, f = 0.78) — a window narrower than the canvas instead makes the
+    frame fill the window edge-to-edge, same as always. What DOES shrink is
+    everything *inside* that box: the gutter (`fluid-px-80` is `80·f`) and
+    every other `--fluid`-scaled value, because those read the unit
+    directly rather than sitting behind a grow-only `max()`. So the
+    composition tightens — gutters, type, gaps all shrink together — while
+    the frame's own outer edge holds at the canvas width. The gutter is
+    still interior padding either way, and it never touches the bezel.
 
   A frozen gutter falls from 5.6% of the viewport at 1440 to 3.1% at 2560, walking the composition
   toward the edges. The arithmetic also collapses once it scales: content = `1680f − 160f = 1520f`, the
@@ -105,6 +117,48 @@ together. 330 rather than the drawn 320 is the smallest minimum a fifth column c
 
 What this does **not** buy is four columns at every desktop width. Four 374px cards need 1520 of
 content; 1440 has 1280. Below about 1500 the grid is 3-up, and that is arithmetic, not a setting.
+
+### A scaled minimum alone still re-flows on a short, wide window
+
+§1's Decision D5 is the trap here: `minmax(min(calc(330*var(--fluid)),100%),1fr)` inside a
+`fluid-cap-*` frame holds four columns everywhere the CAP is the thing binding — but the moment
+*height* binds (a short, wide window), the frame's own `max-width` stops shrinking (it is
+grow-only) while the grid's minimum, sitting directly on `--fluid`, keeps shrinking with `f`. The
+frame's content box is no longer on the same scale as the minimum being compared against it, so the
+comparison drifts exactly the way this section opened by warning against — measured: a grid that
+held 4 columns from 1024×640 to 3840×2160 read **6 columns at 1680×700** (f = 0.78, frame content
+box 1520px fixed, minimum `330·0.78 ≈ 257px` shrunk under it). Two fixes:
+
+**(a) Cap the column count directly — the general answer.**
+
+```
+grid-template-columns: repeat(auto-fill, minmax(max(min(calc(330*var(--fluid)),100%),calc((100% - 3*24px)/4)),1fr))
+```
+
+The minimum is now the LARGER of two floors: the scaled 330 (holds the column count everywhere the
+frame itself is on the scale) and `(100% - 3·gap)/4` — a quarter of whatever the container's content
+box actually is right now, minus the three gaps between four columns. That second term is not on
+`--fluid` at all; it is a plain percentage of the box `auto-fill` is actually laying out into, so it
+tracks the frame's real content width even on the short-wide windows where that width stopped
+moving with `f`. Together the two floors make `minmax(...)` bound the grid to **at most four
+columns** under every combination of window width and height, not just the ones where the cap and
+the minimum happen to be on the same scale. Adjust `4` and `3*24px` (columns and gap count) to match
+the drawn grid.
+
+**(b) Put the grid's own width on the scale instead of relying on the frame.** `fluid-w-<drawn>
+max-w-full` sizes the grid itself directly off `--fluid` (capped at the container's own width via
+`max-w-full`, so it never overflows), rather than inheriting a content box whose width tracks the
+scale only when the cap is what's binding. This holds the column count too, but it is a narrower fix
+— it only helps a grid whose own box can legitimately be smaller than its frame's full content
+width; a grid meant to fill the frame edge-to-edge wants (a) instead.
+
+**Recommendation: reach for (a) first.** It is correct for a grid that fills its frame (the common
+case), needs no change to the grid's own sizing, and holds under every viewport combination — width
+binding, height binding, or the cap's own grow-only floor — rather than only the ones where the
+frame's content box and the scaled minimum happen to move together. `scripts/verify-matrix.mjs`'s
+grid-cols report is what catches a regression here: mark the grid `data-verify-grid` and it fails
+the run whenever the computed column count differs across desktop viewports, unless the grid opts
+out (by design) with `data-verify-grid="responsive"`.
 
 | Construct | The constant that drifts |
 |---|---|

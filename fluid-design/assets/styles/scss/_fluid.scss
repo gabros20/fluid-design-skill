@@ -29,11 +29,17 @@ $fluid-copy-floor: 0.9;
 $fluid-chrome-enabled: true;
 
 // ── Functions ─────────────────────────────────────────────────────────
-// Each returns calc(#{$n} * var(--fluid...)). $n MUST be unitless — the
-// drawn number from the design file, never a length. `fluid(64px)` would
-// build `calc(64px * var(--fluid))`, length times length, which is invalid
-// CSS and drops the whole declaration silently. The @error below turns
-// that mistake into a build failure instead.
+// FUNCTION AND MIXIN NAMES MOVE WITH `prefix` (references/attribute-contract.md §1) — the
+// `--fluid*` CUSTOM-PROPERTY NAMES INSIDE THEM DO NOT, and are always the
+// literal strings cssUnits(cfg) emits. At the default prefix these read
+// identically either way, which is exactly why this bug shipped unnoticed:
+// only a non-default `prefix` makes the two kinds of name diverge visibly.
+//
+// Each function returns calc(#{$n} * var(--fluid...)). $n MUST be
+// unitless — the drawn number from the design file, never a length.
+// `fluid(64px)` would build `calc(64px * var(--fluid))`, length times
+// length, which is invalid CSS and drops the whole declaration silently.
+// The @error below turns that mistake into a build failure instead.
 @function _fluid-assert-unitless($n, $fn) {
   @if math.is-unitless($n) == false {
     @error "fluid-design: #{$fn}() expects a unitless drawn number, got `#{$n}`. `64px * var(--fluid)` is invalid CSS (length * length) and silently drops the declaration — pass the bare number instead.";
@@ -103,16 +109,34 @@ $fluid-chrome-enabled: true;
   }
 }
 
-// The drawn frame as a cap + a scaled gutter, on ONE box — apply to the
-// page's single outermost content wrapper, not to every section.
+// The drawn frame as a cap + a scaled gutter, on ONE box — apply it ONCE
+// PER SECTION, to that section's own single inner wrapper, never to the
+// page as a whole and never stacked on a second box nested inside the same
+// section (references/section-recipe.md: "the section carries full-bleed
+// colour, the inner box carries the frame"). Below the engage breakpoint
+// it is a plain full-width box with a fixed measure and a fixed gutter (32px
+// from 640px up) — bring nothing else for mobile; the cap and the scaled
+// gutter both engage together from $fluid-engage-at.
 @mixin fluid-frame {
+  width: 100%;
   margin-inline: auto;
-  max-width: fluid-cap($fluid-canvas-width);
-  padding-inline: fluid($fluid-canvas-gutter);
+  max-width: #{$fluid-canvas-width}px;
+  padding-inline: 24px;
+
+  @media (width >= 640px) {
+    padding-inline: 32px;
+  }
+
+  @include fluid-up {
+    max-width: fluid-cap($fluid-canvas-width);
+    padding-inline: fluid($fluid-canvas-gutter);
+  }
 }
 
 // Emits the :root custom-property block (flat 1px + the engaged values).
 // Include it once, at :root: `:root { @include fluid-units; }`
+// Every declaration below is copied verbatim from cssUnits(cfg) — see the
+// note at the top of this file's Functions section.
 @mixin fluid-units {
   --fluid: 1px;
   --fluid-display: 1px;

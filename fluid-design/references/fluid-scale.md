@@ -191,6 +191,16 @@ It has no utility family: call sites spend it the long way, `lg:h-[calc(48*var(-
 The page rail (cap and gutter) and the header's inset from the top stay on `--fluid`, so the header
 stays in lockstep with the hero's top padding.
 
+**Decision D4 — `ceiling` also caps `--fluid-chrome`.** Chrome does not read `var(--fluid)` (it has
+its own formula, not a damping of the base unit), so a `ceiling` on `--fluid` does nothing to it by
+itself: `--fluid-chrome` is wrapped in its own `min(<ceiling>px, …)`. Without this, chrome keeps
+growing past the point every other role on the page stopped — measured at 3840×2160 with `ceiling:
+1.6`: the hero headline (on the ceiling-capped `--fluid-display`) held at 320px while a footer
+wordmark on `fluid-chrome(200)` reached 480px, 1.5× past everything beside it, on exactly the
+screens a ceiling exists to tame. Chrome still ignores the *floor* (`units.fluid.floor`) — only the
+ceiling half of "independent of floor/ceiling" changed; chrome's own `max(1px, heightArm)` clause
+already does the floor's job for it. See §7.
+
 ## 7. No ceiling (and when to set one)
 
 Above the reference the whole composition (layout, type, pinned render, wordmarks) scales as one, so
@@ -205,7 +215,9 @@ space. CSS pixels are not device pixels, which keeps this tamer than it sounds:
 
 The real ceiling is asset resolution. Inline SVG scales perfectly; a 1920-wide raster upscales. Either
 re-export at about 3000 wide or set `ceiling`. The generator then emits `min(<ceiling>px, …)` on the
-base unit, and the type units stop with it.
+base unit, and the type units stop with it — and, separately, `min(<ceiling>px, …)` on
+`--fluid-chrome` too (§6, Decision D4), since chrome does not read `var(--fluid)` and would
+otherwise keep growing past the cap on the very displays that set it.
 
 ## 8. Configuration knobs
 

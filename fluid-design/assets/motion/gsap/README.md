@@ -100,6 +100,24 @@ Distances live in CSS custom properties on the animated element —
 reads them with the reference build's own defaults). Scalar ranges for
 `FadeOnExit` are `--exit-from`/`--exit-to`.
 
+## Two things `motion.css` cannot do for you
+
+- **The load veil needs a background from the page.** `[data-stage-veil]` is
+  positioned, `z-index`ed and set to `opacity: 1`, but it paints nothing —
+  the right colour is a page decision (a surface token), not this
+  stack-agnostic file's. Without one, the veil is an invisible fixed layer
+  and the flash it exists to prevent is back, silently: `<div
+  data-stage-veil class="bg-surface-dark">` (or an inline
+  `background-color`).
+- **Centring a stage item needs `translate`, not `transform`.** Every
+  `[data-variant]` rule in `motion.css` sets `transform`
+  (`translateY`/`scaleY`/`scaleX`), so `transform` is already spoken for on
+  any element carrying one. A `transform: translateX(-50%)` meant to centre
+  that same element is silently overwritten the instant the hidden-state
+  rule applies, and again by GSAP's own tween. Use the independent
+  `translate` property instead — `translate: -50% 0;` — which composes with
+  `transform` rather than fighting it for the one declaration.
+
 ## One scroll-driven scene per page
 
 `scrubStage.ts` is real main-thread cost: a gated rAF loop, a per-frame

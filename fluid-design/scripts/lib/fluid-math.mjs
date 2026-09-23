@@ -163,11 +163,19 @@ export function resolveFloors(cfg) {
  *   below engageAt          -> every value is 1 (flat 1px)
  *   --fluid                 max(floor, min(heightArm, widthArm))   [heightAxis:false -> max(floor, widthArm)]
  *   --fluid-display/-copy   max(floor, fluid, damping*fluid + (1-damping))
- *   --fluid-chrome          min(widthArm, max(1, heightArm))       [independent of floor/ceiling]
+ *   --fluid-chrome          min(ceiling, min(widthArm, max(1, heightArm)))   [independent of FLOOR only — see below]
  *
  * `ceiling`, if set, wraps `--fluid` in min(ceiling, ...) BEFORE the type
  * units read it, so display/copy inherit the cap through `fluid` the same
- * way they do in the generated CSS (`var(--fluid)`).
+ * way they do in the generated CSS (`var(--fluid)`). Decision D4: the
+ * ceiling ALSO wraps `--fluid-chrome` directly (chrome does not read
+ * `var(--fluid)`, so it needs its own `min(ceiling, ...)`) — without this,
+ * chrome keeps growing past the point every other role on the page stopped,
+ * which reads as site chrome (header, footer) visibly outgrowing the
+ * content it sits beside on exactly the large displays a ceiling exists
+ * for. Chrome still ignores the FLOOR (`units.fluid.floor`) — that half of
+ * "independent of floor/ceiling" stands: chrome's own height-never-below-1
+ * clause already does that role's floor job.
  */
 export function factors(cfg, w, h) {
   if (w < cfg.engageAt) {
@@ -185,7 +193,8 @@ export function factors(cfg, w, h) {
   const display = Math.max(floors.display, fluid, cfg.units.display.damping * fluid + (1 - cfg.units.display.damping))
   const copy = Math.max(floors.copy, fluid, cfg.units.copy.damping * fluid + (1 - cfg.units.copy.damping))
 
-  const chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
+  let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
+  if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome)
 
   return { fluid, display, copy, chrome }
 }
@@ -225,7 +234,11 @@ export function cssUnits(cfg) {
 
   const displayExpr = `max(${px(floors.display)}, var(--fluid), calc(${num(d)} * var(--fluid) + ${px(1 - d)}))`
   const copyExpr = `max(${px(floors.copy)}, var(--fluid), calc(${num(c)} * var(--fluid) + ${px(1 - c)}))`
-  const chromeExpr = `min(${widthArm}, max(1px, ${heightArm}))`
+  // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
+  // (Decision D4) — otherwise chrome keeps growing past the point the rest
+  // of the page's ceiling-capped units stopped.
+  const chromeExprRaw = `min(${widthArm}, max(1px, ${heightArm}))`
+  const chromeExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${chromeExprRaw})` : chromeExprRaw
 
   // The header row itself: a flat 34px below `engageAt`, `48 * --fluid-chrome`
   // above it — fixed numbers from the reference build, independent of the

@@ -101,6 +101,17 @@ if the segment's early frames still carry decaying motion from an intro. Plot mo
 across the candidate segment — flat is good, decaying means the intro's settle is inside the loop
 and will replay every cycle.
 
+**The easy route, when the source is synthetic rather than filmed: build the loop periodic by
+construction instead of measuring one out of a longer render.** A generated clip (a shader loop, a
+procedural camera path, an eased parameter sweep) can be authored so its last frame's *state* is
+defined to equal its first frame's — the render's own parameters guarantee `frame[0] ≈
+frame[last+1]` rather than that identity having to be *discovered* by scanning for a PSNR minimum
+across candidate seams. This turns the whole of this section's measurement work into a single sanity
+check (confirm the two ends actually match, since a construction bug can still break the guarantee)
+instead of a search. Reach for it whenever you control the generator; the PSNR/motion-floor method
+above is for when you don't — a filmed or hand-animated clip that already exists and must have its
+seam found after the fact.
+
 On the web, a `loop` attribute forces re-entry at frame 0 and suppresses the `ended` event — for a
 mid-clip loop point, don't use it:
 
@@ -191,6 +202,30 @@ entirely: re-evaluating `<source media>` after a tier flip (§8) or recovering a
 was evicted after a long background tab (§12). Reach for it only in those two cases, never as a
 generic "start loading" call on the warm path — setting `preload = 'auto'` alone is enough to hint
 the browser to fetch.
+
+**But "enough to hint the browser to fetch" assumes the element already has something to fetch.**
+Two element shapes need different warm-tier code, and conflating them is how this rule gets
+half-applied:
+
+- **`InViewLoopVideo` (and its GSAP twin, `data-loop-video`): the `<source>` children exist at
+  mount.** The browser already knows what it would fetch; `preload = 'auto'` alone is the whole
+  fix, and an explicit `.load()` on top of it only risks re-running resource selection while a
+  `play()` from a second, tighter observer is already in flight (measured: both observers can fire
+  in the same batch on a phone, and `.load()` there left a fully-buffered video paused forever).
+- **`ScrubStage` (React and GSAP): the `<video>` starts genuinely SRC-LESS.** Only `data-src`/
+  `data-mobile-src` (or, in React, a `null` `resolved` state) hold the real URL until JS assigns it
+  — there is nothing for `preload = 'auto'` to hint toward until that assignment happens. The fix
+  here is not "add `.load()` back": setting the `src` IDL attribute is itself what starts the
+  fetch (assigning `src` runs the same resource-selection algorithm `.load()` would trigger), so
+  the warm tier only needs to assign `src` if it isn't set yet (GSAP: `if (!video.getAttribute
+  ('src')) video.src = …`; React: the `resolved` prop typically already reached the element by the
+  time the warm margin fires) and set `preload = 'auto'`. No explicit `.load()` call is needed on
+  top of an assignment, and nothing has played yet at the warm stage for one to abort even if it
+  were called.
+
+The rule is really one rule, not two: *the warm tier's job is to make sure the element has a
+source and a preload hint, using whichever of those two steps this element's markup doesn't
+already provide — never an unconditional `.load()`.*
 
 ## 6. The `translateZ(0)` anchor
 

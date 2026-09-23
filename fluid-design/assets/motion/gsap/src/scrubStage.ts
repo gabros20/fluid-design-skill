@@ -70,7 +70,7 @@
  * Nothing here ever force-scrolls the visitor or reloads the page.
  */
 
-import { prefersReducedMotion } from './eases'
+import { ENGAGE_QUERY, prefersReducedMotion } from './eases'
 import { createVideoController } from './videoController'
 
 /** Source frame rate, exactly. */
@@ -291,7 +291,13 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   const wakeMarginPx = options.wakeMarginPx ?? 200
   const glide = options.glide ?? 0.18
   const glideRest = options.glideRestSeconds ?? 0.5 / fps
-  const mobileBreakpoint = options.mobileBreakpoint ?? '(min-width: 1024px)'
+  // Default to the shared ENGAGE_QUERY (references/attribute-contract.md §4)
+  // rather than a hand-typed literal — the reference build's earlier
+  // '(min-width: 1024px)' here drifted silently from any project whose
+  // fluid.config.json engageAt wasn't 1024. See eases.ts's own docblock: a
+  // project with a non-default engageAt should regenerate fluid.config.ts
+  // (`--stack ts`) and pass its ENGAGE_QUERY through `mobileBreakpoint`.
+  const mobileBreakpoint = options.mobileBreakpoint ?? ENGAGE_QUERY
   const backdropStops = options.backdropStops ?? DEFAULT_BACKDROP
 
   const desktop = resolveTier(options.desktop)
@@ -385,15 +391,41 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   let mode: Mode = 'head'
   let awake = false
 
+  // Write the initial mode ONCE at mount, rather than relying on setMode's
+  // own early-return-when-unchanged guard to do it. `mode` starts 'head' and
+  // the first real setMode('head') call would be a no-op under that guard,
+  // so a page loaded at progress 0 would never get `data-motion-state` at
+  // all — "head at progress 0" becomes unverifiable (the marker CSS in
+  // verification.md §3 has nothing to key off), and the React port has the
+  // same fact expressed for free by useState('head')'s first render.
+  video.setAttribute('data-motion-state', mode)
+
   const wake = (next: boolean) => {
     if (awake === next) return
     awake = next
+    // Mirrors the React port's wake-edge effect (`if (awake &&
+    // !wasAwakeRef.current) rehydrate('wake')`): re-derive mode/time/camera
+    // from scroll on every false->true transition, not only on mount/resize/
+    // visibility/focus. Without this, a scene that goes to sleep mid-scrub
+    // (scrolled far past, then back) can wake with a stale decoder state
+    // that nothing re-syncs until the next of those other triggers fires.
+    if (next) rehydrate('wake')
   }
 
   const setMode = (next: Mode) => {
     if (mode === next) return
     mode = next
     video.setAttribute('data-motion-state', next)
+    // Mirrors the React port's playback effect (`if (!awake || reduced ||
+    // mode === 'scrub') { video.pause(); return }`): entering scrub hands
+    // the playhead to the scroll-driven glide in tick() below, and the
+    // decoder must not keep free-running under it. Without this, a reader
+    // arriving from the head loop keeps the decoder playing under the
+    // glide — measured via requestVideoFrameCallback: 121 presented frames
+    // in 2s at a PARKED scroll position, a visible shimmer plus wasted
+    // decode, invisible to the mode/attribute alone since the mode itself
+    // was already correct.
+    if (next === 'scrub') video.pause()
   }
 
   // ---- camera geometry ------------------------------------------------
@@ -675,12 +707,27 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   }
 
   // ---- warm / wake observers -----------------------------------------
+  // NEVER call video.load() here (video.md §5: "on phones this aborts an
+  // in-progress play()"). This element is genuinely SRC-LESS until `pickTier`
+  // assigns it — unlike inViewLoopVideo.ts's warm tier, whose <source>
+  // children already exist at mount, so setting `preload='auto'` alone has
+  // nothing to hint the fetch toward here unless a src exists. Assigning the
+  // `src` IDL attribute directly is what starts the fetch (the browser's own
+  // resource-selection algorithm runs off that assignment, the same
+  // mechanism `.load()` would trigger) — no `.load()` call is needed on top
+  // of it, and nothing has played yet at this point for one to abort even if
+  // it were. If `pickTier`'s rAF has already run (the common case — it is
+  // scheduled at mount, long before this margin fires), `src` is already set
+  // and this is a no-op past the preload hint.
   const warmObserver = new IntersectionObserver(
     (entries) => {
       const entry = entries[0]
       if (!entry?.isIntersecting) return
+      if (!video.getAttribute('src')) {
+        const src = desktopTier ? video.dataset.src : video.dataset.mobileSrc
+        if (src) video.src = src
+      }
       video.preload = 'auto'
-      video.load()
       warmObserver.disconnect()
     },
     { rootMargin: `${warmMarginPx}px 0px` }

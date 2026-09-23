@@ -1,0 +1,5 @@
+{
+  "$schema": "../../../assets/fluid.config.schema.json",
+  "canvas": { "width": 1600, "gutter": 64 },
+  "ceiling": 1.6
+}

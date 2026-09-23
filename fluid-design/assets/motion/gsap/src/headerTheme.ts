@@ -72,7 +72,17 @@ export function initHeaderTheme(root: ParentNode = document, options: HeaderThem
   const base: HeaderTheme = options.base ?? 'light'
   let bands: Band[] = []
   let probeY = 48
-  let current: HeaderTheme = base
+  // Not `base` — a sentinel outside HeaderTheme's own two values, so the
+  // FIRST resolve() always writes `data-theme`, even when it resolves to
+  // `base` itself. Initialising this to `base` meant a page that starts
+  // over a light (base) section never got `data-theme` at all until the
+  // first flip: resolve()'s `next !== current` guard was already true on
+  // load, so the write was skipped — the CSS then had to treat "no
+  // attribute" as meaning base, which is undocumented and easy to get
+  // wrong. The React port does not have this gap: `useState<HeaderTheme>
+  // (base)` returns `base` from the very first render, so the header
+  // always has a defined theme from render one.
+  let current: HeaderTheme | null = null
 
   const measure = () => {
     // offsetTop/offsetHeight are LAYOUT metrics, immune to a still-running

@@ -16,7 +16,7 @@
 // the default config — never hand-edit them; edit fluid.config.json (or this
 // generator) and re-run.
 
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_PATH } from './lib/fluid-math.mjs'
@@ -24,8 +24,9 @@ import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_P
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SKILL_ROOT = resolvePath(__dirname, '..')
 const DEFAULT_OUT_DIR = join(SKILL_ROOT, 'assets/styles')
+const FIXTURE_CONFIGS_DIR = join(__dirname, 'fixtures/configs')
 
-const STACKS = ['tailwind-v4', 'css', 'scss', 'stylex']
+const STACKS = ['tailwind-v4', 'css', 'scss', 'stylex', 'ts']
 
 // ── shared text fragments ──────────────────────────────────────────────
 
@@ -564,15 +565,29 @@ function buildUnitsOnlyCss(cfg, headerComment) {
 }
 
 function buildVanillaCss(cfg) {
+  const p = cfg.prefix
   return (
     buildUnitsOnlyCss(cfg, cssHeader(cfg, 'css')) +
-    `\n/* .fluid-frame — the drawn frame, cap + scaled gutter on ONE box. Apply it
-   to the page's single outermost content wrapper, not to every section:
-   the cap and the gutter are properties of the FRAME, and stacking it on
-   nested boxes compounds the padding. Below engageAt it emits nothing —
-   bring your own mobile padding for that box. */
+    `\n/* .${p}-frame — the drawn frame, cap + scaled gutter on ONE box. Apply it
+   ONCE PER SECTION, to that section's own single inner wrapper — never to
+   the page as a whole, and never stacked on a second box nested inside the
+   same section: the section itself carries full-bleed colour, and this box
+   carries the frame (references/section-recipe.md). Below engageAt it is a
+   plain full-width box with a fixed measure and a fixed gutter (32px from
+   640px up); the cap and the scaled gutter both engage together above it. */
+.${p}-frame {
+  width: 100%;
+  margin-inline: auto;
+  max-width: ${num(cfg.canvas.width)}px;
+  padding-inline: 24px;
+}
+@media (width >= 640px) {
+  .${p}-frame {
+    padding-inline: 32px;
+  }
+}
 @media (width >= ${cfg.engageAt}px) {
-  .fluid-frame {
+  .${p}-frame {
     margin-inline: auto;
     max-width: max(${num(cfg.canvas.width)}px, calc(${num(cfg.canvas.width)} * var(--fluid)));
     padding-inline: calc(${num(cfg.canvas.gutter)} * var(--fluid));
@@ -588,8 +603,19 @@ function buildVanillaReadme(cfg) {
     `# fluid-design — vanilla CSS stack
 
 \`fluid.css\` is framework-free: the \`:root\` units, the engage media query,
-\`--header-h\`, and \`.fluid-frame\` (the drawn frame as a cap + a scaled
-gutter, on one box).
+\`--header-h\`, and \`.${cfg.prefix}-frame\` (the drawn frame as a cap + a
+scaled gutter, on one box).
+
+## Include \`shared/base.css\` too — box-sizing
+
+This stack ships no reset of its own, so \`shared/base.css\`'s \`*, *::before,
+*::after { box-sizing: border-box }\` rule is not optional here the way it
+is under Tailwind (whose own Preflight already sets it). Without it,
+\`.${cfg.prefix}-frame\`'s \`max-width\` caps the CONTENT box instead of the
+border box, and the frame renders at canvas + 2×gutter — wider than drawn,
+with its contents overflowing the intended edge. Include \`shared/base.css\`
+before this file, or add the box-sizing rule yourself if you already reset
+some other way.
 
 ## The authoring convention
 
@@ -653,6 +679,17 @@ node scripts/generate-fluid.mjs --stack css
 function buildScss(cfg) {
   const floors = resolveFloors(cfg)
   const p = cfg.prefix
+  const units = cssUnits(cfg)
+  // Every property in `units.root`/`units.engaged` is emitted verbatim below
+  // — no hand-written expression duplicates cssUnits(cfg)'s formulas, so a
+  // ceiling, a disabled chrome unit, or any other config knob can never
+  // diverge between this stack and the others (the SCSS emitter's previous
+  // hand-rolled block silently ignored `ceiling` and built the literal
+  // string `--fluid-fluid` when chrome was disabled).
+  const rootLines = Object.entries(units.root)
+    .map(([k, v]) => `  ${k}: ${v};`)
+    .join('\n')
+  const engagedLines = Object.entries(units.engaged).map(([k, v]) => `    ${k}: ${v};`).join('\n')
   return (
     scssHeader(cfg, 'scss') +
     `@use 'sass:math';
@@ -673,57 +710,63 @@ $fluid-copy-floor: ${num(floors.copy)};
 $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
 
 // ── Functions ─────────────────────────────────────────────────────────
-// Each returns calc(#{$n} * var(--fluid...)). $n MUST be unitless — the
-// drawn number from the design file, never a length. \`fluid(64px)\` would
-// build \`calc(64px * var(--fluid))\`, length times length, which is invalid
-// CSS and drops the whole declaration silently. The @error below turns
-// that mistake into a build failure instead.
-@function _fluid-assert-unitless($n, $fn) {
+// FUNCTION AND MIXIN NAMES MOVE WITH \`prefix\` (references/attribute-contract.md §1) — the
+// \`--fluid*\` CUSTOM-PROPERTY NAMES INSIDE THEM DO NOT, and are always the
+// literal strings cssUnits(cfg) emits. At the default prefix these read
+// identically either way, which is exactly why this bug shipped unnoticed:
+// only a non-default \`prefix\` makes the two kinds of name diverge visibly.
+//
+// Each function returns calc(#{$n} * var(--fluid...)). $n MUST be
+// unitless — the drawn number from the design file, never a length.
+// \`${p}(64px)\` would build \`calc(64px * var(--fluid))\`, length times
+// length, which is invalid CSS and drops the whole declaration silently.
+// The @error below turns that mistake into a build failure instead.
+@function _${p}-assert-unitless($n, $fn) {
   @if math.is-unitless($n) == false {
     @error "fluid-design: #{$fn}() expects a unitless drawn number, got \`#{$n}\`. \`64px * var(--fluid)\` is invalid CSS (length * length) and silently drops the declaration — pass the bare number instead.";
   }
   @return $n;
 }
 
-@function fluid($n) {
-  $n: _fluid-assert-unitless($n, 'fluid');
+@function ${p}($n) {
+  $n: _${p}-assert-unitless($n, '${p}');
   @return calc(#{$n} * var(--fluid));
 }
 
-@function fluid-display($n) {
-  $n: _fluid-assert-unitless($n, 'fluid-display');
+@function ${p}-display($n) {
+  $n: _${p}-assert-unitless($n, '${p}-display');
   @return calc(#{$n} * var(--fluid-display));
 }
 
-@function fluid-copy($n) {
-  $n: _fluid-assert-unitless($n, 'fluid-copy');
+@function ${p}-copy($n) {
+  $n: _${p}-assert-unitless($n, '${p}-copy');
   @return calc(#{$n} * var(--fluid-copy));
 }
 
 // Font size on the BASE unit, for type whose container scales with it too
-// (see fluid.css's ${p}-text-* comment) — distinct from fluid() only in
+// (see fluid.css's ${p}-text-* comment) — distinct from ${p}() only in
 // intent, not formula.
-@function fluid-text($n) {
-  $n: _fluid-assert-unitless($n, 'fluid-text');
+@function ${p}-text($n) {
+  $n: _${p}-assert-unitless($n, '${p}-text');
   @return calc(#{$n} * var(--fluid));
 }
 
-@function fluid-chrome($n) {
-  $n: _fluid-assert-unitless($n, 'fluid-chrome');
+@function ${p}-chrome($n) {
+  $n: _${p}-assert-unitless($n, '${p}-chrome');
   @return calc(#{$n} * var(--fluid-chrome));
 }
 
 // A max-width that only ever GROWS — never an ordinary max-width. See
 // fluid.css's ${p}-cap-* comment for why it needs its own name.
-@function fluid-cap($n) {
-  $n: _fluid-assert-unitless($n, 'fluid-cap');
+@function ${p}-cap($n) {
+  $n: _${p}-assert-unitless($n, '${p}-cap');
   @return max(#{$n}px, calc(#{$n} * var(--fluid)));
 }
 
 // ── Mixins ────────────────────────────────────────────────────────────
 
 // The engage breakpoint, named so it never drifts from $fluid-engage-at.
-@mixin fluid-up {
+@mixin ${p}-up {
   @media (width >= $fluid-engage-at) {
     @content;
   }
@@ -732,45 +775,54 @@ $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
 // font-size + line-height together, Tailwind's \`/lh\` modifier as a mixin.
 // $unit selects which curve: display (headings), copy (small text/
 // controls) or text (base unit, for type whose container scales with it).
-@mixin fluid-type($size, $lh, $unit: display) {
+@mixin ${p}-type($size, $lh, $unit: display) {
   @if $unit == display {
-    font-size: fluid-display($size);
-    line-height: fluid-display($lh);
+    font-size: ${p}-display($size);
+    line-height: ${p}-display($lh);
   } @else if $unit == copy {
-    font-size: fluid-copy($size);
-    line-height: fluid-copy($lh);
+    font-size: ${p}-copy($size);
+    line-height: ${p}-copy($lh);
   } @else if $unit == text {
-    font-size: fluid-text($size);
-    line-height: fluid-text($lh);
+    font-size: ${p}-text($size);
+    line-height: ${p}-text($lh);
   } @else {
-    @error "fluid-design: fluid-type() unit must be display, copy or text, got \`#{$unit}\`.";
+    @error "fluid-design: ${p}-type() unit must be display, copy or text, got \`#{$unit}\`.";
   }
 }
 
-// The drawn frame as a cap + a scaled gutter, on ONE box — apply to the
-// page's single outermost content wrapper, not to every section.
-@mixin fluid-frame {
+// The drawn frame as a cap + a scaled gutter, on ONE box — apply it ONCE
+// PER SECTION, to that section's own single inner wrapper, never to the
+// page as a whole and never stacked on a second box nested inside the same
+// section (references/section-recipe.md: "the section carries full-bleed
+// colour, the inner box carries the frame"). Below the engage breakpoint
+// it is a plain full-width box with a fixed measure and a fixed gutter (32px
+// from 640px up) — bring nothing else for mobile; the cap and the scaled
+// gutter both engage together from $fluid-engage-at.
+@mixin ${p}-frame {
+  width: 100%;
   margin-inline: auto;
-  max-width: fluid-cap($fluid-canvas-width);
-  padding-inline: fluid($fluid-canvas-gutter);
+  max-width: #{$fluid-canvas-width}px;
+  padding-inline: 24px;
+
+  @media (width >= 640px) {
+    padding-inline: 32px;
+  }
+
+  @include ${p}-up {
+    max-width: ${p}-cap($fluid-canvas-width);
+    padding-inline: ${p}($fluid-canvas-gutter);
+  }
 }
 
 // Emits the :root custom-property block (flat 1px + the engaged values).
-// Include it once, at :root: \`:root { @include fluid-units; }\`
-@mixin fluid-units {
-  --fluid: 1px;
-  --fluid-display: 1px;
-  --fluid-copy: 1px;
-  ${cfg.units.chrome.enabled ? '--fluid-chrome: 1px;\n  ' : ''}--safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --browser-bar: calc(100lvh - 100svh);
-  --header-h: calc(24 * var(--fluid) + var(--safe-top) + 34px);
+// Include it once, at :root: \`:root { @include ${p}-units; }\`
+// Every declaration below is copied verbatim from cssUnits(cfg) — see the
+// note at the top of this file's Functions section.
+@mixin ${p}-units {
+${rootLines}
 
-  @include fluid-up {
-    --fluid: max(${num(floors.fluid)}px, ${cfg.heightAxis ? `min(calc(100svh / ${num(cfg.reference.height)}), calc(100vw / ${num(cfg.reference.width)}))` : `calc(100vw / ${num(cfg.reference.width)})`});
-    --fluid-display: max(${num(floors.display)}px, var(--fluid), calc(${num(cfg.units.display.damping)} * var(--fluid) + ${num(1 - cfg.units.display.damping)}px));
-    --fluid-copy: max(${num(floors.copy)}px, var(--fluid), calc(${num(cfg.units.copy.damping)} * var(--fluid) + ${num(1 - cfg.units.copy.damping)}px));
-    ${cfg.units.chrome.enabled ? `--fluid-chrome: min(calc(100vw / ${num(cfg.reference.width)}), max(1px, calc(100svh / ${num(cfg.reference.height)})));\n    ` : ''}--header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-${cfg.units.chrome.enabled ? 'chrome' : 'fluid'}));
+  @include ${p}-up {
+${engagedLines}
   }
 }
 `
@@ -778,6 +830,7 @@ $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
 }
 
 function buildScssReadme(cfg) {
+  const p = cfg.prefix
   return (
     mdHeader(cfg, 'scss') +
     `# fluid-design — SCSS stack
@@ -785,30 +838,68 @@ function buildScssReadme(cfg) {
 \`_fluid.scss\` gives you the same scale as functions and mixins instead of
 Tailwind's \`@utility\` classes.
 
+## The \`--out\` layout and the \`@use\` path
+
+\`node scripts/generate-fluid.mjs --stack scss --out DIR\` writes this file to
+\`DIR/scss/_fluid.scss\` (the stack name is its own folder under \`DIR\`;
+\`DIR/shared/base.css\` and \`DIR/scss/README.md\` land alongside it — see
+\`scripts/README.md\`'s "the --out layout" for the full tree). Sass's \`@use\`
+drops the leading underscore and the extension, so from a stylesheet that
+can resolve \`DIR\` on its Sass \`loadPaths\` (or via a relative \`../\` path),
+the import is \`@use 'scss/fluid' as fd;\` — NOT \`@use 'fluid-design/fluid'\`,
+which matches neither the \`--out\` layout nor the stack subfolder. Adjust the
+\`scss/\` segment if you copy the file somewhere else; the point is that the
+path must name the ACTUAL folder this file was written into, not the name of
+this skill.
+
 \`\`\`scss
-@use 'fluid-design/fluid' as fd;
+// e.g. with { loadPaths: ['src/styles'] } and this file copied to
+// src/styles/fluid/scss/_fluid.scss:
+@use 'fluid/scss/fluid' as fd;
 
 :root {
-  @include fd.fluid-units;
+  @include fd.${p}-units;
 }
 
 .hero {
-  @include fd.fluid-up {
-    padding-block: fd.fluid(120);
-    @include fd.fluid-type(64, 72, $unit: display);
+  @include fd.${p}-up {
+    padding-block: fd.${p}(120);
+    @include fd.${p}-type(64, 72, $unit: display);
   }
-}
-
-.page {
-  @include fd.fluid-frame;
 }
 \`\`\`
 
+Apply \`fd.${p}-frame\` inside each section's own inner wrapper (never once
+for the whole page, never stacked on a nested box in the same section —
+references/section-recipe.md):
+
+\`\`\`scss
+.hero__inner {
+  @include fd.${p}-frame;
+}
+\`\`\`
+
+## Box-sizing
+
+This stack ships no reset of its own. Include \`shared/base.css\` (or your
+own equivalent) before this file — its \`*, *::before, *::after { box-sizing:
+border-box }\` rule is what keeps \`${p}-frame\`'s \`max-width\` capping the
+border box; without it the frame renders at canvas + 2×gutter, wider than
+drawn.
+
+## Function and mixin names move with \`prefix\`; custom properties do not
+
+Every function/mixin above is spelled with THIS config's \`prefix\`
+(\`"${p}"\`) — change \`prefix\` in \`fluid.config.json\` and regenerate to
+rename all of them together. The \`--fluid*\` custom properties they read
+(\`var(--fluid)\`, \`var(--fluid-display)\`, …) are fixed names and never
+change with \`prefix\` (references/attribute-contract.md §1).
+
 ## The unit functions are the enforcement point
 
-\`fluid()\`, \`fluid-display()\`, \`fluid-copy()\`, \`fluid-text()\` and
-\`fluid-chrome()\` all \`@error\` if you pass a value with a unit —
-\`fluid(64px)\` fails the build instead of silently compiling to
+\`${p}()\`, \`${p}-display()\`, \`${p}-copy()\`, \`${p}-text()\` and
+\`${p}-chrome()\` all \`@error\` if you pass a value with a unit —
+\`${p}(64px)\` fails the build instead of silently compiling to
 \`calc(64px * var(--fluid))\`, which is length-times-length and gets the
 WHOLE declaration dropped by the browser with no warning anywhere. Sass's
 build-time \`@error\` is strictly better here than CSS ever can be: it turns
@@ -944,6 +1035,43 @@ node scripts/generate-fluid.mjs --stack stylex
   )
 }
 
+// ── ts (framework-agnostic constants) ─────────────────────────────────
+
+// The single source for the numbers every motion port (GSAP, React/Motion)
+// hand-typed as a duplicate literal before this existed — `ENGAGE_QUERY` in
+// `assets/motion/gsap/src/eases.ts`, `ENGAGE_BREAKPOINT_PX` in
+// `assets/motion/react-motion/lib/constants.ts`. Those files keep their own
+// DEFAULT literal (1024) so they work with zero setup, but each carries a
+// comment pointing back here: regenerate this file with `--stack ts` and
+// import from it instead, the moment `engageAt` (or the reference/canvas
+// numbers) stop matching the default.
+function buildFluidConfigTs(cfg) {
+  return (
+    tsHeader(cfg, 'ts') +
+    `/** Min-width (px) where the fluid scale turns on. Mirrors \`engageAt\` in
+ * \`fluid.config.json\`. Every hand-typed \`ENGAGE_QUERY\`/\`ENGAGE_BREAKPOINT_PX\`
+ * literal in this skill's motion ports (GSAP's \`eases.ts\`, React's
+ * \`lib/constants.ts\`) should import THIS constant once your config's
+ * \`engageAt\` stops matching the shipped default of 1024 — see each of
+ * those files' own docblock for the literal this replaces. */
+export const ENGAGE_PX = ${num(cfg.engageAt)}
+
+/** \`matchMedia\`-ready form of ENGAGE_PX. */
+export const ENGAGE_QUERY = \`(min-width: \${ENGAGE_PX}px)\`
+
+/** The viewport where every fluid unit equals exactly 1px — a content
+ * budget, not the design canvas (references/fluid-scale.md §4). */
+export const REFERENCE_WIDTH = ${num(cfg.reference.width)}
+export const REFERENCE_HEIGHT = ${num(cfg.reference.height)}
+
+/** The drawn design-file frame: the \`${cfg.prefix}-cap-*\` grow-only ceiling
+ * width, and its page gutter. */
+export const CANVAS_WIDTH = ${num(cfg.canvas.width)}
+export const CANVAS_GUTTER = ${num(cfg.canvas.gutter)}
+`
+  )
+}
+
 // ── shared/base.css ────────────────────────────────────────────────────
 
 function buildSharedBaseCss(cfg) {
@@ -955,6 +1083,19 @@ function buildSharedBaseCss(cfg) {
    stack. Nothing here reads fluid.config.json — it has no config-driven
    numbers — but it is generated (not hand-written) so it stays alongside
    the rest of this skill's output and picks up fixes from one place. */
+
+/* Tailwind v4's own Preflight already sets this, so the tailwind-v4 stack
+   needs nothing extra here. A non-Tailwind stack (this file, standalone, or
+   the vanilla-CSS/SCSS stacks) usually has NO reset that does, and without
+   it \`max-width: max(${num(cfg.canvas.width)}px, ...)\` caps the CONTENT box, not the border
+   box: the frame then renders at canvas + 2×gutter (e.g. ${num(cfg.canvas.width)} + 2×${num(cfg.canvas.gutter)} =
+   ${num(cfg.canvas.width + 2 * cfg.canvas.gutter)}) instead of ${num(cfg.canvas.width)}, and everything inside it overflows the intended
+   frame — measured: a header CTA and the hero copy cut off at the edge. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html {
   /* Kill rubber-band / elastic overscroll so momentum can't bounce past a
@@ -1121,6 +1262,34 @@ button:disabled {
 
 // ── CLI ─────────────────────────────────────────────────────────────────
 
+const USAGE = `generate-fluid.mjs — deterministic generator for every fluid-design style stack.
+
+Usage:
+  node generate-fluid.mjs [--config fluid.config.json] --stack tailwind-v4|css|scss|stylex|ts|all [--out DIR] [--check]
+
+Options:
+  --config <file>   config file to load instead of the shipped defaults (assets/fluid.config.json)
+  --stack <name>    which stack to write: tailwind-v4, css, scss, stylex, ts, or all (default: all)
+  --out <dir>       output directory (default: assets/styles, relative to the skill root)
+  --check           regenerate from the DEFAULT config plus every fixture config under
+                     scripts/fixtures/configs/, diff against what's on disk, write nothing,
+                     exit 1 if anything differs
+  -h, --help        print this message and exit
+
+The --out layout: each stack writes into its OWN subfolder, "<out>/<stack>/...":
+  <out>/tailwind-v4/fluid.css, tokens.example.css, cn.ts, README.md
+  <out>/css/fluid.css, README.md
+  <out>/scss/_fluid.scss, README.md
+  <out>/stylex/fluid.stylex.ts, README.md
+  <out>/ts/fluid.config.ts
+  <out>/shared/base.css                          (always written, every run, any --stack)
+
+The committed assets/styles/* tree is exactly this script's output for the default
+config (assets/fluid.config.json) with --out assets/styles — never hand-edit it;
+edit the config (or this generator) and re-run.
+
+Exit codes: 0 ok, 1 --check found a difference, 2 usage/invocation error.`
+
 function parseArgs(argv) {
   const args = { stack: null, config: undefined, out: DEFAULT_OUT_DIR, check: false }
   for (let i = 0; i < argv.length; i++) {
@@ -1163,19 +1332,72 @@ function buildFiles(cfg, stacks) {
     files['stylex/fluid.stylex.ts'] = buildStylex(cfg)
     files['stylex/README.md'] = buildStylexReadme(cfg)
   }
+  if (stacks.includes('ts')) {
+    files['ts/fluid.config.ts'] = buildFluidConfigTs(cfg)
+  }
   // shared/base.css is stack-agnostic and always (re)generated, regardless
   // of which stack(s) were requested.
   files['shared/base.css'] = buildSharedBaseCss(cfg)
   return files
 }
 
+// The last `--fluid:` declaration in a stack's unit output — the root block
+// always writes the flat `--fluid: 1px;` first, so the LAST match is always
+// the engaged (real) expression, in every stack's syntax: plain CSS
+// (tailwind-v4, css), a mixin body (scss — cssUnits(cfg)'s engaged strings
+// are emitted verbatim, see buildScss), or the raw CSS text embedded in
+// stylex's FLUID_UNITS_CSS template string.
+function extractFluidExpr(content) {
+  const matches = [...content.matchAll(/--fluid:\s*([^;]+);/g)]
+  if (matches.length === 0) return null
+  return matches[matches.length - 1][1].trim()
+}
+
+// Cross-stack invariants that hold for ANY config, checked against files
+// built in-memory (never diffed against disk — only the default config has
+// a committed tree to diff against). This is what actually catches #1/#2's
+// class of bug: the SCSS emitter's old hand-written --fluid ignored
+// `ceiling` entirely and built the literal string `--fluid-fluid` when
+// chrome was disabled, and the DEFAULT config (ceiling: null, chrome
+// enabled) cannot exercise either path — a fixture config has to.
+function checkFixtureInvariants(cfg, files, label, mismatches) {
+  const unitFiles = ['tailwind-v4/fluid.css', 'css/fluid.css', 'scss/_fluid.scss', 'stylex/fluid.stylex.ts']
+  const exprs = new Map()
+  for (const rel of unitFiles) {
+    const content = files[rel]
+    if (!content) continue
+    if (content.includes('var(--fluid-fluid)')) {
+      mismatches.push(`${label}: ${rel} emits var(--fluid-fluid) — a stack-local expression diverged from cssUnits(cfg)`)
+    }
+    if (cfg.ceiling !== null && !content.includes(`min(${num(cfg.ceiling)}px`)) {
+      mismatches.push(`${label}: ${rel} has no min(${num(cfg.ceiling)}px — ceiling is set but this stack does not cap --fluid`)
+    }
+    const expr = extractFluidExpr(content)
+    if (expr === null) {
+      mismatches.push(`${label}: ${rel} has no --fluid: declaration to compare`)
+      continue
+    }
+    exprs.set(rel, expr)
+  }
+  const distinct = new Set(exprs.values())
+  if (distinct.size > 1) {
+    mismatches.push(`${label}: --fluid expression differs across stacks — ${[...exprs.entries()].map(([k, v]) => `${k}: ${v}`).join('  |  ')}`)
+  }
+}
+
 function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(USAGE)
+    process.exit(0)
+  }
+  const args = parseArgs(argv)
 
   if (args.check) {
+    const mismatches = []
+
     const cfg = loadConfig(DEFAULT_CONFIG_PATH)
     const files = buildFiles(cfg, STACKS)
-    const mismatches = []
     for (const [rel, expected] of Object.entries(files)) {
       const abs = join(DEFAULT_OUT_DIR, rel)
       if (!existsSync(abs)) {
@@ -1187,13 +1409,32 @@ function main() {
         mismatches.push(`stale: ${rel}`)
       }
     }
+    checkFixtureInvariants(cfg, files, 'default config', mismatches)
+
+    // Fixture configs (scripts/fixtures/configs/*.json) are generated
+    // in-memory only — there is no committed disk tree to diff them
+    // against, so they are checked against the invariants above instead.
+    let fixtureNames = []
+    try {
+      fixtureNames = readdirSync(FIXTURE_CONFIGS_DIR)
+        .filter((f) => f.endsWith('.json'))
+        .sort()
+    } catch {
+      // no fixtures directory: nothing to run, defaults-only check above stands
+    }
+    for (const name of fixtureNames) {
+      const fixtureCfg = loadConfig(join(FIXTURE_CONFIGS_DIR, name))
+      const fixtureFiles = buildFiles(fixtureCfg, STACKS)
+      checkFixtureInvariants(fixtureCfg, fixtureFiles, `fixture ${name}`, mismatches)
+    }
+
     if (mismatches.length > 0) {
       console.error('[fluid-design] --check found differences:')
       for (const m of mismatches) console.error(`  ${m}`)
       console.error('Run: node scripts/generate-fluid.mjs --stack all')
       process.exit(1)
     }
-    console.log('[fluid-design] --check OK — assets/styles matches the default config.')
+    console.log(`[fluid-design] --check OK — assets/styles matches the default config, and ${fixtureNames.length} fixture config(s) (${fixtureNames.join(', ') || 'none'}) pass the cross-stack invariants.`)
     return
   }
 

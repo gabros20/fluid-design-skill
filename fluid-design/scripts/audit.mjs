@@ -6,8 +6,13 @@
 // false positives) because a noisy linter gets ignored.
 //
 // Usage:
-//   node audit.mjs <srcDir> [--engage lg] [--json]
+//   node audit.mjs [srcDir] [--engage lg] [--json]
 //   node audit.mjs --selftest
+//
+// srcDir defaults to "." (the current directory / project root) -- walk()
+// already skips node_modules, .git, .next, dist, build, .turbo, .cache and
+// out, so running with no argument from a project root is the normal case,
+// not just "src/".
 //
 // Exit codes: 0 = no error-severity findings, 1 = at least one error-severity
 // finding, 2 = usage/invocation error.
@@ -75,7 +80,15 @@ function snippetAt(content, index, matchLen) {
 // inside a string or template literal (a URL like `https://…`) are not
 // comment starts: the state machine tracks string/template state and only
 // treats `//`/`/*` as comments while in plain code.
-function maskComments(content) {
+//
+// `blankStrings` (used for .css/.scss, where a rule pattern quoted inside a
+// Sass @error message string is otherwise readable to every rule below --
+// see rule `length-times-unit`'s false positive on the generator's own
+// `_fluid-assert-unitless` @error text, `64px * var(--fluid)`) also blanks
+// the CONTENT of string/template literals, not just skips over it. This is
+// deliberately NOT done for .tsx/.jsx/.html -- several rules there (img-svg,
+// video-attrs, dark-variant) need to read attribute string content itself.
+function maskComments(content, { blankStrings = false } = {}) {
   const chars = Array.from(content)
   const n = chars.length
   let i = 0
@@ -120,9 +133,10 @@ function maskComments(content) {
     }
     if (state === 'sq' || state === 'dq') {
       const quote = state === 'sq' ? "'" : '"'
-      if (c === '\\') { i += 2; continue }
+      if (c === '\\') { if (blankStrings) { chars[i] = ' '; chars[i + 1] = ' ' } i += 2; continue }
       if (c === quote) { state = 'code'; i++; continue }
       if (c === '\n') { state = 'code'; i++; continue } // unterminated -- bail safely, don't eat the rest of the file
+      if (blankStrings) chars[i] = ' '
       i++
       continue
     }
@@ -131,8 +145,9 @@ function maskComments(content) {
       // don't attempt to parse `${...}` interpolations separately -- a `//`
       // or `/*` written inside one would be a very unusual thing to write and
       // is not worth the added state for.
-      if (c === '\\') { i += 2; continue }
+      if (c === '\\') { if (blankStrings) { chars[i] = ' '; chars[i + 1] = ' ' } i += 2; continue }
       if (c === '`') { state = 'code'; i++; continue }
+      if (blankStrings) chars[i] = ' '
       i++
       continue
     }
@@ -245,6 +260,67 @@ const rules = [
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
           why: 'Deliberately off the fluid scale: border/stroke widths, radii, tracking and max-w-* text measures are excluded per fluid-scale.md §4.',
           fix: 'No action needed unless this value was meant to scale — if so it belongs on a different property family.'
+        })
+      }
+    }
+  },
+
+  {
+    // The SCSS/vanilla-CSS twin of `fixed-px-at-engage`: on those stacks
+    // there is no `lg:` class string to grep for, so the same mistake
+    // (a fixed px value that should have answered to the viewport) instead
+    // shows up as a bare `Npx` INSIDE an engaged block -- a `@include
+    // fluid-up { }` (or any `<prefix>-up` mixin) body, or a plain
+    // `@media (width >= Npx)` / `(min-width: Npx)` block. Without this, "0
+    // errors" from a SCSS/vanilla project said almost nothing about the one
+    // thing this skill most wants checked (measured: entirely blind on a
+    // real SCSS+GSAP build).
+    id: 'fixed-px-at-engage-scss',
+    ext: (e) => ['.css', '.scss'].includes(e),
+    run(content, file, ctx, acc) {
+      const openers = [
+        /@include\s+[\w.$-]*-up\s*\{/g,
+        /@media\s*\(\s*(?:width\s*>=|min-width\s*:)\s*\d+(?:\.\d+)?px\s*\)\s*\{/g
+      ]
+      const ranges = []
+      for (const re of openers) {
+        re.lastIndex = 0
+        let om
+        while ((om = re.exec(content))) {
+          let depth = 1
+          let i = om.index + om[0].length
+          while (i < content.length && depth > 0) {
+            if (content[i] === '{') depth++
+            else if (content[i] === '}') depth--
+            i++
+          }
+          ranges.push([om.index + om[0].length, i - 1])
+        }
+      }
+      if (ranges.length === 0) return
+      const inRange = (idx) => ranges.some(([s, e]) => idx >= s && idx < e)
+
+      // Same family list as fixed-px-at-engage's PROP_CORE, spelled as real
+      // CSS property names rather than Tailwind class fragments. Values
+      // <= 2px are the same deliberate hairline exclusion; border/radius/
+      // letter-spacing are never matched because they are not in this list.
+      const propRe = /\b(padding(?:-(?:inline|block)?(?:-(?:start|end))?|-top|-bottom|-left|-right)?|margin(?:-(?:inline|block)?(?:-(?:start|end))?|-top|-bottom|-left|-right)?|gap|row-gap|column-gap|width|height|min-width|min-height|max-width|max-height|top|left|right|bottom|inset|font-size|line-height)\s*:\s*(-?\d+(?:\.\d+)?)px\b/g
+      let m
+      while ((m = propRe.exec(content))) {
+        if (!inRange(m.index)) continue
+        const value = Math.abs(Number(m[2]))
+        if (value <= 2) {
+          pushFinding(acc, {
+            rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
+            why: 'A hairline-scale value (≤ 2px) is likely standing in for a border/seam -- the same deliberate exclusion fixed-px-at-engage makes for Tailwind.',
+            fix: 'If this is genuinely a layout value that should grow with the viewport, scale it; if it is a seam/hairline, leave it fixed.'
+          })
+          continue
+        }
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
+          why: `A fixed px value on "${m[1]}" inside an engaged block (an @include *-up mixin, or an @media width>=/min-width engage query) does not answer to the viewport -- the SCSS/CSS-stack form of the bug fixed-px-at-engage catches for Tailwind (fluid-scale.md §1).`,
+          fix: `Route the drawn number through the fluid function: ${m[1]}: fluid(${m[2]}) (or fluid-display()/fluid-copy() for font-size/line-height).`
         })
       }
     }
@@ -517,15 +593,36 @@ const rules = [
 
 // ── engine ──────────────────────────────────────────────────────────────
 
+// Any file whose header carries both these words is this skill's OWN
+// generator output (`generate-fluid.mjs`'s cssHeader/scssHeader/tsHeader,
+// e.g. "GENERATED by fluid-design's generate-fluid.mjs"). Skipped outright
+// -- scanning generated output for hand-authoring mistakes is never
+// meaningful, and its own @error message text is what produced a false
+// `length-times-unit` positive before this existed. Checked against a
+// prefix of the RAW file, before any masking.
+const GENERATED_HEADER_RE = /generated/i
+const GENERATED_SKILL_RE = /fluid-design/i
+function isGeneratedFile(raw) {
+  const head = raw.slice(0, 400)
+  return GENERATED_HEADER_RE.test(head) && GENERATED_SKILL_RE.test(head)
+}
+
 export function scan(srcDir, opts = {}) {
   const options = { engage: opts.engage ?? 'lg', prefix: opts.prefix ?? 'fluid' }
-  const files = walk(srcDir)
+  const files = walk(srcDir).filter((f) => !isGeneratedFile(readFileSync(f, 'utf8')))
   // Every rule sees comments blanked out (newlines preserved, so line numbers
   // are unaffected) -- a rule pattern mentioned in a docblock or JSX aside
   // must never count as a hit. Repo-wide context is built from the same
   // masked text, so a commented-out @custom-variant/radius/LazyMotion line
-  // doesn't count either.
-  const contents = new Map(files.map((f) => [f, maskComments(readFileSync(f, 'utf8'))]))
+  // doesn't count either. .css/.scss additionally blank STRING CONTENT (not
+  // just skip over it) -- see maskComments' docblock.
+  const contents = new Map(
+    files.map((f) => {
+      const ext = extname(f)
+      const blankStrings = ext === '.css' || ext === '.scss'
+      return [f, maskComments(readFileSync(f, 'utf8'), { blankStrings })]
+    })
+  )
   const ctx = buildContext(files, contents)
 
   const findings = []
@@ -619,12 +716,13 @@ async function main() {
     process.exit(ok ? 0 : 1)
   }
 
-  const srcDir = args._[0]
-  if (!srcDir) {
-    console.error('usage: node audit.mjs <srcDir> [--engage lg] [--json]')
-    console.error('       node audit.mjs --selftest')
-    process.exit(2)
-  }
+  // Default to the current directory -- a PROJECT ROOT, not a src/ folder --
+  // now that walk()'s SKIP_DIR already excludes node_modules/.git/.next/
+  // dist/build/.turbo/.cache/out. Requiring an explicit <srcDir> meant
+  // "node audit.mjs src" silently missed markup living outside src/ (a Vite
+  // layout's root index.html, a monorepo's root-level HTML), which is
+  // exactly what let a bug through unscanned on a real build.
+  const srcDir = args._[0] ?? '.'
 
   const findings = scan(srcDir, { engage: args.engage, prefix: 'fluid' })
 

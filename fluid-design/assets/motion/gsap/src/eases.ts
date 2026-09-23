@@ -6,6 +6,13 @@ import { CustomEase } from 'gsap/CustomEase'
  * `fluid.config.json`'s `engageAt` and the host project's own breakpoint
  * token. Three places, one number — the react-motion port hit duplicate,
  * hand-typed copies of this same fact before it was centralised here.
+ *
+ * This literal is the DEFAULT (`engageAt: 1024` unmodified). The moment a
+ * project's `fluid.config.json` sets a different `engageAt`, this constant
+ * silently stops matching it — nothing here reads the config file. Run
+ * `node scripts/generate-fluid.mjs --stack ts` and import `ENGAGE_QUERY`
+ * from the generated `fluid.config.ts` instead, replacing this literal at
+ * the one place it's declared.
  */
 export const ENGAGE_QUERY = '(min-width: 1024px)'
 

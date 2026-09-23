@@ -150,8 +150,10 @@ if the symptom survives that.
 
 ## 7. The scripts
 
-Three companion scripts (written alongside this skill, referenced here by intent rather than by a
-frozen flag list — check each script's own `--help` for the current surface):
+`audit.mjs` is a **static source scanner** (regex/heuristic rules over your project's source files —
+`fixed-px-at-engage`, `length-times-unit`, and the rest of `scripts/README.md`'s rule table), not a
+scanner of matrix screenshots or captured drift data. Four companion scripts (referenced here by
+intent rather than by a frozen flag list — check each script's own `--help` for the current surface):
 
 - **`scripts/verify-matrix.mjs <url> --reveal --screens --fit-selector`** — drives the viewport
   matrix (§5) against a running dev server, capturing a contact sheet per viewport. `--reveal` steps
@@ -161,16 +163,16 @@ frozen flag list — check each script's own `--help` for the current surface):
 - **`scripts/probe.mjs <url>`** — a single-viewport, single-pass version of the same read-state
   discipline in §1: dumps computed custom properties, key element rects and any scene's current
   mode/progress for one URL, useful as a fast sanity check between matrix runs.
-- **`scripts/audit.mjs <dir>`** — runs after a matrix capture, scanning the resulting screenshots/
-  data for the drift signatures `fluid-scale.md` documents (a grid column count that changed between
-  adjacent matrix cells, an element that overflowed its frame) rather than requiring a human to
-  eyeball every contact sheet.
 - **`scripts/calc.mjs table|px|budget`** — a standalone calculator for the fluid-scale arithmetic
   itself: `table` prints the resolved factor at a set of reference viewports (the kind of table in
   `fluid-scale.md` §3's "Resolved factors"), `px` converts a single drawn number to its resolved
   pixel value at a given viewport, `budget` checks a row of drawn widths against the content budget
   at the reference width (`fluid-scale.md` §9 step 1) before a section is built, rather than after it
   ships and overflows.
+- **`scripts/audit.mjs <dir>`** — the static scanner itself: walks your project's source, applying
+  the rule table in `scripts/README.md` (`fixed-px-at-engage`, `length-times-unit`, and the rest),
+  each finding carrying a rule id, `file:line`, the offending snippet, a *why* and a *fix*.
+  `--selftest` runs it over its own positive/negative fixtures and asserts each trips (or doesn't).
 
-These are being written by another worker in this skill; treat the flags above as the intended shape
-rather than a frozen contract, and check the script's own help output if a flag here doesn't match.
+Flags above are the intended shape rather than a frozen contract — check a script's own `--help`
+output if one here doesn't match.

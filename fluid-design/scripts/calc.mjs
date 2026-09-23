@@ -30,7 +30,8 @@ function rawFactors(cfg, w, h) {
   const floors = resolveFloors(cfg)
   const display = Math.max(floors.display, fluid, cfg.units.display.damping * fluid + (1 - cfg.units.display.damping))
   const copy = Math.max(floors.copy, fluid, cfg.units.copy.damping * fluid + (1 - cfg.units.copy.damping))
-  const chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
+  let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
+  if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome) // Decision D4 — see fluid-math.mjs's factors()
 
   return { fluid, display, copy, chrome }
 }
@@ -107,7 +108,12 @@ function cmdTable(cfg, args) {
       const widthArm = w / cfg.reference.width
       const heightArm = cfg.heightAxis ? h / cfg.reference.height : Infinity
       const raw = cfg.heightAxis ? Math.min(widthArm, heightArm) : widthArm
-      arm = raw < cfg.units.fluid.floor ? 'floor' : (widthArm <= heightArm ? 'width' : 'height')
+      const floored = Math.max(cfg.units.fluid.floor, raw)
+      if (cfg.ceiling !== null && floored >= cfg.ceiling) {
+        arm = 'ceiling'
+      } else {
+        arm = raw < cfg.units.fluid.floor ? 'floor' : (widthArm <= heightArm ? 'width' : 'height')
+      }
     }
     console.log([String(w), String(h), arm, fmt(f.fluid), fmt(f.display), fmt(f.copy), fmt(f.chrome)].map((c) => c.padEnd(9)).join(''))
   }

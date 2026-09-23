@@ -1,0 +1,4 @@
+{
+  "$schema": "../../../assets/fluid.config.schema.json",
+  "heightAxis": false
+}

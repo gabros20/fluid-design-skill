@@ -1209,12 +1209,24 @@ export function ScrubStage({
     const range = rangeRef.current
     if (!range || !resolved) return
 
+    // NEVER call video.load() here (video.md §5). This element is genuinely
+    // SRC-LESS until `resolved` becomes non-null (one rAF after mount, once
+    // the tier resolves) — unlike InViewLoopVideo's warm tier, whose
+    // <source> children already exist at mount, where preload='auto' alone
+    // is enough to hint the fetch and an explicit load() only risks aborting
+    // a play() already in flight. Here, the `src` prop (bound to `resolved`)
+    // is what starts the fetch once React commits it — the same
+    // resource-selection algorithm `.load()` would otherwise re-trigger —
+    // and nothing has played yet at this point for a `.load()` to abort even
+    // if it were called. If `resolved` is still null when this margin fires
+    // (rare — it resolves on the very first rAF after mount), there is
+    // nothing to warm yet; the preload hint below simply waits for React's
+    // next commit to give it a src.
     const warm = new IntersectionObserver(
       ([entry]) => {
         const video = videoRef.current
         if (!entry.isIntersecting || !video) return
         video.preload = 'auto'
-        video.load()
         warm.disconnect()
       },
       { rootMargin: WARM_MARGIN }

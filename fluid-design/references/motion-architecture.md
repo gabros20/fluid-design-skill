@@ -234,6 +234,16 @@ One variant, `growY`/`growX`, is the sanctioned exception to "never animate layo
 see `performance.md` for why `scaleY` (not `height`) is what makes a growing bar affordable, and
 why it needs `transform-origin: bottom` (or `left`, for `growX`) or it grows from the middle.
 
+**Every variant above sets `transform`, which means `transform` is spoken for on any element
+carrying `[data-variant]`/a `StageItem`.** If that same element also needs centring or another
+static offset (`translateX(-50%)` to centre it horizontally, say), write it with the independent
+`translate` property instead: `className="[translate:-50%_0]"` (or the equivalent inline style).
+`transform: translateX(-50%)` on the same element is silently overwritten the moment the hidden
+state applies, and again by whatever drives the reveal — `translate` composes with `transform`
+rather than fighting it for the one declaration, which is also why `fluid-translate-x/y-*`
+(`fluid-scale.md`) writes `translate`, not `transform`. This applies identically to the GSAP port
+— `motion.css`'s own variant rules make the same `transform` claim on `[data-stage-item]`.
+
 ## 8. The entrance curve and fade are measured
 
 `entrance` (a 1.3s move on `cubic-bezier(0.15, 0.6, 0.2, 1)`) and `entranceFade` (a 0.17s linear
