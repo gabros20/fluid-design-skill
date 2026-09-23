@@ -1,0 +1,16 @@
+{
+ "eval_id": 1,
+ "eval_name": "greenfield-next-tailwind-motion-editorial",
+ "prompt": "see evals.json id 1",
+ "assertions": [
+  "fluid units defined with min() of svh and vw arms",
+  "sections use fluid utilities at lg (>=40)",
+  "frame cap and gutter on the same element",
+  "exactly one ScrubStage usage",
+  "scrub asset is all-intra",
+  "noscript reveal safety net present",
+  "audit.mjs reports zero errors",
+  "verify-matrix passes with --reveal",
+  "dark sections mark data-header-theme"
+ ]
+}

@@ -1,0 +1,55 @@
+{
+ "expectations": [
+  {
+   "text": "fluid units defined with min() of svh and vw arms",
+   "passed": true,
+   "evidence": "src/styles/fluid.css:114 --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))"
+  },
+  {
+   "text": "sections use fluid utilities at lg (>=40)",
+   "passed": true,
+   "evidence": "108 lg:fluid-* occurrences"
+  },
+  {
+   "text": "frame cap and gutter on the same element",
+   "passed": true,
+   "evidence": "src/lib/frame.ts, Header.tsx"
+  },
+  {
+   "text": "exactly one ScrubStage usage",
+   "passed": true,
+   "evidence": "1 use in 1 file"
+  },
+  {
+   "text": "scrub asset is all-intra",
+   "passed": true,
+   "evidence": "ffprobe: all 270 frames key_frame=1 (desktop and mobile)"
+  },
+  {
+   "text": "noscript reveal safety net present",
+   "passed": true,
+   "evidence": "layout.tsx references data-stage-item"
+  },
+  {
+   "text": "audit.mjs reports zero errors",
+   "passed": true,
+   "evidence": "0 error, 0 warn, 1 info"
+  },
+  {
+   "text": "verify-matrix passes with --reveal",
+   "passed": true,
+   "evidence": "REVALIDATION.md: PASS 27/27"
+  },
+  {
+   "text": "dark sections mark data-header-theme",
+   "passed": true,
+   "evidence": "7 data-header-theme=\"dark\" occurrences"
+  }
+ ],
+ "summary": {
+  "passed": 9,
+  "failed": 0,
+  "total": 9,
+  "pass_rate": 1.0
+ }
+}
