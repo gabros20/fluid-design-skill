@@ -19,7 +19,7 @@
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_PATH } from './lib/fluid-math.mjs'
+import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_PATH, textZoomFactor, textZoomFactorExpr } from './lib/fluid-math.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SKILL_ROOT = resolvePath(__dirname, '..')
@@ -39,7 +39,7 @@ function configSummary(cfg) {
     `copy.damping ${num(cfg.units.copy.damping)} (floor ${cfg.units.copy.floor === 'auto' ? `auto -> ${num(floors.copy)}` : num(floors.copy)})`,
     `chrome.enabled ${cfg.units.chrome.enabled}`,
     `ceiling ${cfg.ceiling === null ? 'none' : num(cfg.ceiling)}`,
-    `zoomCompensation ${cfg.zoomCompensation}`,
+    `zoomCompensation ${cfg.zoomCompensation}${cfg.zoomCompensation ? ` (fluid-text: full <= ${num(cfg.zoomTextRange[0])}, none >= ${num(cfg.zoomTextRange[1])})` : ''}`,
     `prefix "${cfg.prefix}"`
   ]
   return lines
@@ -238,7 +238,7 @@ design.`
 
 // ── tailwind-v4 ─────────────────────────────────────────────────────────
 
-function buildUtilityBlock(prefix) {
+function buildUtilityBlock(prefix, cfg) {
   const p = prefix
   return `/* ── Utilities that spend the fluid units ───────────────────────────────
    One @utility per property. The VALUE is always the drawn number, inline
@@ -391,7 +391,11 @@ ${NOT_SCALED_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
    \`${p}-display-*\` and \`${p}-copy-*\` spend the damped type units;
    \`${p}-text-*\` spends the BASE unit, for type whose container scales on
    it too — type on the gentler curve inside a box on the steeper one
-   outgrows its box and re-wraps. */
+   outgrows its box and re-wraps.${cfg.zoomCompensation ? `
+   Browser zoom: display and copy zoom 1:1 through their units. \`${p}-text-*\`
+   takes a share of the zoom by size — all of it up to ${num(cfg.zoomTextRange[0])}px drawn,
+   none from ${num(cfg.zoomTextRange[1])}px — because its box does not zoom, and big type
+   zoomed inside it runs over its neighbours (zoomTextRange, fluid-scale.md §12).` : ''} */
 @utility ${p}-display-* {
   font-size: calc(--value(number) * var(--fluid-display));
   line-height: calc(--modifier(number) * var(--fluid-display));
@@ -401,8 +405,8 @@ ${NOT_SCALED_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
   line-height: calc(--modifier(number) * var(--fluid-copy));
 }
 @utility ${p}-text-* {
-  font-size: calc(--value(number) * var(--fluid));
-  line-height: calc(--modifier(number) * var(--fluid));
+  font-size: calc(--value(number) * var(--fluid)${textZoomFactorExpr(cfg, '--value(number)')});
+  line-height: calc(--modifier(number) * var(--fluid)${textZoomFactorExpr(cfg, '--value(number)')});
 }
 `
 }
@@ -447,7 +451,7 @@ ${BREAKPOINT_TRAP_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
 ${rootBlock(units)}
 ${engagedBlock(units)}
 ${ONE_SCALE_NOTE.split('\n').map((l) => '/* ' + l).join('\n') + ' */\n'}
-${buildUtilityBlock(cfg.prefix)}`
+${buildUtilityBlock(cfg.prefix, cfg)}`
   )
 }
 
@@ -815,6 +819,9 @@ $fluid-display-floor: ${num(floors.display)};
 $fluid-copy-damping: ${num(cfg.units.copy.damping)};
 $fluid-copy-floor: ${num(floors.copy)};
 $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
+$fluid-zoom-compensation: ${cfg.zoomCompensation};
+$fluid-zoom-text-full: ${num(cfg.zoomTextRange[0])};
+$fluid-zoom-text-none: ${num(cfg.zoomTextRange[1])};
 
 // ── Functions ─────────────────────────────────────────────────────────
 // FUNCTION AND MIXIN NAMES MOVE WITH \`prefix\` (references/contract.md §1) — the
@@ -851,11 +858,25 @@ $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
 }
 
 // Font size on the BASE unit, for type whose container scales with it too
-// (see fluid.css's ${p}-text-* comment) — distinct from ${p}() only in
-// intent, not formula.
-@function ${p}-text($n) {
+// (see fluid.css's ${p}-text-* comment). Under browser zoom it takes a share
+// of --fluid-zoom by size: all of it up to $fluid-zoom-text-full drawn px,
+// none from $fluid-zoom-text-none, because its box does not zoom and big type
+// zoomed inside it runs over its neighbours. $size is the FONT size the
+// share is read from; pass it for a line-height, so the line box zooms
+// exactly as its text does (${p}-type() does this for you).
+@function ${p}-text($n, $size: $n) {
   $n: _${p}-assert-unitless($n, '${p}-text');
-  @return calc(#{$n} * var(--fluid));
+  @if not $fluid-zoom-compensation {
+    @return calc(#{$n} * var(--fluid));
+  }
+  $w: math.clamp(0, math.div($fluid-zoom-text-none - $size, $fluid-zoom-text-none - $fluid-zoom-text-full), 1);
+  @if $w == 0 {
+    @return calc(#{$n} * var(--fluid));
+  }
+  @if $w == 1 {
+    @return calc(#{$n} * var(--fluid) * var(--fluid-zoom, 1));
+  }
+  @return calc(#{$n} * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * #{$w}));
 }
 
 @function ${p}-chrome($n) {
@@ -891,7 +912,7 @@ $fluid-chrome-enabled: ${cfg.units.chrome.enabled};
     line-height: ${p}-copy($lh);
   } @else if $unit == text {
     font-size: ${p}-text($size);
-    line-height: ${p}-text($lh);
+    line-height: ${p}-text($lh, $size);
   } @else {
     @error "fluid-design: ${p}-type() unit must be display, copy or text, got \`#{$unit}\`.";
   }
@@ -1072,8 +1093,20 @@ export function fluidCopy(n: number): string {
 }
 
 // Font size on the BASE unit — see fluid.css's ${cfg.prefix}-text-* comment.
-export function fluidText(n: number): string {
-  return \`calc(\${assertFinite(n, 'fluidText')} * var(--fluid))\`
+// Under browser zoom it takes a share of --fluid-zoom by size (all of it up
+// to ${num(cfg.zoomTextRange[0])}px drawn, none from ${num(cfg.zoomTextRange[1])}px). \`size\` is the FONT size the
+// share is read from: pass it for a line-height so the line box zooms with
+// its text.
+const ZOOM_COMPENSATION = ${cfg.zoomCompensation}
+const ZOOM_TEXT_FULL = ${num(cfg.zoomTextRange[0])}
+const ZOOM_TEXT_NONE = ${num(cfg.zoomTextRange[1])}
+export function fluidText(n: number, size: number = n): string {
+  const base = \`calc(\${assertFinite(n, 'fluidText')} * var(--fluid)\`
+  if (!ZOOM_COMPENSATION) return \`\${base})\`
+  const w = Math.min(1, Math.max(0, (ZOOM_TEXT_NONE - size) / (ZOOM_TEXT_NONE - ZOOM_TEXT_FULL)))
+  if (w === 0) return \`\${base})\`
+  if (w === 1) return \`\${base} * var(--fluid-zoom, 1))\`
+  return \`\${base} * (1 + (var(--fluid-zoom, 1) - 1) * \${Math.round(w * 1e6) / 1e6}))\`
 }
 
 export function fluidChrome(n: number): string {
@@ -1446,9 +1479,15 @@ function checkFixtureInvariants(cfg, files, label, mismatches) {
     if (cfg.ceiling !== null && !content.includes(`min(${num(cfg.ceiling)}px`)) {
       mismatches.push(`${label}: ${rel} has no min(${num(cfg.ceiling)}px — ceiling is set but this stack does not cap --fluid`)
     }
-    const zoomed = content.includes('var(--fluid-zoom, 1)')
+    // The engaged --fluid-display declaration (the last one; the root block
+    // writes `1px` first) must read the zoom factor exactly when configured.
+    // Function bodies (scss, stylex) mention var(--fluid-zoom) either way,
+    // behind a compile-time switch, so only the declaration is conclusive.
+    const displayDecls = [...content.matchAll(/--fluid-display:\s*([^;]+);/g)]
+    const displayExpr = displayDecls.length ? displayDecls[displayDecls.length - 1][1] : ''
+    const zoomed = displayExpr.includes('var(--fluid-zoom, 1)')
     if (cfg.zoomCompensation !== zoomed) {
-      mismatches.push(`${label}: ${rel} ${zoomed ? 'multiplies by' : 'does not multiply by'} var(--fluid-zoom, 1) but zoomCompensation is ${cfg.zoomCompensation}`)
+      mismatches.push(`${label}: ${rel} --fluid-display ${zoomed ? 'reads' : 'does not read'} var(--fluid-zoom, 1) but zoomCompensation is ${cfg.zoomCompensation}`)
     }
     const expr = extractFluidExpr(content)
     if (expr === null) {

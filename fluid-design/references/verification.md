@@ -65,6 +65,11 @@ Reading a failure:
   switched to mobile type that is smaller than the desktop type had grown to. Draw mobile body copy
   no smaller than its desktop reference size.
 
+With `--screens` it also saves a viewport capture per zoom cell (`zoom-<window>-<pct>.jpg`), taken
+through the DevTools protocol: Playwright's own screenshot crops a zoomed page to its top-left
+1/zoom, which makes a fitting layout look cut off. Look at them for what the numbers cannot see:
+big type in a scaled box running over its neighbours, fixed chrome covering grown copy.
+
 It needs Playwright's full Chromium (`npx playwright install chromium`). The headless shell ignores
 the zoom preference, and the row is then skipped with a note rather than reporting false passes.
 

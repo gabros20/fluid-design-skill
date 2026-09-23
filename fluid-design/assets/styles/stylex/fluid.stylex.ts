@@ -10,7 +10,7 @@
  *   copy.damping 0.33 (floor auto -> 0.9)
  *   chrome.enabled true
  *   ceiling none
- *   zoomCompensation true
+ *   zoomCompensation true (fluid-text: full <= 24, none >= 48)
  *   prefix "fluid"
  */
 
@@ -76,8 +76,20 @@ export function fluidCopy(n: number): string {
 }
 
 // Font size on the BASE unit — see fluid.css's fluid-text-* comment.
-export function fluidText(n: number): string {
-  return `calc(${assertFinite(n, 'fluidText')} * var(--fluid))`
+// Under browser zoom it takes a share of --fluid-zoom by size (all of it up
+// to 24px drawn, none from 48px). `size` is the FONT size the
+// share is read from: pass it for a line-height so the line box zooms with
+// its text.
+const ZOOM_COMPENSATION = true
+const ZOOM_TEXT_FULL = 24
+const ZOOM_TEXT_NONE = 48
+export function fluidText(n: number, size: number = n): string {
+  const base = `calc(${assertFinite(n, 'fluidText')} * var(--fluid)`
+  if (!ZOOM_COMPENSATION) return `${base})`
+  const w = Math.min(1, Math.max(0, (ZOOM_TEXT_NONE - size) / (ZOOM_TEXT_NONE - ZOOM_TEXT_FULL)))
+  if (w === 0) return `${base})`
+  if (w === 1) return `${base} * var(--fluid-zoom, 1))`
+  return `${base} * (1 + (var(--fluid-zoom, 1) - 1) * ${Math.round(w * 1e6) / 1e6}))`
 }
 
 export function fluidChrome(n: number): string {

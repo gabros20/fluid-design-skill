@@ -9,7 +9,7 @@
 //   copy.damping 0.33 (floor auto -> 0.9)
 //   chrome.enabled true
 //   ceiling none
-//   zoomCompensation true
+//   zoomCompensation true (fluid-text: full <= 24, none >= 48)
 //   prefix "fluid"
 
 @use 'sass:math';
@@ -28,6 +28,9 @@ $fluid-display-floor: 0.82;
 $fluid-copy-damping: 0.33;
 $fluid-copy-floor: 0.9;
 $fluid-chrome-enabled: true;
+$fluid-zoom-compensation: true;
+$fluid-zoom-text-full: 24;
+$fluid-zoom-text-none: 48;
 
 // ── Functions ─────────────────────────────────────────────────────────
 // FUNCTION AND MIXIN NAMES MOVE WITH `prefix` (references/contract.md §1) — the
@@ -64,11 +67,25 @@ $fluid-chrome-enabled: true;
 }
 
 // Font size on the BASE unit, for type whose container scales with it too
-// (see fluid.css's fluid-text-* comment) — distinct from fluid() only in
-// intent, not formula.
-@function fluid-text($n) {
+// (see fluid.css's fluid-text-* comment). Under browser zoom it takes a share
+// of --fluid-zoom by size: all of it up to $fluid-zoom-text-full drawn px,
+// none from $fluid-zoom-text-none, because its box does not zoom and big type
+// zoomed inside it runs over its neighbours. $size is the FONT size the
+// share is read from; pass it for a line-height, so the line box zooms
+// exactly as its text does (fluid-type() does this for you).
+@function fluid-text($n, $size: $n) {
   $n: _fluid-assert-unitless($n, 'fluid-text');
-  @return calc(#{$n} * var(--fluid));
+  @if not $fluid-zoom-compensation {
+    @return calc(#{$n} * var(--fluid));
+  }
+  $w: math.clamp(0, math.div($fluid-zoom-text-none - $size, $fluid-zoom-text-none - $fluid-zoom-text-full), 1);
+  @if $w == 0 {
+    @return calc(#{$n} * var(--fluid));
+  }
+  @if $w == 1 {
+    @return calc(#{$n} * var(--fluid) * var(--fluid-zoom, 1));
+  }
+  @return calc(#{$n} * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * #{$w}));
 }
 
 @function fluid-chrome($n) {
@@ -104,7 +121,7 @@ $fluid-chrome-enabled: true;
     line-height: fluid-copy($lh);
   } @else if $unit == text {
     font-size: fluid-text($size);
-    line-height: fluid-text($lh);
+    line-height: fluid-text($lh, $size);
   } @else {
     @error "fluid-design: fluid-type() unit must be display, copy or text, got `#{$unit}`.";
   }

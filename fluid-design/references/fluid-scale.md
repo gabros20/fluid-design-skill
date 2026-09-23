@@ -313,11 +313,21 @@ and renders z times larger: **text zooms 1:1, floors and dampings included.** Me
 build after installing it: 110/125/150/200% zoom gives 110/125/150/200% text wherever the desktop
 layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
 
-- **Only type is compensated.** `--fluid` (layout), `--fluid-chrome` and `fluid-text-*` stay as they
-  are. Scaling the layout by the zoom would make the composition z times wider than the zoomed
-  viewport. Instead the layout keeps fitting, and the larger text reflows inside its columns, which
-  is what zoom is for. Text in a box that scales on `--fluid` (`fluid-text-*`) does not zoom; keep
-  running copy on the copy and display units.
+- **Only type is compensated.** `--fluid` (layout) and `--fluid-chrome` stay as they are. Scaling
+  the layout by the zoom would make the composition z times wider than the zoomed viewport. Instead
+  the layout keeps fitting, and the larger text reflows inside its columns, which is what zoom is for.
+- **`fluid-text-*` zooms by size** (`zoomTextRange`, default `[24, 48]`): fully up to 24px drawn,
+  not at all from 48px, linearly between. It is type inside a box that scales on `--fluid`, and that
+  box does not zoom. Measured on the Vite example at 2560×1440 and 200%: zooming it fully, the 200px
+  hero title wrapped onto two lines and ran over the body copy beside it. Leaving it out entirely,
+  the body copy that build sets in `fluid-text` (8 of its 14 type styles) did not zoom at all. By size,
+  the title holds its one line and the copy doubles. The share is read from the font size for the
+  line-height too, so a line box never zooms differently from its text (SCSS `fluid-text($lh, $size)`,
+  StyleX `fluidText(lh, size)`; `fluid-type()` and the Tailwind `/lh` modifier do it for you).
+  Display and copy always zoom fully: they sit in fixed measures and wrap.
+- **Fixed chrome does not move out of the way.** A fixed side tab or sticky bar keeps its size and
+  position while the text beside it grows, so at 200% it can sit over copy it cleared at 100%
+  (seen on the Vite example's reservation tab). Check fixed elements in the zoom screenshots.
 - **Install it inline in `<head>`**, before first paint, or a page opened at a remembered zoom
   level renders small type and then jumps. Next: `<script dangerouslySetInnerHTML={{ __html:
   FLUID_ZOOM_INLINE }} />`; anywhere else, the same string in a plain `<script>`. Copy both
@@ -338,7 +348,9 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   Keep mobile body copy no smaller than its desktop reference size to shrink that step. The runtime
   cannot help here, because mobile type is plain px with nothing to multiply.
 - **Check it** with `scripts/verify-matrix.mjs`: its zoom row loads the page under real browser zoom
-  and reports physical text growth (`verification.md`). `zoomCompensation: false` turns the unit
+  and reports physical text growth (`verification.md`). To *see* a zoomed page, capture it through the
+  DevTools protocol (`Page.captureScreenshot`); Playwright's own `page.screenshot` crops a zoomed
+  page to its top-left 1/zoom and makes a fitting layout look cut off. `zoomCompensation: false` turns the unit
   change off; do that only with the client's informed agreement, and record it in `FLUID.md`.
 
 ## 13. Traps

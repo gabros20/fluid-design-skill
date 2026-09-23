@@ -113,8 +113,9 @@ These are two different things.
 - **Browser zoom** (Cmd/Ctrl +). This one must work: it is what WCAG 1.4.4 tests. Viewport-derived
   type cancels zoom on its own, so the type units read a `--fluid-zoom` factor that
   `assets/runtime/fluid-zoom.js` measures (`fluid-scale.md` §12, Browser zoom). Install the script,
-  keep running copy on `fluid-copy-*`/`fluid-display-*` (`fluid-text-*` does not zoom), and draw
-  mobile body copy no smaller than its desktop reference size.
+  and draw mobile body copy no smaller than its desktop reference size. Display and copy zoom fully;
+  `fluid-text-*` zooms fully up to 24px drawn and not at all from 48px (`zoomTextRange`), so a big
+  title in a scaled box holds its box while reading-size copy beside it still zooms.
 
 ## Traps
 - [ ] The unit follows the container: `fluid-text-*` inside scaling boxes, never display type.

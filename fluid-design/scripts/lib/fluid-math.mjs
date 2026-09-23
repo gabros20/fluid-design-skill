@@ -28,7 +28,8 @@ export const DEFAULT_CONFIG = Object.freeze({
     chrome: Object.freeze({ enabled: true })
   }),
   ceiling: null,
-  zoomCompensation: true
+  zoomCompensation: true,
+  zoomTextRange: Object.freeze([24, 48])
 })
 
 export const DEFAULT_CONFIG_PATH = resolvePath(__dirname, '../../assets/fluid.config.json')
@@ -65,7 +66,7 @@ function assertFloor(v, path) {
  * ignored.
  */
 export function mergeConfig(partial = {}) {
-  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'zoomCompensation'])
+  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'zoomCompensation', 'zoomTextRange'])
   for (const key of Object.keys(partial)) {
     assert(known.has(key), `unknown top-level key "${key}"`)
   }
@@ -83,7 +84,8 @@ export function mergeConfig(partial = {}) {
       chrome: { ...DEFAULT_CONFIG.units.chrome, ...(partial.units?.chrome ?? {}) }
     },
     ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling,
-    zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation
+    zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation,
+    zoomTextRange: [...(partial.zoomTextRange ?? DEFAULT_CONFIG.zoomTextRange)]
   }
 
   validateConfig(cfg)
@@ -119,6 +121,41 @@ export function validateConfig(cfg) {
   }
 
   assert(typeof cfg.zoomCompensation === 'boolean', 'zoomCompensation must be a boolean')
+  const r = cfg.zoomTextRange
+  assert(Array.isArray(r) && r.length === 2 && r.every(isFiniteNumber) && r[0] >= 0 && r[0] < r[1], 'zoomTextRange must be [full, none] drawn px with 0 <= full < none')
+}
+
+/**
+ * How much of the browser zoom a `fluid-text-*` size takes: 1 at or below
+ * zoomTextRange[0] drawn px, 0 at or above zoomTextRange[1], linear between.
+ * `fluid-text` is type inside a box that scales on --fluid, and that box is
+ * NOT zoom-compensated, so large type zoomed with it outgrows the box and
+ * runs over its neighbours (measured: a 200px hero title at 2560x1440, 200%,
+ * wrapped to two lines over the body copy). Reading-size text still zooms
+ * 1:1. The display and copy units zoom fully: they sit in fixed measures and
+ * can wrap. The weight is always taken from the FONT size, for the
+ * line-height too, so a line box never zooms differently from its text.
+ */
+export function textZoomWeight(cfg, n) {
+  if (!cfg.zoomCompensation) return 0
+  const [full, none] = cfg.zoomTextRange
+  return Math.min(1, Math.max(0, (none - n) / (none - full)))
+}
+
+/** The CSS factor a fluid-text size is multiplied by, for a compile-time
+ * drawn size `n` (SCSS, StyleX). '' when it is exactly 1. */
+export function textZoomFactor(cfg, n) {
+  const w = textZoomWeight(cfg, n)
+  if (w === 0) return ''
+  if (w === 1) return ' * var(--fluid-zoom, 1)'
+  return ` * (1 + (var(--fluid-zoom, 1) - 1) * ${num(w)})`
+}
+
+/** The same factor for a runtime size expression (Tailwind's --value(number)). */
+export function textZoomFactorExpr(cfg, sizeExpr) {
+  if (!cfg.zoomCompensation) return ''
+  const [full, none] = cfg.zoomTextRange
+  return ` * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (${num(none)} - ${sizeExpr}) / ${num(none - full)}, 1))`
 }
 
 /**

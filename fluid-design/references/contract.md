@@ -43,7 +43,8 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
     "chrome":  { "enabled": true }
   },
   "ceiling": null,
-  "zoomCompensation": true
+  "zoomCompensation": true,
+  "zoomTextRange": [24, 48]
 }
 ```
 
@@ -61,6 +62,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 | `units.chrome.enabled` | emit `--fluid-chrome`, a width-fit/height-floored fourth role for site chrome. Default `true` |
 | `ceiling` | `null` (default) = uncapped growth. A number N wraps `--fluid` in `min(Npx, …)`; the type units inherit the cap through it |
 | `zoomCompensation` | `true` (default): the display and copy units read their base as `var(--fluid) * var(--fluid-zoom, 1)`, so text follows browser zoom once `assets/runtime/fluid-zoom.js` sets `--fluid-zoom` (`fluid-scale.md` §12, Browser zoom). Without the script the fallback is 1. `false` emits plain `var(--fluid)` |
+| `zoomTextRange` | `[full, none]` drawn px, default `[24, 48]`: how much of the zoom `fluid-text-*` takes by font size — all at or below `full`, none at or above `none`, linear between. Tailwind emits it as `clamp(0, (none − n) / (none − full), 1)` inside the utility; SCSS and StyleX resolve it at compile time |
 
 ### Emitted custom properties
 

@@ -25,8 +25,9 @@
 // type on an unzoomed page unless a side panel happens to match a native
 // ratio within 4% (see NATIVE below for how that is narrowed).
 //
-// Verified with real Chromium zoom (Preferences default_zoom_level, headless
-// and headed) at 110–300% on 1x and 2x: see scripts/verify-matrix.mjs --zoom.
+// Verified with real Chromium zoom (Preferences default_zoom_level, new
+// headless) at 110–300% on 1440, 1920 and 2560 windows, on the fixture page
+// and both example builds: see scripts/verify-matrix.mjs's zoom row.
 // Safari and Firefox are expected to work if they expose zoom in dpr; if not,
 // they fall back to 1. Check on the real browser before promising compliance.
 //

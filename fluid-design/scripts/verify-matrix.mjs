@@ -132,7 +132,8 @@ Options:
   --heights <list>    comma-separated desktop heights (default: 640,700,800,900,1440)
   --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667), or "none" to disable
   --fit-selector <s>  selector checked against "height <= viewport" (default: [data-fit=screen])
-  --screens           write a full-page screenshot per viewport + a contact sheet
+  --screens           write a full-page screenshot per viewport + a contact sheet, and a
+                      viewport screenshot per zoom-row cell (zoom-WxH-PCT.jpg)
   --zoom <list>       browser zoom levels for the zoom row (default: 1.25,1.5,2), or "none"
   --zoom-bases <list> window sizes the zoom row runs on (default: 1440x900,1920x1080,2560x1440)
   --zoom-selector <s> the body text measured at each zoom (default: "main p, p"; first visible match)
@@ -389,7 +390,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
 const zoomLevel = (z) => Math.log(z) / Math.log(1.2)
 const ZOOM_PASS_RATIO = 0.9
 
-async function measureAtZoom(chromium, url, base, z, selector) {
+async function measureAtZoom(chromium, url, base, z, selector, shotPath = null) {
   const dir = mkdtempSync(join(tmpdir(), 'fluid-zoom-'))
   mkdirSync(join(dir, 'Default'), { recursive: true })
   writeFileSync(join(dir, 'Default', 'Preferences'), JSON.stringify({ partition: { default_zoom_level: { x: zoomLevel(z) } } }))
@@ -419,7 +420,17 @@ async function measureAtZoom(chromium, url, base, z, selector) {
       }
     }, selector)
     const overflow = await checkOverflow(page)
-    return { ...m, overflow }
+    let screenshot
+    if (shotPath) {
+      // Through the DevTools protocol, not page.screenshot(): Playwright's
+      // capture crops a zoomed page to its top-left 1/zoom, which makes a
+      // layout that fits look cut off.
+      const cdp = await ctx.newCDPSession(page)
+      const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 80 })
+      writeFileSync(shotPath, Buffer.from(data, 'base64'))
+      screenshot = shotPath
+    }
+    return { ...m, overflow, screenshot }
   } finally {
     if (ctx) await ctx.close()
     rmSync(dir, { recursive: true, force: true })
@@ -431,7 +442,9 @@ async function runZoomRow(chromium, url, cfg, opts) {
   const bases = parseWxHList(opts.zoomBases).filter((b) => b.width >= cfg.engageAt)
   const rows = []
   for (const base of bases) {
-    const ref = await measureAtZoom(chromium, url, base, 1, opts.zoomSelector)
+    const shot = (z) => (opts.screens ? join(opts.out, `zoom-${base.width}x${base.height}-${Math.round(z * 100)}.jpg`) : null)
+    if (opts.screens) mkdirSync(opts.out, { recursive: true })
+    const ref = await measureAtZoom(chromium, url, base, 1, opts.zoomSelector, shot(1))
     if (ref.fontSize === null) {
       rows.push({ base, zoom: 1, pass: false, note: `no visible element matches ${opts.zoomSelector}` })
       continue
@@ -441,7 +454,7 @@ async function runZoomRow(chromium, url, cfg, opts) {
     }
     rows.push({ base, zoom: 1, ...ref, physical: ref.fontSize, ratio: 1, pass: ref.overflow.pass })
     for (const z of zooms) {
-      const m = await measureAtZoom(chromium, url, base, z, opts.zoomSelector)
+      const m = await measureAtZoom(chromium, url, base, z, opts.zoomSelector, shot(z))
       if (Math.abs(m.innerWidth * z - base.width) > base.width * 0.02) {
         return { skipped: `zoom did not apply (innerWidth ${m.innerWidth} at ${z * 100}%): the headless shell ignores zoom; run npx playwright install chromium`, rows: [] }
       }
