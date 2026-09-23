@@ -1,0 +1,8 @@
+node_modules/
+.next/
+dist/
+.DS_Store
+*.log
+test-results/
+playwright-report/
+.orchestrate/archive/
