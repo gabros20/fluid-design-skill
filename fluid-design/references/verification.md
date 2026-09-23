@@ -194,6 +194,15 @@ intent rather than by a frozen flag list — check each script's own `--help` fo
   the rule table in `scripts/README.md` (`fixed-px-at-engage`, `length-times-unit`, and the rest),
   each finding carrying a rule id, `file:line`, the offending snippet, a *why* and a *fix*.
   `--selftest` runs it over its own positive/negative fixtures and asserts each trips (or doesn't).
+- **`scripts/anchor-check.mjs <url> [--selector] [--viewports] [--limit]`** — the one check that
+  exercises a REAL smooth scroll through the page's own `scroll-behavior`/scroll-well setup, which
+  `--reveal` deliberately does not: `--reveal`'s stepping forces `scroll-behavior: auto` for the
+  duration of its own stepped `scrollTo` calls (the paragraph above), so 27/27 green cells there
+  prove nothing about whether an actual anchor click survives a scroll well sitting between it and
+  its target (`scroll-scenes.md` §8). It clicks each matching same-page anchor with smooth scrolling
+  left on, waits for `scrollend` or for `scrollY` to sit still for 300ms, and asserts the target's
+  landed `rect.top` matches its `scroll-margin-top` (+ `scroll-padding-top`) or a `--header-h`
+  fallback within 2px.
 
 Flags above are the intended shape rather than a frozen contract — check a script's own `--help`
 output if one here doesn't match.

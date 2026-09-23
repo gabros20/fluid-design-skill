@@ -1144,19 +1144,23 @@ node scripts/generate-fluid.mjs --stack stylex
 // ── ts (framework-agnostic constants) ─────────────────────────────────
 
 // The single source for the numbers every motion port (GSAP, React/Motion)
-// hand-typed as a duplicate literal before this existed — `ENGAGE_QUERY` in
-// `assets/motion/gsap/src/eases.ts`, `ENGAGE_BREAKPOINT_PX` in
-// `assets/motion/react-motion/lib/constants.ts`. Those files keep their own
-// DEFAULT literal (1024) so they work with zero setup, but each carries a
-// comment pointing back here: regenerate this file with `--stack ts` and
+// hand-typed as a duplicate literal before this existed — `ENGAGE_PX`/
+// `ENGAGE_QUERY` in `assets/motion/gsap/src/config.ts`, `ENGAGE_BREAKPOINT_PX`
+// in `assets/motion/react-motion/lib/constants.ts`. Those files keep their
+// own DEFAULT literal (1024) so they work with zero setup, but each carries
+// a comment pointing back here: regenerate this file with `--stack ts` and
 // import from it instead, the moment `engageAt` (or the reference/canvas
-// numbers) stop matching the default.
+// numbers) stop matching the default. GSAP's other modules (`eases.ts`,
+// `stage.ts`, `scrollPull.ts`, `scrubStage.ts`) import `ENGAGE_PX`/
+// `ENGAGE_QUERY` from `config.ts` rather than declaring their own copies, so
+// replacing that one file's body (or having it re-export from this
+// generated one) is the whole fix.
 function buildFluidConfigTs(cfg) {
   return (
     tsHeader(cfg, 'ts') +
     `/** Min-width (px) where the fluid scale turns on. Mirrors \`engageAt\` in
  * \`fluid.config.json\`. Every hand-typed \`ENGAGE_QUERY\`/\`ENGAGE_BREAKPOINT_PX\`
- * literal in this skill's motion ports (GSAP's \`eases.ts\`, React's
+ * literal in this skill's motion ports (GSAP's \`config.ts\`, React's
  * \`lib/constants.ts\`) should import THIS constant once your config's
  * \`engageAt\` stops matching the shipped default of 1024 — see each of
  * those files' own docblock for the literal this replaces. */

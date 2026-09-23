@@ -70,7 +70,8 @@
  * Nothing here ever force-scrolls the visitor or reloads the page.
  */
 
-import { ENGAGE_QUERY, prefersReducedMotion } from './eases'
+import { ENGAGE_QUERY } from './config'
+import { prefersReducedMotion } from './eases'
 import { createVideoController } from './videoController'
 
 /**
@@ -325,7 +326,7 @@ function mountOne(rangeEl: HTMLElement, options: ScrubStageOptions): (() => void
   // Default to the shared ENGAGE_QUERY (references/attribute-contract.md §4)
   // rather than a hand-typed literal — the reference build's earlier
   // '(min-width: 1024px)' here drifted silently from any project whose
-  // fluid.config.json engageAt wasn't 1024. See eases.ts's own docblock: a
+  // fluid.config.json engageAt wasn't 1024. See ./config's own docblock: a
   // project with a non-default engageAt should regenerate fluid.config.ts
   // (`--stack ts`) and pass its ENGAGE_QUERY through `mobileBreakpoint`.
   const mobileBreakpoint = options.mobileBreakpoint ?? ENGAGE_QUERY

@@ -48,13 +48,30 @@ function expectedRawExpr(units, key, width, engageAt) {
   return prop in bucket ? bucket[prop] : null
 }
 
+/** Collapses whitespace and strips a redundant leading zero before a decimal
+ * point (`0.9px` -> `.9px`) so two computed-vs-expected expressions that are
+ * the SAME value serialised two different ways never register as a
+ * mismatch. Measured: the browser's `getComputedStyle` drops the leading
+ * zero (and reformats `var()` internals) even when the raw text otherwise
+ * matches the generator's own output character-for-character, which made
+ * every passing unit row on `display`/`copy` (values built from `--fluid`
+ * inside a further `calc()`) come back diagnosed "mismatch" despite
+ * `pass: true` and `drift: 0`. */
+function normalizeExpr(s) {
+  if (typeof s !== 'string') return s
+  return s
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/(?<!\d)0+(\.\d)/g, '$1')
+}
+
 /** Distinguishes a genuinely stale build from any other kind of drift, so a
  * generator/config bug is never reported with "close the tab" advice that
  * cannot fix it. */
 function diagnoseUnitMismatch(raw, expected) {
   if (raw === '') return 'missing'
   if (expected === null) return raw === '' ? 'missing' : 'unexpected' // property shouldn't exist for this config at all
-  if (raw === expected) return 'match'
+  if (normalizeExpr(raw) === normalizeExpr(expected)) return 'match'
   if (KNOWN_STALE_SIGNATURES.some((re) => re.test(raw))) return 'stale'
   return 'mismatch'
 }
@@ -349,6 +366,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
     const r = resolved[key]
     const drift = Number.isFinite(r) ? Math.abs(r - expected[key]) : Infinity
     const expectedExpr = expectedRawExpr(expectedUnits, key, viewport.width, cfg.engageAt)
+    const pass = drift <= UNIT_TOLERANCE
     return {
       unit: key,
       raw: raw[key],
@@ -356,9 +374,15 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
       resolved: r,
       expected: expected[key],
       expectedExpr,
-      diagnosis: diagnoseUnitMismatch(raw[key], expectedExpr),
+      // Only computed for a failing row -- diagnoseUnitMismatch's job is to
+      // explain a FAILURE, and even after normalizeExpr a passing row can
+      // still carry harmless string drift (e.g. resolved var() internals)
+      // that would otherwise print "mismatch" in report.json next to
+      // pass: true, drift: 0 and mislead anyone reading the JSON directly
+      // (the console table already only prints diagnosis for failing rows).
+      diagnosis: pass ? undefined : diagnoseUnitMismatch(raw[key], expectedExpr),
       drift,
-      pass: drift <= UNIT_TOLERANCE
+      pass
     }
   })
   const unitsPass = unitRows.every((u) => u.pass)

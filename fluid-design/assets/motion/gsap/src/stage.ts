@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 
-import { ENGAGE_QUERY, MOTION, prefersReducedMotion, registerEases, TRIGGERS } from './eases'
+import { ENGAGE_QUERY } from './config'
+import { MOTION, prefersReducedMotion, registerEases, TRIGGERS } from './eases'
 
 /**
  * `[data-stage]` / `[data-stage-item]` / `[data-stage-veil]` — the PAGE-LOAD

@@ -88,7 +88,8 @@ export function initFluidMotion(root: ParentNode = document, options: FluidMotio
   return controller
 }
 
-export { registerEases, EASE_NAMES, MOTION, TRIGGERS, SCROLL_SPRING, ENGAGE_QUERY, prefersReducedMotion } from './eases'
+export { ENGAGE_PX, ENGAGE_QUERY } from './config'
+export { registerEases, EASE_NAMES, MOTION, TRIGGERS, SCROLL_SPRING, prefersReducedMotion } from './eases'
 export { initStages, type StageController } from './stage'
 export { initVeil, type VeilController } from './veil'
 export { initCountUps, type CountUpOptions, type CountUpController } from './countUp'

@@ -353,8 +353,35 @@ away-meter and reclaim logic to stay correct — for the duration of any scroll 
 Both engines' `scrollPull` expose `suspend(ms?)` on the returned controller for a caller that is
 about to drive its own scroll, and call it automatically from two listeners registered in capture
 phase: a `click` on `a[href^="#"]` or any same-path hash link, and `hashchange`. The suspension
-clears on the earlier of a `scrollend` event or a fallback timeout (Safari does not fire `scrollend`
-as of this writing), so it never outlives the scroll it was covering for.
+clears on the earliest of a `scrollend` event, `scrollY` going stable, or a fallback timeout, so it
+never outlives the scroll it was covering for.
+
+**The fallback timeout scales with jump distance, not a flat number.** A flat 1200ms fallback was
+measured tight: a real Chromium smooth scroll from the top of the page to `#menu` — a ~5.2k
+reference-px jump — took 1196ms on its own, and Safari's smooth-scroll pacing for the same jump is
+not guaranteed to be faster. If the jump takes longer than the fallback, the well resumes writing
+mid-flight, which is the exact bug `suspend()` exists to prevent — just delayed instead of avoided.
+So both automatic triggers (the capture-phase click listener and `hashchange`) compute the jump
+distance from the anchor **target's own rect, read at click/hashchange time** (`getBoundingClientRect().top`,
+before any scroll has started) and pass a distance-scaled `ms` to `suspend()`:
+
+```
+ms = min(SUSPEND_FALLBACK_MAX_MS, max(SUSPEND_FALLBACK_MIN_MS, distancePx * SUSPEND_FALLBACK_DISTANCE_FACTOR))
+```
+
+`SUSPEND_FALLBACK_MIN_MS` is 1200 (the old flat value, now a floor for a short jump),
+`SUSPEND_FALLBACK_DISTANCE_FACTOR` is 0.35 reference-px-per-ms, and `SUSPEND_FALLBACK_MAX_MS` is a
+4000ms ceiling so a broken or very distant target can't suspend the well indefinitely. A caller
+driving its own scroll and calling `suspend(ms)` directly is unaffected — the default only changed
+its constant's name, not its value — and can pass its own distance-derived `ms` the same way.
+
+**A second, browser-agnostic clear: scrollY stability.** The distance-scaled fallback above is still
+a ceiling, not a measurement — it's sized for the slowest plausible jump, so a normal one still
+finishes well under it, most visibly on Safari where there is no `scrollend` to end the suspension
+early. While suspended, a small `requestAnimationFrame` watcher tracks `window.scrollY`; once it has
+gone unchanged for `SUSPEND_STABLE_MS` (150ms), the watcher clears the suspension itself, regardless
+of `scrollend` support. This is what keeps a fast jump from sitting out the rest of a conservative
+fallback window on a browser that can't tell the well "the scroll is over" any other way.
 
 `scripts/audit.mjs`'s `scroll-well-vs-smooth-scroll` rule flags (informationally, not as an error) a
 project that uses a scroll well alongside a page-wide `scroll-behavior: smooth` — a reminder that the

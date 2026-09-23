@@ -81,9 +81,14 @@
  * Two triggers call it automatically — a capture-phase `click` on any
  * `a[href^="#"]` or same-path hash link, and `hashchange` — and it is also
  * exposed on the returned controller for a caller that knows it is about to
- * drive `scrollIntoView`/`scrollTo` itself. It clears on the earlier of a
- * `scrollend` event (most browsers) or a 1200ms fallback timeout (Safari,
- * which does not fire `scrollend` as of this writing).
+ * drive `scrollIntoView`/`scrollTo` itself. Both automatic triggers read the
+ * anchor TARGET's rect at click/hashchange time and scale the suspension to
+ * that jump's distance (`SUSPEND_FALLBACK_MIN_MS`..`SUSPEND_FALLBACK_MAX_MS`),
+ * since a flat 1200ms measured tight against a real ~5.2k-reference-px smooth
+ * jump (1196ms in Chromium). It clears on the earliest of a `scrollend` event
+ * (most browsers), `scrollY` going still for `SUSPEND_STABLE_MS` (works even
+ * where `scrollend` is unsupported), or that distance-scaled fallback timeout
+ * (Safari, which does not fire `scrollend` as of this writing).
  *
 
  * ## One rest state, or an interval of them
@@ -324,12 +329,38 @@ const RESTED_QUIET_MS = 200
 
 /**
  * How long `suspend()` pauses writes for when the browser never reports
- * `scrollend` (Safari, as of this writing). Comfortably longer than any
- * anchor-jump smooth scroll in this system's own sections; a caller with a
- * longer scroll of its own should call `suspend(ms)` with an explicit
- * value.
+ * `scrollend` (Safari, as of this writing), if nothing clears it sooner.
+ *
+ * A flat 1200ms was measured tight: a smooth `#menu` jump of ~5.2k reference
+ * px on a real page took 1196ms in Chromium, and Safari's own smooth-scroll
+ * pacing is not guaranteed to be faster. A jump this long resuming the well
+ * mid-flight is the exact bug `suspend()` exists to prevent — so the two
+ * automatic triggers (the capture-phase anchor click and `hashchange`) scale
+ * the fallback with how far the target actually is: `max(SUSPEND_FALLBACK_MIN_MS,
+ * distancePx * SUSPEND_FALLBACK_DISTANCE_FACTOR)`, capped at
+ * `SUSPEND_FALLBACK_MAX_MS` so a broken/very distant target can't suspend the
+ * well indefinitely. See `references/scroll-scenes.md` §8.
+ *
+ * `SUSPEND_STABLE_MS` is the second, browser-agnostic half of the fix: while
+ * suspended, a small watcher ends the suspension as soon as `scrollY` has
+ * gone unchanged for that long, so a fast jump doesn't sit out the rest of a
+ * conservative fallback window even on Safari.
  */
-const SUSPEND_FALLBACK_MS = 1200
+const SUSPEND_FALLBACK_MIN_MS = 1200
+const SUSPEND_FALLBACK_MAX_MS = 4000
+/** Reference px→ms slope for the distance-scaled fallback above. */
+const SUSPEND_FALLBACK_DISTANCE_FACTOR = 0.35
+/** How long scrollY must sit still, while suspended, to end the suspension
+ * early — see `SUSPEND_FALLBACK_MIN_MS`'s docblock. */
+const SUSPEND_STABLE_MS = 150
+
+/** `max(SUSPEND_FALLBACK_MIN_MS, distancePx * SUSPEND_FALLBACK_DISTANCE_FACTOR)`,
+ * capped at `SUSPEND_FALLBACK_MAX_MS`. */
+const suspendMsForDistance = (distancePx: number) =>
+  Math.min(
+    SUSPEND_FALLBACK_MAX_MS,
+    Math.max(SUSPEND_FALLBACK_MIN_MS, Math.abs(distancePx) * SUSPEND_FALLBACK_DISTANCE_FACTOR)
+  )
 
 export interface ScrollPullOptions {
   /** The box to centre in the viewport. */
@@ -365,11 +396,14 @@ export interface ScrollPull {
   /** Stop attracting and reset the visit — the next `start` is a fresh visit. */
   stop(): void
   /**
-   * Pause writes (not the loop) for `ms` (default `SUSPEND_FALLBACK_MS`), or
-   * until `scrollend` fires, whichever is sooner. Call this before driving a
+   * Pause writes (not the loop) for `ms` (default `SUSPEND_FALLBACK_MIN_MS`),
+   * or until `scrollend` fires or `scrollY` has been stable for
+   * `SUSPEND_STABLE_MS`, whichever is sooner. Call this before driving a
    * programmatic or smooth scroll of your own through this pull's target —
-   * see §`behavior: 'instant'` is load-bearing. Safe to call repeatedly;
-   * each call only extends the suspension, never shortens it.
+   * see §`behavior: 'instant'` is load-bearing. The two automatic triggers
+   * (anchor click, `hashchange`) instead pass a distance-scaled `ms` — see
+   * `suspendMsForDistance`. Safe to call repeatedly; each call only extends
+   * the suspension, never shortens it.
    */
   suspend(ms?: number): void
   /** Stop, drop listeners, release ownership. */
@@ -416,6 +450,8 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
   let suspendedUntil = 0
   /** Listener for the `scrollend` that would end a suspension early. */
   let scrollendAbort: AbortController | null = null
+  /** rAF handle for the scrollY-stability watcher; 0 when not running. */
+  let stabilityFrame = 0
 
   // §The viewport height is a SNAPSHOT, and §the lengths are on the fluid unit.
   let vw = window.innerWidth
@@ -589,10 +625,10 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
   }
 
   /**
-   * Pause writes for `ms` (or until `scrollend`, whichever is sooner). See
-   * the `ScrollPull.suspend` docblock.
+   * Pause writes for `ms` (or until `scrollend`/scrollY-stability, whichever
+   * is sooner). See the `ScrollPull.suspend` docblock.
    */
-  const suspend = (ms = SUSPEND_FALLBACK_MS) => {
+  const suspend = (ms = SUSPEND_FALLBACK_MIN_MS) => {
     suspendedUntil = Math.max(suspendedUntil, performance.now() + ms)
     if ('onscrollend' in window) {
       // Only one pending scrollend listener at a time — a second suspend()
@@ -608,6 +644,39 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
         { once: true, signal: scrollendAbort.signal }
       )
     }
+    watchStability()
+  }
+
+  /**
+   * While suspended, ends the suspension as soon as `scrollY` has gone
+   * unchanged for `SUSPEND_STABLE_MS` — the browser-agnostic half of the
+   * fix, since it does not depend on `scrollend` support. Idempotent: a
+   * second `suspend()` call while one watcher is already running does not
+   * start a second one.
+   */
+  const watchStability = () => {
+    if (stabilityFrame) return
+    let lastY = window.scrollY
+    let lastChangeAt = performance.now()
+    const tick = () => {
+      const now = performance.now()
+      if (now >= suspendedUntil) {
+        // Already cleared, by scrollend or by the timeout above.
+        stabilityFrame = 0
+        return
+      }
+      const y = window.scrollY
+      if (y !== lastY) {
+        lastY = y
+        lastChangeAt = now
+      } else if (now - lastChangeAt >= SUSPEND_STABLE_MS) {
+        suspendedUntil = 0
+        stabilityFrame = 0
+        return
+      }
+      stabilityFrame = requestAnimationFrame(tick)
+    }
+    stabilityFrame = requestAnimationFrame(tick)
   }
 
   // Anchor navigation is the common source of a smooth scroll this loop did
@@ -615,6 +684,17 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
   // jump. Capture phase so this fires before any click handler on the
   // anchor itself might call preventDefault(). `hashchange` also catches a
   // browser back/forward that lands on a hash with no click in between.
+  //
+  // Both listeners compute the jump distance from the anchor target's OWN
+  // rect (at the moment of the click/hashchange, before any scroll has
+  // started) and scale the fallback suspension to it — see
+  // `suspendMsForDistance`'s docblock on `SUSPEND_FALLBACK_MIN_MS`.
+  const suspendForHash = (hash: string) => {
+    const id = hash.slice(1)
+    const anchorTarget = id ? document.getElementById(id) : null
+    const distancePx = anchorTarget ? anchorTarget.getBoundingClientRect().top : 0
+    suspend(suspendMsForDistance(distancePx))
+  }
   window.addEventListener(
     'click',
     (e) => {
@@ -623,11 +703,11 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
       const isHashOnly = (a.getAttribute('href') ?? '').startsWith('#')
       const isSamePathHash =
         a.pathname === window.location.pathname && a.search === window.location.search
-      if (isHashOnly || isSamePathHash) suspend()
+      if (isHashOnly || isSamePathHash) suspendForHash(a.hash)
     },
     { capture: true, passive: true, signal }
   )
-  window.addEventListener('hashchange', () => suspend(), { passive: true, signal })
+  window.addEventListener('hashchange', () => suspendForHash(window.location.hash), { passive: true, signal })
 
   // Touch is the only input the loop has to be told about: everything else it
   // reads straight off the scroll position.
@@ -654,6 +734,8 @@ export function createScrollPull(options: ScrollPullOptions): ScrollPull {
     destroy: () => {
       stop()
       scrollendAbort?.abort()
+      if (stabilityFrame) cancelAnimationFrame(stabilityFrame)
+      stabilityFrame = 0
       abort.abort()
     }
   }

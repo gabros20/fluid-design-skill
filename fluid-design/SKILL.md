@@ -24,7 +24,7 @@ alternative has usually already been tried and removed.
 | Ready unit/utility layers per styling stack | `assets/styles/{tailwind-v4,css,scss,stylex,shared}/` |
 | Motion primitives, React + Motion | `assets/motion/react-motion/` |
 | Motion primitives, GSAP (any framework) | `assets/motion/gsap/` |
-| Static audit, viewport-matrix verifier, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,calc,probe}.mjs` |
+| Static audit, viewport-matrix verifier, anchor-scroll check, calculator, stale-CSS probe | `scripts/{audit,verify-matrix,anchor-check,calc,probe}.mjs` |
 
 Copy the prepared artifacts; do not regenerate them from memory. They encode measured numbers and
 comment trails that a from-scratch rewrite loses, which is the whole reason they are on disk.
@@ -140,6 +140,9 @@ Details are in `references/video.md` and `references/ios-safari.md`.
   checks that every reveal actually fired. Keep 2560 in the matrix: frame drift and grid re-flow
   bugs only appear above the reference.
 - At 1440×900 the page must match the design pixel for pixel. That point is the calibration check.
+- If the page has same-page anchor links and/or a scroll well, `node scripts/anchor-check.mjs <url>`
+  clicks them with real smooth scrolling on and asserts they land — `--reveal` above forces
+  `scroll-behavior: auto` while it steps, so it never proves an anchor jump actually arrives.
 - iOS toolbar tint, `lvh` shortfall and video compositing can only be verified on a real device.
   Before asking for a device test, confirm the deployed build actually contains the fix.
 
