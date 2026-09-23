@@ -15,6 +15,8 @@ defaults, pre-generated.
 drawn number: `lg:fluid-py-120`, `lg:fluid-display-64/72`, `lg:fluid-cap-1680`.
 - The breakpoint prefix is how the scale stays desktop-only. Below `lg` the units are 1px anyway,
   but the mobile *values* differ from the drawn desktop ones, so the fluid classes are always prefixed.
+  With the mobile arm on (`fluid-scale.md` §13), the unprefixed utility is the phone frame's drawn
+  number and scales too: `fluid-py-48 lg:fluid-py-120`.
 - Arbitrary values spend the units directly when no utility fits: `lg:grid-cols-[1fr_calc(512*var(--fluid))]`,
   `lg:px-[calc(24*var(--fluid-copy))]`.
 - Register the families with tailwind-merge (`cn.ts`).
@@ -86,7 +88,8 @@ Author the breakpoint as a StyleX media-query key. See its README for the one li
 - Overriding only `--breakpoint-lg` in px: the rem defaults for the other rungs sort the whole `lg:`
   block before `sm:`. Ship the full ladder in px.
 - `lg: 64rem` as the "fix": a rem query follows the browser font-size, `fluid.css`'s px query does not.
-- Fluid classes without the breakpoint prefix: the mobile values differ from the drawn desktop ones.
+- Fluid classes without the breakpoint prefix, when the mobile arm is off: they are then plain px on
+  mobile, so they only make sense for a value that is the same number on both frames.
 - Two classes for one property outside `cn()`: stylesheet order picks the winner (`frame-and-gutter.md` §5).
 - `64px * var(--fluid)` in vanilla or Tailwind arbitrary values: invalid and silently dropped. SCSS
   turns it into a build error.

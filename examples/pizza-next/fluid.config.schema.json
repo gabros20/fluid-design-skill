@@ -134,6 +134,17 @@
         }
       }
     },
+    "mobile": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The mobile arm. Off (default): below engageAt every unit is a flat 1px and mobile is authored in plain px per breakpoint. On: below engageAt --fluid is clamp(min, 100vw / reference, max), width only, so an unprefixed fluid-* utility is the phone frame's drawn number (fluid-py-48 lg:fluid-py-120), scaled between small and large phones and held at max across the tablet band. The type units damp it like the desktop ones, with floors read at `min`.",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "reference": { "type": "number", "exclusiveMinimum": 0, "default": 390, "description": "The phone frame's width: where the mobile unit is exactly 1px. Must be < engageAt." },
+        "min": { "type": "number", "exclusiveMinimum": 0, "maximum": 1, "default": 0.85, "description": "Floor: the unit never shrinks below this (0.85 = 331px wide at a 390 reference)." },
+        "max": { "type": "number", "minimum": 1, "default": 1.25, "description": "Cap: the unit stops growing here (1.25 = 488px wide at a 390 reference), which holds the phone composition steady across large phones and the tablet band." }
+      }
+    },
     "zoomCompensation": {
       "type": "boolean",
       "default": true,

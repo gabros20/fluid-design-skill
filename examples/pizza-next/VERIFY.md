@@ -163,3 +163,20 @@ hero scrolled, resizing in place without a reload:
 No console errors or warnings. `verify-motion --reveal --scenes`: PASS at 1440×900 and 390×844.
 To see it: scroll the hero on a 1440 window, then on a 2560 one (or zoom the window out); the
 peel ends the same fraction of the way across the composition.
+
+## Mobile arm, added 2026-09-23
+
+`fluid.config.json`: `mobile: { enabled: true, reference: 390, min: 0.85, max: 1.25 }`. The mobile
+half of every section is now written in fluid utilities with the 390 frame's numbers
+(`fluid-py-96 lg:fluid-py-120`, `fluid-display-44 leading-[1.02] … lg:fluid-display-112/112`). Kept
+fixed on purpose: `sm:` tablet overrides, text measures, tracking, radii, entrance offsets.
+
+- **No-op at the reference.** Geometry of all 247 elements at 390×844 before vs after: 0 changed.
+- **Matrix:** PASS on every desktop cell and at 360×780, 390×844, 430×932 and 768×1024.
+- **Zoom row:** every cell PASS. The mobile handover at 1920×1080 and 200% went from 166% to 212%,
+  because the mobile type is at 1.25× on that wide CSS viewport.
+- **Motion:** `verify-motion --reveal --scenes` PASS at 1440×900, 390×844, 360×780 and 768×1024.
+- Captures: `verify/mobile-arm/` (360 and 768).
+
+To see it: open the page in a responsive devtools view and drag between 340 and 1000 wide. The
+phone layout now scales as one drawing between 331 and 488 and holds at 1.25× beyond.

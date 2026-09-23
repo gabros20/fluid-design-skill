@@ -20,14 +20,14 @@ const LINES = [
 export function Manifesto() {
   return (
     <section className="w-full bg-surface-cream">
-      <div className={cn(FRAME, 'py-24 lg:fluid-py-180')}>
+      <div className={cn(FRAME, 'fluid-py-96 lg:fluid-py-180')}>
         <Stage trigger="view" className="mx-auto max-w-[1120px] text-center">
           <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
-            <p className="text-[11px] font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
+            <p className="fluid-copy-11 font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
               The house rule
             </p>
           </StageItem>
-          <p className="mt-6 font-display text-[30px] leading-[1.22] font-light tracking-[-0.015em] text-text-heading sm:text-[38px] lg:fluid-mt-32 lg:fluid-display-48/64">
+          <p className="fluid-mt-24 font-display fluid-display-30 leading-[1.22] font-light tracking-[-0.015em] text-text-heading sm:text-[38px] lg:fluid-mt-32 lg:fluid-display-48/64">
             {LINES.map((line, i) => (
               <StageItem
                 key={line}

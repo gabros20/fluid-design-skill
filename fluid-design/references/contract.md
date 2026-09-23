@@ -43,6 +43,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
     "chrome":  { "enabled": true }
   },
   "ceiling": null,
+  "mobile": { "enabled": false, "reference": 390, "min": 0.85, "max": 1.25 },
   "zoomCompensation": true,
   "zoomTextRange": [24, 48]
 }
@@ -61,6 +62,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 | `units.display.floor` / `units.copy.floor` | `"auto"` = `round2(damping * engageAt/reference.width + (1 - damping))` (0.82 and 0.90 at the shipped defaults) — or a number override |
 | `units.chrome.enabled` | emit `--fluid-chrome`, a width-fit/height-floored fourth role for site chrome. Default `true` |
 | `ceiling` | `null` (default) = uncapped growth. A number N wraps `--fluid` in `min(Npx, …)`; the type units inherit the cap through it |
+| `mobile` | `{ enabled: false, reference: 390, min: 0.85, max: 1.25 }`. On: below `engageAt`, `--fluid` is `clamp(min px, 100vw / reference, max px)`, the type units damp it with floors read at `min`, and `--fluid-chrome` is `var(--fluid)` (`fluid-scale.md` §13) |
 | `zoomCompensation` | `true` (default): the display and copy units read their base as `var(--fluid) * var(--fluid-zoom, 1)`, so text follows browser zoom once `assets/runtime/fluid-zoom.js` sets `--fluid-zoom` (`fluid-scale.md` §12, Browser zoom). Without the script the fallback is 1. `false` emits plain `var(--fluid)` |
 | `zoomTextRange` | `[full, none]` drawn px, default `[24, 48]`: how much of the zoom `fluid-text-*` takes by font size — all at or below `full`, none at or above `none`, linear between. Tailwind emits it as `clamp(0, (none − n) / (none − full), 1)` inside the utility; SCSS and StyleX resolve it at compile time |
 
@@ -85,6 +87,9 @@ Only utility/class *names* move with `prefix`; these do not.
 `--fluid-zoom` is **not** emitted by the stylesheet. `assets/runtime/fluid-zoom.js` writes it as an
 inline style on `<html>` (the detected browser zoom, 1 when unzoomed or undetectable); the `, 1`
 fallback keeps every unit valid without it.
+
+With the mobile arm on, `:root` instead holds `--fluid: clamp(<min>px, calc(100vw / <mobile.reference>), <max>px)`,
+the two type units damping its zoom-compensated twin, and `--fluid-chrome: var(--fluid)`.
 
 All properties are `1px` in `:root` (or omitted, for `--fluid-chrome`, when `units.chrome.enabled`
 is `false`) and are redefined inside `@media (width >= engageAt)`.

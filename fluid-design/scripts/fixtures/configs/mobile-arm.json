@@ -1,0 +1,4 @@
+{
+  "$schema": "../../../assets/fluid.config.schema.json",
+  "mobile": { "enabled": true, "reference": 390, "min": 0.85, "max": 1.25 }
+}

@@ -28,6 +28,7 @@ export const DEFAULT_CONFIG = Object.freeze({
     chrome: Object.freeze({ enabled: true })
   }),
   ceiling: null,
+  mobile: Object.freeze({ enabled: false, reference: 390, min: 0.85, max: 1.25 }),
   zoomCompensation: true,
   zoomTextRange: Object.freeze([24, 48])
 })
@@ -66,7 +67,7 @@ function assertFloor(v, path) {
  * ignored.
  */
 export function mergeConfig(partial = {}) {
-  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'zoomCompensation', 'zoomTextRange'])
+  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'mobile', 'zoomCompensation', 'zoomTextRange'])
   for (const key of Object.keys(partial)) {
     assert(known.has(key), `unknown top-level key "${key}"`)
   }
@@ -84,6 +85,7 @@ export function mergeConfig(partial = {}) {
       chrome: { ...DEFAULT_CONFIG.units.chrome, ...(partial.units?.chrome ?? {}) }
     },
     ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling,
+    mobile: { ...DEFAULT_CONFIG.mobile, ...(partial.mobile ?? {}) },
     zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation,
     zoomTextRange: [...(partial.zoomTextRange ?? DEFAULT_CONFIG.zoomTextRange)]
   }
@@ -119,6 +121,13 @@ export function validateConfig(cfg) {
   if (cfg.ceiling !== null) {
     assertPositiveNumber(cfg.ceiling, 'ceiling')
   }
+
+  const mo = cfg.mobile
+  assert(typeof mo?.enabled === 'boolean', 'mobile.enabled must be a boolean')
+  assertPositiveNumber(mo.reference, 'mobile.reference')
+  assert(mo.reference < cfg.engageAt, `mobile.reference (${mo.reference}) must be < engageAt (${cfg.engageAt})`)
+  assert(isFiniteNumber(mo.min) && mo.min > 0 && mo.min <= 1, 'mobile.min must be in (0, 1]')
+  assert(isFiniteNumber(mo.max) && mo.max >= 1, 'mobile.max must be >= 1')
 
   assert(typeof cfg.zoomCompensation === 'boolean', 'zoomCompensation must be a boolean')
   const r = cfg.zoomTextRange
@@ -187,6 +196,15 @@ export function round2(n) {
  * shipped defaults (reference 1440, engageAt 1024, damping .62/.33) this is
  * 0.82 and 0.90.
  */
+/** The type floors below engageAt when the mobile arm is on: the damped
+ * curve read at mobile.min, the same derivation as the desktop floors read
+ * at engageAt (fluid-scale.md §5). */
+export function resolveMobileFloors(cfg) {
+  const m = cfg.mobile.min
+  const resolve = (unit) => round2(unit.damping * m + (1 - unit.damping))
+  return { display: resolve(cfg.units.display), copy: resolve(cfg.units.copy) }
+}
+
 export function resolveFloors(cfg) {
   const ratio = cfg.engageAt / cfg.reference.width
   const resolve = (unit) => (unit.floor === 'auto' ? round2(unit.damping * ratio + (1 - unit.damping)) : unit.floor)
@@ -219,24 +237,34 @@ export function resolveFloors(cfg) {
  * clause already does that role's floor job.
  */
 export function factors(cfg, w, h, zoom = 1) {
+  // `w`/`h` are CSS px (already divided by any browser zoom); `zoom` is what
+  // fluid-zoom.js writes to --fluid-zoom (1 without it). The type units read
+  // the viewport arms times the zoom, clamped exactly like --fluid.
+  const z = cfg.zoomCompensation ? zoom : 1
+  const typeUnits = (tf, dFloor, cFloor) => ({
+    display: Math.max(dFloor, tf, cfg.units.display.damping * tf + (1 - cfg.units.display.damping)),
+    copy: Math.max(cFloor, tf, cfg.units.copy.damping * tf + (1 - cfg.units.copy.damping))
+  })
+
   if (w < cfg.engageAt) {
-    return { fluid: 1, display: 1, copy: 1, chrome: 1 }
+    if (!cfg.mobile.enabled) return { fluid: 1, display: 1, copy: 1, chrome: 1 }
+    const { reference, min, max } = cfg.mobile
+    const clampM = (v) => Math.min(max, Math.max(min, v))
+    const fluid = clampM(w / reference)
+    const mf = resolveMobileFloors(cfg)
+    return { fluid, ...typeUnits(clampM((w * z) / reference), mf.display, mf.copy), chrome: fluid }
   }
 
+  const clampD = (widthArm, heightArm) => {
+    const raw = cfg.heightAxis ? Math.min(widthArm, heightArm) : widthArm
+    const floored = Math.max(cfg.units.fluid.floor, raw)
+    return cfg.ceiling !== null ? Math.min(cfg.ceiling, floored) : floored
+  }
   const widthArm = w / cfg.reference.width
   const heightArm = h / cfg.reference.height
-
-  const fluidRaw = cfg.heightAxis ? Math.min(widthArm, heightArm) : widthArm
-  let fluid = Math.max(cfg.units.fluid.floor, fluidRaw)
-  if (cfg.ceiling !== null) fluid = Math.min(cfg.ceiling, fluid)
-
+  const fluid = clampD(widthArm, heightArm)
   const floors = resolveFloors(cfg)
-  // `zoom` is the value fluid-zoom.js writes to --fluid-zoom (1 when the
-  // runtime is absent or no zoom is detected); `w`/`h` are CSS px, i.e.
-  // already divided by the browser zoom.
-  const tf = cfg.zoomCompensation ? fluid * zoom : fluid
-  const display = Math.max(floors.display, tf, cfg.units.display.damping * tf + (1 - cfg.units.display.damping))
-  const copy = Math.max(floors.copy, tf, cfg.units.copy.damping * tf + (1 - cfg.units.copy.damping))
+  const { display, copy } = typeUnits(clampD(widthArm * z, heightArm * z), floors.display, floors.copy)
 
   let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
   if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome)
@@ -269,33 +297,66 @@ export function cssUnits(cfg) {
   const floors = resolveFloors(cfg)
   const d = cfg.units.display.damping
   const c = cfg.units.copy.damping
+  const zc = cfg.zoomCompensation
+  const Z = ' * var(--fluid-zoom, 1)'
 
-  const widthArm = `calc(100vw / ${num(reference.width)})`
-  const heightArm = `calc(100svh / ${num(reference.height)})`
+  const arm = (vp, n, zoomed) => `calc(${vp} / ${num(n)}${zoomed ? Z : ''})`
+  const widthArm = arm('100vw', reference.width, false)
+  const heightArm = arm('100svh', reference.height, false)
 
-  const fluidExprRaw = cfg.heightAxis ? `min(${heightArm}, ${widthArm})` : widthArm
-  const fluidExprFloored = `max(${px(floors.fluid)}, ${fluidExprRaw})`
-  const fluidExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${fluidExprFloored})` : fluidExprFloored
+  // --fluid, and the same expression with each viewport arm multiplied by
+  // the zoom BEFORE the floor/ceiling clamp. Browser zoom shrinks the CSS
+  // viewport by z, so an arm times z is exactly its unzoomed value, and the
+  // clamp then lands where it did at 100%. Multiplying the clamped --fluid
+  // instead would count the zoom twice wherever the floor or the ceiling
+  // binds (there the unit is plain px, which zooms by itself).
+  const desktopBase = (zoomed) => {
+    const w = arm('100vw', reference.width, zoomed)
+    const h = arm('100svh', reference.height, zoomed)
+    const raw = cfg.heightAxis ? `min(${h}, ${w})` : w
+    const floored = `max(${px(floors.fluid)}, ${raw})`
+    return cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${floored})` : floored
+  }
+  const fluidExpr = desktopBase(false)
 
-  // Browser zoom shrinks the CSS viewport by the zoom factor z, so --fluid
-  // (built only from vw/svh) comes out z times smaller and type renders at
-  // the same physical size at every zoom level (fluid-scale.md §12).
-  // assets/runtime/fluid-zoom.js writes the detected z to --fluid-zoom.
-  // Inside the TYPE units only, the base is read as `--fluid × z`, which is
-  // exactly the unzoomed value, so each type unit resolves to the same CSS
-  // px it had at 100% and renders z times larger: text zooms 1:1, floors
-  // and dampings included. Layout (`--fluid` itself), chrome and
-  // `fluid-text-*` stay uncompensated on purpose: they keep fitting the
-  // zoomed viewport, and the larger text reflows inside them. Without the
-  // script the fallback is 1 and the expressions equal the plain ones.
-  const base = cfg.zoomCompensation ? 'calc(var(--fluid) * var(--fluid-zoom, 1))' : 'var(--fluid)'
-  const displayExpr = `max(${px(floors.display)}, ${base}, calc(${num(d)} * ${base} + ${px(1 - d)}))`
-  const copyExpr = `max(${px(floors.copy)}, ${base}, calc(${num(c)} * ${base} + ${px(1 - c)}))`
+  // The type units read the zoom-compensated base (fluid-scale.md §12): each
+  // resolves to the CSS px it had at 100% and renders z times larger, so text
+  // zooms 1:1. Layout (`--fluid`), chrome and `fluid-text-*` (by size) stay
+  // uncompensated on purpose: they keep fitting the zoomed viewport.
+  const typeUnit = (damping, floor, base) => `max(${px(floor)}, ${base}, calc(${num(damping)} * ${base} + ${px(1 - damping)}))`
+  const typeBase = zc ? desktopBase(true) : 'var(--fluid)'
+  const displayExpr = typeUnit(d, floors.display, typeBase)
+  const copyExpr = typeUnit(c, floors.copy, typeBase)
   // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
   // — otherwise chrome keeps growing past the point the rest
   // of the page's ceiling-capped units stopped.
   const chromeExprRaw = `min(${widthArm}, max(1px, ${heightArm}))`
   const chromeExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${chromeExprRaw})` : chromeExprRaw
+
+  // Below engageAt: a flat 1px, or with the mobile arm a width-only scale off
+  // the phone frame, clamped so a small phone stops shrinking and a tablet
+  // stops growing (fluid-scale.md §13). Height never enters: below the
+  // breakpoint sections stack and scroll, so there is nothing to fit.
+  let root
+  if (cfg.mobile.enabled) {
+    const mo = cfg.mobile
+    const mf = resolveMobileFloors(cfg)
+    const mobileBase = (zoomed) => `clamp(${px(mo.min)}, ${arm('100vw', mo.reference, zoomed)}, ${px(mo.max)})`
+    const mTypeBase = zc ? mobileBase(true) : 'var(--fluid)'
+    root = {
+      '--fluid': mobileBase(false),
+      '--fluid-display': typeUnit(d, mf.display, mTypeBase),
+      '--fluid-copy': typeUnit(c, mf.copy, mTypeBase),
+      ...(cfg.units.chrome.enabled ? { '--fluid-chrome': 'var(--fluid)' } : {})
+    }
+  } else {
+    root = {
+      '--fluid': '1px',
+      '--fluid-display': '1px',
+      '--fluid-copy': '1px',
+      ...(cfg.units.chrome.enabled ? { '--fluid-chrome': '1px' } : {})
+    }
+  }
 
   // The header row itself: a flat 34px below `engageAt`, `48 * --fluid-chrome`
   // above it — fixed numbers from the reference build, independent of the
@@ -310,10 +371,7 @@ export function cssUnits(cfg) {
     engageAt,
     prefix: cfg.prefix,
     root: {
-      '--fluid': '1px',
-      '--fluid-display': '1px',
-      '--fluid-copy': '1px',
-      ...(cfg.units.chrome.enabled ? { '--fluid-chrome': '1px' } : {}),
+      ...root,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       '--browser-bar': 'calc(100lvh - 100svh)',

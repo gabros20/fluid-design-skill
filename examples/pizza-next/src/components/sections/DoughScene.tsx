@@ -60,10 +60,10 @@ const BACKDROP: BackdropStop[] = [
 ]
 
 const EYEBROW =
-  'text-[11px] font-medium tracking-[0.24em] text-text-on-dark-muted uppercase lg:fluid-copy-12/16'
+  'fluid-copy-11 font-medium tracking-[0.24em] text-text-on-dark-muted uppercase lg:fluid-copy-12/16'
 const HEADING =
-  'font-display text-[40px] leading-[1.05] font-light tracking-[-0.02em] text-text-on-dark sm:text-[52px] lg:fluid-display-80/84'
-const BODY = 'text-[15px] leading-[1.6] text-text-on-dark-muted lg:fluid-copy-17/28'
+  'font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-on-dark sm:text-[52px] lg:fluid-display-80/84'
+const BODY = 'fluid-copy-15 leading-[1.6] text-text-on-dark-muted lg:fluid-copy-17/28'
 
 export function DoughScene() {
   return (
@@ -83,13 +83,13 @@ export function DoughScene() {
           leaves so it never competes with the turning render. No background and
           no overflow-hidden on anything riding over the pin. */}
       <section data-header-theme="dark" className="flex h-svh items-start lg:items-center">
-        <div className={cn(FRAME, 'pt-[calc(var(--header-h)+48px)] lg:pt-0')}>
+        <div className={cn(FRAME, 'pt-[calc(var(--header-h)+48*var(--fluid))] lg:pt-0')}>
           <FadeOnExit className="max-w-[560px] [--exit-from:0.08] [--exit-to:0.4] lg:fluid-cap-560">
             <Stage trigger="view">
               <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
                 <p className={EYEBROW}>The dough</p>
               </StageItem>
-              <h2 className={cn(HEADING, 'mt-4 lg:fluid-mt-24')}>
+              <h2 className={cn(HEADING, 'fluid-mt-16 lg:fluid-mt-24')}>
                 <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px]">
                   Patience is the
                 </StageItem>
@@ -98,7 +98,7 @@ export function DoughScene() {
                 </StageItem>
               </h2>
               <StageItem variant="liftFade" delay={0.2} className="[--hero-lift:24px]">
-                <p className={cn(BODY, 'mt-5 max-w-[440px] lg:fluid-mt-32')}>
+                <p className={cn(BODY, 'fluid-mt-20 max-w-[440px] lg:fluid-mt-32')}>
                   Three flours, 80% water and a pinch of sourdough, left cold for 72 hours.
                   The long rest breaks the starch down, so the crumb bakes open and the
                   crust stays light enough to eat to the last bite.
@@ -116,7 +116,7 @@ export function DoughScene() {
           it to rest, clamped to the pin so it can never ask to rest outside it. */}
       <section
         data-header-theme="dark"
-        className="relative flex h-svh items-end pb-16 lg:items-center lg:pb-0"
+        className="relative flex h-svh items-end fluid-pb-64 lg:items-center lg:pb-0"
       >
         <PullToCentre clamp="[data-scrub-stage]" />
         <div className={cn(FRAME, 'flex justify-end')}>
@@ -124,7 +124,7 @@ export function DoughScene() {
             <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
               <p className={EYEBROW}>The bake</p>
             </StageItem>
-            <h2 className={cn(HEADING, 'mt-4 lg:fluid-mt-24')}>
+            <h2 className={cn(HEADING, 'fluid-mt-16 lg:fluid-mt-24')}>
               <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px]">
                 Crisp outside,
               </StageItem>
@@ -133,7 +133,7 @@ export function DoughScene() {
               </StageItem>
             </h2>
             <StageItem variant="liftFade" delay={0.2} className="[--hero-lift:24px]">
-              <p className={cn(BODY, 'mt-5 max-w-[440px] lg:fluid-mt-32')}>
+              <p className={cn(BODY, 'fluid-mt-20 max-w-[440px] lg:fluid-mt-32')}>
                 Two and a half minutes on stone at 450°C. The oval blisters, the edge
                 leopards, and the middle stays soft enough to fold.
               </p>

@@ -72,9 +72,15 @@ Default: **the whole site from the engage breakpoint up**, including chrome (hea
   unmigrated routes can coexist.
 
 ### 7. Mobile
-Default: **flat**. Mobile stays authored per breakpoint and is not scaled.
-- A mobile fluid arm is possible (a second media block with a 390-wide reference), but it is not the
-  default and was never validated in production. Offer it only if asked, and say so.
+Default: **flat** (`mobile.enabled: false`). Mobile stays authored per breakpoint in plain px.
+- Offer the **mobile arm** (`fluid-scale.md` §13) when the design has a phone frame (usually 390
+  wide) and the team wants it to hold across phone sizes: unprefixed `fluid-*` utilities then take
+  the phone frame's numbers and scale 0.85–1.25×. It was validated on the Next example
+  (`examples/pizza-next`), not yet on a production site; say so.
+- Detect: a mobile frame in Figma, or a brief that says the phone layout must look the same on
+  every phone. Brownfield: converting the mobile px is a no-op at the reference width, so it can be
+  done file by file and checked by diffing geometry at 390×844.
+- Ask when: the design has a phone frame and its width is not 390.
 
 ### 8. Browser zoom
 Default: **compensated** (`zoomCompensation: true`, plus `assets/runtime/fluid-zoom.js` inlined in `<head>`).

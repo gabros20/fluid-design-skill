@@ -28,14 +28,14 @@ export function Hero() {
       {/* The half-disc: diameter 1100, centre on the baseline. */}
       <div
         aria-hidden="true"
-        className="absolute bottom-[-190px] left-1/2 size-[380px] -translate-x-1/2 rounded-full bg-surface-arc sm:bottom-[-260px] sm:size-[520px] lg:fluid-size-1100 lg:bottom-[calc(-550*var(--fluid))]"
+        className="absolute bottom-[calc(-190*var(--fluid))] left-1/2 fluid-size-380 -translate-x-1/2 rounded-full bg-surface-arc sm:bottom-[-260px] sm:size-[520px] lg:fluid-size-1100 lg:bottom-[calc(-550*var(--fluid))]"
       />
 
       <Stage
         trigger="mount"
         className={cn(
           FRAME,
-          'relative flex min-h-[max(640px,100svh)] flex-col pt-[calc(var(--header-h)+40px)] pb-8',
+          'relative flex min-h-[max(640px,100svh)] flex-col pt-[calc(var(--header-h)+40*var(--fluid))] fluid-pb-32',
           'lg:fluid-pb-40 lg:h-full lg:min-h-0 lg:pt-[calc(var(--header-h)+70*var(--fluid))]'
         )}
       >
@@ -44,11 +44,11 @@ export function Hero() {
             variant="settle"
             className="[--hero-settle:-16px] lg:[--hero-settle:-24px]"
           >
-            <p className="text-[11px] font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
+            <p className="fluid-copy-11 font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
               Pinsa romana · since 2019
             </p>
           </StageItem>
-          <h1 className="mt-4 font-display text-[44px] leading-[1.02] font-light tracking-[-0.025em] text-text-heading sm:text-[64px] lg:fluid-mt-20 lg:fluid-display-112/112">
+          <h1 className="fluid-mt-16 font-display fluid-display-44 leading-[1.02] font-light tracking-[-0.025em] text-text-heading sm:text-[64px] lg:fluid-mt-20 lg:fluid-display-112/112">
             <StageItem as="span" variant="liftFade" className="block [--hero-lift:32px] lg:[--hero-lift:48px]">
               The airy bread
             </StageItem>
@@ -63,13 +63,13 @@ export function Hero() {
           </h1>
         </div>
 
-        <div className="relative mt-8 grid grid-cols-1 gap-6 lg:flex-1 lg:items-end lg:fluid-mt-0 lg:grid-cols-[250fr_780fr_250fr] lg:fluid-gap-40">
+        <div className="relative fluid-mt-32 grid grid-cols-1 fluid-gap-24 lg:flex-1 lg:items-end lg:fluid-mt-0 lg:grid-cols-[250fr_780fr_250fr] lg:fluid-gap-40">
           <StageItem
             variant="liftFade"
             delay={0.2}
             className="order-2 max-w-[420px] self-center [--hero-lift:24px] lg:order-none lg:max-w-none lg:fluid-pb-120"
           >
-            <p className="text-[15px] leading-[1.6] lg:fluid-copy-15/24">
+            <p className="fluid-copy-15 leading-[1.6] lg:fluid-copy-15/24">
               Pinsa is the lighter cousin of pizza: a blend of wheat, rice and soy flour,
               fermented for 72 hours and stretched by hand into an oval.
             </p>
@@ -96,7 +96,7 @@ export function Hero() {
             delay={0.267}
             className="order-3 max-w-[420px] self-center [--hero-lift:24px] lg:order-none lg:max-w-none lg:fluid-pb-120"
           >
-            <p className="text-[15px] leading-[1.6] lg:fluid-copy-15/24">
+            <p className="fluid-copy-15 leading-[1.6] lg:fluid-copy-15/24">
               Baked at 450°C on stone, crisp outside and soft within. Topped simply, with
               produce from the Alsace markets and the south of Italy.
             </p>

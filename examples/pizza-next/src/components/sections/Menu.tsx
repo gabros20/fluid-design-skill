@@ -48,18 +48,18 @@ const PINSAS: Pinsa[] = [
 export function Menu() {
   return (
     <section id="menu" className="w-full bg-surface-page">
-      <div className={cn(FRAME, 'py-24 lg:fluid-py-160')}>
+      <div className={cn(FRAME, 'fluid-py-96 lg:fluid-py-160')}>
         <Stage
           trigger="view"
-          className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end lg:fluid-gap-40"
+          className="flex flex-col items-start justify-between fluid-gap-24 lg:flex-row lg:items-end lg:fluid-gap-40"
         >
           <div>
             <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
-              <p className="text-[11px] font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
+              <p className="fluid-copy-11 font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">
                 La carta
               </p>
             </StageItem>
-            <h2 className="mt-4 font-display text-[40px] leading-[1.05] font-light tracking-[-0.02em] text-text-heading sm:text-[52px] lg:fluid-mt-20 lg:fluid-display-80/84">
+            <h2 className="fluid-mt-16 font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-heading sm:text-[52px] lg:fluid-mt-20 lg:fluid-display-80/84">
               <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px]">
                 Six pinsas,
               </StageItem>
@@ -69,14 +69,14 @@ export function Menu() {
             </h2>
           </div>
           <StageItem variant="liftFade" delay={0.2} className="max-w-[400px] [--hero-lift:24px]">
-            <p className="text-[15px] leading-[1.6] lg:fluid-copy-16/26">
+            <p className="fluid-copy-15 leading-[1.6] lg:fluid-copy-16/26">
               Every pinsa is 30 cm of the same 72-hour dough. Gluten-light, never heavy.
               Ask for the day&apos;s special at the counter.
             </p>
           </StageItem>
         </Stage>
 
-        <ul className="mt-14 grid grid-cols-[repeat(auto-fill,minmax(min(calc(360*var(--fluid)),100%),1fr))] gap-x-8 gap-y-14 lg:fluid-mt-96 lg:fluid-gap-x-40 lg:fluid-gap-y-80">
+        <ul className="fluid-mt-56 grid grid-cols-[repeat(auto-fill,minmax(min(calc(360*var(--fluid)),100%),1fr))] fluid-gap-x-32 fluid-gap-y-56 lg:fluid-mt-96 lg:fluid-gap-x-40 lg:fluid-gap-y-80">
           {PINSAS.map((p, i) => (
             <li key={p.name}>
               <Stage trigger="view">
@@ -96,15 +96,15 @@ export function Menu() {
                         />
                       </div>
                     </div>
-                    <div className="mt-5 flex items-baseline justify-between gap-4 lg:fluid-mt-24 lg:fluid-gap-16">
-                      <h3 className="font-display text-[26px] leading-[1.1] font-normal text-text-heading lg:fluid-text-30/34">
+                    <div className="fluid-mt-20 flex items-baseline justify-between fluid-gap-16 lg:fluid-mt-24 lg:fluid-gap-16">
+                      <h3 className="font-display fluid-display-26 leading-[1.1] font-normal text-text-heading lg:fluid-text-30/34">
                         {p.name}
                       </h3>
-                      <p className="text-[17px] font-medium text-text-heading tabular-nums lg:fluid-text-18/24">
+                      <p className="fluid-copy-17 font-medium text-text-heading tabular-nums lg:fluid-text-18/24">
                         €{p.price}
                       </p>
                     </div>
-                    <p className="mt-2 max-w-[320px] text-[14px] leading-[1.55] text-text-muted lg:fluid-mt-8 lg:max-w-none lg:fluid-text-15/23">
+                    <p className="fluid-mt-8 max-w-[320px] fluid-copy-14 leading-[1.55] text-text-muted lg:fluid-mt-8 lg:max-w-none lg:fluid-text-15/23">
                       {p.ingredients}
                     </p>
                   </article>

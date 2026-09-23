@@ -98,12 +98,16 @@ function cmdTable(cfg, args) {
   console.log(`config: reference ${cfg.reference.width}x${cfg.reference.height}, engageAt ${cfg.engageAt}${args.raw ? ' (ignored: --raw)' : ''}, floors fluid=${floors.fluid} display=${floors.display} copy=${floors.copy}`)
   console.log('')
   const header = ['width', 'height', 'arm', 'fluid', 'display', 'copy', 'chrome']
-  console.log(header.map((h) => h.padEnd(9)).join(''))
+  console.log(header.map((h, i) => h.padEnd(i === 2 ? 14 : 9)).join(''))
   for (const [w, h] of rows) {
     const f = args.raw ? rawFactors(cfg, w, h) : factors(cfg, w, h)
     let arm
     if (!args.raw && w < cfg.engageAt) {
-      arm = 'below-engage'
+      if (!cfg.mobile.enabled) arm = 'below-engage'
+      else {
+        const m = w / cfg.mobile.reference
+        arm = m <= cfg.mobile.min ? 'mobile-min' : m >= cfg.mobile.max ? 'mobile-max' : 'mobile'
+      }
     } else {
       const widthArm = w / cfg.reference.width
       const heightArm = cfg.heightAxis ? h / cfg.reference.height : Infinity
@@ -115,7 +119,7 @@ function cmdTable(cfg, args) {
         arm = raw < cfg.units.fluid.floor ? 'floor' : (widthArm <= heightArm ? 'width' : 'height')
       }
     }
-    console.log([String(w), String(h), arm, fmt(f.fluid), fmt(f.display), fmt(f.copy), fmt(f.chrome)].map((c) => c.padEnd(9)).join(''))
+    console.log([String(w), String(h), arm, fmt(f.fluid), fmt(f.display), fmt(f.copy), fmt(f.chrome)].map((c, i) => c.padEnd(i === 2 ? 14 : 9)).join(''))
   }
 }
 

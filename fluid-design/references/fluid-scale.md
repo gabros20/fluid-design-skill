@@ -16,7 +16,8 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 10. One scale: why sections may not re-anchor it
 11. Interop with animation (if any)
 12. Limitations, and browser zoom
-13. Traps
+13. The mobile arm (optional)
+14. Traps
 
 ---
 
@@ -299,7 +300,8 @@ the page, four facts keep the two from fighting:
 
 ## 12. Limitations
 
-1. Desktop only by default (below `engageAt` the unit is 1px).
+1. Desktop only by default (below `engageAt` the unit is 1px). The optional mobile arm (§13)
+   scales phones off their own frame.
 2. When width binds, a one-screen section is shorter than the window. That is fine over a pinned
    render, but it changes a pinned scene's act maths: 3.42 viewports at 1024×900 instead of 4.00.
 3. **Type ignores the user's browser font-size setting from the breakpoint up.** This is deliberate:
@@ -369,12 +371,60 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   page to its top-left 1/zoom and makes a fitting layout look cut off. `zoomCompensation: false` turns the unit
   change off; do that only with the client's informed agreement, and record it in `FLUID.md`.
 
-## 13. Traps
+## 13. The mobile arm (optional)
+
+Off by default. With `mobile.enabled`, the units stop being a flat 1px below `engageAt`:
+
+```css
+:root { --fluid: clamp(0.85px, calc(100vw / 390), 1.25px); }   /* mobile.min, mobile.reference, mobile.max */
+```
+
+- **Width only.** Below the breakpoint sections stack and scroll, so there is nothing to fit on the
+  height axis, and a height term would make type move with the phone's toolbar.
+- **Clamped both ways.** The phone frame is drawn at `reference` (390). At 360 the unit is 0.92, at
+  430 it is 1.10. It stops shrinking at `min` (0.85, a 331px screen) and stops growing at `max` (1.25,
+  from 488px), so the tablet band (768–1023) shows the phone composition at 1.25× instead of a phone
+  layout stretched 2.6×. If the design has its own tablet frame, author it with `sm:`/`md:` values as
+  before; those stay plain px unless you write them as fluid too.
+- **The type units damp it** like the desktop ones (0.62 / 0.33), with floors read at `min`: body
+  copy drawn 16 is 15.6px on a 360 phone rather than 14.8px. Chrome uses `--fluid` directly.
+- **Browser zoom** is compensated the same way as on desktop (§12), inside the clamp.
+
+**What it changes for authoring.** The unprefixed utility becomes the phone frame's drawn number and
+`lg:` takes the desktop frame's:
+
+```html
+<section class="fluid-py-48 lg:fluid-py-120">
+<h2 class="fluid-display-40/44 lg:fluid-display-64/72">
+```
+
+Both numbers come straight from their frames. Without the arm the mobile half is `py-12` or
+`py-[48px]`, correct only at the width it was checked at.
+
+- **At the reference width nothing moves.** The unit is exactly 1 at 390, so converting an existing
+  site's mobile px to fluid utilities is visually a no-op at 390 and only changes the other widths.
+  That is the check for a conversion: element geometry at 390×844 identical before and after.
+- **Keep off it:** input font sizes (iOS zooms into a focused input under 16px, and a fluid 16 is
+  15.6 on a 360 phone; keep inputs at a fixed 16px), text measures, borders, radii, tracking,
+  entrance offsets, icons of 24px and under.
+- **Validated on the Next example** (`examples/pizza-next`, about 100 mobile values in 8 files):
+  geometry of all 247 elements at 390×844 identical before and after the conversion; the full matrix
+  including 360×780, 430×932 and 768×1024 passes (no overflow, units match the maths); reveals and
+  the pinned scene pass at 360, 390 and 768.
+- **What the arm does for zoom:** a desktop window zoomed past the breakpoint falls into the mobile
+  CSS. With the arm, that CSS sits at `max` on such a wide CSS viewport, so mobile type there is 1.25×
+  its drawn size and the drop at the handover closes: measured on the Next example, body copy at
+  1920×1080 and 200% went from 166% (flat mobile) to 212% (mobile arm).
+
+## 14. Traps
 
 - `max()` instead of `min()` to combine the arms: cover, not contain, and text overflows.
 - `dvh` in the unit: type resizes while the reader scrolls on mobile Safari.
 - Anchoring the reference to the canvas (1680) instead of the laptop viewport (1440).
 - An intercept in `--fluid` (`clamp(…, 1px)`, `a·vw + b`): `900 × --fluid` stops equalling `100svh`.
+  (The mobile arm's `clamp(min, 100vw/390, max)` is not this: it has no intercept, and no height
+  guarantee to keep.)
+- With the mobile arm on, a fluid input font size: iOS zooms into inputs under 16px (§13).
 - Overriding `--fluid` on one section: the type units resolved at `:root` do not re-derive (§10).
 - A length times a unit (`64px * var(--fluid)`): invalid, and the declaration drops silently.
 - A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).

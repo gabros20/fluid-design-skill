@@ -37,7 +37,7 @@ const UNIT_TOLERANCE = 0.002
 // generate-fluid.mjs's SCSS-emitter bugs #1/#2 — a bug that was misdiagnosed
 // as a stale stylesheet in exactly this spot before this fix).
 const KNOWN_STALE_SIGNATURES = [
-  /clamp\(/, // a pre-rewrite clamp()-based formula; this generator only ever emits max()/min()
+  /clamp\(/, // a pre-rewrite desktop clamp()-based formula. Desktop rows only: the mobile arm's clamp(min, 100vw/N, max) below engageAt is current
   /100vh\b/, // dvh/vh-based older formula; current generator always divides svh, never bare vh
   /--fluid-fluid\b/ // the SCSS chrome-disabled string-concat bug's own literal (fixed in generate-fluid.mjs)
 ]
@@ -71,11 +71,12 @@ function normalizeExpr(s) {
 /** Distinguishes a genuinely stale build from any other kind of drift, so a
  * generator/config bug is never reported with "close the tab" advice that
  * cannot fix it. */
-function diagnoseUnitMismatch(raw, expected) {
+function diagnoseUnitMismatch(raw, expected, engaged = true) {
   if (raw === '') return 'missing'
   if (expected === null) return raw === '' ? 'missing' : 'unexpected' // property shouldn't exist for this config at all
   if (normalizeExpr(raw) === normalizeExpr(expected)) return 'match'
-  if (KNOWN_STALE_SIGNATURES.some((re) => re.test(raw))) return 'stale'
+  const signatures = engaged ? KNOWN_STALE_SIGNATURES : KNOWN_STALE_SIGNATURES.filter((re) => re.source !== 'clamp\\(')
+  if (signatures.some((re) => re.test(raw))) return 'stale'
   return 'mismatch'
 }
 
@@ -86,7 +87,7 @@ function parseArgs(argv) {
     out: 'verify-matrix-out',
     widths: '1024,1280,1440,1680,2560',
     heights: '640,700,800,900,1440',
-    mobile: '390x844,375x667',
+    mobile: null, // default: 390x844,375x667; with the mobile arm on, 360x780,390x844,430x932,768x1024
     fitSelector: '[data-fit=screen]',
     screens: false,
     zoom: '1.25,1.5,2',
@@ -130,7 +131,8 @@ Options:
   --out <dir>         output directory for report.json / screenshots (default: verify-matrix-out)
   --widths <list>     comma-separated desktop widths (default: 1024,1280,1440,1680,2560)
   --heights <list>    comma-separated desktop heights (default: 640,700,800,900,1440)
-  --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667), or "none" to disable
+  --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667; with the mobile arm on,
+                      360x780,390x844,430x932,768x1024), or "none" to disable
   --fit-selector <s>  selector checked against "height <= viewport" (default: [data-fit=screen])
   --screens           write a full-page screenshot per viewport + a contact sheet, and a
                       viewport screenshot per zoom-row cell (zoom-WxH-PCT.jpg)
@@ -351,7 +353,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
       // that would otherwise print "mismatch" in report.json next to
       // pass: true, drift: 0 and mislead anyone reading the JSON directly
       // (the console table already only prints diagnosis for failing rows).
-      diagnosis: pass ? undefined : diagnoseUnitMismatch(raw[key], expectedExpr),
+      diagnosis: pass ? undefined : diagnoseUnitMismatch(raw[key], expectedExpr, viewport.width >= cfg.engageAt),
       drift,
       pass
     }
@@ -682,7 +684,11 @@ async function main() {
   try {
     widths = parseNumberList(args.widths)
     heights = parseNumberList(args.heights)
-    mobiles = parseWxHList(args.mobile)
+    // With the mobile arm on, the phone matrix spans the clamp: a small phone
+    // (below the reference), the reference, a large phone, and a tablet on
+    // the cap, so every arm of clamp(min, 100vw/ref, max) is checked.
+    const defaultMobile = cfg.mobile.enabled ? '360x780,390x844,430x932,768x1024' : '390x844,375x667'
+    mobiles = parseWxHList(args.mobile ?? defaultMobile)
   } catch (err) {
     console.error(`[verify-matrix] ${err.message}`)
     process.exit(2)
