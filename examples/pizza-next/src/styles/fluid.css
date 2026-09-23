@@ -101,8 +101,9 @@
 
 :root {
   --fluid: clamp(0.85px, calc(100vw / 390), 1.25px);
-  --fluid-display: max(0.91px, clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px), calc(0.62 * clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px) + 0.38px));
-  --fluid-copy: max(0.95px, clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px), calc(0.33 * clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px) + 0.67px));
+  --fluid-z: clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px);
+  --fluid-display: max(0.91px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+  --fluid-copy: max(0.95px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
   --fluid-chrome: var(--fluid);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -113,8 +114,9 @@
 @media (width >= 1024px) {
   :root {
     --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
-    --fluid-display: max(0.82px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.62 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.38px));
-    --fluid-copy: max(0.9px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.33 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.67px));
+    --fluid-z: max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1))));
+    --fluid-display: max(0.82px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+    --fluid-copy: max(0.9px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
     --fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
     --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
   }
@@ -308,6 +310,6 @@
   line-height: calc(--modifier(number) * var(--fluid-copy));
 }
 @utility fluid-text-* {
-  font-size: calc(--value(number) * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (48 - --value(number)) / 24, 1)));
-  line-height: calc(--modifier(number) * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (48 - --value(number)) / 24, 1)));
+  font-size: calc(--value(number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * clamp(0, (48 - --value(number)) / 24, 1)));
+  line-height: calc(--modifier(number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * clamp(0, (48 - --value(number)) / 24, 1)));
 }

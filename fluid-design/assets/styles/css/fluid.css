@@ -30,6 +30,7 @@
 
 :root {
   --fluid: 1px;
+  --fluid-z: 1px;
   --fluid-display: 1px;
   --fluid-copy: 1px;
   --fluid-chrome: 1px;
@@ -42,8 +43,9 @@
 @media (width >= 1024px) {
   :root {
     --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
-    --fluid-display: max(0.82px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.62 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.38px));
-    --fluid-copy: max(0.9px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.33 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.67px));
+    --fluid-z: max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1))));
+    --fluid-display: max(0.82px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+    --fluid-copy: max(0.9px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
     --fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
     --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
   }

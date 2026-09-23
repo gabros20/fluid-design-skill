@@ -323,10 +323,11 @@ takes over. Where that happens depends on the window: about 141% on a 1440-wide 
 its size at 150% zoom on 2560×1440, and 122% at 200%. That fails WCAG 1.4.4 on every display wider
 than about 1440, and worst on the large displays this system is proudest of.
 
-**The fix, on by default.** `zoomCompensation: true` in `fluid.config.json` makes the two type units
-read their base as `var(--fluid) * var(--fluid-zoom, 1)`. `assets/runtime/fluid-zoom.js` detects the
-zoom factor and writes it to `--fluid-zoom` on `<html>`. Multiplying the zoomed-down `--fluid` by the
-zoom gives back exactly the unzoomed value, so each type unit resolves to the CSS px it had at 100%
+**The fix, on by default.** `zoomCompensation: true` in `fluid.config.json` emits `--fluid-z`: the
+`--fluid` formula with each viewport arm multiplied by `var(--fluid-zoom, 1)` *inside* the same floor
+and ceiling, and the two type units read it as their base. `assets/runtime/fluid-zoom.js` detects the
+zoom factor and writes it to `--fluid-zoom` on `<html>`. A viewport arm times the zoom is exactly its
+unzoomed value, and the clamp then lands where it did at 100%, so each type unit resolves to the CSS px it had at 100%
 and renders z times larger: **text zooms 1:1, floors and dampings included.** Measured on the same
 build after installing it: 110/125/150/200% zoom gives 110/125/150/200% text wherever the desktop
 layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
@@ -430,5 +431,7 @@ Both numbers come straight from their frames. Without the arm the mobile half is
 - A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).
 - Shipping without `fluid-zoom.js`: vw/svh type does not grow under browser zoom, a WCAG 1.4.4
   failure on wide displays (§12, Browser zoom).
-- Multiplying the whole type unit by the zoom instead of its `--fluid` base: the unit's px term
-  already zooms, so the text overshoots (146% at 125% zoom on a 1440 window, by the unit maths).
+- Multiplying anything already clamped by the zoom: the whole type unit (its px term already zooms:
+  146% text at 125% on a 1440 window), or `--fluid` itself where the floor or ceiling binds (plain px
+  there: measured 156% text at 125% on a 3840×2160 window with `ceiling: 1.6`). Multiply the
+  viewport arms, then clamp; that is `--fluid-z`.

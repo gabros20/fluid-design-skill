@@ -74,9 +74,12 @@ Only utility/class *names* move with `prefix`; these do not.
 
 ```
 --fluid          max(<floor>px, min(calc(100svh / H), calc(100vw / W)))      [heightAxis:false → max(floor, 100vw/W)]
+--fluid-z        --fluid's formula with each viewport arm × var(--fluid-zoom, 1), inside the same floor/ceiling
+                 [only with zoomCompensation; the unzoomed value of --fluid, so type zooms 1:1 (fluid-scale.md §12)]
 --fluid-display  max(<dfloor>px, B, calc(d * B + (1-d)px))
 --fluid-copy     max(<cfloor>px, B, calc(c * B + (1-c)px))
-                 where B = calc(var(--fluid) * var(--fluid-zoom, 1))   [zoomCompensation:false → B = var(--fluid)]
+                 where B = var(--fluid-z)   [zoomCompensation:false → B = var(--fluid)]
+fluid-text-N     N × a blend of var(--fluid) and var(--fluid-z) by N's share of the zoom (zoomTextRange)
 --fluid-chrome   min(calc(100vw / W), max(1px, calc(100svh / H)))            [only emitted when units.chrome.enabled]
 --safe-top       env(safe-area-inset-top, 0px)
 --safe-bottom    env(safe-area-inset-bottom, 0px)

@@ -19,7 +19,7 @@
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs'
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_PATH, textZoomFactor, textZoomFactorExpr } from './lib/fluid-math.mjs'
+import { loadConfig, mergeConfig, resolveFloors, cssUnits, num, DEFAULT_CONFIG_PATH, textZoomFactor, textZoomFactorExpr, textUnitExprRuntime } from './lib/fluid-math.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SKILL_ROOT = resolvePath(__dirname, '..')
@@ -405,8 +405,8 @@ ${NOT_SCALED_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
   line-height: calc(--modifier(number) * var(--fluid-copy));
 }
 @utility ${p}-text-* {
-  font-size: calc(--value(number) * var(--fluid)${textZoomFactorExpr(cfg, '--value(number)')});
-  line-height: calc(--modifier(number) * var(--fluid)${textZoomFactorExpr(cfg, '--value(number)')});
+  font-size: calc(--value(number) * ${textUnitExprRuntime(cfg, '--value(number)')});
+  line-height: calc(--modifier(number) * ${textUnitExprRuntime(cfg, '--value(number)')});
 }
 `
 }
@@ -874,9 +874,9 @@ $fluid-zoom-text-none: ${num(cfg.zoomTextRange[1])};
     @return calc(#{$n} * var(--fluid));
   }
   @if $w == 1 {
-    @return calc(#{$n} * var(--fluid) * var(--fluid-zoom, 1));
+    @return calc(#{$n} * var(--fluid-z));
   }
-  @return calc(#{$n} * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * #{$w}));
+  @return calc(#{$n} * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * #{$w}));
 }
 
 @function ${p}-chrome($n) {
@@ -1105,8 +1105,8 @@ export function fluidText(n: number, size: number = n): string {
   if (!ZOOM_COMPENSATION) return \`\${base})\`
   const w = Math.min(1, Math.max(0, (ZOOM_TEXT_NONE - size) / (ZOOM_TEXT_NONE - ZOOM_TEXT_FULL)))
   if (w === 0) return \`\${base})\`
-  if (w === 1) return \`\${base} * var(--fluid-zoom, 1))\`
-  return \`\${base} * (1 + (var(--fluid-zoom, 1) - 1) * \${Math.round(w * 1e6) / 1e6}))\`
+  if (w === 1) return \`calc(\${n} * var(--fluid-z))\`
+  return \`calc(\${n} * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * \${Math.round(w * 1e6) / 1e6}))\`
 }
 
 export function fluidChrome(n: number): string {
@@ -1485,9 +1485,9 @@ function checkFixtureInvariants(cfg, files, label, mismatches) {
     // behind a compile-time switch, so only the declaration is conclusive.
     const displayDecls = [...content.matchAll(/--fluid-display:\s*([^;]+);/g)]
     const displayExpr = displayDecls.length ? displayDecls[displayDecls.length - 1][1] : ''
-    const zoomed = displayExpr.includes('var(--fluid-zoom, 1)')
+    const zoomed = displayExpr.includes('var(--fluid-z)') && /--fluid-z:\s*[^;]*var\(--fluid-zoom, 1\)/.test(content)
     if (cfg.zoomCompensation !== zoomed) {
-      mismatches.push(`${label}: ${rel} --fluid-display ${zoomed ? 'reads' : 'does not read'} var(--fluid-zoom, 1) but zoomCompensation is ${cfg.zoomCompensation}`)
+      mismatches.push(`${label}: ${rel} --fluid-display ${zoomed ? 'reads' : 'does not read'} a zoom-compensated --fluid-z but zoomCompensation is ${cfg.zoomCompensation}`)
     }
     const expr = extractFluidExpr(content)
     if (expr === null) {

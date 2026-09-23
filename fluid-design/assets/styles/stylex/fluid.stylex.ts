@@ -36,6 +36,7 @@ import * as stylex from '@stylexjs/stylex'
 
 export const FLUID_UNITS_CSS = `:root {
   --fluid: 1px;
+  --fluid-z: 1px;
   --fluid-display: 1px;
   --fluid-copy: 1px;
   --fluid-chrome: 1px;
@@ -48,8 +49,9 @@ export const FLUID_UNITS_CSS = `:root {
 @media (width >= 1024px) {
   :root {
     --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
-    --fluid-display: max(0.82px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.62 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.38px));
-    --fluid-copy: max(0.9px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.33 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.67px));
+    --fluid-z: max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1))));
+    --fluid-display: max(0.82px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+    --fluid-copy: max(0.9px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
     --fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
     --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
   }
@@ -88,8 +90,8 @@ export function fluidText(n: number, size: number = n): string {
   if (!ZOOM_COMPENSATION) return `${base})`
   const w = Math.min(1, Math.max(0, (ZOOM_TEXT_NONE - size) / (ZOOM_TEXT_NONE - ZOOM_TEXT_FULL)))
   if (w === 0) return `${base})`
-  if (w === 1) return `${base} * var(--fluid-zoom, 1))`
-  return `${base} * (1 + (var(--fluid-zoom, 1) - 1) * ${Math.round(w * 1e6) / 1e6}))`
+  if (w === 1) return `calc(${n} * var(--fluid-z))`
+  return `calc(${n} * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * ${Math.round(w * 1e6) / 1e6}))`
 }
 
 export function fluidChrome(n: number): string {

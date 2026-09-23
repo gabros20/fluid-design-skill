@@ -160,11 +160,29 @@ export function textZoomFactor(cfg, n) {
   return ` * (1 + (var(--fluid-zoom, 1) - 1) * ${num(w)})`
 }
 
+/** The unit a fluid-text size of drawn `n` px is multiplied by: --fluid,
+ * --fluid-z (the zoom-compensated base, fluid-scale.md §12), or a blend by
+ * the size's share of the zoom. Blending the two bases, not multiplying
+ * --fluid by the zoom, keeps it exact where the floor or ceiling binds. */
+export function textUnitExpr(cfg, n) {
+  const w = textZoomWeight(cfg, n)
+  if (w === 0) return 'var(--fluid)'
+  if (w === 1) return 'var(--fluid-z)'
+  return `(var(--fluid) + (var(--fluid-z) - var(--fluid)) * ${num(w)})`
+}
+
 /** The same factor for a runtime size expression (Tailwind's --value(number)). */
 export function textZoomFactorExpr(cfg, sizeExpr) {
   if (!cfg.zoomCompensation) return ''
   const [full, none] = cfg.zoomTextRange
   return ` * (1 + (var(--fluid-zoom, 1) - 1) * clamp(0, (${num(none)} - ${sizeExpr}) / ${num(none - full)}, 1))`
+}
+
+/** textUnitExpr for a runtime size expression (Tailwind's --value(number)). */
+export function textUnitExprRuntime(cfg, sizeExpr) {
+  if (!cfg.zoomCompensation) return 'var(--fluid)'
+  const [full, none] = cfg.zoomTextRange
+  return `(var(--fluid) + (var(--fluid-z) - var(--fluid)) * clamp(0, (${num(none)} - ${sizeExpr}) / ${num(none - full)}, 1))`
 }
 
 /**
@@ -324,7 +342,9 @@ export function cssUnits(cfg) {
   // zooms 1:1. Layout (`--fluid`), chrome and `fluid-text-*` (by size) stay
   // uncompensated on purpose: they keep fitting the zoomed viewport.
   const typeUnit = (damping, floor, base) => `max(${px(floor)}, ${base}, calc(${num(damping)} * ${base} + ${px(1 - damping)}))`
-  const typeBase = zc ? desktopBase(true) : 'var(--fluid)'
+  // Emitted once as --fluid-z (only with zoomCompensation), so the type
+  // units and fluid-text all read the same compensated base.
+  const typeBase = zc ? 'var(--fluid-z)' : 'var(--fluid)'
   const displayExpr = typeUnit(d, floors.display, typeBase)
   const copyExpr = typeUnit(c, floors.copy, typeBase)
   // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
@@ -342,16 +362,17 @@ export function cssUnits(cfg) {
     const mo = cfg.mobile
     const mf = resolveMobileFloors(cfg)
     const mobileBase = (zoomed) => `clamp(${px(mo.min)}, ${arm('100vw', mo.reference, zoomed)}, ${px(mo.max)})`
-    const mTypeBase = zc ? mobileBase(true) : 'var(--fluid)'
     root = {
       '--fluid': mobileBase(false),
-      '--fluid-display': typeUnit(d, mf.display, mTypeBase),
-      '--fluid-copy': typeUnit(c, mf.copy, mTypeBase),
+      ...(zc ? { '--fluid-z': mobileBase(true) } : {}),
+      '--fluid-display': typeUnit(d, mf.display, typeBase),
+      '--fluid-copy': typeUnit(c, mf.copy, typeBase),
       ...(cfg.units.chrome.enabled ? { '--fluid-chrome': 'var(--fluid)' } : {})
     }
   } else {
     root = {
       '--fluid': '1px',
+      ...(zc ? { '--fluid-z': '1px' } : {}),
       '--fluid-display': '1px',
       '--fluid-copy': '1px',
       ...(cfg.units.chrome.enabled ? { '--fluid-chrome': '1px' } : {})
@@ -379,6 +400,7 @@ export function cssUnits(cfg) {
     },
     engaged: {
       '--fluid': fluidExpr,
+      ...(zc ? { '--fluid-z': desktopBase(true) } : {}),
       '--fluid-display': displayExpr,
       '--fluid-copy': copyExpr,
       ...(cfg.units.chrome.enabled ? { '--fluid-chrome': chromeExpr } : {}),

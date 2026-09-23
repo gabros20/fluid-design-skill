@@ -83,9 +83,9 @@ $fluid-zoom-text-none: 48;
     @return calc(#{$n} * var(--fluid));
   }
   @if $w == 1 {
-    @return calc(#{$n} * var(--fluid) * var(--fluid-zoom, 1));
+    @return calc(#{$n} * var(--fluid-z));
   }
-  @return calc(#{$n} * var(--fluid) * (1 + (var(--fluid-zoom, 1) - 1) * #{$w}));
+  @return calc(#{$n} * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * #{$w}));
 }
 
 @function fluid-chrome($n) {
@@ -157,6 +157,7 @@ $fluid-zoom-text-none: 48;
 // note at the top of this file's Functions section.
 @mixin fluid-units {
   --fluid: 1px;
+  --fluid-z: 1px;
   --fluid-display: 1px;
   --fluid-copy: 1px;
   --fluid-chrome: 1px;
@@ -167,8 +168,9 @@ $fluid-zoom-text-none: 48;
 
   @include fluid-up {
     --fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
-    --fluid-display: max(0.82px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.62 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.38px));
-    --fluid-copy: max(0.9px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))), calc(0.33 * max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))) + 0.67px));
+    --fluid-z: max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1))));
+    --fluid-display: max(0.82px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+    --fluid-copy: max(0.9px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
     --fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
     --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
   }
