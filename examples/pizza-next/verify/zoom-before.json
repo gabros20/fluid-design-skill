@@ -1,0 +1,151 @@
+{
+  "url": "http://127.0.0.1:4317/",
+  "generatedAt": "2026-09-23T20:40:30.690Z",
+  "config": {
+    "prefix": "fluid",
+    "reference": {
+      "width": 1440,
+      "height": 900
+    },
+    "engageAt": 1024,
+    "ceiling": null,
+    "zoomCompensation": true
+  },
+  "zoom": {
+    "pass": false,
+    "rows": [
+      {
+        "window": "1440x900",
+        "zoom": 1,
+        "css": "1440x813",
+        "fluidZoom": "",
+        "textPx": 11.6172,
+        "physical": 11.6172,
+        "growth": 1,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "1440x900",
+        "zoom": 1.25,
+        "css": "1152x650",
+        "fluidZoom": "",
+        "textPx": 10.9018,
+        "physical": 13.62725,
+        "growth": 1.1730236201494335,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "1440x900",
+        "zoom": 1.5,
+        "css": "960x542",
+        "fluidZoom": "",
+        "textPx": 11,
+        "physical": 16.5,
+        "growth": 1.4203078194401404,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "1440x900",
+        "zoom": 2,
+        "css": "720x406",
+        "fluidZoom": "",
+        "textPx": 11,
+        "physical": 22,
+        "growth": 1.8937437592535207,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "1920x1080",
+        "zoom": 1,
+        "css": "1920x993",
+        "fluidZoom": "",
+        "textPx": 13.24,
+        "physical": 13.24,
+        "growth": 1,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "1920x1080",
+        "zoom": 1.25,
+        "css": "1536x794",
+        "fluidZoom": "",
+        "textPx": 11.5354,
+        "physical": 14.419249999999998,
+        "growth": 1.0890672205438066,
+        "overflow": true,
+        "pass": false
+      },
+      {
+        "window": "1920x1080",
+        "zoom": 1.5,
+        "css": "1280x662",
+        "fluidZoom": "",
+        "textPx": 10.9528,
+        "physical": 16.4292,
+        "growth": 1.2408761329305138,
+        "overflow": true,
+        "pass": false
+      },
+      {
+        "window": "1920x1080",
+        "zoom": 2,
+        "css": "960x496",
+        "fluidZoom": "",
+        "textPx": 11,
+        "physical": 22,
+        "growth": 1.661631419939577,
+        "overflow": true,
+        "pass": false
+      },
+      {
+        "window": "2560x1440",
+        "zoom": 1,
+        "css": "2560x1353",
+        "fluidZoom": "",
+        "textPx": 18.04,
+        "physical": 18.04,
+        "growth": 1,
+        "overflow": true,
+        "pass": true
+      },
+      {
+        "window": "2560x1440",
+        "zoom": 1.25,
+        "css": "2048x1082",
+        "fluidZoom": "",
+        "textPx": 14.432,
+        "physical": 18.04,
+        "growth": 1,
+        "overflow": true,
+        "pass": false
+      },
+      {
+        "window": "2560x1440",
+        "zoom": 1.5,
+        "css": "1707x902",
+        "fluidZoom": "",
+        "textPx": 12.0267,
+        "physical": 18.04005,
+        "growth": 1.0000027716186253,
+        "overflow": true,
+        "pass": false
+      },
+      {
+        "window": "2560x1440",
+        "zoom": 2,
+        "css": "1280x676",
+        "fluidZoom": "",
+        "textPx": 11.0166,
+        "physical": 22.0332,
+        "growth": 1.2213525498891353,
+        "overflow": true,
+        "pass": false
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@
       "type": "string",
       "default": "fluid",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Utility/class-name and custom-property prefix. Changing it renames every `fluid-*` utility and `--fluid*` custom property the generator emits."
+      "description": "Utility, class and (SCSS) function/mixin name prefix — renames `fluid-*` utilities (Tailwind), the `.fluid-frame` class (vanilla CSS) and the `fluid()`/`fluid-display()`/`fluid-frame`/etc. Sass identifiers. It does NOT rename the `--fluid*` custom-property names the generator emits (`--fluid`, `--fluid-display`, `--fluid-copy`, `--fluid-chrome`, `--header-h`, ...) — those are fixed across every stack and every prefix; see references/contract.md §1."
     },
     "reference": {
       "type": "object",
@@ -134,11 +134,16 @@
         }
       }
     },
+    "zoomCompensation": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inside the two type units (`--fluid-display`, `--fluid-copy`), read the base as `var(--fluid) * var(--fluid-zoom, 1)` from the engage breakpoint up, which restores the unzoomed value so text zooms 1:1. Browser zoom shrinks the CSS viewport by the zoom factor, so vw/svh-derived type otherwise renders at the same physical size at every zoom level (a WCAG 1.4.4 failure on wide displays). `assets/runtime/fluid-zoom.js` sets `--fluid-zoom`; without it the fallback is 1 and nothing changes. Layout, chrome and `fluid-text-*` are never compensated: the layout keeps fitting the zoomed viewport and text reflows inside it."
+    },
     "ceiling": {
       "type": ["number", "null"],
       "default": null,
       "exclusiveMinimum": 0,
-      "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent."
+      "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent. It also wraps `--fluid-chrome` directly in its own `min(Npx, ...)` — chrome does not read `var(--fluid)`, so without this it keeps growing past N on exactly the large displays the ceiling exists for, while the floor (`units.fluid.floor`) still does not apply to chrome."
     }
   }
 }

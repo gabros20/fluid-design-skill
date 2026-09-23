@@ -98,3 +98,30 @@ Fixed after looking:
 ## 6. Server stopped
 
 `lsof -i :4310` returns nothing. I also started a `next dev` on :4312 once, only to read `__scrub()`, and stopped it.
+
+## Browser zoom (WCAG 1.4.4), added 2026-09-23
+
+Added after the review in `docs/REVIEW-2026-09.md`. The build now inlines
+`src/lib/fluid-zoom.js` in `<head>` (`FLUID_ZOOM_INLINE`, `src/app/layout.tsx`), and
+`fluid.config.json` has `zoomCompensation: true` (regenerated `src/styles/fluid.css`).
+
+`verify-matrix.mjs` zoom row, real Chromium zoom, production build (`next start -p 4317`):
+
+| Window | Zoom | Before (text growth) | After (text growth) |
+|---|---|---|---|
+| 1440×900 | 125% | 117% | 125% |
+| 1920×1080 | 125% | 109% | 125% |
+| 1920×1080 | 150% | 124% | 150% |
+| 1920×1080 | 200% (mobile) | 166% | 170% |
+| 2560×1440 | 125% | 100% | 125% |
+| 2560×1440 | 150% | 100% | 150% |
+| 2560×1440 | 200% | 122% | 200% |
+
+"Before" measured the first `main p` (an 11.6px label); "after" measured body copy
+(`p[class*="fluid-copy-16"]`), with a 300% column added. Growth under the desktop layout is now
+exactly proportional, with no horizontal overflow at any zoom level, and the full viewport matrix
+still passes. The one remaining miss is the **mobile handover** at 1920×1080, 200%: the CSS
+viewport (960) is below `engageAt`, so the page uses its mobile copy (15px), which is smaller than
+the 17.65px the desktop copy had grown to on that window. 300% there reaches 255%. It is a property of
+this page's mobile type sizes, not of the runtime (`fluid-scale.md` §12). Evidence:
+`verify/zoom-before.json`, `verify/zoom-after.json`.
