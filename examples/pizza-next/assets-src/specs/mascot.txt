@@ -1,0 +1,3 @@
+$imagegen Generate the following image. No text anywhere in the image. Save the result as mascot.png in the current directory.
+
+Simple flat line illustration logo mark: a friendly round chef face with a small chef hat and a red-and-white checkered neck scarf, thick uniform black strokes, only black and red fill for the scarf checks, no shading, no gradients, minimal geometric style, no text, transparent background, centred, square 1:1 aspect ratio.

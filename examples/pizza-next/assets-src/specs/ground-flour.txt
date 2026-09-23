@@ -1,0 +1,3 @@
+$imagegen Generate the following image. No text anywhere in the image. Save the result as ground-flour.png in the current directory.
+
+Top-down photograph of a dark charcoal slate stone work surface, lightly and unevenly dusted with fine white flour, subtle natural stone texture, even soft diffused daylight, no objects on the surface, no hands, no text, no watermark, slightly darker vignette toward the edges than the centre. Square 1:1 aspect ratio, opaque background (not transparent).

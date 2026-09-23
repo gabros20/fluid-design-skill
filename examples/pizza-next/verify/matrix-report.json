@@ -1,0 +1,2111 @@
+{
+  "url": "http://localhost:4310",
+  "config": {
+    "prefix": "fluid",
+    "reference": {
+      "width": 1440,
+      "height": 900
+    },
+    "engageAt": 1024,
+    "ceiling": null
+  },
+  "generatedAt": "2026-09-23T12:48:25.536Z",
+  "viewports": [
+    {
+      "width": 1024,
+      "height": 640,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1024x640.png"
+    },
+    {
+      "width": 1280,
+      "height": 640,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1280x640.png"
+    },
+    {
+      "width": 1440,
+      "height": 640,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1440x640.png"
+    },
+    {
+      "width": 1680,
+      "height": 640,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1680x640.png"
+    },
+    {
+      "width": 2560,
+      "height": 640,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-2560x640.png"
+    },
+    {
+      "width": 1024,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.9143,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1024x700.png"
+    },
+    {
+      "width": 1280,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1280x700.png"
+    },
+    {
+      "width": 1440,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1440x700.png"
+    },
+    {
+      "width": 1680,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1680x700.png"
+    },
+    {
+      "width": 2560,
+      "height": 700,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.777765625,
+              "expected": 0.7777777777777778,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000012152777777774126,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.86221875,
+              "expected": 0.8622222222222222,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000034722222221894583,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.92665625,
+              "expected": 0.9266666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666679397,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 700,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-2560x700.png"
+    },
+    {
+      "width": 1024,
+      "height": 800,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.8,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1024x800.png"
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1280x800.png"
+    },
+    {
+      "width": 1440,
+      "height": 800,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1440x800.png"
+    },
+    {
+      "width": 1680,
+      "height": 800,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1680x800.png"
+    },
+    {
+      "width": 2560,
+      "height": 800,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-2560x800.png"
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.7111,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1024x900.png"
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 0.8889,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1280x900.png"
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1440x900.png"
+    },
+    {
+      "width": 1680,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1680x900.png"
+    },
+    {
+      "width": 2560,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-2560x900.png"
+    },
+    {
+      "width": 1024,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.820875,
+              "expected": 0.8208888888888889,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.90465625,
+              "expected": 0.9046666666666666,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.000010416666666568375,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.711109375,
+              "expected": 0.7111111111111111,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 640,
+              "ratio": 0.4444,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1024x1440.png"
+    },
+    {
+      "width": 1280,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 0.931109375,
+              "expected": 0.9311111111111111,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000017361111110947292,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 0.963328125,
+              "expected": 0.9633333333333333,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.0000052083333332841875,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 0.888875,
+              "expected": 0.8888888888888888,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.000013888888888868856,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 800,
+              "ratio": 0.5556,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1280x1440.png"
+    },
+    {
+      "width": 1440,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 900,
+              "ratio": 0.625,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1440x1440.png"
+    },
+    {
+      "width": 1680,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0.00001041666666679042,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.16665625,
+              "expected": 1.1666666666666667,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0.00001041666666679042,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1050,
+              "ratio": 0.7292,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-1680x1440.png"
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "mobile": false,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "rawExpr": "max(.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "expectedExpr": "max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "rawExpr": "max(.82px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.62 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .38px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "expectedExpr": "max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "rawExpr": "max(.9px, max(.58px, min(calc(100svh / 900), calc(100vw / 1440))), calc(.33 * max(.58px, min(calc(100svh / 900), calc(100vw / 1440))) + .67px))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "expectedExpr": "max(0.9px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px))",
+              "diagnosis": "mismatch",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "rawExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "resolved": 1.6,
+              "expected": 1.6,
+              "expectedExpr": "min(calc(100vw / 1440), max(1px, calc(100svh / 900)))",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "elements": [
+            {
+              "index": 0,
+              "height": 1440,
+              "ratio": 1,
+              "pass": true
+            }
+          ]
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-2560x1440.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mobile": true,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "skipped": "below engageAt"
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-390x844-mobile.png"
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "mobile": true,
+      "checks": {
+        "overflow": {
+          "pass": true,
+          "offenders": []
+        },
+        "units": {
+          "pass": true,
+          "rows": [
+            {
+              "unit": "fluid",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "display",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "copy",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            },
+            {
+              "unit": "chrome",
+              "raw": "1px",
+              "rawExpr": "1px",
+              "resolved": 1,
+              "expected": 1,
+              "expectedExpr": "1px",
+              "diagnosis": "match",
+              "drift": 0,
+              "pass": true
+            }
+          ]
+        },
+        "fit": {
+          "pass": true,
+          "skipped": "below engageAt"
+        },
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "gridCols": []
+      },
+      "screenshot": "screenshot-375x667-mobile.png"
+    }
+  ],
+  "gridCols": {
+    "pass": true,
+    "grids": []
+  }
+}

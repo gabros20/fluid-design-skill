@@ -1,0 +1,78 @@
+{
+  "url": "http://localhost:4310",
+  "viewport": [
+    1440,
+    900
+  ],
+  "base": {
+    "top": 1564,
+    "range": 2700
+  },
+  "rows": [
+    {
+      "progress": 0,
+      "mode": "head",
+      "time": 0.8,
+      "frame": 24,
+      "paused": false,
+      "ready": 4,
+      "src": "dough-desktop.mp4",
+      "transform": "translate3d(0px, -29px, 0px) scale(1.065)",
+      "header": "rgb(250, 246, 239)",
+      "scrub": null,
+      "file": "scrub-1440x900-p0.png"
+    },
+    {
+      "progress": 0.25,
+      "mode": "scrub",
+      "time": 3.386,
+      "frame": 102,
+      "paused": true,
+      "ready": 4,
+      "src": "dough-desktop.mp4",
+      "transform": "translate3d(-87px, 0px, 0px) scale(1)",
+      "header": "rgb(250, 246, 239)",
+      "scrub": null,
+      "file": "scrub-1440x900-p025.png"
+    },
+    {
+      "progress": 0.5,
+      "mode": "scrub",
+      "time": 4.81,
+      "frame": 144,
+      "paused": true,
+      "ready": 4,
+      "src": "dough-desktop.mp4",
+      "transform": "translate3d(-239px, 0px, 0px) scale(1)",
+      "header": "rgb(250, 246, 239)",
+      "scrub": null,
+      "file": "scrub-1440x900-p05.png"
+    },
+    {
+      "progress": 0.75,
+      "mode": "scrub",
+      "time": 6.235,
+      "frame": 187,
+      "paused": true,
+      "ready": 4,
+      "src": "dough-desktop.mp4",
+      "transform": "translate3d(-391px, 0px, 0px) scale(1)",
+      "header": "rgb(250, 246, 239)",
+      "scrub": null,
+      "file": "scrub-1440x900-p075.png"
+    },
+    {
+      "progress": 1,
+      "mode": "tail",
+      "time": 7.011,
+      "frame": 210,
+      "paused": false,
+      "ready": 4,
+      "src": "dough-desktop.mp4",
+      "transform": "translate3d(-470px, 0px, 0px) scale(1)",
+      "header": "rgb(250, 246, 239)",
+      "scrub": null,
+      "file": "scrub-1440x900-p1.png"
+    }
+  ]
+}

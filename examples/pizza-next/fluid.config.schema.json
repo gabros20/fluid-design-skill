@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluid-design.skill/fluid.config.schema.json",
+  "title": "fluid-design config",
+  "description": "Config for the fluid-design generator. Each unit is a CSS length equal to exactly 1px at `reference`, so a Figma number is written as that number times the unit (`calc(64 * var(--fluid-display))`). See references/fluid-scale.md for the full model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reference", "canvas", "engageAt", "units"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Standard JSON Schema self-reference. Not read by the generator."
+    },
+    "prefix": {
+      "type": "string",
+      "default": "fluid",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Utility/class-name and custom-property prefix. Changing it renames every `fluid-*` utility and `--fluid*` custom property the generator emits."
+    },
+    "reference": {
+      "type": "object",
+      "description": "The viewport where every unit equals exactly 1px. This is a CONTENT budget, not the design canvas — it is deliberately narrower than `canvas.width` so the composition fits a typical desktop window rather than the full Figma frame. See fluid-scale.md \"the reference is 1440x900, and the Figma canvas is 1680 wide\".",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Reference width in CSS px. Divides the width arm: `100vw / width`. Must be > 0."
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Reference height in CSS px. Divides the height arm: `100svh / height`. Must be > 0. Ignored when `heightAxis` is false."
+        }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "description": "The drawn design-file frame. Independent of `reference` on purpose — between `reference.width` and `canvas.width` the composition does not scale at all (the height arm pins the factor at 1.0), it simply gets more room.",
+      "additionalProperties": false,
+      "required": ["width", "gutter"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The drawn frame width in px. Emitted as the `fluid-cap-*` grow-only max-width ceiling for the page frame."
+        },
+        "gutter": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The drawn page gutter in px, for documentation/example use (e.g. `fluid-px-<gutter>` at the page edge). Not baked into a custom property by itself."
+        }
+      }
+    },
+    "engageAt": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Min-width in px where the scale turns on, emitted as `@media (width >= <engageAt>px)`. Below it every fluid unit is a flat 1px, so every value under this breakpoint is untouched. Must be <= reference.width (the scale cannot engage past its own reference)."
+    },
+    "heightAxis": {
+      "type": "boolean",
+      "default": true,
+      "description": "true (default): `--fluid` takes min(width arm, height arm) via svh, giving the 'never taller than one screen' guarantee. false: drops the height arm entirely — `--fluid` is width-only (`max(floor, 100vw / reference.width)`) — for sites with no one-screen/pinned sections, where an svh dependency buys nothing and only adds mobile-toolbar risk."
+    },
+    "units": {
+      "type": "object",
+      "description": "Per-unit tuning. `fluid` is the one measured unit; `display` and `copy` are damped percentages of it; `chrome` is a fourth, independently-floored role for site chrome (header/footer) that never shrinks on a short-but-wide window.",
+      "additionalProperties": false,
+      "required": ["fluid", "display", "copy"],
+      "properties": {
+        "fluid": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["floor"],
+          "properties": {
+            "floor": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Hard floor in px-equivalent (unitless, multiplied by 1px) below which `--fluid` stops shrinking. Chosen, not derived — pick the value at which the layout itself breaks (default 0.58, measured at a 522px-tall section: 0.58 * 900)."
+            }
+          }
+        },
+        "display": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["damping", "floor"],
+          "properties": {
+            "damping": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "description": "Rate `--fluid-display` shrinks relative to `--fluid` below the reference, in (0,1]. Read 0.62 as 'display type shrinks at 62% of the rate the layout does'. The design point is exact for any damping because `d*1 + (1-d) = 1`."
+            },
+            "floor": {
+              "oneOf": [
+                { "const": "auto", "description": "round2(damping * engageAt/reference.width + (1 - damping)) — the value the damped curve reaches exactly at engageAt, i.e. what the role hands over at the breakpoint where the flat-1px mobile layout takes over." },
+                { "type": "number", "exclusiveMinimum": 0, "description": "Explicit override in px-equivalent." }
+              ],
+              "description": "Hard floor for `--fluid-display`. 'auto' derives it from `damping`; a number overrides it."
+            }
+          }
+        },
+        "copy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["damping", "floor"],
+          "properties": {
+            "damping": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "description": "Rate `--fluid-copy` shrinks relative to `--fluid` below the reference, in (0,1]. Kept separate from `display.damping` because the two roles cannot share one rate: measured, a single gentle rate blows headings to too many lines, a single steep rate makes body copy unreadable."
+            },
+            "floor": {
+              "oneOf": [
+                { "const": "auto", "description": "round2(damping * engageAt/reference.width + (1 - damping)) at the defaults this is 0.90." },
+                { "type": "number", "exclusiveMinimum": 0, "description": "Explicit override in px-equivalent." }
+              ],
+              "description": "Hard floor for `--fluid-copy`. 'auto' derives it from `damping`; a number overrides it."
+            }
+          }
+        },
+        "chrome": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Emit `--fluid-chrome`, a fourth role for site chrome (header menu, dropdowns, footer): width-fit, height-floored (`min(100vw/W, max(1px, 100svh/H))`) so it never shrinks when height binds on a short-but-wide window but still fits when width binds. Spent explicitly at call sites (`calc(N * var(--fluid-chrome))`); there is no parallel utility family."
+            }
+          }
+        }
+      }
+    },
+    "ceiling": {
+      "type": ["number", "null"],
+      "default": null,
+      "exclusiveMinimum": 0,
+      "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent."
+    }
+  }
+}

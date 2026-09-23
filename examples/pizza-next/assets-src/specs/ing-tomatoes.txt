@@ -1,0 +1,3 @@
+$imagegen Generate the following image. No text anywhere in the image. Save the result as ing-tomatoes.png in the current directory.
+
+Overhead top-down product photograph of a small cluster of cherry tomatoes still on the vine, glossy red skins, a green stem and a couple of small leaves. Camera exactly 90 degrees above, soft warm diffused daylight from the upper left, gentle natural contact shadow, colour temperature about 4800K, true-to-life colours, crisp focus edge to edge, editorial food photography, isolated subject, fully transparent background, no plate, no table, no text, no watermark. Square 1:1 aspect ratio.

@@ -1,0 +1,3 @@
+$imagegen Generate the following image. No text anywhere in the image. Save the result as ing-basil.png in the current directory.
+
+Overhead top-down product photograph of a small fresh basil sprig with a few leaves and a short stem, natural imperfections, dewy fresh look. Camera exactly 90 degrees above, soft warm diffused daylight from the upper left, gentle natural contact shadow, colour temperature about 4800K, true-to-life colours, crisp focus edge to edge, editorial food photography, isolated subject, fully transparent background, no plate, no table, no text, no watermark. Square 1:1 aspect ratio.

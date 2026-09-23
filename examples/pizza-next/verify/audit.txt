@@ -1,0 +1,6 @@
+[INFO] fixed-px-at-engage  components/Header.tsx:79
+  'lg:size-[calc(48*var(--fluid-chrome))] lg:text-[calc(11*var(--fluid-chrome))] lg:tracking-[0.08em]',
+  why: Deliberately off the fluid scale: border/stroke widths, radii, tracking and max-w-* text measures are excluded per fluid-scale.md §4.
+  fix: No action needed unless this value was meant to scale — if so it belongs on a different property family.
+
+1 finding(s) — 0 error, 0 warn, 1 info.

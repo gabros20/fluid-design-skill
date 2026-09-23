@@ -1,0 +1,9 @@
+node_modules
+.next
+next-env.d.ts
+*.tsbuildinfo
+verify-out
+assets-src/raw
+assets-src/frames
+AGENTS.md
+CLAUDE.md
