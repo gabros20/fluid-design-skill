@@ -1,0 +1,5 @@
+.hero {
+  @variant fluid-desktop {
+    padding: 0;
+  }
+}

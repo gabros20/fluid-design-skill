@@ -6,8 +6,13 @@
 // false positives) because a noisy linter gets ignored.
 //
 // Usage:
-//   node audit.mjs [srcDir] [--engage lg] [--json]
+//   node audit.mjs [srcDir] [--desktop-variant lg] [--prefix fluid] [--json]
 //   node audit.mjs --selftest
+//
+// With a fluid.config.json at or above srcDir, the class prefix, the roles,
+// the stack and the generated folder come from it (flags still win).
+// Programmatic: runAudit({ root, prefix, desktopVariant, rules, … }) — the
+// same rules `fluid check` runs (CHECK_RULES) with the project's context.
 //
 // srcDir defaults to "." (the current directory / project root) -- walk()
 // already skips node_modules, .git, .next, dist, build, .turbo, .cache and
@@ -18,7 +23,7 @@
 // finding, 2 = usage/invocation error.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative, extname } from 'node:path'
+import { join, relative, extname, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname_ = fileURLToPath(new URL('.', import.meta.url))
@@ -28,29 +33,37 @@ const __dirname_ = fileURLToPath(new URL('.', import.meta.url))
 const USAGE = `audit.mjs — static scanner for a fluid-design codebase (greenfield or brownfield).
 
 Usage:
-  node audit.mjs [srcDir] [--engage lg] [--json]
+  node audit.mjs [srcDir] [--desktop-variant lg] [--prefix fluid] [--json]
   node audit.mjs --selftest
 
 srcDir defaults to "." (a project root, not just "src/" -- walk() already
 skips node_modules/.git/.next/dist/build/.turbo/.cache/out).
 
+With a fluid.config.json at or above srcDir, the class prefix, roles, stack
+and generated folder come from it.
+
 Options:
-  --engage <bp>   the breakpoint name fixed-px-at-engage checks (default: lg)
-  --json          print { srcDir, findings } instead of the readable table
-  --selftest      run every rule against fixtures/audit/<rule-id>/{positive,negative}
-  -h, --help      print this message and exit
+  --desktop-variant <bp>  the desktop breakpoint variant (default: lg)
+  --prefix <p>            the utility class prefix (default: the config's, else fluid)
+  --json                  print { srcDir, findings } instead of the readable table
+  --selftest              run every rule against fixtures/audit/<rule-id>/{positive,negative}
+  -h, --help              print this message and exit
 
 Exit codes: 0 = no error-severity findings, 1 = at least one error-severity
 finding, 2 = usage/invocation error. --selftest exits 0/1 on pass/fail.`
 
 function parseArgs(argv) {
-  const out = { _: [], engage: 'lg', json: false, selftest: false, help: false }
+  const out = { _: [], desktopVariant: undefined, prefix: undefined, json: false, selftest: false, help: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--help' || a === '-h') out.help = true
     else if (a === '--json') out.json = true
     else if (a === '--selftest') out.selftest = true
-    else if (a === '--engage') out.engage = argv[++i]
+    // --engage: the v1 name, kept as a silent alias
+    else if (a === '--desktop-variant' || a === '--engage') out.desktopVariant = argv[++i]
+    else if (a.startsWith('--desktop-variant=') || a.startsWith('--engage=')) out.desktopVariant = a.slice(a.indexOf('=') + 1)
+    else if (a === '--prefix') out.prefix = argv[++i]
+    else if (a.startsWith('--prefix=')) out.prefix = a.slice(9)
     else if (a.startsWith('--')) { console.error(`[audit] unknown flag ${a}`); process.exit(2) }
     else out._.push(a)
   }
@@ -59,10 +72,10 @@ function parseArgs(argv) {
 
 // ── file walking ────────────────────────────────────────────────────────
 
-const SCAN_EXT = new Set(['.tsx', '.jsx', '.ts', '.js', '.css', '.scss', '.html', '.vue', '.astro'])
-const SKIP_DIR = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo', '.cache', 'out'])
+const SCAN_EXT = new Set(['.tsx', '.jsx', '.ts', '.js', '.mjs', '.css', '.scss', '.html', '.vue', '.astro', '.svelte', '.mdx'])
+const SKIP_DIR = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo', '.cache', 'out', '.vercel', 'coverage'])
 
-function walk(dir, acc = []) {
+function walk(dir, acc = [], skip = null) {
   let entries
   try {
     entries = readdirSync(dir, { withFileTypes: true })
@@ -72,7 +85,8 @@ function walk(dir, acc = []) {
   for (const e of entries) {
     if (SKIP_DIR.has(e.name)) continue
     const p = join(dir, e.name)
-    if (e.isDirectory()) walk(p, acc)
+    if (skip && resolvePath(p) === skip) continue
+    if (e.isDirectory()) walk(p, acc, skip)
     else if (e.isFile() && SCAN_EXT.has(extname(e.name))) acc.push(p)
   }
   return acc
@@ -221,6 +235,187 @@ function extractClassNames(content) {
   return out
 }
 
+// ── markup scanner: class strings per element ───────────────────────────
+// A small tag scanner for JSX/HTML/Vue/Svelte/Astro, used by the class-string
+// rules. It respects quotes, template literals and balanced {} (so an arrow
+// function `onClick={() => x > 1}` in an earlier attribute does not end the
+// tag), and it reads class strings ONLY from class/className attribute values
+// and from cn()/clsx()-style call arguments -- never from data-* or other
+// attributes.
+
+const esc = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+
+// Skip a JS string/template starting at i (content[i] is the quote). Returns
+// the index just past it, and pushes its static text into `pieces`.
+function skipJsString(content, i, pieces) {
+  const q = content[i]
+  let j = i + 1
+  let from = j
+  while (j < content.length) {
+    const c = content[j]
+    if (c === '\\') { j += 2; continue }
+    if (c === q) break
+    if (q !== '`' && c === '\n') break
+    if (q === '`' && c === '$' && content[j + 1] === '{') {
+      if (pieces && j > from) pieces.push({ text: content.slice(from, j), index: from })
+      j = skipBalanced(content, j + 1, '{', '}', pieces)
+      from = j
+      continue
+    }
+    j++
+  }
+  if (pieces && j > from) pieces.push({ text: content.slice(from, j), index: from })
+  return j + 1
+}
+
+// content[i] === open. Returns the index just past the matching close, with
+// every string literal inside pushed into `pieces`.
+function skipBalanced(content, i, open, close, pieces) {
+  let depth = 0
+  let j = i
+  const limit = Math.min(content.length, i + 20000)
+  while (j < limit) {
+    const c = content[j]
+    if (c === '"' || c === "'" || c === '`') { j = skipJsString(content, j, pieces); continue }
+    if (c === open) depth++
+    else if (c === close && --depth === 0) return j + 1
+    j++
+  }
+  return j
+}
+
+/** Every tag `<name …>` whose name matches `nameRe`: { name, index, end,
+ * attrs: [{ name, index, value, valueIndex, pieces: [{ text, index }] }] }.
+ * `pieces` are the string literals in the value (the value itself when quoted). */
+function scanTags(content, nameRe = /[A-Za-z][\w.:-]*/) {
+  const tags = []
+  const re = new RegExp(`<(${nameRe.source})(?=[\\s/>])`, 'g')
+  let m
+  while ((m = re.exec(content))) {
+    const prev = content[m.index - 1]
+    if (prev && /[\w$)\]]/.test(prev)) continue // a generic: Array<string>
+    const tag = { name: m[1], index: m.index, end: -1, attrs: [] }
+    let i = m.index + m[0].length
+    const limit = Math.min(content.length, i + 20000)
+    while (i < limit) {
+      while (i < limit && /\s/.test(content[i])) i++
+      const c = content[i]
+      if (c === '>') { tag.end = i + 1; break }
+      if (c === '/' && content[i + 1] === '>') { tag.end = i + 2; break }
+      if (c === '{') { i = skipBalanced(content, i, '{', '}', null); continue } // {...spread}
+      const nm = /^[^\s=>/{}"'`]+/.exec(content.slice(i, i + 200))
+      if (!nm) { i++; continue }
+      const attr = { name: nm[0], index: i, value: null, valueIndex: -1, pieces: [] }
+      i += nm[0].length
+      let k = i
+      while (k < limit && /\s/.test(content[k])) k++
+      if (content[k] === '=') {
+        k++
+        while (k < limit && /\s/.test(content[k])) k++
+        const v = content[k]
+        attr.valueIndex = k
+        if (v === '"' || v === "'") {
+          let e = content.indexOf(v, k + 1)
+          if (e === -1) e = limit
+          attr.value = content.slice(k + 1, e)
+          attr.pieces.push({ text: attr.value, index: k + 1 })
+          i = e + 1
+        } else if (v === '{') {
+          const e = skipBalanced(content, k, '{', '}', attr.pieces)
+          attr.value = content.slice(k, e)
+          i = e
+        } else {
+          const bare = /^[^\s>]+/.exec(content.slice(k, k + 500))
+          attr.value = bare ? bare[0] : ''
+          attr.pieces.push({ text: attr.value, index: k })
+          i = k + attr.value.length
+        }
+      }
+      tag.attrs.push(attr)
+    }
+    tags.push(tag)
+  }
+  return tags
+}
+
+const MARKUP_EXT = new Set(['.tsx', '.jsx', '.html', '.vue', '.svelte', '.astro', '.mdx'])
+const CLASS_ATTR = /^(?:class|className|:class|v-bind:class|class:list)$/
+const CLASS_CALL = /\b(?:cn|clsx|cx|twMerge|twJoin|classNames|classnames|cva|tv)\s*\(/g
+
+/** One group per element (its class/className value) or per cn()/clsx()
+ * call outside one: { index, tag, classes: [{ raw, index, variants, base }] }. */
+function classGroups(content) {
+  const groups = []
+  const covered = []
+  for (const tag of scanTags(content)) {
+    for (const a of tag.attrs) {
+      if (!CLASS_ATTR.test(a.name) || a.value == null) continue
+      covered.push([a.valueIndex, a.valueIndex + a.value.length])
+      groups.push({ index: a.valueIndex, tag: tag.name, classes: tokensOf(a.pieces) })
+    }
+  }
+  CLASS_CALL.lastIndex = 0
+  let m
+  while ((m = CLASS_CALL.exec(content))) {
+    if (covered.some(([s, e]) => m.index >= s && m.index < e)) continue
+    const open = m.index + m[0].length - 1
+    const pieces = []
+    const end = skipBalanced(content, open, '(', ')', pieces)
+    covered.push([m.index, end])
+    groups.push({ index: m.index, tag: null, classes: tokensOf(pieces) })
+  }
+  return groups
+}
+
+function tokensOf(pieces) {
+  const out = []
+  for (const p of pieces) {
+    const re = /\S+/g
+    let m
+    while ((m = re.exec(p.text))) out.push({ raw: m[0], index: p.index + m.index, ...parseClass(m[0]) })
+  }
+  return out
+}
+
+/** `md:hover:!fluid-p-4` -> { variants: ['md', 'hover'], base: 'fluid-p-4' }
+ * (important marks, leading or trailing, dropped). Splits on ':' outside []. */
+function parseClass(tok) {
+  const parts = []
+  let depth = 0
+  let from = 0
+  for (let i = 0; i < tok.length; i++) {
+    const c = tok[i]
+    if (c === '[' || c === '(') depth++
+    else if (c === ']' || c === ')') depth--
+    else if (c === ':' && depth === 0) { parts.push(tok.slice(from, i)); from = i + 1 }
+  }
+  let base = tok.slice(from)
+  base = base.replace(/^!/, '').replace(/!$/, '')
+  return { variants: parts, base }
+}
+
+const BREAKPOINT_VARIANT = /^(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl|3xl)$|^(?:max|min)-\[[^\]]+\]$/
+const DISPLAY = new Set(['hidden', 'block', 'inline', 'inline-block', 'flex', 'inline-flex', 'grid', 'inline-grid', 'contents', 'table', 'flow-root', 'list-item', 'table-row', 'table-cell'])
+const VALUE_TAIL = /-(?:\[[^\]]*\]|\([^)]*\)|\d[\w.]*|px|full|auto|screen|none|min|max|fit|xs|sm|md|lg|xl|svh|dvh|lvh|svw|dvw|lvw)$/
+
+/** The CSS property a utility sets, roughly: `p-4`, `fluid-p-24` -> 'p';
+ * `hidden`, `flex` -> 'display'; every fluid type family -> 'text'. */
+function propKey(base, opts) {
+  let b = base.replace(/^-/, '')
+  if (!b.includes('[')) b = b.replace(/\/[^/]*$/, '')
+  if (DISPLAY.has(b)) return 'display'
+  const pre = `${opts.prefix}-`
+  if (b.startsWith(pre)) {
+    b = b.slice(pre.length)
+    const fam = b.replace(VALUE_TAIL, '')
+    if (fam === 'text' || fam === 'ui-text' || opts.roles.includes(fam)) return 'text'
+    b = b.replace(/^ui-/, '')
+  }
+  return b.replace(VALUE_TAIL, '')
+}
+
+const limitClassRe = (prefix) => new RegExp(`^${esc(prefix)}-(?:(?:ui-)?grow-until|shrink-until)-\\[?\\d+(?:\\.\\d+)?\\]?$|^${esc(prefix)}-off$|^\\[--fluid-(?:ui-grow-until|grow-until|shrink-until|off):[^\\]]*\\]$`)
+
 // ── rules ───────────────────────────────────────────────────────────────
 // Each rule: { id, ext: (extname)=>bool, run(content, file, ctx, acc, opts) }
 
@@ -236,7 +431,7 @@ const rules = [
     id: 'fixed-px-at-engage',
     ext: (e) => ['.tsx', '.jsx', '.vue', '.astro', '.html'].includes(e),
     run(content, file, ctx, acc, opts) {
-      const engage = opts.engage
+      const engage = opts.desktopVariant
       const core = new RegExp(`\\b${engage}:(${PROP_CORE})-\\[(\\d+(?:\\.\\d+)?)px\\]`, 'g')
       let m
       while ((m = core.exec(content))) {
@@ -296,7 +491,7 @@ const rules = [
     // real SCSS-based build).
     id: 'fixed-px-at-engage-scss',
     ext: (e) => ['.css', '.scss'].includes(e),
-    run(content, file, ctx, acc) {
+    run(content, file, ctx, acc, opts) {
       const openers = [
         /@include\s+[\w.$-]*-up\s*\{/g,
         /@media\s*\(\s*(?:width\s*>=|min-width\s*:)\s*\d+(?:\.\d+)?px\s*\)\s*\{/g
@@ -339,7 +534,7 @@ const rules = [
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
           why: `A fixed px value on "${m[1]}" inside an engaged block (an @include *-up mixin, or an @media width>=/min-width engage query) does not answer to the viewport -- the SCSS/CSS-stack form of the bug fixed-px-at-engage catches for Tailwind (fluid-scale.md §1).`,
-          fix: `Route the drawn number through the fluid function: ${m[1]}: fluid(${m[2]}) (or fluid-display()/fluid-copy() for font-size/line-height).`
+          fix: `Route the drawn number through the fluid function: ${m[1]}: ${opts.prefix}(${m[2]}) (or ${opts.prefix}-display()/${opts.prefix}-copy() for font-size/line-height).`
         })
       }
       // A px radius inside an engaged block: warn (see fixed-px-at-engage).
@@ -349,7 +544,7 @@ const rules = [
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
           why: 'A fixed px radius on a box that scales reads sharp on a large screen and blunt on a small one: the corner is part of the box\'s shape.',
-          fix: `border-radius: fluid(${m[1]}). Leave it fixed only for a deliberately constant corner.`
+          fix: `border-radius: ${opts.prefix}(${m[1]}). Leave it fixed only for a deliberately constant corner.`
         })
       }
     }
@@ -490,10 +685,10 @@ const rules = [
   {
     id: 'double-fluid-same-prop',
     ext: (e) => ['.tsx', '.jsx'].includes(e),
-    run(content, file, ctx, acc) {
+    run(content, file, ctx, acc, opts) {
       for (const cls of extractClassNames(content)) {
         const seen = new Map()
-        const re = new RegExp(`\\blg:${'fluid'}-(${PROP_CORE})-`, 'g')
+        const re = new RegExp(`(?<![\\w-])${esc(opts.desktopVariant)}:${esc(opts.prefix)}-(${PROP_CORE})-`, 'g')
         let m
         while ((m = re.exec(cls.value))) {
           const family = m[1]
@@ -504,8 +699,8 @@ const rules = [
           if (hits.length < 2) continue
           pushFinding(acc, {
             rule: this.id, file, content, index: cls.index, matchLen: cls.value.length, severity: 'warn',
-            why: `Two lg:fluid-${family}-* classes appear in one className string literal (${hits.join(', ')}...). A plain string never passes through cn(), so stylesheet order — not intent — decides which wins (fluid-scale.md §8.6).`,
-            fix: `Keep one lg:fluid-${family}-* per className literal, or route the value through cn() so the later call wins deterministically.`
+            why: `Two ${opts.desktopVariant}:${opts.prefix}-${family}-* classes appear in one className string literal (${hits.join(', ')}...). A plain string never passes through cn(), so stylesheet order — not intent — decides which wins (fluid-scale.md §8.6).`,
+            fix: `Keep one ${opts.desktopVariant}:${opts.prefix}-${family}-* per className literal, or route the value through cn() so the later call wins deterministically.`
           })
         }
       }
@@ -564,17 +759,164 @@ const rules = [
   {
     id: 'type-unit-mismatch',
     ext: (e) => ['.tsx', '.jsx'].includes(e),
-    run(content, file, ctx, acc) {
+    run(content, file, ctx, acc, opts) {
+      const p = esc(opts.prefix)
       for (const cls of extractClassNames(content)) {
-        if (!/\bfluid-display-/.test(cls.value)) continue
-        if (!/\bfluid-(w|size)-/.test(cls.value)) continue
+        if (!new RegExp(`(?<![\\w-])${p}-display-`).test(cls.value)) continue
+        if (!new RegExp(`(?<![\\w-])${p}-(w|size)-`).test(cls.value)) continue
         pushFinding(acc, {
           rule: this.id, file, content, index: cls.index, matchLen: cls.value.length, severity: 'info',
-          why: 'fluid-display-* (the gentle-damping type unit) sits on an element whose own box is also on fluid-w-*/fluid-size-* (the base unit). The container already scales, so the type inside it can use the steeper fluid-text-* unit instead (fluid-scale.md §5).',
-          fix: 'If this box genuinely scales with the layout, prefer fluid-text-* for the type inside it; keep fluid-display-* only for type inside a fixed-width container.'
+          why: `${opts.prefix}-display-* (the gentle-damping type unit) sits on an element whose own box is also on ${opts.prefix}-w-*/${opts.prefix}-size-* (the base unit). The container already scales, so the type inside it can use the steeper ${opts.prefix}-text-* unit instead (fluid-scale.md §5).`,
+          fix: `If this box genuinely scales with the layout, prefer ${opts.prefix}-text-* for the type inside it; keep ${opts.prefix}-display-* only for type inside a fixed-width container.`
         })
       }
     }
+  },
+
+  // ── class-string rules (also run by `fluid check`) ─────────────────────
+
+  {
+    // A limit class on the site header limits the header's units, but not
+    // the page's --fluid-header-h, which anchor offsets and hero padding read
+    // on :root. The root ui limit keeps both in step.
+    id: 'header-limit',
+    ext: (e) => MARKUP_EXT.has(e),
+    run(content, file, ctx, acc, opts) {
+      const re = new RegExp(`^${esc(opts.prefix)}-(?:ui-)?grow-until-\\[?(\\d+(?:\\.\\d+)?)\\]?$`)
+      for (const tag of scanTags(content, /header/)) {
+        for (const a of tag.attrs) {
+          if (!CLASS_ATTR.test(a.name) || a.value == null) continue
+          for (const cls of tokensOf(a.pieces)) {
+            const m = re.exec(cls.base)
+            if (!m) continue
+            pushFinding(acc, {
+              rule: this.id, file, content, index: cls.index, matchLen: cls.raw.length, severity: 'warn',
+              why: `A grow-until limit on <header> limits the header but not the page's --fluid-header-h (anchor offsets and hero padding read it on :root), so the two drift apart past ${m[1]}px.`,
+              fix: `For the site header, set :root { --fluid-ui-grow-until: ${m[1]}; } instead: it holds the header's ui units and --fluid-header-h together.`
+            })
+          }
+        }
+      }
+    }
+  },
+
+  {
+    // A project's own tailwind-merge (shadcn's lib/utils.ts, a local cn) that
+    // does not know the fluid utilities: cn('lg:fluid-p-40', 'lg:fluid-p-24')
+    // keeps both, and stylesheet order picks the winner.
+    id: 'cn-without-withfluid',
+    ext: (e) => ['.ts', '.tsx', '.js', '.jsx', '.mjs'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      if (opts.stack && opts.stack !== 'tailwind-v4') return
+      const imp = /(?:from\s+|import\s*\(\s*|require\s*\(\s*)['"]tailwind-merge['"]/.exec(content)
+      if (!imp || /\bwithFluid\b/.test(content)) return
+      pushFinding(acc, {
+        rule: this.id, file, content, index: imp.index, matchLen: imp[0].length, severity: 'warn',
+        why: `This file builds a tailwind-merge without withFluid, so fluid classes don't merge here: cn('lg:${opts.prefix}-p-40', 'lg:${opts.prefix}-p-24') keeps both and stylesheet order decides.`,
+        fix: 'Add the plugin: extendTailwindMerge(withFluid) (import { withFluid } from the generated cn.ts), or use the generated cn.'
+      })
+    }
+  },
+
+  {
+    // Tailwind orders every @custom-variant after every breakpoint variant,
+    // so a band variant always beats a breakpoint on the same property.
+    id: 'band-variant-with-breakpoint',
+    ext: (e) => MARKUP_EXT.has(e) || ['.ts', '.js', '.mjs'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      const band = new RegExp(`^${esc(opts.prefix)}-(?:phone|tablet|landscape|desktop)$`)
+      // Breakpoints at or above the desktop band (lg:, xl:, 2xl:) start where
+      // the band variants stop matching, so they can't collide with them.
+      const atDesktop = new Set([opts.desktopVariant, 'xl', '2xl'])
+      const overlaps = (v) => BREAKPOINT_VARIANT.test(v) && !atDesktop.has(v)
+      for (const g of classGroups(content)) {
+        const seen = new Map() // key -> { band: [], bp: [] }
+        for (const cls of g.classes) {
+          const b = cls.variants.filter((v) => band.test(v))
+          const bp = cls.variants.filter(overlaps)
+          if (b.length && bp.length) continue
+          if (!b.length && !bp.length) continue
+          const rest = cls.variants.filter((v) => !band.test(v) && !BREAKPOINT_VARIANT.test(v)).join(':')
+          const key = `${rest}|${propKey(cls.base, opts)}`
+          if (!seen.has(key)) seen.set(key, { band: [], bp: [] })
+          seen.get(key)[b.length ? 'band' : 'bp'].push(cls)
+        }
+        for (const { band: bs, bp } of seen.values()) {
+          if (!bs.length || !bp.length) continue
+          const first = bs[0]
+          pushFinding(acc, {
+            rule: this.id, file, content, index: first.index, matchLen: first.raw.length, severity: 'warn',
+            why: `${bs.map((c) => c.raw).join(' ')} and ${bp.map((c) => c.raw).join(' ')} set the same property on one element. Tailwind v4 emits every band variant after every breakpoint variant, so the band variant always wins, whatever the widths say.`,
+            fix: `Use one system for this property: breakpoints (max-${opts.desktopVariant}:, md:max-${opts.desktopVariant}:) or the band variants alone.`
+          })
+        }
+      }
+    }
+  },
+
+  {
+    // fluid-desktop: was byte-for-byte lg: (the ladder sets lg to the desktop
+    // band), and mixed badly with xl:/2xl:. It is removed.
+    id: 'fluid-desktop-variant',
+    ext: (e) => MARKUP_EXT.has(e) || ['.ts', '.js', '.mjs', '.css', '.scss'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      const p = esc(opts.prefix)
+      const css = ['.css', '.scss'].includes(extname(file))
+      const re = css ? new RegExp(`@variant\\s+${p}-desktop\\b`, 'g') : new RegExp(`(?<=^|[\\s"'\`:!{(,])${p}-desktop:(?=[\\w!\\[(-])`, 'g')
+      let m
+      while ((m = re.exec(content))) {
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
+          why: `${opts.prefix}-desktop: was removed: it was exactly ${opts.desktopVariant}: (the breakpoint ladder puts ${opts.desktopVariant} at the desktop band), and it compiles to nothing now.`,
+          fix: `Replace ${opts.prefix}-desktop: with ${opts.desktopVariant}:.`
+        })
+      }
+    }
+  },
+
+  {
+    // `*:fluid-off` puts the class on the parent but the rule on the children,
+    // and the scope selector matches the element that carries the class.
+    id: 'limit-on-children',
+    ext: (e) => MARKUP_EXT.has(e) || ['.ts', '.js', '.mjs'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      const limit = limitClassRe(opts.prefix)
+      for (const g of classGroups(content)) {
+        for (const cls of g.classes) {
+          if (!limit.test(cls.base)) continue
+          const child = cls.variants.find((v) => v === '*' || v === '**' || /^\[&[\s_>+~]/.test(v))
+          if (!child) continue
+          pushFinding(acc, {
+            rule: this.id, file, content, index: cls.index, matchLen: cls.raw.length, severity: 'warn',
+            why: `${cls.raw}: the class sits on the parent but ${child}: applies the rule to its children, so the children get the setting without being a scope, and the limit does nothing.`,
+            fix: `Put the limit on the element itself (${cls.base} on each child), or add ${opts.prefix}-scope to the children as well.`
+          })
+        }
+      }
+    }
+  },
+
+  {
+    // The line-height modifier is drawn px like every other number:
+    // fluid-text-48/1.1 is a 1.1px line box, not a ratio.
+    id: 'fluid-leading-ratio',
+    ext: (e) => MARKUP_EXT.has(e) || ['.ts', '.js', '.mjs'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      const fams = ['text', 'ui-text', ...opts.roles].map(esc).join('|')
+      const re = new RegExp(`^${esc(opts.prefix)}-(?:${fams})-[^/]+/\\[?(\\d*\\.?\\d+)\\]?$`)
+      for (const g of classGroups(content)) {
+        for (const cls of g.classes) {
+          const m = re.exec(cls.base)
+          if (!m || Number(m[1]) >= 4) continue
+          pushFinding(acc, {
+            rule: this.id, file, content, index: cls.index, matchLen: cls.raw.length, severity: 'warn',
+            why: `${cls.raw}: the modifier is ${m[1]} drawn px of line height, like every number in the system, not a ratio.`,
+            fix: `Write the drawn line height (${cls.base.replace(/\/.*$/, '')}/<px>), or for a ratio use leading-[${m[1]}] next to it.`
+          })
+        }
+      }
+    }
+
   }
 ]
 
@@ -603,9 +945,31 @@ function isGeneratedFile(raw) {
   return GENERATED_HEADER_RE.test(head) && GENERATED_SKILL_RE.test(head)
 }
 
-export function scan(srcDir, opts = {}) {
-  const options = { engage: opts.engage ?? 'lg', prefix: opts.prefix ?? 'fluid' }
-  const files = walk(srcDir)
+/** Every rule id, and the ones `fluid check` runs: the source scans that
+ * used to live in check, and the rules on class strings the fluid layer owns. */
+export const RULE_IDS = rules.map((r) => r.id)
+export const CHECK_RULES = ['header-limit', 'cn-without-withfluid', 'band-variant-with-breakpoint', 'fluid-desktop-variant', 'limit-on-children', 'fluid-leading-ratio']
+
+/**
+ * Run the audit rules over a project.
+ *   root            folder to scan (walks it, skipping node_modules, .next, dist, …)
+ *   prefix          utility class prefix (structure.prefix), default 'fluid'
+ *   desktopVariant  the desktop breakpoint variant, default 'lg'
+ *   rules           rule ids to run (default: all); e.g. CHECK_RULES
+ *   roles           type roles (structure.roles), default ['display', 'copy']
+ *   stack           structure.output.stack; cn-without-withfluid runs only for 'tailwind-v4' (or when unset)
+ *   outDir          the generated folder, skipped entirely
+ * Returns [{ rule, file, rel, line, snippet, severity: 'error'|'warn'|'info', why, fix }],
+ * `file` as walked (root-joined), `rel` relative to root.
+ */
+export function runAudit({ root = '.', prefix = 'fluid', desktopVariant = 'lg', rules: only, roles = ['display', 'copy'], stack, outDir } = {}) {
+  if (only) {
+    const unknown = only.filter((id) => !rules.some((r) => r.id === id))
+    if (unknown.length) throw new Error(`[audit] unknown rule(s): ${unknown.join(', ')}`)
+  }
+  const active = only ? rules.filter((r) => only.includes(r.id)) : rules
+  const options = { desktopVariant, engage: desktopVariant, prefix, roles, stack }
+  const files = walk(root, [], outDir ? resolvePath(outDir) : null)
   const raw = new Map(files.map((f) => [f, readFileSync(f, 'utf8')]))
   const generated = new Map(files.map((f) => [f, isGeneratedFile(raw.get(f))]))
   // Every rule sees comments blanked out (newlines preserved, so line numbers
@@ -630,12 +994,18 @@ export function scan(srcDir, opts = {}) {
     if (generated.get(file)) continue
     const ext = extname(file)
     const content = contents.get(file)
-    for (const rule of rules) {
+    for (const rule of active) {
       if (!rule.ext(ext)) continue
       rule.run(content, file, ctx, findings, options)
     }
   }
+  for (const f of findings) f.rel = relative(root, f.file)
   return findings
+}
+
+/** The v1 entry point, kept: scan(srcDir, { engage|desktopVariant, prefix }). */
+export function scan(srcDir, opts = {}) {
+  return runAudit({ ...opts, root: srcDir, desktopVariant: opts.desktopVariant ?? opts.engage ?? 'lg' })
 }
 
 // ── output ──────────────────────────────────────────────────────────────
@@ -692,7 +1062,12 @@ function selftest() {
     for (const name of cases) {
       caseCount++
       const dir = join(ruleDir, name)
-      const findings = scan(dir, { engage: 'lg', prefix: 'fluid' })
+      // A case may carry audit-options.json ({ prefix, desktopVariant, roles, stack }).
+      let caseOpts = {}
+      try {
+        caseOpts = JSON.parse(readFileSync(join(dir, 'audit-options.json'), 'utf8'))
+      } catch {}
+      const findings = runAudit({ root: dir, prefix: 'fluid', desktopVariant: 'lg', ...caseOpts })
       const hit = findings.some((f) => f.rule === rule.id)
       const expected = name.startsWith('positive')
       if (hit === expected) {
@@ -709,8 +1084,10 @@ function selftest() {
 
 // ── main ────────────────────────────────────────────────────────────────
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2))
+/** The `fluid audit` / `node audit.mjs` entry. Exported so a caller that
+ * already imported this module (ES modules evaluate once) can still run it. */
+export async function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv)
 
   if (args.help) {
     console.log(USAGE)
@@ -730,7 +1107,20 @@ async function main() {
   // exactly what let a bug through unscanned on a real build.
   const srcDir = args._[0] ?? '.'
 
-  const findings = scan(srcDir, { engage: args.engage, prefix: 'fluid' })
+  // The project's context, when a fluid.config.json sits at or above srcDir:
+  // prefix, roles, stack and the generated folder come from it.
+  const project = {}
+  try {
+    const { findConfig, loadContext } = await import('./lib/context.mjs')
+    const configPath = findConfig(srcDir)
+    if (configPath) {
+      const cx = loadContext(configPath)
+      Object.assign(project, { prefix: cx.structure.prefix, roles: cx.structure.roles, stack: cx.structure.output.stack, outDir: cx.outDir })
+    }
+  } catch (err) {
+    if (!args.json) console.error(`[audit] fluid.config.json not used (${String(err.message).split('\n')[0]}); auditing with defaults`)
+  }
+  const findings = runAudit({ root: srcDir, ...project, prefix: args.prefix ?? project.prefix ?? 'fluid', desktopVariant: args.desktopVariant ?? 'lg' })
 
   if (args.json) {
     console.log(JSON.stringify({ srcDir, findings }, null, 2))
