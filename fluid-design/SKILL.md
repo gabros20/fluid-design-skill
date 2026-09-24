@@ -90,8 +90,11 @@ The result, for Tailwind:
   `plugins: [fluidPlugin()]` from `integrations/vite`; otherwise inline `FLUID_ZOOM_INLINE` from
   `runtime/zoom.js` first in `<head>`. Viewport-derived type does not grow under browser zoom on its
   own (`references/fluid-scale.md` §12).
-- **Tailwind**: use `cn` from the generated `cn.ts` on every component that takes `className`, or
-  two fluid classes for one property both ship and stylesheet order picks the winner.
+- **Tailwind**: every component that takes `className` needs a `cn` that knows the fluid classes, or
+  two fluid classes for one property both ship and stylesheet order picks the winner. Already have a
+  `cn` (shadcn's `lib/utils.ts`)? Keep it: `extendTailwindMerge(withFluid)` from the generated
+  `cn.ts`. No `cn` yet? Use the generated one. `fluid init` and `fluid check` point at an existing
+  `cn` that lacks the plugin.
 - **Script**: import `DESKTOP_QUERY`, `MEDIA`, `fluidPx` from the generated `fluid.ts`; never
   hand-type the breakpoint.
 - **SCSS**: import `fluid/fluid.css` once from the entry; `@use 'fluid' as fd;` for the functions

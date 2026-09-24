@@ -195,7 +195,15 @@ function cmdCheck(flags) {
     }
   }
 
-  // 4. breakpoints you manage yourself must agree with the bands
+  // 4. A cn/twMerge of the project's own that does not know the fluid utilities.
+  if (p.structure.output.stack === 'tailwind-v4') {
+    for (const f of mergeWithoutFluid(p.dir, p.outDir)) {
+      warns++
+      console.log(`${c.yellow('!')} ${relative(p.dir, f)} builds a tailwind-merge without withFluid: cn('lg:fluid-p-40', 'lg:fluid-p-24') keeps both there. Add the plugin: extendTailwindMerge(withFluid) (import { withFluid } from the generated cn.ts), or use the generated cn.`)
+    }
+  }
+
+  // 5. breakpoints you manage yourself must agree with the bands
   if (p.structure.output.stack === 'tailwind-v4' && p.structure.tailwind.breakpoints === 'none') {
     for (const f of projectStyleFiles(p.dir, p.outDir)) {
       const m = /--breakpoint-lg\s*:\s*([\d.]+)(px|rem)/.exec(readFileSync(f, 'utf8'))
@@ -209,8 +217,19 @@ function cmdCheck(flags) {
   process.exit(errors ? 1 : 0)
 }
 
+/** Files that build their own tailwind-merge (a shadcn lib/utils.ts, a local cn)
+ * without the fluid plugin: fluid classes would not merge there. */
+function mergeWithoutFluid(root, skip) {
+  const out = []
+  for (const f of sourceFiles(root, skip, /\.(ts|tsx|js|jsx|mjs)$/)) {
+    const t = readFileSync(f, 'utf8')
+    if (/from\s+['"]tailwind-merge['"]/.test(t) && !/\bwithFluid\b/.test(t)) out.push(f)
+  }
+  return out
+}
+
 const SOURCE_EXT = /\.(tsx|jsx|html|vue|svelte|astro|mdx)$/
-function sourceFiles(root, skip) {
+function sourceFiles(root, skip, ext = SOURCE_EXT) {
   const out = []
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
@@ -218,7 +237,7 @@ function sourceFiles(root, skip) {
       const abs = join(dir, name)
       if (abs === skip) continue
       if (statSync(abs).isDirectory()) walk(abs)
-      else if (SOURCE_EXT.test(name)) out.push(abs)
+      else if (ext.test(name)) out.push(abs)
     }
   }
   walk(root)
@@ -498,6 +517,20 @@ function cmdInit(flags) {
     console.log(`  ${importLine}`)
     console.log(c.dim('  and set any settings you want to change in your :root (settings.reference.css lists them).'))
   }
+  // An existing cn (shadcn's lib/utils.ts, …): keep it, add the plugin.
+  if (tw) {
+    const existing = mergeWithoutFluid(root, p.outDir)
+    if (existing.length) {
+      const cnImport = toImport(relative(dirname(existing[0]), join(p.outDir, 'cn'))).replace(/\.ts$/, '')
+      console.log('')
+      console.log(c.bold(`You already have a cn: ${relative(root, existing[0])}. Keep it and teach it the fluid classes:`))
+      console.log(`  import { extendTailwindMerge } from 'tailwind-merge'`)
+      console.log(`  import { withFluid } from '${cnImport}'`)
+      console.log(`  const twMerge = extendTailwindMerge(withFluid)   // instead of importing twMerge directly`)
+      console.log(c.dim('  (already extending it? pass withFluid as the next argument: extendTailwindMerge({ extend: … }, withFluid))'))
+    }
+  }
+
   // Editor autocomplete for the settings in CSS files (VS Code custom data).
   const vsc = join(root, '.vscode/settings.json')
   const dataRel = toImport(relative(root, join(p.outDir, 'fluid.css-data.json'))).replace(/^\.\//, '')

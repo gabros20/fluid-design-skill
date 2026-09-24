@@ -191,30 +191,45 @@ export function cnTs(structure, header) {
     add('space-x', 'space-x')
     add('space-y', 'space-y')
   }
-  // Groups tailwind-merge does not ship: declared in the type parameter below.
-  const own = [`${p}-grow-until`, `${p}-shrink-until`, ...(structure.ui ? [`${p}-ui-grow-until`] : []), `${p}-off`]
   add(`${p}-grow-until`, 'grow-until')
   add(`${p}-shrink-until`, 'shrink-until')
   if (structure.ui) add(`${p}-ui-grow-until`, 'ui-grow-until')
   groups.push(`      '${p}-off': ['${p}-off']`)
   return `${header}import { type ClassValue, clsx } from 'clsx'
-import { extendTailwindMerge } from 'tailwind-merge'
+import { extendTailwindMerge, mergeConfigs } from 'tailwind-merge'
 
 // tailwind-merge does not know ${p}-* utilities, so without this it keeps BOTH
 // of 'lg:${p}-p-40 lg:${p}-p-24' and CSS source order picks the winner. Each
 // family joins the Tailwind group its property already belongs to (${p}-p joins
 // p, every font-size family joins font-size), so the last class wins, as a
 // caller passing className expects.
+//
+// ALREADY HAVE A cn (shadcn's lib/utils.ts, or your own)? Keep it and add the
+// plugin — it composes with any extension you already have:
+//
+//   import { extendTailwindMerge } from 'tailwind-merge'
+//   import { withFluid } from '@/styles/fluid/cn'
+//   const twMerge = extendTailwindMerge(withFluid)            // was: import { twMerge } from 'tailwind-merge'
+//   const twMerge = extendTailwindMerge({ extend: … }, withFluid)   // if you already extend it
+//
+// No cn yet? Use the one exported below.
 const isFluidValue = (value: string) => /^(\\d+(\\.\\d+)?(\\/\\d+(\\.\\d+)?)?|\\[\\d+\\])$/.test(value)
 const fluid = (name: string) => ({ [name]: [isFluidValue] })
 
-export const twMerge = extendTailwindMerge<${own.map((g) => `'${g}'`).join(' | ')}>({
-  extend: {
-    classGroups: {
-${groups.join(',\n')}
+type AnyConfig = Parameters<typeof mergeConfigs>[0]
+
+/** tailwind-merge plugin: teaches any twMerge the ${p}-* utilities. */
+export function withFluid(config: AnyConfig): AnyConfig {
+  return mergeConfigs<string>(config, {
+    extend: {
+      classGroups: {
+${groups.map((g) => '  ' + g).join(',\n')}
+      }
     }
-  }
-})
+  })
+}
+
+export const twMerge = extendTailwindMerge(withFluid)
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

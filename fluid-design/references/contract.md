@@ -285,3 +285,12 @@ the other read them.
   `fluid check` catches both (`scripts/lib/settings.mjs`'s `lintSettings`).
 - Expecting `canvas.gutter` (v1) to still exist. It is `--fluid-<band>-container-padding` now, a
   setting, not a structure key (`preflight.md`).
+
+## Class merging (`cn.ts`, Tailwind)
+
+The generated `cn.ts` exports `withFluid` (a tailwind-merge plugin that puts every `fluid-*` family in
+the group of the property it sets, and gives the limits groups of their own), `twMerge`
+(`extendTailwindMerge(withFluid)`) and `cn`. A project with its own `cn` (shadcn's `lib/utils.ts`)
+keeps it and adds the plugin: `extendTailwindMerge(withFluid)`, or
+`extendTailwindMerge({ extend: … }, withFluid)` when it already extends tailwind-merge. Tested with
+both shapes in `scripts/test/tailwind-compile.mjs`.

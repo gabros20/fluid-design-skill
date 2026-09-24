@@ -167,3 +167,10 @@ where the site looks right today (usually 1024 / 1440).
 - [ ] A v1 migration runs `fluid migrate --write` before anything else touches `fluid.config.json`,
       and keeps `aliases: true` until every `--fluid-chrome`/`--fluid-column`/`.fluid-frame` call
       site has moved.
+
+## A project that already has `cn` (shadcn and friends)
+
+Do not replace it. Import `withFluid` from the generated `cn.ts` and build the project's `twMerge`
+with it: `extendTailwindMerge(withFluid)` where it used to import `twMerge` directly, or add it as the
+next argument if the project already extends tailwind-merge. `fluid init` prints the exact lines for
+the file it finds; `fluid check` warns while any tailwind-merge setup in the project lacks it.

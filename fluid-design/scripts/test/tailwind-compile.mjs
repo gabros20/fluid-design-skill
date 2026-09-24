@@ -74,6 +74,34 @@ try {
     expect(r.status === 0, 'generated cn.ts and fluid.ts pass tsc --strict', r.stdout + r.stderr)
   }
 
+  // Merging, for real: the generated cn, and a shadcn-style lib/utils.ts that keeps its own cn and
+  // adds withFluid next to an extension it already had.
+  {
+    const ts = createRequire(join(process.cwd(), 'package.json'))('typescript')
+    const js = (src) => ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
+    writeFileSync(join(dir, 'fluid/cn.mjs'), js(files['cn.ts']))
+    writeFileSync(join(dir, 'utils.mjs'), js(`import { clsx } from 'clsx'
+import { extendTailwindMerge } from 'tailwind-merge'
+import { withFluid } from './fluid/cn.mjs'
+const twMerge = extendTailwindMerge({ extend: { classGroups: { 'shadow-brand': ['shadow-brand'] } } }, withFluid)
+export function cn(...inputs) { return twMerge(clsx(inputs)) }`))
+    const gen = await import(pathToFileURL(join(dir, 'fluid/cn.mjs')).href)
+    const own = await import(pathToFileURL(join(dir, 'utils.mjs')).href)
+    const cases = [
+      [['lg:fluid-p-40', 'lg:fluid-p-24'], 'lg:fluid-p-24'],
+      [['p-4', 'fluid-p-24'], 'fluid-p-24'],
+      [['fluid-text-14', 'fluid-display-64/72'], 'fluid-display-64/72'],
+      [['fluid-ui-h-48', 'fluid-h-40'], 'fluid-h-40'],
+      [['fluid-grow-until-1680', 'fluid-grow-until-[1920]'], 'fluid-grow-until-[1920]'],
+      [['max-w-xl', 'fluid-cap-1680'], 'fluid-cap-1680']
+    ]
+    for (const [name, cn] of [['generated cn', gen.cn], ['shadcn cn + withFluid', own.cn]]) {
+      const bad = cases.filter(([a, e]) => cn(...a) !== e).map(([a, e]) => `${a.join(' ')} -> ${cn(...a)} (expected ${e})`)
+      expect(bad.length === 0, `${name} merges fluid classes (${cases.length} cases)`, bad.join('\n'))
+    }
+    expect(own.cn('shadow-brand', 'fluid-off', 'px-2') === 'shadow-brand fluid-off px-2', 'withFluid keeps the project\'s own extension working')
+  }
+
   // Editor autocomplete: Tailwind IntelliSense lists what the design system's getClassList returns.
   const node = createRequire(req.resolve('@tailwindcss/postcss'))('@tailwindcss/node')
   const ds = await node.__unstable__loadDesignSystem(input, { base: dir })
