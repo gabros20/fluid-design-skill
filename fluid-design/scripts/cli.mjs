@@ -860,7 +860,7 @@ const TOOLS = {
 const BROWSER_TOOLS = new Set(['verify'])
 
 /** A standalone binary (bun build --compile) rather than node running the skill. */
-export const IS_BINARY = typeof process.versions.bun === 'string' && import.meta.url.includes('$bunfs')
+export const IS_BINARY = globalThis.__fluidBinary === true
 
 function needsNode(what) {
   fail(`${what} drives a real browser through Playwright, a Node library, so it runs under Node, not in the standalone binary:\n  npx fluid-design-cli@${SKILL_VERSION.split('.')[0]} ${process.argv.slice(2).join(' ')}\n(in a project with playwright installed: npm i -D playwright && npx playwright install chromium)`, 2)
