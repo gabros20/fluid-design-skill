@@ -75,7 +75,7 @@ em {
 }
 
 // ── Load veil ─────────────────────────────────────────────────────────
-// motion.css positions it and holds it opaque; the colour is ours.
+// animation.gsap.css positions it and holds it opaque; the colour is ours.
 .veil {
   background: var(--surface-light);
 }
@@ -584,7 +584,7 @@ em {
 }
 
 // ── 5. The scroll scene ───────────────────────────────────────────────
-// motion.css owns the pin (sticky, 100lvh) and the -100lvh cancel on the
+// animation.gsap.css owns the pin (sticky, 100lvh) and the -100lvh cancel on the
 // content wrapper. Nothing here may put a transform, overflow or
 // content-visibility on the scene or its ancestors.
 .scene {

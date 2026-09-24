@@ -130,7 +130,7 @@ Follow-up the same day, after the skill moved on:
 - `fluid-text-*` now zooms by size (`zoomTextRange: [24, 48]`), so this build's small
   `fluid-text-14/18` … `fluid-text-18/24` copy zooms fully and `fluid-text-112/112` holds its box.
 - `src/styles/base.css` is the post-split, render-only file; its motion half (smooth scrolling,
-  reduced-motion collapse, `--fill`, noscript) is now `src/styles/motion/motion.css` from the
+  reduced-motion collapse, `--fill`, noscript) is now `src/styles/animation/animation.css` from the
   `scroll-animation` skill, imported right after it in `globals.css`.
 - Re-verified on a fresh production build: full matrix PASS, zoom row PASS except the 1920×1080
   200% mobile handover (166%). Real-zoom captures: `verify/zoom/zoom-<window>-<pct>.jpg`.

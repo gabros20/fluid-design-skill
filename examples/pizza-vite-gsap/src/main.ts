@@ -3,8 +3,8 @@
 import './styles/fluid/fluid.css'
 // The scroll-animation skill's CSS, one folder beside styles/fluid: the base
 // (both engines), then the GSAP engine's pre-JS resting states.
-import './styles/motion/motion.css'
-import './styles/motion/motion.gsap.css'
+import './styles/animation/animation.css'
+import './styles/animation/animation.gsap.css'
 import './styles/main.scss'
 
 import gsap from 'gsap'
