@@ -1,0 +1,306 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/gabros20/fluid-design-skill/fluid.config.schema.json",
+  "title": "fluid-design structure config (v2)",
+  "description": "Structure only: which bands exist, their breakpoints, type roles, output. Every tuning number is a CSS variable (settings.reference.css).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "Path to fluid.config.schema.json, for editor autocomplete.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Config format version. A file without it is read as v1 and migrated (`fluid migrate`).",
+      "const": 2
+    },
+    "prefix": {
+      "description": "Utility, class, variant and Sass function prefix. Custom-property names never change with it.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "default": "fluid"
+    },
+    "bands": {
+      "description": "Which bands exist and where they switch. Cascade order: phone, tablet, landscape, desktop.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phone": {
+          "description": "Portrait phones: the mobile artboard, scaled. false = a flat 1px below desktop (no mobile scaling).",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "Scale the mobile design on phones.",
+                  "type": "boolean",
+                  "default": true
+                }
+              }
+            }
+          ]
+        },
+        "tablet": {
+          "description": "The phone design scaled up for portrait tablets and wide phones.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "Turn the tablet band on.",
+                  "type": "boolean",
+                  "default": true
+                },
+                "minWidth": {
+                  "description": "Viewport width (CSS px) where the tablet band starts.",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 600
+                }
+              }
+            }
+          ]
+        },
+        "landscape": {
+          "description": "A phone on its side: the phone design, scaled a bit. Wins over tablet when both match.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "description": "Turn the landscape band on.",
+                  "type": "boolean",
+                  "default": true
+                },
+                "maxHeight": {
+                  "description": "Landscape viewports this short or shorter (CSS px) are a phone on its side.",
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 500
+                }
+              }
+            }
+          ]
+        },
+        "desktop": {
+          "description": "The desktop artboard, scaled. Every width from minWidth up.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minWidth": {
+              "description": "Viewport width (CSS px) where the desktop design takes over (v1 engageAt).",
+              "type": "integer",
+              "minimum": 1,
+              "default": 1024
+            }
+          }
+        }
+      }
+    },
+    "roles": {
+      "description": "Damped type roles. Each becomes --fluid-<role>, a fluid-<role>-* text utility and fluidPx(n, \"<role>\"). Add e.g. \"caption\".",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+        "not": {
+          "enum": [
+            "fluid",
+            "z",
+            "ui",
+            "chrome",
+            "text",
+            "container",
+            "column",
+            "zoom",
+            "scope",
+            "cap",
+            "build",
+            "phone",
+            "tablet",
+            "landscape",
+            "desktop",
+            "header",
+            "base",
+            "scale",
+            "fit",
+            "p",
+            "px",
+            "py",
+            "pt",
+            "pb",
+            "pl",
+            "pr",
+            "ps",
+            "pe",
+            "m",
+            "mx",
+            "my",
+            "mt",
+            "mb",
+            "ml",
+            "mr",
+            "ms",
+            "me",
+            "gap",
+            "w",
+            "h",
+            "size",
+            "min",
+            "max",
+            "inset",
+            "top",
+            "right",
+            "bottom",
+            "left",
+            "start",
+            "end",
+            "translate",
+            "basis",
+            "scroll",
+            "space",
+            "rounded",
+            "grow",
+            "shrink",
+            "off",
+            "step",
+            "width",
+            "until"
+          ]
+        }
+      },
+      "default": [
+        "display",
+        "copy"
+      ]
+    },
+    "ui": {
+      "description": "Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window (v1 chrome).",
+      "type": "boolean",
+      "default": true
+    },
+    "zoom": {
+      "description": "Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl + (v1 zoomCompensation).",
+      "type": "boolean",
+      "default": true
+    },
+    "output": {
+      "description": "What `fluid generate` writes, and where.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "description": "Output folder, relative to this config file. Generated; never edit inside it.",
+          "type": "string",
+          "default": "src/styles/fluid"
+        },
+        "stack": {
+          "description": "Styling stack.",
+          "type": "string",
+          "enum": [
+            "tailwind-v4",
+            "css",
+            "scss",
+            "stylex"
+          ],
+          "default": "tailwind-v4"
+        },
+        "base": {
+          "description": "Include base.css (box-sizing, overflow guard, focus ring) in fluid.css as layer(base). Brownfield: often false.",
+          "type": "boolean",
+          "default": true
+        },
+        "integration": {
+          "description": "Emit a head-script integration for browser zoom: next (<FluidHead/>) or vite (fluidPlugin()).",
+          "type": "string",
+          "enum": [
+            "none",
+            "next",
+            "vite"
+          ],
+          "default": "none"
+        }
+      }
+    },
+    "tailwind": {
+      "description": "Tailwind v4 stack only.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "breakpoints": {
+          "description": "ladder: emit the whole sm-2xl ladder in px with lg = the desktop band (v4 cannot sort mixed px/rem). none: leave @theme breakpoints to you.",
+          "type": "string",
+          "enum": [
+            "ladder",
+            "none"
+          ],
+          "default": "ladder"
+        },
+        "variants": {
+          "description": "Emit band variants: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape:, <prefix>-desktop:.",
+          "type": "boolean",
+          "default": true
+        },
+        "utilities": {
+          "description": "Optional utility families.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "negative": {
+              "description": "Leading-minus negatives: -fluid-mt-8.",
+              "type": "boolean",
+              "default": true
+            },
+            "logical": {
+              "description": "ps/pe/ms/me/start/end/inset-x/inset-y.",
+              "type": "boolean",
+              "default": true
+            },
+            "basis": {
+              "description": "fluid-basis-*.",
+              "type": "boolean",
+              "default": true
+            },
+            "scroll": {
+              "description": "scroll-mt/pt/mb/pb.",
+              "type": "boolean",
+              "default": true
+            },
+            "space": {
+              "description": "fluid-space-x/y-*.",
+              "type": "boolean",
+              "default": true
+            },
+            "rounded": {
+              "description": "Scaled radii: fluid-rounded-*.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      }
+    },
+    "aliases": {
+      "description": "Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on.",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "version"
+  ]
+}

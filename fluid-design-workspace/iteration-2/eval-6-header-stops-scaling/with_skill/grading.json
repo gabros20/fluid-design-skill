@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "text": "sets --fluid-ui-grow-until: 1680 on :root",
+      "passed": true,
+      "evidence": "--fluid-ui-grow-until: 1680;"
+    },
+    {
+      "text": "explains why not a limit class on <header> (--header-h would not follow)",
+      "passed": true,
+      "evidence": "elements inside it, but the page also reads `--header-h` from `:root` (it's what"
+    },
+    {
+      "text": "does not replace fluid utilities on the header's children with fixed px or max() caps",
+      "passed": true,
+      "evidence": "header markup unchanged"
+    },
+    {
+      "text": "names the per-component tool for other parts (fluid-grow-until-* on a wrapper)",
+      "passed": true,
+      "evidence": "The tempting alternative — putting a `fluid-grow-until-1680` (or `fluid-ui-grow-until-1680`) class"
+    },
+    {
+      "text": "fluid check passes after the change",
+      "passed": true,
+      "evidence": "OK (1 warning(s))"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "total": 5
+  }
+}

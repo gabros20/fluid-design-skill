@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+@import '../styles/fluid/fluid.css';
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --radius: 0.625rem;
+
+  /* fluid settings — every one, with its default, is in ../styles/fluid/settings.reference.css */
+  /* --fluid-phone-scale-min: 0.82; */
+  /* --fluid-desktop-display-damping: 0.62; */
+
+  /* Header/nav stop growing past a 1680 window; page content keeps scaling.
+     Set on :root (not a limit class on <header>) so --header-h, which the
+     header itself is built from, holds the same ceiling — see fluid-design
+     skill references/fluid-scale.md §10 "--header-h trap". */
+  --fluid-ui-grow-until: 1680;
+}
