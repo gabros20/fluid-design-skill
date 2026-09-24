@@ -244,6 +244,9 @@ async function cmdExplain(flags, args) {
   const zoom = flags.zoom ? Number(flags.zoom) : 1
   if (flags.url) {
     const live = await readLiveSettings(flags.url, w, h, p.structure)
+    // Registered settings always compute to a value; only a non-default one was set by the page.
+    const defaults = Object.fromEntries(settingsSpec(p.structure).map((x) => [x.name, x.default]))
+    for (const [k, o] of Object.entries(live.overrides)) if (o.value === defaults[k]) delete live.overrides[k]
     const resolved = resolveSettings(p.structure, live.overrides)
     printExplain(p.structure, resolved, w, h, zoom, `settings read from ${flags.url}`)
     const e = evaluate(p.structure, valuesOf(resolved), w, h, zoom)
@@ -273,7 +276,7 @@ async function readLiveSettings(url, w, h, structure) {
       const overrides = {}
       for (const n of names) {
         const v = cs.getPropertyValue(n).trim()
-        if (v !== '' && Number.isFinite(Number(v))) overrides[n] = { value: Number(v), source: 'page' }
+        if (v !== '' && Number.isFinite(Number(v))) overrides[n] = { value: Number(v), source: 'the page' }
       }
       const probe = document.createElement('div')
       probe.style.cssText = 'position:fixed;visibility:hidden;left:0;top:0;height:0'

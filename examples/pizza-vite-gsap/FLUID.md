@@ -1,23 +1,25 @@
 # FLUID.md — decision log (Forno Aurelia, Vite + SCSS + GSAP)
 
-The numbers live in `fluid.config.json`. This file holds the reasons.
+Structure (bands, output) lives in `fluid.config.json`. Every tuning number is a CSS variable with
+a registered default; this build overrides three of them in `src/styles/main.scss`'s own `:root`.
+This file holds the reasons.
 
 ## Preflight answers
 
 | Decision | Answer | Why |
 |---|---|---|
-| Styling stack | **SCSS** (`sass`), generated layer in `src/styles/fluid/` | Test build B exercises the non-default stack on purpose. |
+| Styling stack | **SCSS** (`sass`), generated layer in `src/styles/fluid/` (`output.stack: "scss"`) | Test build B exercises the non-default stack on purpose. |
 | Animation engine | **GSAP 3.13+** (installed 3.15), primitives copied from `assets/motion/gsap/src` into `src/motion/` | Not a React project; the GSAP port is the default outside React. |
 | Framework | Vite 8, vanilla TS, one multi-section `index.html` | Brief. |
-| Design frame | canvas **1600 × 900**, gutter **64** | Non-default, to exercise the generator. |
-| Reference viewport | **1440 × 900** | The reference stays at the common laptop viewport, not the canvas (fluid-scale.md §Reference). Content budget: 1440 − 2·64 = **1312**. |
-| Engage breakpoint | **1024** | Same number in `$fluid-engage-at` and `ENGAGE_QUERY` (eases.ts), which scrubStage's `mobileBreakpoint` now defaults to. |
-| Height axis | **on** | The hero is a one-screen section (`fluid(900)`, `data-fit="screen"`). |
-| Growth ceiling | **1.6** | The hero pinsa is a 1460-wide raster, and the scrub clip is 1280×720. Uncapped, at 3840×2160 `--fluid` would be 2.4. |
-| Scope | the whole page from 1024 up, header and footer on `--fluid-chrome` | Default. |
+| Container | `--fluid-desktop-container-width: 1600`, `--fluid-desktop-container-padding: 64` (set in `main.scss`'s `:root`) | Non-default, to exercise settings overrides. Applied via `.frame { @include fd.fluid-container; }`. |
+| Desktop artboard | `--fluid-desktop-base-width/-base-height: 1440 × 900` (defaults) | The artboard stays at the common laptop viewport, not the container (fluid-scale.md §Reference). Content budget: 1440 − 2·64 = **1312**. |
+| `bands.desktop.minWidth` | **1024** (default) | One number, read from `fluid.config.json`: it sets `lg` in the emitted breakpoint ladder, `DESKTOP_QUERY` in the generated `fluid.ts`, re-exported as `ENGAGE_QUERY` in `eases.ts`, which `scrubStage`'s `mobileBreakpoint` defaults to. The old `$fluid-engage-at` SCSS variable is gone — the engine lives in `fluid.css`, not in per-project SCSS config. |
+| `--fluid-desktop-fit-height` | **1** (default) | The hero is a one-screen section (`fluid(900)`, `data-fit="screen"`). |
+| `--fluid-desktop-scale-max` | **1.6** (set in `main.scss`'s `:root`) | The hero pinsa is a 1460-wide raster, and the scrub clip is 1280×720. Uncapped, at 3840×2160 `--fluid` would be 2.4. |
+| Scope | the whole page from 1024 up, header and footer on `--fluid-ui` | Default. |
 | Scroll-driven scene | **one**: `#forno`, a pinned all-intra clip with head loop, scrub band and tail loop | Brief. It is the page's only scroll-driven scene. Everything else is a triggered `[data-stage]`. |
 | Header | fixed and transparent, ink from `data-header-theme` (`headerTheme.ts`) | Default. |
-| Mobile | mobile arm, three bands (defaults): phone 0.82–1.10 off 390, portrait tablet 1.10–1.30 and landscape phone 1.00–1.20 in a centred column; landscape tablets take the desktop design | Base-level declarations go through the unit functions with the 390 frame's numbers; the frame mixin applies the column cap. |
+| Mobile | `bands: { phone: true, tablet: { minWidth: 600 }, landscape: { maxHeight: 500 } }` (defaults) — three bands: phone 0.82–1.10 off 390, portrait tablet 1.10–1.30 and landscape phone 1.00–1.20 in a centred column; landscape tablets take the desktop design | Base-level declarations go through the unit functions with the 390 frame's numbers; the `fluid-container` mixin applies the column cap. |
 
 ## Local deviations from the prepared artifacts
 
@@ -37,7 +39,7 @@ re-sync and the checks that confirm it. `SKILL-FEEDBACK.md` is kept as the origi
   `fluid(1312)` wide. Both scale.
 - Eyebrows, the Réservation pill, act body: **`fluid-copy`**. The pill's padding follows its line
   box.
-- Header and footer: **`fluid-chrome`**.
+- Header and footer: **`fluid-ui`**.
 
 ## The scene
 

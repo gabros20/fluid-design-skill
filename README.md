@@ -1,11 +1,12 @@
 # fluid-design, a Claude skill
 
 A skill that teaches a coding agent to build a website, or convert an existing one, onto a
-**viewport-fluid design system**. From the desktop breakpoint up, every drawn number (padding, gap,
-width, type, offsets) is written as `number × unit`. The unit is 1px at a reference viewport and
-follows whichever viewport axis is tighter. The desktop composition then stays a proportional copy
-of the design frame at every size: exactly one screen tall when height binds, never overflowing,
-pixel-exact at the reference, and still correct on a 5K display.
+**viewport-fluid design system**. From the desktop band's `minWidth` up, every drawn number
+(padding, gap, width, type, offsets) is written as `number × unit`. The unit is 1px at a reference
+viewport and follows whichever viewport axis is tighter. The desktop composition then stays a
+proportional copy of the design frame at every size: exactly one screen tall when height binds,
+never overflowing, pixel-exact at the reference, and still correct on a 5K display. Below the
+desktop band, phone/tablet/landscape-phone bands scale their own artboard the same way.
 
 It also covers what that scale has to survive in a real browser: iOS 26 Safari viewport units,
 toolbar tint and safe areas, sticky pitfalls, Safari's SVG rendering bugs, image `sizes` on a page
@@ -17,59 +18,13 @@ viewport-matrix verifier with a real-browser-zoom row.
 scrubbed scenes, scroll wells, video playback, header ink that follows the section underneath, and
 coexistence with existing GSAP, Lenis or header scripts live in the companion skill,
 [`scroll-animation`](https://github.com/gabros20/scroll-animation-skill). Each works alone; together
-they share the engage breakpoint, `--header-h` and the `translate` property
+they share the desktop band's `minWidth`, `--header-h` and the `translate` property
 (`fluid-design/references/contract.md` §4).
 
 The whole thing is extracted from a production marketing site. Nearly every rule in `references/`
 records the bug it prevents and the measurement behind it.
 
-## What's inside
-
-```
-fluid-design/                      the skill: copy this folder into your skills directory
-  SKILL.md                         workflow: preflight → foundation → sections → tokens → media → verify
-  references/                      the method and its reasons
-    preflight.md                   the decisions, their defaults, detection hints
-    fluid-scale.md                 the unit, its maths and knobs, interop with animation
-    frame-and-gutter.md            one frame box, scaled gutters, constants that drift
-    section-recipe.md              the per-section checklist
-    typography.md                  choosing type units, line boxes, hard breaks, fonts
-    tokens-and-theming.md          semantic tokens and the traps that compile clean
-    brownfield-migration.md        converting a container-based site, route by route
-    stacks.md                      Tailwind v4 · vanilla CSS · SCSS · StyleX · CSS Modules
-    media.md                       images, inline SVG rules, video element rendering, posters
-    ios-safari.md                  svh/lvh/dvh, safe areas, toolbar tint, hero overshoot, sticky
-    performance.md                 render budget: image sizes on a growing page, fonts, budgets
-    verification.md                the matrix, real-device checks, the stale-stylesheet probe
-    contract.md                    exact config keys, custom properties, utilities, attributes
-  assets/
-    fluid.config.json (+ schema)   the numbers: reference viewport, canvas, gutter, engage breakpoint,
-                                   dampings, floors, ceiling
-    styles/                        pre-generated unit and utility layers for tailwind-v4 · css · scss ·
-                                   stylex, the ts config constants, plus a shared iOS/sticky-safe base layer
-    runtime/fluid-zoom.js (+ .d.ts) makes the fluid type follow browser zoom (inline it in <head>)
-    runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
-  scripts/
-    generate-fluid.mjs             config → stack layers (deterministic; --check guards drift)
-    calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
-    audit.mjs                      static scan for the silent layout failure modes (self-tested)
-    verify-matrix.mjs              Playwright: overflow, unit maths, one-screen fit, grid column counts,
-                                   screenshots across a viewport matrix
-    probe.mjs                      one-shot stale-stylesheet diagnosis
-  evals/evals.json                 test prompts used to validate the skill
-
-examples/                          integration examples using both skills
-  pizza-next/                      Next 16 + Tailwind v4 + Motion editorial restaurant page (default stack)
-  pizza-vite-gsap/                 Vite + SCSS + GSAP, non-default config (canvas 1600, gutter 64, ceiling 1.6)
-```
-
-The two examples were built before the split and use **both** skills: their layout, units and
-Safari fixes come from `fluid-design`, their entrances, pinned scrub and loops from
-`scroll-animation`. Each contains the agent's `FLUID.md` (its decisions), `VERIFY.md` (evidence),
-`SKILL-FEEDBACK.md` (what the skill got wrong during the build; all of it has since been fixed
-upstream) and `CREDITS.md`.
-
-## Install
+## v2 quick start
 
 ```bash
 # Claude Code (user-level)
@@ -78,30 +33,160 @@ cp -r fluid-design ~/.claude/skills/fluid-design
 cp -r fluid-design .claude/skills/fluid-design
 ```
 
-For animation, install [`scroll-animation`](https://github.com/gabros20/scroll-animation-skill) the
-same way.
+In a project:
 
-Then ask for what you want, for example "make this landing page match our 1680×900 Figma frames at every
-laptop size" or "convert this Tailwind site to fluid scaling". The skill runs a short preflight (styling
-stack, design frame, engage breakpoint) and records the answers in `fluid.config.json` and `FLUID.md`
-in your project.
+```bash
+fluid init          # detects your stack/framework, writes fluid.config.json,
+                     # runs `fluid generate`, and adds the one import + a
+                     # commented settings starter into your existing :root
+```
+
+That's the whole install: **one import**.
+
+```css
+@import 'tailwindcss';
+@import './styles/fluid/fluid.css';
+```
+
+Everything you tune afterwards is a CSS variable, set in your own `:root` next to your tokens — no
+regenerate, changes apply live:
+
+```css
+:root {
+  --fluid-phone-scale-min: 0.8;
+  --fluid-desktop-display-damping: 0.7;
+}
+```
+
+`fluid.config.json` (structure: which bands exist, type role names, output stack/folder) only needs
+`fluid generate` again when you change *that* — which bands exist, not a number inside one:
+
+```json
+{
+  "$schema": "./fluid.config.schema.json",
+  "version": 2,
+  "bands": {
+    "phone": true,
+    "tablet": { "minWidth": 600 },
+    "landscape": { "maxHeight": 500 },
+    "desktop": { "minWidth": 1024 }
+  },
+  "output": { "integration": "next" }
+}
+```
+
+Then, before trusting any of it:
+
+```bash
+fluid check                # CI gate: generated output current? settings valid? zero browser.
+fluid explain 390x844      # every unit at a viewport, and where each setting came from
+fluid verify <url>         # the viewport matrix + zoom row, in a real browser
+```
+
+Ask the agent for what you want, for example "make this landing page match our 1680×900 Figma
+frames at every laptop size" or "convert this Tailwind site to fluid scaling." The skill runs a
+short preflight (styling stack, design frame, bands) and records the decisions in `fluid.config.json`
+and `FLUID.md` in your project.
+
+## What's inside
+
+```
+fluid-design/                      the skill: copy this folder into your skills directory
+  SKILL.md                         workflow: preflight → foundation → sections → tokens → media → verify
+  references/                      the method and its reasons
+    preflight.md                   the decisions, their defaults, detection hints
+    config.md                      GENERATED — every fluid.config.json key and every setting, with its default
+    fluid-scale.md                 the unit, its maths and knobs, interop with animation
+    frame-and-gutter.md            the page container, scaled gutters, constants that drift
+    section-recipe.md              the per-section checklist
+    typography.md                  choosing type units, line boxes, hard breaks, fonts
+    tokens-and-theming.md          semantic tokens and the traps that compile clean
+    brownfield-migration.md        converting a container-based site, route by route
+    stacks.md                      Tailwind v4 · vanilla CSS · SCSS · StyleX · CSS Modules
+    media.md                       images, inline SVG rules, video element rendering, posters
+    ios-safari.md                  svh/lvh/dvh, safe areas, toolbar tint, hero overshoot, sticky
+    performance.md                 render budget: image sizes on a growing page, fonts, budgets
+    verification.md                fluid check/explain/verify/probe/audit, the matrix, real-device checks
+    contract.md                    exact config keys, custom properties, utilities, attributes
+  assets/
+    fluid.config.json (+ schema)   the example config, and its JSON Schema
+    styles/                        pre-generated reference output per stack (tailwind-v4 · css · scss ·
+                                   stylex): fluid.css, base.css, settings.reference.css, fluid.ts, …
+    runtime/fluid-zoom.js (+ .d.ts) makes fluid type follow browser zoom (fluid generate copies + stamps it)
+    runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
+  bin/fluid                        the `fluid` CLI (node scripts/cli.mjs)
+  scripts/
+    cli.mjs                        fluid init/generate/check/settings/explain/migrate, + calc/probe/verify/audit passthrough
+    calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
+    probe.mjs                      one-shot stale-stylesheet diagnosis (--fluid-build vs the config)
+    verify-matrix.mjs              Playwright: overflow, unit maths, one-screen fit, grid column counts,
+                                   screenshots, the real-zoom row, across a viewport matrix
+    audit.mjs                      static scan for the silent layout failure modes (self-tested)
+    generate-fluid.mjs             the skill's OWN generator: regenerates assets/ and references/config.md
+                                   from scripts/lib/spec.mjs; --check also runs the tests below
+    lib/                           spec (the one source of truth) · model (the maths) · settings (the lint) ·
+                                   context (what the CLI/tools share) · emit/ (CSS/Tailwind/SCSS/StyleX/project)
+    test/                          parity.mjs (v1 maths, no browser) · cli.mjs (the CLI, no browser) ·
+                                   engine-matrix.mjs + tailwind-compile.mjs (real browsers, run from a
+                                   project with playwright/tailwind — see examples/pizza-next)
+    fixtures/                      v1-configs (parity fixtures) · configs (v2 structures) · audit (rule fixtures)
+  evals/evals.json                 test prompts used to validate the skill
+
+examples/                          integration examples using both skills
+  pizza-next/                      Next 16 + Tailwind v4 + Motion editorial restaurant page (default stack)
+  pizza-vite-gsap/                 Vite + SCSS + GSAP, non-default settings (container 1600/64, ceiling 1.6)
+```
+
+Both examples were migrated to v2 (`fluid migrate --write` then `fluid generate`) with no visual or
+behavioural change intended; each records the migration and its verification in its own `VERIFY.md`.
+They also use **both** skills: their layout, units and Safari fixes come from `fluid-design`, their
+entrances, pinned scrub and loops from `scroll-animation`. Each contains the agent's `FLUID.md` (its
+decisions), `VERIFY.md` (evidence), `SKILL-FEEDBACK.md` (what the skill got wrong during the build;
+all of it has since been fixed upstream) and `CREDITS.md`.
+
+## Structure vs settings, in one sentence
+
+Anything that changes **which CSS rules exist** — which bands, type role names, the output stack —
+is structure, lives in `fluid.config.json`, and needs `fluid generate`. Anything that changes **a
+number inside those rules** — an artboard width, a damping curve, a container width, a growth
+ceiling — is a setting: a `@property`-registered CSS variable, set in your own `:root`, live, no
+regenerate. `fluid check` lints the settings and confirms the generated output hasn't drifted from
+the config; `references/config.md` (generated) lists every key of both kinds with its default.
 
 ## The system in one paragraph
 
-`--fluid = max(0.58px, min(100svh/900, 100vw/1440))` from the engage breakpoint (1024) up, and 1px
-below it. Display type uses `max(0.82px, --fluid, 0.62·--fluid + 0.38px)` and copy uses
-`max(0.90px, --fluid, 0.33·--fluid + 0.67px)`, so type shrinks more gently than the layout, while
-above the reference everything grows as one. The type units read `--fluid × --fluid-zoom` so text
-still follows browser zoom.
+`--fluid` is 1px at the desktop artboard (default 1440×900) from `bands.desktop.minWidth` (default
+1024) up, computed from `min()`/`max()` of the two viewport axes — a section drawn as tall as the
+artboard never outgrows the window, svh not dvh so nothing resizes mid-scroll. Type roles
+(`display`, `copy` by default) read the same unit through a per-band damping curve, so they shrink
+more gently than the layout; below the band's edge the curve is read at the edge (the "knee"),
+which is what holds headings up on a short window. The `ui` unit (header/nav/footer) follows width
+and never shrinks for a short window. Below `bands.desktop.minWidth`, optional phone/tablet/landscape
+bands scale a **separate** mobile artboard (default 390 wide) the same way — one set of phone
+numbers, no orientation variants. Every setting is a CSS variable with a registered default,
+override it in your own `:root`; `fluid.config.json` only decides which bands and rules exist.
+Type units read `--fluid-z`, which folds in `--fluid-zoom` (written by a small runtime script), so
+text still follows browser zoom (WCAG 1.4.4) even though the layout unit itself never does. Each
+section has one `fluid-container` (the centred page wrapper, max width and padding from the active
+band's settings) applied once, to its inner wrapper. Read `fluid-design/references/fluid-scale.md`
+for why each of those numbers is what it is, and `references/config.md` for the exact key/setting
+list.
 
-Below 1024 the optional **mobile arm** scales the phone design (drawn at 390) the same way: phones
-0.82–1.10, portrait tablets and landscape phones slightly larger in a centred column, landscape
-tablets on the desktop design. One set of phone numbers, no orientation variants
-(`fluid-design/references/fluid-scale.md` §13). Site chrome uses a width-led unit that height never
-shrinks. Each section has one frame box: `fluid-cap-<canvas>` (grow-only) plus a scaled gutter.
-Rows that exceed the `1440 − 2·gutter` content budget move to `cqw`, and any constant compared
-against a scaling box (an auto-fill minimum, a wrap basis) is scaled too. Read
-`fluid-design/references/fluid-scale.md` for why each of those numbers is what it is.
+## Tests
+
+From `fluid-design/`:
+
+```bash
+npm test              # generate-fluid.mjs --check (regeneration + invariants + v1 parity)
+                       #   && test/cli.mjs (the fluid CLI, no browser)
+                       #   && audit.mjs --selftest
+npm run test:browsers  # test/engine-matrix.mjs + test/tailwind-compile.mjs — needs playwright/tailwind,
+                       #   run from a project that has them, e.g. `cd ../examples/pizza-next && …`
+```
+
+`generate-fluid.mjs --check` is also what proves nothing in `assets/styles/**` or
+`references/config.md` has drifted from `scripts/lib/spec.mjs`, the one place every name and default
+lives.
 
 ## Credits and licence
 

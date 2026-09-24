@@ -1,41 +1,195 @@
 # fluid-design scripts
 
 Node 20+, ESM, zero runtime dependencies except `playwright` (only needed by
-`probe.mjs` and `verify-matrix.mjs`, resolved from the target project — see
-below). All math comes from `lib/fluid-math.mjs`; these scripts are thin CLIs
-over it plus a static scanner.
+`probe.mjs`, `verify-matrix.mjs` and the browser tests under `test/`,
+resolved from the target project — see below).
+
+`bin/fluid` (`cli.mjs`) is the `fluid` command projects use day to day. It
+finds the nearest `fluid.config.json` (walking up from `cwd`, or `--config
+<file>`) and either runs its own logic or forwards straight to one of the
+standalone tools below (`fluid calc|probe|verify|audit` == `node
+calc.mjs|probe.mjs|verify-matrix.mjs|audit.mjs`). All of it — the CLI and the
+tools — is built on `lib/`, never duplicates a formula, and never hand-writes
+a config default: everything traces back to `lib/spec.mjs`.
 
 Animation/scroll-scene verification (a triggered entrance, a scrub scene's
 state, a real anchor click through smooth scrolling) lives in the
 `scroll-animation` skill's `scripts/` — `audit-motion.mjs`,
 `verify-motion.mjs`, `anchor-check.mjs` — not here.
 
-## calc.mjs — the math, with no browser and no project
+## bin/fluid — the CLI (cli.mjs)
 
 ```
-node calc.mjs [--config f] table [--w 1024,1280,1440,1680,2560] [--h 640,700,800,900,1440] [--raw]
-node calc.mjs [--config f] px <N> --unit fluid|display|copy|chrome --at WxH
-node calc.mjs [--config f] budget --widths N,N,N,...
+fluid init [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integration next|vite|none] [--out dir] [--css globals.css] [--force]
+fluid generate [--dry] [--force]
+fluid check
+fluid settings [--json]
+fluid explain <W>x<H> [--zoom z] [--url http://…]
+fluid migrate [--write]
+fluid calc | probe | verify | audit …   (the tools below)
 ```
 
-- **table** — prints the resolved factors (`fluid`, `display`, `copy`,
-  `chrome`) for a set of viewports, and which arm (`width`, `height`,
-  `floor`, or `below-engage`) is binding at each one. `--w`/`--h` are zipped
-  index-wise into one row per pair when they're the same length (this is
-  what reproduces fluid-scale.md §3's "Resolved factors" table); otherwise
-  it's a full width x height cross product. `--raw` continues the formula
-  past `engageAt` instead of flattening to 1 below it — useful for seeing the
-  curve's shape, not what actually ships below `lg`.
-- **px** — prints what a single drawn number renders to at one viewport,
-  e.g. `node calc.mjs px 64 --unit display --at 1280x800`.
+- **`init`** — detects the stack and framework from `package.json`, writes a
+  minimal `fluid.config.json` + `fluid.config.schema.json`, runs `generate`,
+  and adds the one `@import` plus a commented settings starter into the
+  project's existing `:root` (found by walking common `globals.css`
+  locations, or `--css`). `--brownfield` turns `output.base` off and only
+  prints the import instead of editing the file. Refuses to run twice without
+  `--force`.
+- **`generate`** — writes `output.dir` from the current `fluid.config.json`.
+  Compares against `.fluid.lock.json` first: a file that was hand-edited
+  since the last generate is left alone (and the whole run fails) unless
+  `--force`. `--dry` prints what would change without writing.
+- **`check`** — the CI gate, zero browser: (1) the generated output matches
+  what the config would produce right now — missing / stale / hand-edited /
+  orphaned; (2) every `--fluid-*` declaration in the project's own CSS is
+  linted (unknown name with a did-you-mean, out-of-range value, non-numeric
+  value, `scale-min` above `scale-max`, a setting declared outside
+  `:root`/`.fluid-scope`, one shadowing another); (3) on
+  `tailwind.breakpoints: "none"`, any hand-maintained `--breakpoint-lg` still
+  agrees with `bands.desktop.minWidth`. Non-zero exit on any problem.
+- **`settings [--json]`** — prints `settings.reference.css` (every setting,
+  commented, with its default), or with `--json` the same as structured data.
+- **`explain <W>x<H> [--zoom z] [--url http://…]`** — the band a viewport
+  falls in, every resolved unit, and where each setting in play came from
+  (default, or `file:line` in the project's CSS). With `--url` it loads the
+  live page in a headless browser instead, reads its own computed settings,
+  and compares the page's resolved units and build stamp against what the
+  config generates now (`verification.md` §6).
+- **`migrate [--write]`** — converts a v1 `fluid.config.json` to v2: prints
+  what moved, the new config, and a `:root` snippet of every v1 number that
+  differed from its v2 default (nothing to carry over prints instead).
+  `--write` replaces the config (keeping the v1 file as
+  `fluid.config.v1.json`) and turns the top-level `aliases` setting on, so a
+  brownfield migration keeps emitting the v1 custom-property/class names
+  (`--fluid-chrome`, `--fluid-column`, `.fluid-frame`) alongside the v2 ones
+  until callers are moved over.
+- **`calc | probe | verify | audit`** — thin passthroughs to `calc.mjs`,
+  `probe.mjs`, `verify-matrix.mjs`, `audit.mjs` (below), run as a child
+  process with the remaining args forwarded verbatim.
+
+## calc.mjs — the math, with no browser and no live project
+
+```
+node calc.mjs table [--w list] [--h list] [--zoom z] [--raw]
+node calc.mjs px <N> --unit fluid|<role>|ui --at WxH [--zoom z]
+node calc.mjs budget --widths N,N,...
+```
+
+Reads the nearest `fluid.config.json` and the settings the project's own CSS
+sets at the top level (`lib/context.mjs`'s `loadContext`, the same scan
+`fluid check` lints), or `--config`.
+
+- **table** — prints the resolved unit (`fluid`, each role, `ui` if on) for a
+  set of viewports, and which arm is binding at each one (`width`, `height`,
+  `min`, `max`, or `flat` below the desktop band with the mobile bands off).
+  `--w`/`--h` are zipped index-wise into one row per pair when they're the
+  same length (the default 11-viewport list is what reproduces
+  `fluid-scale.md` §5's "Resolved factors" table); otherwise it's a full
+  width × height cross product. `--raw` continues the desktop formula past
+  `bands.desktop.minWidth` instead of flattening below it — useful for seeing
+  the curve's shape, not what actually ships below the desktop band.
+- **px** — prints what a single drawn number renders to at one viewport and
+  unit, e.g. `node calc.mjs px 64 --unit display --at 1280x800`.
 - **budget** — sums a drawn row of widths and checks it against the content
-  budget at the reference (`reference.width - 2*canvas.gutter`). PASS if it
-  fits; on OVER it suggests `cqw` fractions of the canvas content box
-  (`N / (canvas.width - 2*canvas.gutter)`) per fluid-scale.md §4.1's
-  container-query escape — the fix for a row drawn wider than the reference
-  frame can hold.
+  budget at the artboard (`min(base-width, container-width) − 2 ×
+  container-padding`). PASS if it fits; on OVER it suggests `cqw` fractions of
+  the container's content box (`N / (container-width − 2×padding)`) per
+  `fluid-scale.md` §4.1's container-query escape.
 
 Exit codes: `0` ok / budget PASS, `1` budget OVER, `2` usage error.
+
+## probe.mjs — one-shot freshness check
+
+```
+node probe.mjs <url> [--config f] [--width 1440] [--height 900]
+node probe.mjs --help
+```
+
+Loads `<url>` in a headless browser at one viewport, reads every registered
+`--fluid-*` setting the page's `:root` resolves to a number plus every unit
+(`getPropertyValue` returns the unevaluated expression, not a number, so each
+unit is measured with a probe element sized `calc(1000 * var(--fluid...))`),
+computes what the model expects from those settings, and reads the
+`--fluid-build` stamp. Prints a verdict:
+
+- **FRESH** — every resolved unit matches expected within `0.002`, and the
+  page's build stamp matches what the current `fluid.config.json` generates.
+- **STALE** — a unit drifted, or the build stamp doesn't match. Almost always
+  the classic bug, not a code bug: Next dev pushes CSS over the HMR socket, a
+  server restart kills that socket, and an already-open tab does not reliably
+  re-fetch on reconnect. Safari holds it hardest. Fix: close the tab and open
+  a fresh one; if that doesn't clear it, blow away the build cache (`rm -rf
+  .next`) and restart the dev server. `--help` prints the full explanation.
+- **MISSING** — no unit resolves to anything (wrong URL, a build that
+  predates the scale, or it's genuinely not wired up here).
+
+Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
+
+## verify-matrix.mjs — the browser harness
+
+```
+node verify-matrix.mjs <url> [--config f] [--out dir]
+  [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
+  [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']   (mobile bands on: 320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194)
+  [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
+  [--zoom-selector 'main p, p'] [--zoom-strict] [--browser chromium|webkit|firefox]
+```
+
+Drives every viewport in the `widths x heights` desktop matrix, plus each
+exact `--mobile WxH` pair, and for each one checks:
+
+- **(a) overflow** — `scrollWidth > innerWidth + 1`. On fail, lists up to 10
+  offending elements (`rect.right > innerWidth`), shallowest DOM depth first.
+- **(b) units** — the page's OWN settings (every registered `--fluid-*`
+  custom property it resolves) run through the model, then compared against
+  what the page actually renders — the same probe-element technique as
+  `probe.mjs`, within `0.002`. A failing row is diagnosed from the
+  `--fluid-build` stamp: `missing` (no fluid stylesheet at all), `v1` (a
+  stylesheet with no build stamp), `stale` (a stamp that doesn't match what
+  `fluid.config.json` generates now), or `mismatch` (current build, wrong
+  number — a hand-edited `fluid.css`, or a setting redeclared somewhere
+  `fluid check` would catch).
+- **(c) fit** — every element matching `--fit-selector` has
+  `height <= innerHeight + 1`, checked only at/above `bands.desktop.minWidth`
+  (below it the scale is flat and the check is meaningless). Reports the
+  height ratio.
+- **(d) grid-cols** — `[data-verify-grid]` elements' computed
+  `grid-template-columns` track count, compared across every desktop
+  viewport (mobile excluded); a `data-verify-grid="responsive"` element is
+  reported but never fails the run.
+- **(e) screenshots** (`--screens` only) — a full-page PNG per viewport in
+  `--out`, plus `contact-sheet.html` tiling all of them with pass/fail
+  captions.
+- **(f) zoom row** (WCAG 1.4.4) — for each `--zoom-bases` window at or above
+  `bands.desktop.minWidth`, the page is loaded under REAL browser zoom: a
+  throwaway Chromium profile whose `Preferences` set
+  `partition.default_zoom_level` (factor = 1.2^level). The `--zoom-selector`
+  text's font-size × zoom is its physical size; a cell passes at >= 0.9 ×
+  zoom (capped at 2×) with no horizontal overflow. Needs `channel: 'chromium'`
+  (Playwright's full Chromium, i.e. the new headless): the headless shell
+  ignores the zoom preference, and on `--browser webkit|firefox` the row is
+  skipped outright (it only ever drives Chromium's zoom preference). Warns by
+  default; `--zoom-strict` gates the exit code.
+
+When the config sets `--fluid-desktop-scale-max`, one extra desktop viewport
+is appended automatically, sized so the natural (uncapped) factor clears the
+ceiling by 25% — so the ceiling is always exercised even if every viewport in
+`--widths`/`--heights` lands at or below it.
+
+`--browser webkit|firefox` runs the whole matrix (minus the zoom row) in
+another engine (`npx playwright install webkit firefox`). WebKit is the
+closest a script gets to Safari. Firefox rounds `min()`/`max()` results to
+1/60px — the reason the engine's precision form exists.
+
+Writes `report.json` (every check, every viewport) and prints a readable
+summary table plus a detail block per failing viewport. Playwright is
+resolved from the target project's `node_modules` first (via
+`process.cwd()`, i.e. run this from inside the project), then a skill-local
+install, then a clear install hint if neither exists.
+
+Exit codes: `0` every check passed, `1` at least one failed, `2` usage error
+or playwright could not be resolved/launched.
 
 ## audit.mjs — static scanner
 
@@ -45,15 +199,16 @@ node audit.mjs --selftest
 node audit.mjs --help
 ```
 
-Walks `<srcDir>` (skipping `node_modules`, `.git`, `.next`, `dist`, `build`)
-and reports rule violations, each with a rule id, `file:line`, the offending
-snippet, a one-line *why*, and a *fix*. Some rules need repo-wide context
-(e.g. whether `@custom-variant dark` is declared anywhere, or whether a
-`--radius-*: 0` token is defined) — that context is computed once per scan
-root, over EVERY file including this skill's own generated output (`base.css`
-and friends), before per-file rules run. Generated files are then skipped by
-the per-file rules themselves (scanning generated output for hand-authoring
-mistakes is never meaningful) but still feed that shared context.
+Unchanged in shape from v1: walks `<srcDir>` (skipping `node_modules`, `.git`,
+`.next`, `dist`, `build`, `.turbo`, `.cache`, `out`) and reports rule
+violations, each with a rule id, `file:line`, the offending snippet, a
+one-line *why*, and a *fix*. Some rules need repo-wide context (e.g. whether
+`@custom-variant dark` is declared anywhere, or whether a `--radius-*: 0`
+token is defined) — that context is computed once per scan root, over EVERY
+file including this skill's own generated output (`base.css` and friends),
+before per-file rules run. Generated files are then skipped by the per-file
+rules themselves (scanning generated output for hand-authoring mistakes is
+never meaningful) but still feed that shared context.
 
 Rules (severity in parens): `fixed-px-at-engage` (error; info for the
 deliberately-excluded border/radius/tracking/max-w properties),
@@ -66,7 +221,7 @@ above), `length-times-unit` (error), `dvh-on-scaled` (warn),
 
 Motion-specific rules (`motion-strict`, `scroll-well-vs-smooth-scroll`,
 `fractional-amount`, `contents-reveal`, `video-attrs`, plus
-`lenis-with-scroll-well` and `gsap-pin-with-sticky-scene`) moved to the
+`lenis-with-scroll-well` and `gsap-pin-with-sticky-scene`) live in the
 `scroll-animation` skill's `scripts/audit-motion.mjs`.
 
 `--selftest` runs the scanner over `fixtures/audit/<rule-id>/{positive,negative}`
@@ -77,105 +232,141 @@ the readable table.
 Exit codes: `0` no error-severity findings, `1` at least one error-severity
 finding, `2` usage error. `--selftest` exits `0`/`1` on pass/fail.
 
-## probe.mjs — one-shot freshness check
+## generate-fluid.mjs — the SKILL's own generator
 
 ```
-node probe.mjs <url> [--config f] [--width 1440] [--height 900]
-node probe.mjs --help
+node generate-fluid.mjs            write every generated file this skill commits
+node generate-fluid.mjs --check    write nothing; exit 1 if anything is stale, a
+                                    fixture breaks an invariant, or v1 parity fails
 ```
 
-Loads `<url>` in a headless browser at one viewport, reads the four fluid
-custom properties, resolves each to a number (`getPropertyValue` returns the
-unevaluated expression, not a number, so a probe element sized with
-`calc(1000 * var(--fluid...))` is measured instead), and compares against
-`factors()` from `lib/fluid-math.mjs`. Prints a verdict:
+Not a tool for a consuming project — projects run `fluid generate`. This one
+regenerates everything in the skill itself that is derived from
+`lib/spec.mjs`, so none of it can drift from that one source:
 
-- **FRESH** — resolved values match expected within `0.002`.
-- **STALE** — units are present but drift from expected. This is almost
-  always the classic bug, not a code bug: Next dev pushes CSS over the HMR
-  socket, a server restart kills that socket, and an already-open tab does
-  not reliably re-fetch on reconnect. Safari holds it hardest. Fix: close the
-  tab and open a fresh one; if that doesn't clear it, blow away the build
-  cache (`rm -rf .next`) and restart the dev server. `--help` prints the full
-  explanation.
-- **MISSING** — none of the four properties resolve to anything (wrong URL,
-  a build that predates the scale, or it's genuinely not wired up here).
+- `assets/fluid.config.json` / `assets/fluid.config.schema.json` — the
+  example config at every default, and its JSON Schema.
+- `assets/styles/{tailwind-v4,css,scss,stylex}/…` — the reference output for
+  each stack at the defaults (`runtime/` excluded; its source is
+  `assets/runtime/`).
+- `references/config.md` — the structure + settings tables (every row is
+  built from `STRUCTURE`/`settingsSpec()` in `lib/spec.mjs`, never hand-typed).
 
-Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
+`--check` additionally runs `checkInvariants()` — no `clamp()`/`round()` in
+the generated CSS, one `@property` per registered setting, every setting
+actually read somewhere in the output, each role's unit present, `--fluid-z`/
+`--fluid-ui` present iff `zoom`/`ui` are on, `aliases` followed exactly,
+`base.css` presence follows `output.base`, every Tailwind utility family
+present iff its `tailwind.utilities.*` flag is on, an integration emitted iff
+`output.integration` isn't `none` — over the defaults and every fixture in
+`fixtures/configs/`, then runs `test/parity.mjs` (below) as a subprocess.
+`npm test` is `generate-fluid.mjs --check && node scripts/test/cli.mjs &&
+node scripts/audit.mjs --selftest` — the full no-browser gate.
 
-## verify-matrix.mjs — the browser harness
+## lib/ — everything above is a thin CLI over these
 
-```
-node verify-matrix.mjs <url> [--config f] [--out dir]
-  [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
-  [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']   (mobile arm on: 320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194)
-  [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
-  [--zoom-selector 'main p, p'] [--zoom-strict]
-```
+- **`spec.mjs`** — the one place every structure key and setting name,
+  default, doc string and constraint lives (`STRUCTURE`, `settingsSpec()`,
+  `jsonSchema()`, `structureDefaults()`, `RESERVED_ROLE_NAMES`,
+  `didYouMean()`). `references/config.md`, the JSON Schema, every
+  `@property` default and the settings lint all trace back to this file —
+  nothing duplicates a default anywhere else.
+- **`model.mjs`** — `normaliseStructure()` (validate + fill defaults),
+  `resolveSettings()`/`valuesOf()` (settings + their source), `evaluate()`
+  (the maths in JS, mirroring the generated CSS, for `calc`/`explain`/tests),
+  `bandAt()`/`bandMedia()`/`exclusiveMedia()`, and `migrateV1()`/`isV1()`
+  (v1 config → v2 structure + settings, with human-readable notes on what moved).
+- **`settings.mjs`** — `scanDeclarations()` (every `--fluid-*`/`--_fluid-*`
+  declaration in a CSS/SCSS file, with its line and selector context) and
+  `lintSettings()` (the rules `fluid check` reports: unknown name, bad value,
+  range, redundant media query, wrong scope, shadowing). `scanProject()`
+  walks every style file under a project root except `output.dir`.
+- **`context.mjs`** — `loadContext()`: what every static tool (`calc`,
+  `probe`, `verify-matrix`, `explain`) needs in one call — the structure, the
+  resolved settings with where each came from, and the output dir. A v1
+  config is migrated in memory so these tools work before `fluid migrate`.
+- **`emit/engine.mjs`** — the unit engine as CSS: `@property` registrations,
+  band parameter blocks, and the formulas (written once, on `:root,
+  .<prefix>-scope`). Owns the ×1000 precision form (Firefox rounds a
+  `min()`/`max()` result to 1/60px) and the knee (the desktop damping curve
+  read at `bands.desktop.minWidth / base-width` instead of a v1-style rounded
+  "auto floor"). `min()`/`max()`/`calc()` only — no `clamp()`, no `round()`.
+- **`emit/tailwind.mjs`** — the `@theme` breakpoint ladder (the whole sm–2xl
+  ladder in px, because Tailwind v4 cannot sort a px override against its own
+  rem defaults), `@custom-variant` band variants, the `@utility` vocabulary,
+  and `cn.ts` (a `tailwind-merge` config that knows the fluid utility groups).
+- **`emit/stacks.mjs`** — the non-Tailwind outputs: plain CSS classes, SCSS
+  (`_index.scss`: functions + band mixins, `@use 'fluid' as fd`), StyleX
+  helpers, and `fluid.ts` (typed constants + `SETTINGS` table +
+  `setFluidSetting()`, shared by every stack).
+- **`emit/project.mjs`** — `buildOutput()`: assembles everything `fluid
+  generate` writes into `output.dir` (`fluid.css`, `base.css`,
+  `settings.reference.css`, `fluid.ts`, plus the stack-specific file,
+  `runtime/`, `integrations/`, `README.md`), deterministic and content-hashed
+  for the hand-edit guard.
+- **`emit/readme.mjs`** — the generated output folder's own `README.md`
+  (install, tuning, bands, units, why, file list) — what a developer reads
+  standing in `output.dir`, not this file.
+- **`v1-math.mjs`** — the FROZEN v1 maths (`factors()`, `mergeConfig()`,
+  `resolveFloors()`, `resolveBandFloors()`), used ONLY by `test/parity.mjs`
+  to check v2 reproduces v1's numbers. Never imported by the generator or the
+  CLI — v2's real engine is `emit/engine.mjs`.
 
-Drives every viewport in the `widths x heights` desktop matrix, plus each
-exact `--mobile WxH` pair, and for each one checks:
+## test/
 
-- **(a) overflow** — `scrollWidth > innerWidth + 1`. On fail, lists up to 10
-  offending elements (`rect.right > innerWidth`), shallowest DOM depth first.
-- **(b) units** — the same probe-element technique as `probe.mjs`, checked
-  against `factors()` within `0.002`. This doubles as the stale-stylesheet
-  detector: a missing or drifted unit means the stylesheet did not rebuild.
-- **(c) fit** — every element matching `--fit-selector` has
-  `height <= innerHeight + 1`, checked only at/above `engageAt` (below it the
-  scale is a flat 1px and the check is meaningless). Reports the height
-  ratio.
-- **(d) grid-cols** — `[data-verify-grid]` elements' computed
-  `grid-template-columns` track count, compared across every desktop
-  viewport (mobile excluded); a `data-verify-grid="responsive"` element is
-  reported but never fails the run.
-- **(e) screenshots** (`--screens` only) — a full-page PNG per viewport in
-  `--out`, plus `contact-sheet.html` tiling all of them with pass/fail
-  captions.
-- **(f) zoom row** (WCAG 1.4.4) — for each `--zoom-bases` window, the page is
-  loaded under REAL browser zoom: a throwaway Chromium profile whose
-  `Preferences` set `partition.default_zoom_level` (factor = 1.2^level). The
-  `--zoom-selector` text's font-size × zoom is its physical size; a cell
-  passes at >= 0.9 × zoom (capped at 2×) with no horizontal overflow. Needs
-  `channel: 'chromium'` (Playwright's full Chromium, i.e. the new headless):
-  the headless shell ignores the zoom preference, and the row is skipped with
-  a note if the zoom visibly did not apply. Warns by default;
-  `--zoom-strict` gates the exit code. Measured on `fixtures/page`: with the
-  runtime every cell passes at 110–300%; with `?nozoom` the 1920 and 2560
-  windows stay at 100–124% (warns).
+Run from the skill root unless noted. `generate-fluid.mjs --check` runs
+`parity.mjs` itself; the rest are run directly or via `npm test` /
+`npm run test:browsers`.
 
-Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
-scene's `data-motion-state` across progress) moved to the `scroll-animation`
-skill's `verify-motion.mjs --reveal --scenes`.
-
-Writes `report.json` (every check, every viewport) and prints a readable
-summary table plus a detail block per failing viewport. Playwright is
-resolved from the target project's `node_modules` first (via
-`process.cwd()`, i.e. run this from inside the project), then a skill-local
-install, then a clear install hint if neither exists.
-
-Exit codes: `0` every check passed, `1` at least one failed, `2` usage error
-or playwright could not be resolved/launched.
+- **`test/parity.mjs`** — v2's model must reproduce v1's numbers for every v1
+  config. Each fixture in `fixtures/v1-configs/` (plus the v1 defaults, with
+  and without the mobile arm) is migrated to v2 structure + settings and
+  evaluated on a viewport × zoom grid, compared against the frozen v1 maths
+  in `lib/v1-math.mjs`. Tolerance `1e-9`, except where v1 rounded a type
+  floor to 2 decimals — there v2's exact knee value is allowed the documented
+  slack (≤ 0.005). No browser. `node scripts/test/parity.mjs`.
+- **`test/cli.mjs`** — the `fluid` command end to end, no browser, no
+  network: `init` on a throwaway greenfield Next+Tailwind project (the
+  config, the one import, the settings starter, every generated file,
+  `check` passing clean), `check` catching a typo and a bad unit with a
+  did-you-mean, `explain` showing a setting's `file:line` and the resolved
+  override, `generate`'s hand-edit guard and `--force`, `settings`,
+  `init --brownfield` (prints instead of editing, base off), and `migrate
+  --write` on a v1 fixture (detects the stack/integration, turns `aliases`
+  on, keeps the v1 file, then `generate` writes the SCSS module and the Vite
+  plugin). `node scripts/test/cli.mjs`.
+- **`test/engine-matrix.mjs`** — the generated engine CSS against
+  `model.evaluate()`, in real browsers. For each of a set of structures
+  (defaults, flat below desktop, zoom off, ui off, a custom role, no
+  tablet/landscape, width-only + ceiling, floors set, desktop at a moved
+  `minWidth`) plus every migrated v1 fixture, it renders a probe page and
+  measures every unit at a viewport × zoom grid. Then, on the defaults: a
+  live setting override, an invalid value falling back to its default, and
+  the same numbers with `@property` stripped. `node scripts/test/engine-matrix.mjs
+  [--browsers chromium,webkit,firefox]` — needs `playwright`, resolved from
+  the current directory first, so run it from a project that has it, e.g.
+  `cd examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs`.
+- **`test/tailwind-compile.mjs`** — the generated Tailwind layer through the
+  real Tailwind v4 compiler (`@tailwindcss/postcss`): band variants, every
+  utility family, a custom role, the container, negatives all compile to the
+  expected CSS. Then in a browser: exactly one band variant matches at each
+  viewport, and `.fluid-scope` re-scopes a setting to a subtree. Needs
+  `tailwindcss`, `@tailwindcss/postcss`, `postcss` and `playwright` in the
+  current project — same caveat as `engine-matrix.mjs`, run it from
+  `examples/pizza-next`.
 
 ## fixtures/
 
-- `fixtures/audit/<rule-id>/{positive,negative}/` — one isolated directory
-  pair per audit rule, consumed by `audit.mjs --selftest`.
-- `fixtures/page/index.html` — a static page whose `<style>` block is the
-  unit CSS generated by `lib/fluid-math.mjs`'s `cssUnits(loadConfig())` at
-  the shipped defaults, pasted verbatim (regenerate and re-paste if the
-  defaults change). It has one `data-fit="screen"` section sized
-  `calc(900 * var(--fluid))`, a handful of filler sections, and one
-  deliberately overflowing element gated behind a `?overflow` query flag.
-  A `<main><p>` of body copy on `--fluid-copy` is what the zoom row measures;
-  the page loads `fluid-zoom.js` (a symlink to `assets/runtime/`) unless the
-  URL has `?nozoom`.
-  Serve it with `python3 -m http.server` from `fixtures/page/` and point
-  `verify-matrix.mjs` or `probe.mjs` at it:
-
-  ```
-  cd fixtures/page && python3 -m http.server 8934 &
-  node ../../verify-matrix.mjs http://localhost:8934/index.html --screens            # PASS
-  node ../../verify-matrix.mjs "http://localhost:8934/index.html?overflow"           # FAIL (overflow)
-  node ../../verify-matrix.mjs "http://localhost:8934/index.html?nozoom" --zoom-strict # FAIL (zoom row)
-  ```
+- **`fixtures/v1-configs/`** — real v1 `fluid.config.json` files (`canvas-
+  gutter-ceiling`, `chrome-disabled`, `mobile-arm`, `utilities-flipped`,
+  `width-only`, `zoom-off`), each a genuine v1 shape. Consumed by
+  `test/parity.mjs`, by `generate-fluid.mjs --check` (migrated then checked
+  against the same invariants as any v2 structure), and by
+  `test/engine-matrix.mjs`.
+- **`fixtures/configs/`** — v2 structures exercising the less-default corners
+  (`custom-role`, `flat-below-desktop`, `moved-breakpoints`, `phone-only`,
+  `scss-vite`, `stylex-next`, `tailwind-minimal`, `ui-off`, `zoom-off`,
+  `css-aliases`), each checked against `generate-fluid.mjs --check`'s
+  invariants.
+- **`fixtures/audit/<rule-id>/{positive,negative}/`** — one isolated
+  directory pair per audit rule, consumed by `audit.mjs --selftest`.

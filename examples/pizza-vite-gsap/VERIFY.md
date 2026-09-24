@@ -171,3 +171,25 @@ column); landscape tablets (1024+) take the desktop design. `fluid.config.json` 
 See it: DevTools device mode, then iPhone SE → 15 → Pro Max (same composition, slightly larger),
 rotate to landscape (a touch larger, centred), iPad Air portrait (larger still, centred column),
 iPad landscape (the desktop design).
+
+## fluid-design v2, added 2026-09-24
+
+Migrated with `fluid migrate --write`, then `fluid generate --stack scss`. `fluid.config.json` is
+now the v2 shape (`version: 2`, `bands`, `output: { stack: "scss", integration: "vite" }`); the
+three non-default numbers this build carries (container width/padding, growth ceiling) moved from
+`fluid.config.json` (`canvas`, `ceiling`) to three `--fluid-desktop-*` CSS variables set in
+`main.scss`'s own `:root`. The generated SCSS layer moved from `src/styles/fluid/scss/_fluid.scss`
+(`@use 'fluid/scss/fluid' as fd`) plus a hand-copied `shared/base.css` to one generated folder,
+`src/styles/fluid/` (`@use 'fluid' as fd`, with `src/styles` on the Sass `loadPaths`), imported
+once from `main.ts` (`import './styles/fluid/fluid.css'`). `fd.fluid-up` is now `fd.fluid-desktop`
+(`fluid-up` still works as an alias). Browser-zoom inlining moved from a hand-written Vite plugin
+reading `src/lib/fluid-zoom.js` to `fluidPlugin()` (`src/styles/fluid/integrations/vite`). No
+visual or behavioural change was intended by the migration; the checks below confirm none
+happened.
+
+- **verify-matrix:** PASS in Chromium, WebKit and Firefox, including the real-zoom row.
+- **Geometry:** identical to the pre-migration (v1) build at 9 of 10 verified viewports. The
+  exception is 320×568, where type differs by 0.3% — v1 rounded its phone floor to 2 decimals,
+  v2's knee computes it exactly (`fluid-design/references/config.md`, "The engine"). Not a
+  regression; the more precise number is v2's.
+- **verify-motion:** `--reveal --scenes --anchors` PASS.

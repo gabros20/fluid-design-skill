@@ -11,7 +11,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node scripts/generate-fluid.mjs --check",
+    "test": "node scripts/generate-fluid.mjs --check && node scripts/test/cli.mjs && node scripts/audit.mjs --selftest",
     "test:browsers": "node scripts/test/engine-matrix.mjs && node scripts/test/tailwind-compile.mjs",
     "generate": "node scripts/generate-fluid.mjs"
   }

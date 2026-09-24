@@ -5,8 +5,17 @@ Skip when: `fluid.config.json` and `FLUID.md` already exist and the task stays i
 
 Inspect the project first and ask second. Every question below has a default and a detection
 hint. Ask only when detection is inconclusive **and** the answer changes the output. Put all the open
-questions into one short batch; never ask one per turn. Once they are answered, write
-`fluid.config.json` and a `FLUID.md` decision log at the project root.
+questions into one short batch; never ask one per turn. Once they are answered, run
+`fluid init` (or `fluid init --brownfield`) to write `fluid.config.json`, and write a `FLUID.md`
+decision log at the project root.
+
+Each decision below lands in one of two places, and the split is the one rule the whole skill
+runs on (`config.md`, `contract.md` §1):
+
+- **Structure** — changes which CSS rules exist. Goes in `fluid.config.json`, needs
+  `fluid generate` (which `fluid init` runs for you the first time).
+- **Settings** — a number inside those rules. Goes in the project's own `:root`, next to its
+  tokens, as a `--fluid-*` CSS variable. Live, no regenerate. `fluid.config.json` never holds one.
 
 This skill makes no animation decisions. Engine choice, scroll-driven scenes, header behaviour on
 scroll and what to do with existing motion code belong to the companion `scroll-animation` skill,
@@ -20,73 +29,115 @@ which has its own preflight.
 | `package.json` motion deps: `motion` / `framer-motion`, `gsap`, `lenis`, `locomotive-scroll` | nothing for this skill. Note them in `FLUID.md` for the `scroll-animation` skill; do not remove or rewire them here |
 | CSS entry (`globals.css`, `app.css`, `main.scss`) | `@import 'tailwindcss'` means v4; `@tailwind base` means v3; an existing `@theme`, custom breakpoints, `clamp()` / `vw` type |
 | `tailwind.config.*` | v3 (see the v3 note in `stacks.md`) |
-| container classes | `.container`, `max-w-7xl mx-auto px-*`, a hand-rolled wrapper: that is your current frame and gutter |
-| breakpoints in use | the one where the desktop layout starts is your `engageAt` candidate |
+| an existing `fluid.config.json` with no `"version": 2"` | a v1 project — route to `brownfield-migration.md` §"From fluid-design v1" instead of this preflight |
+| container classes | `.container`, `max-w-7xl mx-auto px-*`, a hand-rolled wrapper: that is your current container width and padding |
+| breakpoints in use | the one where the desktop layout starts is your `bands.desktop.minWidth` candidate |
 | existing `vw`/`clamp` type | a prior fluid attempt; inventory it before replacing it (`brownfield-migration.md`) |
 | `<video>` count, sticky/pinned sections | the media rendering work (`media.md`); any scene or playback work is for the `scroll-animation` skill |
-| Figma links or exported frames in the repo | canvas width and height |
+| Figma links or exported frames in the repo | the artboard's width and height |
+| a phone frame in Figma | whether the mobile bands should stay on at their default 390 width, or be re-tuned |
 
 ## The decisions
 
-### 1. Styling stack
-Default: **Tailwind v4** if it is present or the project is greenfield. Otherwise use the stack the project already has.
+### 1. Styling stack (structure: `output.stack`)
+Default: **Tailwind v4** (`"tailwind-v4"`) if it is present or the project is greenfield. Otherwise use the stack the project already has.
 - Tailwind v4 gets the richest artifact: arbitrary-number `@utility` families (`lg:fluid-py-120`).
-- On Tailwind v3, recommend upgrading. If that is not possible, use the vanilla layer plus arbitrary values
+- On Tailwind v3, recommend upgrading. If that is not possible, use `"css"` plus arbitrary values
   `lg:py-[calc(120*var(--fluid))]`. v3 has no functional `@utility`.
-- SCSS, vanilla CSS, CSS Modules and StyleX all use the same units, through functions or `calc()` inside the engage media query.
+- `"scss"`, `"css"` (also covers CSS Modules and plain CSS) and `"stylex"` all use the same units,
+  through functions or `calc()` inside each band's rules.
 - Ask when: nothing is installed yet, or two systems coexist.
 
-### 2. Design frame and reference viewport
-Default: canvas **1680 × 900**, gutter **80**, reference **1440 × 900**.
-- The canvas is the width the designer drew. The reference is the viewport where one unit is exactly
-  1px. Keep the reference at the most common laptop viewport, 1440. Anchoring it to a 1680 canvas
-  shrinks every rendering at 1440 by 14% and breaks the one-screen guarantee whenever width binds.
-  This option was modelled and rejected twice (`fluid-scale.md` §4).
-- The consequence: drawn content has to fit `reference.width − 2 × gutter`. Tell the designer early.
-- Ask when: the frame size is not visible anywhere, or frames are not 900 tall.
+### 2. Desktop artboard and desktop container (settings: `--fluid-desktop-base-width/-height`, `--fluid-desktop-container-width/-padding`)
+Default: artboard **1440 × 900** (the viewport where 1 drawn px = 1 CSS px), container **1680 wide,
+80 padding**.
+- The artboard is a content budget, not the design canvas. Keep it at the most common laptop
+  viewport, 1440. Anchoring it to a wider canvas (1680) shrinks every rendering at 1440 by 14% and
+  breaks the one-screen guarantee whenever width binds. This option was modelled and rejected twice
+  (`fluid-scale.md` §4).
+- The consequence: drawn content has to fit `base-width − 2 × container-padding` (1440 − 160 =
+  1280 at the defaults). Tell the designer early.
+- These four numbers are **settings**, not structure — they go in the project's `:root`
+  (`--fluid-desktop-base-width: 1440;` etc.), not in `fluid.config.json`. Only the *existence* of
+  the desktop band is structure (§3).
+- Ask when: the artboard size is not visible anywhere, or frames are not 900 tall, or the
+  designer's container differs from 1680/80.
 
-### 3. Engage breakpoint
-Default: **1024** (Tailwind `lg`). Below it the units are a flat 1px and mobile is plain responsive CSS.
+### 3. Desktop breakpoint (structure: `bands.desktop.minWidth`)
+Default: **1024** (Tailwind `lg`). Below it, either the mobile bands scale a phone design (§7,
+default in v2) or, with them off, every unit is a flat 1px and mobile is plain responsive CSS.
 - It must equal the breakpoint where the desktop composition begins. Two separate numbers here
   produce a band where desktop layout runs at mobile sizes.
-- If the `scroll-animation` skill is also in use, it reads this same number from `fluid.config.json`,
-  so record it there and nowhere else.
+- If the `scroll-animation` skill is also in use, it reads this same number from the generated
+  `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`), so record it only here.
 - Ask when: the desktop layout starts somewhere else (768, 1280).
 
-### 4. Height axis
-Default: **on**. The height arm is what makes "one screen tall" possible.
-- Turn it off (`heightAxis:false`) for document-style sites such as docs, blogs or dashboards. On those,
-  scaling on a short window only shrinks things without buying any fit.
+### 4. Height axis (setting: `--fluid-desktop-fit-height`, 1 or 0)
+Default: **on** (`1`). The height arm is what makes "one screen tall" possible.
+- Turn it off (`--fluid-desktop-fit-height: 0;`) for document-style sites such as docs, blogs or
+  dashboards. On those, scaling on a short window only shrinks things without buying any fit.
+- With it off, `--fluid-ui` also scales by width only (v2 behaviour; v1's `--fluid-chrome` kept
+  reading height even with `heightAxis: false` — `brownfield-migration.md` §"Two numbers that move").
 - Ask when: the design has no full-viewport sections.
 
-### 5. Growth ceiling
-Default: **none**. Above the reference the whole composition grows as one piece.
+### 5. Growth ceiling (setting: `--fluid-desktop-scale-max`)
+Default: **unset** (no ceiling). Above the artboard the whole composition grows as one piece.
 - The real limit is asset resolution: a 1920-wide render upscales about 1.3× on a 27" 5K. Either
-  re-export the assets at about 3000 wide, or set `ceiling` (for example 1.5).
+  re-export the assets at about 3000 wide, or set `--fluid-desktop-scale-max` (for example 1.5).
 - Ask when: the hero art or video is raster and below about 2400px wide.
 
 ### 6. Scope
-Default: **the whole site from the engage breakpoint up**, including chrome (header and footer on `--fluid-chrome`).
+Default: **the whole site from the desktop breakpoint up**, ui included (header and footer on `--fluid-ui`, §9).
 - For brownfield work, migrate one route as the reference implementation, then queue the rest.
 - The shared elements (buttons, chips, CTAs) take an opt-in `fluid` prop, so migrated and
   unmigrated routes can coexist.
 
-### 7. Mobile
-Default: **flat** (`mobile.enabled: false`). Mobile stays authored per breakpoint in plain px.
-- Offer the **mobile arm** (`fluid-scale.md` §13) when the design has a phone frame (usually 390
-  wide) and the team wants it to hold across phones: unprefixed `fluid-*` utilities then take the
-  phone frame's numbers. Phones scale 0.82–1.10, portrait tablets show the phone design at
-  1.10–1.30 in a centred column, landscape phones at 1.00–1.20, and landscape tablets (1024+) get the
-  desktop design scaled down. Validated on both examples, not yet on a production site; say so.
-- Ask: **is there a tablet design?** No (the usual case): the defaults above. Yes: `mobile.tablet`
-  gets its frame as the reference and the team authors `md:` values.
+### 7. Mobile bands (structure: `bands.phone` / `.tablet` / `.landscape`)
+Default in v2: **on** (`bands.phone: true`, `tablet.minWidth: 600`, `landscape.maxHeight: 500`).
+Unprefixed `fluid-*` utilities take the phone frame's numbers (390 wide by default), and three
+bands hold it across phones and tablets: phones scale 0.82–1.10, portrait tablets show the phone
+design at 1.10–1.30 in a centred container, landscape phones at 1.00–1.20, and landscape tablets
+(desktop-breakpoint width and up) get the desktop design scaled down.
+- Turn all three off (`bands.phone: false`) for a flat 1px below the desktop band — mobile then
+  stays plain, hand-authored responsive CSS with no scaling at all (v1's old default).
+- Ask: **is there a tablet design?** No (the usual case): keep the default three bands, or the
+  defaults on their own settings. Yes: give `--fluid-tablet-base-width` the tablet frame's width and
+  author `md:` values against it.
 - Detect: a mobile frame in Figma, or a brief that says the phone layout must look the same on
-  every phone. Brownfield: converting the mobile px is a no-op at the reference width, so it can be
+  every phone. Brownfield: converting the mobile px is a no-op at the artboard width, so it can be
   done file by file and checked by diffing geometry at 390×844.
-- Ask when: the design has a phone frame and its width is not 390.
+- Ask when: the design has a phone frame and its width is not 390, or the team wants mobile to stay flat.
 
-### 8. Browser zoom
-Default: **compensated** (`zoomCompensation: true`, plus `assets/runtime/fluid-zoom.js` inlined in `<head>`).
+### 8. Container (settings: `--fluid-<band>-container-width` / `-container-padding`)
+Default: mobile bands **560 wide, 24 padding**; desktop **1680 wide, 80 padding** (grows above
+that, never narrows below it in CSS px).
+- This is the centred page wrapper each section's content sits in (`fluid-container` /
+  `.fluid-container` / `fd.fluid-container`), applied once per section to its inner wrapper — not a
+  page-level frame.
+- A brownfield site with an existing container: read its max-width and padding straight into these
+  settings (`brownfield-migration.md` §"Converting a container").
+- Ask when: the design's container differs from the defaults, or differs between mobile and desktop.
+
+### 9. UI (structure: `ui`)
+Default: **on**. Emits `--fluid-ui` (v1 `chrome`) — the header/nav/footer unit: follows width,
+never shrinks for a short window, unlike the damped type roles or the plain layout unit.
+- Turn it off only if the header and footer should scale on the plain `--fluid` unit like everything else.
+- Ask when: the header design intentionally shrinks on a short, wide window (rare).
+
+### 10. Roles (structure: `roles`)
+Default: **`["display", "copy"]`**. Each role becomes its own `--fluid-<role>` unit, a
+`fluid-<role>-*` utility and a `fluidPx(n, "<role>")` call.
+- Add a role (e.g. `"caption"`, `"eyebrow"`) when the design has a third type curve that damps
+  differently from display and copy — a custom role starts with copy's dampings
+  (`--fluid-desktop-<role>-damping: 0.33`) and is tuned from there as a setting.
+- Role names may not collide with a unit, utility or settings word already in use (`fluid`, `ui`,
+  `text`, `container`, band names, and the CSS property abbreviations `p`/`m`/`w`/`h`/… are
+  reserved — `fluid check` and `fluid.config.schema.json` both reject a collision).
+- Ask when: the design has more than two damped type curves.
+
+### 11. Browser zoom (structure: `zoom`)
+Default: **on** (`zoom: true`), which also emits the browser-zoom runtime
+(`assets/runtime/fluid-zoom.js`, generated into `output.dir/runtime/zoom.js`).
 - Viewport-derived type does not grow under browser zoom on its own, which fails WCAG 1.4.4 on
   displays wider than about 1440 (`fluid-scale.md` §12, Browser zoom). The runtime restores 1:1 text
   zoom in Chromium; Safari and Firefox are unverified.
@@ -95,26 +146,47 @@ Default: **compensated** (`zoomCompensation: true`, plus `assets/runtime/fluid-z
   browsers, and that mobile body copy should be drawn no smaller than the desktop size.
 - Turn it off only with the client's informed agreement, recorded in `FLUID.md`.
 
+### 12. Framework integration (structure: `output.integration`)
+Default: **auto-detected** by `fluid init` from `package.json` (`next` → `"next"`, `vite` → `"vite"`,
+else `"none"`).
+- With `zoom: true`, the runtime script has to run before first paint, or a page opened at a
+  remembered zoom level paints its type at the wrong size and then jumps. `"next"` generates
+  `integrations/next.tsx`'s `<FluidHead />` for `app/layout.tsx`; `"vite"` generates
+  `integrations/vite.ts`'s `fluidPlugin()` for `vite.config.ts`. `"none"` prints the inline script
+  (`FLUID_ZOOM_INLINE` from `runtime/zoom.js`) to add to `<head>` by hand.
+- Ask when: the framework is neither Next nor Vite and `zoom` is on — the team needs to wire the
+  inline script into their own head themselves.
+
 ## Writing the result
 
-`fluid.config.json` (schema: `assets/fluid.config.schema.json`) holds the numbers. `FLUID.md` holds
-the reasons: the stack, canvas and reference, anything that differs from the defaults and why,
-the routes in scope, and any motion libraries found (noted for the `scroll-animation` skill). A few
-lines each. Both files are the handoff to the next session.
+`fluid.config.json` (schema: `assets/fluid.config.schema.json`, or the project's own generated
+`fluid.config.schema.json` after `fluid init`) holds the structure. `FLUID.md` holds the reasons:
+the stack, the artboard and container numbers (even though they live in `:root`, not the config,
+`FLUID.md` is where the "why" for a setting belongs too), anything that differs from the defaults
+and why, the routes in scope, and any motion libraries found (noted for the `scroll-animation`
+skill). A few lines each. Both files are the handoff to the next session.
 
 ## Phrasing the questions
 
 Batch the questions, give each one its default, and let the user answer only the ones they care about:
 
 > Before I set this up: (1) styling: Tailwind v4 (you have it) or SCSS? (2) your Figma frames:
-> 1680×900? I'll keep the reference at 1440×900. (3) does the desktop layout start at 1024? If you
-> don't mind, I'll go with the defaults.
+> is the desktop artboard 1440×900 and the container 1680/80? (3) does the desktop layout start at
+> 1024? (4) is there a tablet design, or should the mobile bands hold the phone frame across every
+> size below that? If you don't mind, I'll go with the defaults.
 
 ## Traps
 
 - Asking one question per turn. Batch them, each with its default.
-- Anchoring the reference to the canvas width (1680) instead of the laptop viewport (1440).
-- Recording the engage breakpoint in more than one place. Three copies of one number drift.
+- Anchoring the artboard to a wider design canvas instead of the laptop viewport (1440).
+- Writing a setting (an artboard number, a container number, a damping) into `fluid.config.json`.
+  It belongs in `:root` as a `--fluid-*` variable; the config only holds structure (`config.md`).
+- Recording the desktop breakpoint in more than one place. Two copies of one number drift — import
+  `DESKTOP_QUERY`/`DESKTOP_PX` from the generated `fluid.ts` instead of hand-typing it again.
 - Treating "ignores the browser font-size setting" as covering zoom. They are different; zoom must work.
 - Removing or rewiring an installed motion library during preflight. That decision belongs to the
   `scroll-animation` skill; here you only note it.
+- Assuming mobile is flat by default. v2 defaults the mobile bands **on** — ask before turning them
+  off, not before turning them on.
+- Running this preflight against a project that already has a v1 `fluid.config.json`. Route to
+  `brownfield-migration.md` §"From fluid-design v1" first.

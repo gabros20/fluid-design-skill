@@ -285,13 +285,13 @@
               "default": true
             }
           }
-        },
-        "aliases": {
-          "description": "Also emit the v1 names (--fluid-chrome, --fluid-column, fluid-frame). `fluid migrate` turns this on.",
-          "type": "boolean",
-          "default": false
         }
       }
+    },
+    "aliases": {
+      "description": "Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on.",
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

@@ -242,8 +242,9 @@ with zero scroll range on the visible axis: when one axis is set non-visible, th
 silently behaves as `static`. Use `overflow-x: clip` on ancestors; it suppresses the same overflow
 without the side effect. A root-level `overflow-x: hidden` on `<html>` itself is safe, because
 nothing sits above it to be turned into an intermediate scroll container — the trap is specifically
-an *ancestor between the root and the sticky element*. That is why `assets/styles/shared/base.css`
-puts the guard on `html` and never on `body`.
+an *ancestor between the root and the sticky element*. That is why the generated `base.css` — written
+into your fluid output folder (`output.dir`) by `fluid generate`, and imported by `fluid.css` as
+`layer(base)` when `output.base` is on — puts the guard on `html` and never on `body`.
 
 Sticky is also fragile to ancestor `transform` and to anything else that creates a containing block
 — audit every ancestor. **The render-safe sticky rule: never put `transform` or `overflow-x: hidden`

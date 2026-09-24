@@ -109,10 +109,10 @@ export const STRUCTURE = {
             space: { type: 'boolean', default: true, doc: 'fluid-space-x/y-*.' },
             rounded: { type: 'boolean', default: true, doc: 'Scaled radii: fluid-rounded-*.' }
           }
-        },
-        aliases: { type: 'boolean', default: false, doc: 'Also emit the v1 names (--fluid-chrome, --fluid-column, fluid-frame). `fluid migrate` turns this on.' }
+        }
       }
-    }
+    },
+    aliases: { type: 'boolean', default: false, doc: 'Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on.' }
   }
 }
 

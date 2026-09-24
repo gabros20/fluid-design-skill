@@ -4,6 +4,28 @@ Read when: setting up colour, surface and type tokens; adding a dark section; po
 from another codebase.
 Skip when: working on pure layout.
 
+## Tokens live in `globals.css`, next to the fluid settings
+
+There is no separate tokens file to copy from (v1 shipped a `tokens.example.css` starter; v2 doesn't
+— nothing under `output.dir` is meant to hold your tokens, and `fluid generate` never touches your
+`:root`). Tokens go straight into your own stylesheet, `@theme` for the ramp and roles, `:root` for
+anything that isn't a Tailwind theme value — the same file, right below the one `fluid generate`
+told you to add: this is the shadcn pattern, one `globals.css` owning both the design tokens and the
+handful of fluid settings you've chosen to override:
+
+```css
+@import 'tailwindcss';
+@import '../styles/fluid/fluid.css';
+
+@theme {
+  /* your tokens */
+}
+:root {
+  /* your tokens */
+  --fluid-phone-scale-min: 0.8; /* only the fluid settings you change */
+}
+```
+
 ## Semantic names over the ramp
 
 Define the brand as ramps (`--color-brand-gold-50…900`, `--color-brand-dark-50…950`) and **alias them**
@@ -31,7 +53,7 @@ measures 1.52:1 on white. Give roles explicit names: `-ink` is text *in* the hue
 that clears 4.5:1), `on-` is text *on* the hue. The focus ring is not brand gold on light grounds
 either (1.29:1); a dark ring at 16:1 is the one that shows where you are.
 
-## Five traps that compile and render plausibly wrong
+## Four traps that compile and render plausibly wrong
 
 1. **`rounded-*` still rounds.** A `--radius-custom: 0` token *adds* a utility; it does not reset
    Tailwind's radius scale. A ported `rounded-xl` still rounds on a square-cornered design.
@@ -44,19 +66,24 @@ either (1.29:1); a dark ring at 16:1 is the one that shows where you are.
    both define `border-secondary` resolve it to different colours. Ported markup compiles and draws a
    near-invisible hairline. Namespace a second component set's tokens (`app-*`) so a foreign name
    either exists or fails, and never silently means something else.
-5. **A `--breakpoint-*` token defined in px while the rest stay on Tailwind's rem defaults reorders
-   every variant.** Tailwind v4 sorts breakpoint variants by comparing their lengths, and cannot
-   compare px against rem. Overriding only `--breakpoint-lg` (to match `engageAt`) leaves
-   `sm`/`md`/`xl`/`2xl` on the stock rem values, so the whole `lg:` block gets emitted before the
-   `sm:` block regardless of pixel width — measured: `sm:text-[64px]` beat `lg:fluid-display-112`
-   even though 1024px is wider than the 40rem `sm` breakpoint. It compiles, the classes are present,
-   and it renders like a plausible design choice. Fix: define the FULL ladder in one unit — this is
-   exactly what `assets/styles/tailwind-v4/fluid.css`'s generated `@theme` block does (`sm 640, md
-   768, lg = engageAt, xl 1280, 2xl 1536`, nudged to stay monotonic if `engageAt` collides with a
-   default rung). Never redeclare `--breakpoint-lg` alone in a second `@theme` block (see
-   `references/stacks.md`).
 
-`scripts/audit.mjs` catches 1, 2 and 5 (`tw-breakpoint-units`); a lint list of banned token families catches 4.
+`scripts/audit.mjs` catches 1 and 2; a lint list of banned token families catches 4.
+
+### The breakpoint ladder ships in `fluid.css` — don't redeclare rungs
+
+Tailwind v4 sorts breakpoint variants by comparing their lengths, and cannot compare px against rem,
+so a `--breakpoint-*` token defined in px while the rest stay on the stock rem defaults reorders
+every variant. That trap is why the generated `fluid.css` (`tailwind.breakpoints: "ladder"`, the
+default) emits the **whole** ladder in one unit itself: `sm 640, md 768, lg = bands.desktop.minWidth,
+xl 1280, 2xl 1536`, nudged to stay monotonic if `bands.desktop.minWidth` collides with a default
+rung. You don't write this — it's already in the file `fluid generate` produced. The one way to break
+it is to redeclare `--breakpoint-lg` (or any other rung) yourself in a second `@theme` block: that
+reintroduces the exact px-vs-rem mismatch the ladder exists to avoid, measured once as
+`sm:text-[64px]` beating `lg:fluid-display-112` even though 1024px is wider than the 40rem `sm`
+breakpoint — it compiles, the classes are present, and it renders like a plausible design choice.
+Set `tailwind.breakpoints: "none"` in `fluid.config.json` instead if you need to own the ladder
+yourself (`references/config.md`). `scripts/audit.mjs`'s `tw-breakpoint-units` check catches a
+redeclared rung.
 
 ## A dark theme later without touching components
 

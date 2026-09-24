@@ -73,12 +73,13 @@ export function migrateV1(v1) {
     roles: ['display', 'copy'],
     ui: v1.units?.chrome?.enabled ?? true,
     zoom: v1.zoomCompensation ?? true,
-    tailwind: { aliases: true, ...(v1.utilities ? { utilities: { ...v1.utilities } } : {}) }
+    aliases: true,
+    ...(v1.utilities ? { tailwind: { utilities: { ...v1.utilities } } } : {})
   }
   notes.push(`engageAt ${engageAt} -> bands.desktop.minWidth`)
   if (!mobileOn) notes.push('mobile arm off -> bands.phone: false (flat 1px below desktop). v1 .fluid-frame stepped its padding 24px -> 32px at 640px; v2 uses one --fluid-phone-container-padding (24). Add your own sm: class if you relied on the step.')
   if (v1.units?.chrome?.enabled === false) notes.push('units.chrome.enabled false -> ui: false')
-  notes.push('tailwind.aliases: true keeps --fluid-chrome, --fluid-column and fluid-frame working')
+  notes.push('aliases: true keeps --fluid-chrome, --fluid-column and fluid-frame working')
 
   const s = normaliseStructure(structure)
   const defaults = Object.fromEntries(settingsSpec(s).map((x) => [x.name, x.default]))

@@ -1,9 +1,9 @@
 {
   "generator": "fluid-design 2.0.0",
-  "build": "2.0.0+8e3835eb",
+  "build": "2.0.0+358498dc",
   "stack": "scss",
   "files": {
-    "fluid.css": "f4966909a6cd20b3",
+    "fluid.css": "08031eb0ed50f408",
     "base.css": "6f20df579330e8c1",
     "settings.reference.css": "b89c4d458b930015",
     "fluid.ts": "205a8508f44899f8",

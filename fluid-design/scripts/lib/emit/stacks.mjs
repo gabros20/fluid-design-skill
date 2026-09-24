@@ -18,8 +18,8 @@ export function vanillaClassesCss(structure) {
    Apply once per section, to that section's own inner wrapper. */
 .${p}-container {
   ${container}
-}${structure.tailwind.aliases ? `
-/* v1 name (tailwind.aliases). */
+}${structure.aliases ? `
+/* v1 name (aliases). */
 .${p}-frame {
   ${container}
 }` : ''}`
@@ -103,8 +103,8 @@ ${[...structure.roles.map((r) => [r, `${p}-${r}($size)`, `${p}-${r}($lh)`]), ['t
   max-width: var(--fluid-container-width);
   padding-inline: var(--fluid-container-padding);
 }
-${structure.tailwind.aliases ? `
-// v1 names (tailwind.aliases).
+${structure.aliases ? `
+// v1 names (aliases).
 @mixin ${p}-frame {
   @include ${p}-container;
 }

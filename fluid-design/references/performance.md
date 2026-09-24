@@ -59,35 +59,35 @@ re-lays-out on every frame of that animation, and if the scale itself were on `d
 ## 3. Image `sizes` on a page that grows
 
 A fixed-width site can describe an image slot with a px cap. A fluid page cannot: above the
-reference the frame grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), so every slot inside
-it grows too. A `sizes` value written against the drawn canvas tells the browser the slot is smaller
+reference the container grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), so every slot inside
+it grows too. A `sizes` value written against the drawn container tells the browser the slot is smaller
 than it is, the browser picks a smaller candidate, and the image renders upscaled and soft on
 exactly the large displays the scale was built for.
 
-Worked numbers at the defaults (canvas 1680, gutter 80, reference 1440×900, no ceiling), for an
-image drawn at half the frame:
+Worked numbers at the defaults (container 1680, padding 80, reference 1440×900, no ceiling), for an
+image drawn at half the container:
 
-| Viewport | f | Frame (≤ viewport) | Half-frame slot | `sizes` of `840px` says | `50vw` says |
+| Viewport | f | Container (≤ viewport) | Half-container slot | `sizes` of `840px` says | `50vw` says |
 |---|---|---|---|---|---|
 | 1440×900 | 1.00 | 1440 | 720 | 840 (fine) | 720 |
 | 1680×900 | 1.00 | 1680 | 840 | 840 | 840 |
 | 2560×1440 | 1.60 | 2560 | 1280 | 840: **1.5× short** | 1280 |
-| a window wide enough to hold the grown frame, f = 1.6 | 1.60 | 2688 (1680·1.6) | **1344** | 840: **1.6× short** | ≥ 1344 |
-| 2560×700 (short, wide) | 0.78 | 1680 (the cap never shrinks) | 840 | 840 | 1280 (over, costs bytes only) |
+| a window wide enough to hold the grown container, f = 1.6 | 1.60 | 2688 (1680·1.6) | **1344** | 840: **1.6× short** | ≥ 1344 |
+| 2560×700 (short, wide) | 0.78 | 1680 (the max-width never shrinks) | 840 | 840 | 1280 (over, costs bytes only) |
 
 So a half-width image at f = 1.6 is about **1344px** wide in CSS pixels, and about 2688 device
 pixels on a 2× display. That is where the "re-export at about 3000 wide" advice in
 `preflight.md` §5 comes from.
 
-- **Write `sizes` in `vw` above the engage breakpoint**, as the fraction of the viewport the slot
-  occupies when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The frame is never wider than
+- **Write `sizes` in `vw` above the desktop band's breakpoint**, as the fraction of the viewport the slot
+  occupies when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The container is never wider than
   the viewport, so `vw` is always at least the slot; it overestimates only when height binds,
-  which costs bytes, never sharpness. Subtract the gutter only if the bytes matter
-  (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled gutter is `80·f`).
+  which costs bytes, never sharpness. Subtract the padding only if the bytes matter
+  (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled padding is `80·f`).
 - **`sizes` cannot read `var(--fluid)`.** It is parsed before any stylesheet, so custom properties
   and the `fluid-*` utilities mean nothing there. Express the slot in `vw` and `px` only.
 - **Ship candidates up to twice the largest slot**, or set a `ceiling` (`fluid-scale.md` §7). With
-  `ceiling: 1.5` the half-frame slot stops at 1260.
+  `ceiling: 1.5` the half-container slot stops at 1260.
 - Framework image components (`next/image` and friends) take the same `sizes` string; the default
   `100vw` is only correct for a full-bleed image.
 - Reserve every image's box so the scale's own resize never shifts content: see `media.md` §2.
@@ -134,7 +134,7 @@ Enforceable numeric targets, worth wiring into CI rather than trusting review to
 
 ## Traps
 
-- ★ A `sizes` px cap written against the drawn canvas: the slot is 1.5–1.6× larger at 2560 and the
+- ★ A `sizes` px cap written against the drawn container: the slot is 1.5–1.6× larger at 2560 and the
   image renders soft (§3).
 - ★ `content-visibility: auto` on anything that is measured zeroes its geometry (§5).
 - `var(--fluid)` inside `sizes`: it is never resolved there (§3).

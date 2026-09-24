@@ -1,52 +1,63 @@
 # Styling stacks: the same units, five spellings
 
 Read when: implementing in a stack other than Tailwind v4, or choosing a stack.
-Skip when: you are on Tailwind v4 and the utilities are installed.
+Skip when: you are on Tailwind v4 and `fluid.css` is already imported.
 
-Every stack spends the same four custom properties (`--fluid`, `--fluid-display`, `--fluid-copy`,
-`--fluid-chrome`), defined once on `:root` and redefined inside the engage media query. Only the
-authoring surface differs. Generate each stack's layer with
-`node scripts/generate-fluid.mjs --stack <name>`. The files in `assets/styles/<name>/` are the
-defaults, pre-generated.
+Every stack spends the same custom properties (`--fluid`, `--fluid-<role>` per entry in `roles`,
+`--fluid-ui` with `ui: true`, `--fluid-container-width`/`-padding`, `--header-h`), defined once on
+`:root, .<prefix>-scope` and redefined inside each band's media query. Only the authoring surface
+differs. `output.stack` in `fluid.config.json` picks it; `fluid generate` writes **one `fluid.css`
+per stack** into `output.dir` — there is no separate "install the layer for stack X" step, and no
+`--stack` flag to hand-pick a different one at generate time. The files under `assets/styles/<name>/`
+are the same generator's output at the shipped defaults, for reference.
 
 ## Tailwind v4 (richest)
 
-`assets/styles/tailwind-v4/fluid.css` after `@import 'tailwindcss'`. Functional `@utility` families take the
-drawn number: `lg:fluid-py-120`, `lg:fluid-display-64/72`, `lg:fluid-cap-1680`.
-- The breakpoint prefix is how the scale stays desktop-only. Below `lg` the units are 1px anyway,
-  but the mobile *values* differ from the drawn desktop ones, so the fluid classes are always prefixed.
-  With the mobile arm on (`fluid-scale.md` §13), the unprefixed utility is the phone frame's drawn
-  number and scales too: `fluid-py-48 lg:fluid-py-120`.
-- Arbitrary values spend the units directly when no utility fits: `lg:grid-cols-[1fr_calc(512*var(--fluid))]`,
-  `lg:px-[calc(24*var(--fluid-copy))]`.
-- Register the families with tailwind-merge (`cn.ts`).
-- `--breakpoint-lg` in `@theme` must equal `engageAt`.
-- **Define the whole breakpoint ladder in px, never `lg` alone.** Tailwind v4 has no
-  `tailwind.config` to read a breakpoint order from — only whatever `--breakpoint-*` tokens a
-  project's `@theme` defines, with Tailwind's own rem defaults filling in anything left undefined.
-  It then emits variants in min-width order by comparing breakpoint LENGTHS, and a px value is not
-  comparable against a rem one. Override only `--breakpoint-lg` (in px, to match `engageAt`) and the
-  `sm`/`md`/`xl`/`2xl` rungs stay on the rem defaults: the whole `lg:` block sorts before `sm:`
-  regardless of pixel width — measured, `sm:text-[64px]` beat `lg:fluid-display-112` even though
-  1024px is wider than the 40rem `sm` breakpoint. It compiles clean and looks like a design mistake,
-  not a units bug. `lg: 64rem` instead of `1024px` is not the fix either: a rem media query follows
-  the visitor's browser font-size setting, while `fluid.css`'s own hand-written
-  `(width >= 1024px)` query does not — the two would silently disagree for any visitor whose default
-  font size is not 16px. (Browser zoom is not the cause: it scales px and em media queries alike.)
-  The generated `assets/styles/tailwind-v4/fluid.css` ships the full ladder for this reason (`sm
-  640, md 768, lg = engageAt, xl 1280, 2xl 1536px`, nudged to stay monotonic if `engageAt` collides
-  with a default rung); `tokens.example.css` must never redeclare `--breakpoint-lg` on its own.
-  `scripts/audit.mjs`'s `tw-breakpoint-units` rule flags a mixed-unit or partial `--breakpoint-*`
-  block as an error.
+`<output.dir>/fluid.css`, imported once after `@import 'tailwindcss';`. It carries the `@theme`
+breakpoint ladder, the band `@custom-variant`s, the engine and the full `@utility` vocabulary
+(`contract.md` §3). Functional `@utility` families take the drawn number: `lg:fluid-py-120`,
+`lg:fluid-display-64/72`, `lg:fluid-cap-1680`.
 
-**Tailwind v3**: there is no functional `@utility`. Either upgrade, or add the vanilla layer and write arbitrary
-values `lg:py-[calc(120*var(--fluid))]`. That works, but it is verbose and easy to get wrong. Recommend the
-upgrade.
+- The band-variant prefix is how the scale stays desktop-only by default. Below `lg` the units are
+  1px anyway when `bands.phone` is off, but with the mobile bands on (the v2 default) the
+  unprefixed utility is live too — it spends the phone frame's numbers, and each `fluid-<band>:`
+  variant overrides it: `fluid-py-48 lg:fluid-py-120` (or `fluid-tablet:fluid-py-64` for a tablet
+  override).
+- Arbitrary values spend the units directly when no utility fits:
+  `lg:grid-cols-[1fr_calc(512*var(--fluid))]`, `lg:px-[calc(24*var(--fluid-copy))]`.
+- Register the families with tailwind-merge — the generated `cn.ts` already does this for every
+  utility `fluid.css` emits, including the opt-in families that are on.
+- `tailwind.breakpoints: "ladder"` (default) makes `--breakpoint-lg` in `@theme` equal
+  `bands.desktop.minWidth`; do not redeclare it yourself.
+- **`fluid.css` defines the whole breakpoint ladder in px, never `lg` alone, when
+  `tailwind.breakpoints` is `"ladder"`.** Tailwind v4 has no `tailwind.config` to read a breakpoint
+  order from — only whatever `--breakpoint-*` tokens a project's `@theme` defines, with Tailwind's
+  own rem defaults filling in anything left undefined. It then emits variants in min-width order by
+  comparing breakpoint LENGTHS, and a px value is not comparable against a rem one. Overriding only
+  `--breakpoint-lg` (in px) and leaving `sm`/`md`/`xl`/`2xl` on the rem defaults sorts the whole
+  `lg:` block before `sm:` regardless of pixel width — measured, `sm:text-[64px]` beat
+  `lg:fluid-display-112` even though 1024px is wider than the 40rem `sm` breakpoint. It compiles
+  clean and looks like a design mistake, not a units bug. `lg: 64rem` instead of `1024px` is not
+  the fix either: a rem media query follows the visitor's browser font-size setting, while the
+  hand-written `(width >= 1024px)` band query does not — the two would silently disagree for any
+  visitor whose default font size is not 16px. (Browser zoom is not the cause: it scales px and em
+  media queries alike.) `scripts/lib/emit/tailwind.mjs`'s `breakpointLadder()` builds it
+  (`sm 640, md 768, lg = bands.desktop.minWidth, xl 1280, 2xl 1536px`, nudged to stay monotonic if
+  the desktop band collides with a default rung, with a note comment in the generated CSS when it
+  does); `tailwind.breakpoints: "none"` opts out and leaves `@theme` breakpoints to the project —
+  `fluid check` then verifies any project-owned `--breakpoint-lg` still equals
+  `bands.desktop.minWidth`.
+
+**Tailwind v3**: there is no functional `@utility`. Either upgrade, or set `output.stack: "css"`
+and write arbitrary values `lg:py-[calc(120*var(--fluid))]`. That works, but it is verbose and easy
+to get wrong. Recommend the upgrade.
 
 ## Vanilla CSS and CSS Modules
 
-`assets/styles/css/fluid.css` provides the units, `--header-h` and `.fluid-frame`. Author per component
-inside the engage media query:
+`output.stack: "css"`. `<output.dir>/fluid.css` provides the units, `--header-h` and one class,
+`.fluid-container` (the page container — `width: 100%; margin-inline: auto; max-width:
+var(--fluid-container-width); padding-inline: var(--fluid-container-padding)`). Author per
+component inside each band's media query:
 
 ```css
 .hero { padding: 80px 24px 40px; }
@@ -56,40 +67,64 @@ inside the engage media query:
 }
 ```
 
-There are no helper classes per value, because vanilla has no arbitrary values, and a class per number is
-the explosion the functional utilities avoid. CSS Modules is the same, with class names scoped.
+There are no helper classes per value, because vanilla has no arbitrary values, and a class per
+number is the explosion the functional utilities avoid. **CSS Modules is the same stack** —
+`output.stack: "css"` again, with class names scoped by the bundler; nothing about fluid-design
+changes for it. There is no separate CSS Modules output.
 
 ## SCSS
 
-`assets/styles/scss/_fluid.scss` provides `fluid(120)`, `fluid-display(64)`, `fluid-copy(14)`,
-`fluid-text(56)`, `fluid-chrome(48)`, `fluid-cap(1680)`, and the mixins `fluid-up`, `fluid-type($size, $lh, $unit)`,
-`fluid-frame` and `fluid-units`. The functions `@error` on a number that already has a unit, which turns the
-silent `64px * var(--fluid)` failure into a build error. That is a genuine improvement over the Tailwind path.
+`output.stack: "scss"`. `<output.dir>/_index.scss` provides the functions and mixins on top of the
+same `fluid.css` (import `fluid.css` once, globally, from your JS entry or a plain `@import`; the
+units, settings and base styles live there, not in `_index.scss`):
+
+```scss
+@use 'fluid' as fd;   // the folder that holds fluid/ must be on Sass loadPaths
+.hero { @include fd.fluid-desktop { padding-block: fd.fluid(120); @include fd.fluid-type(64, 72); } }
+```
+
+`fd.fluid($n)`, `fd.fluid-<role>($n)` per role, `fd.fluid-ui($n)` (`ui: true`), `fd.fluid-text($n,
+$size: $n)`, `fd.fluid-cap($n)`, the mixin `fd.fluid-type($size, $lh, $unit: <first role>)`, band
+mixins `fd.fluid-phone`, `fd.fluid-tablet`, `fd.fluid-landscape`, `fd.fluid-desktop` (one per
+enabled band; `fd.fluid-up` is an alias of `fd.fluid-desktop`), and `fd.fluid-container`. The
+functions `@error` on a number that already has a unit, which turns the silent
+`64px * var(--fluid)` failure into a build error. That is a genuine improvement over the Tailwind
+arbitrary-value path. Full list: `contract.md` §4.
 
 ## StyleX
 
-`assets/styles/stylex/`: `defineVars` for the units plus typed helpers returning `calc()` strings.
-Author the breakpoint as a StyleX media-query key. See its README for the one limitation (nested
-`max()`/`min()` inside `defineVars`).
+`output.stack: "stylex"`. `<output.dir>/fluid.stylex.ts`: typed helpers returning `calc()`
+strings — `fluid(n)`, `fluidDisplay(n)` / `fluidCopy(n)` (one per role, camelCased), `fluidUi(n)`
+(`ui: true`), `fluidText(n, size = n)`, `fluidCap(n)`, and `fluidContainer` (a plain style object,
+not a function). Author the breakpoint as a StyleX media-query key against `DESKTOP_QUERY` from the
+generated `fluid.ts`. The one limitation: StyleX's `defineVars` cannot express a variable whose
+formula reads a sibling variable, which every fluid unit does — that is why the units are plain
+global CSS (`fluid.css`, imported once) and StyleX only gets typed `calc()`-string helpers, not
+`defineVars` tokens.
 
 ## Choosing
 
-| If the project… | Use |
+| If the project… | `output.stack` |
 |---|---|
-| is greenfield or already on Tailwind v4 | Tailwind v4 |
-| is on Tailwind v3 and cannot upgrade | vanilla layer + arbitrary values |
-| uses Sass | SCSS |
-| uses CSS Modules or plain CSS | vanilla |
-| uses StyleX | StyleX |
-| mixes several | the one owning the section being built; the units are shared, so mixing is safe |
+| is greenfield or already on Tailwind v4 | `tailwind-v4` |
+| is on Tailwind v3 and cannot upgrade | `css` + arbitrary values |
+| uses Sass | `scss` |
+| uses CSS Modules or plain CSS | `css` |
+| uses StyleX | `stylex` |
+| mixes several | the one owning the section being built; the units and `fluid.ts` are shared, so mixing is safe |
 
 ## Traps
 
-- Overriding only `--breakpoint-lg` in px: the rem defaults for the other rungs sort the whole `lg:`
-  block before `sm:`. Ship the full ladder in px.
-- `lg: 64rem` as the "fix": a rem query follows the browser font-size, `fluid.css`'s px query does not.
-- Fluid classes without the breakpoint prefix, when the mobile arm is off: they are then plain px on
-  mobile, so they only make sense for a value that is the same number on both frames.
-- Two classes for one property outside `cn()`: stylesheet order picks the winner (`frame-and-gutter.md` §5).
+- Overriding only `--breakpoint-lg` in px with `tailwind.breakpoints: "none"` and no ladder of your
+  own: the rem defaults for the other rungs sort the whole `lg:` block before `sm:`. Either keep
+  `"ladder"` (default) or ship the full ladder yourself in px.
+- `lg: 64rem` as the "fix": a rem query follows the browser font-size, the band's px query does not.
+- Fluid classes without the band-variant prefix, when `bands.phone` is off: they are then plain 1px
+  units below desktop, so they only make sense for a value that is the same number on every band.
+- Two classes for one property outside `cn()`: stylesheet order picks the winner
+  (`frame-and-gutter.md` §5).
 - `64px * var(--fluid)` in vanilla or Tailwind arbitrary values: invalid and silently dropped. SCSS
   turns it into a build error.
+- Hand-editing anything in `output.dir`: it is generated. `fluid generate` refuses to overwrite a
+  hand-edited file without `--force`; move the change into `fluid.config.json` (structure) or a
+  setting (a number) instead.

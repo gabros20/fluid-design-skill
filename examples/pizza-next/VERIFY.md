@@ -15,7 +15,7 @@ stopped myself. The last full run followed the final code change. Compact eviden
 
 | Finding | Kept because |
 |---|---|
-| INFO `fixed-px-at-engage` Header.tsx:79, `lg:tracking-[0.08em]` | Tracking in `em` is deliberately off the scale (typography.md). The line also carries `--fluid-chrome` arbitrary values, which is the documented way to spend chrome. |
+| INFO `fixed-px-at-engage` Header.tsx:79, `lg:tracking-[0.08em]` | Tracking in `em` is deliberately off the scale (typography.md). The line also carries `fluid-ui-*` utilities, which is the documented way to spend the `ui` unit. |
 
 ## 3. Viewport matrix — PASS, 27/27
 
@@ -197,3 +197,22 @@ column); landscape tablets (1024+) take the desktop design. `fluid.config.json` 
 See it: DevTools device mode, then iPhone SE → 15 → Pro Max (same composition, slightly larger),
 rotate to landscape (a touch larger, centred), iPad Air portrait (larger still, centred column),
 iPad landscape (the desktop design).
+
+## fluid-design v2, added 2026-09-24
+
+Migrated with `fluid migrate --write`, then `fluid generate`: `fluid.config.json` is now the
+11-line v2 shape (`version: 2`, `bands`, `output.integration: "next"`); every tuning number that
+used to live in that file is now a registered CSS variable, left at its default in
+`src/app/globals.css`'s `:root`. The generated output moved from three hand-copied files
+(`src/styles/fluid.css`, `src/styles/base.css`, `src/styles/tokens.css`) plus `src/lib/cn.ts` and
+`src/lib/frame.ts` to one generated folder, `src/styles/fluid/`, with a single import
+(`@import '../styles/fluid/fluid.css'`). Browser-zoom inlining moved from a hand-imported
+`FLUID_ZOOM_INLINE` script to `<FluidHead />` (`src/styles/fluid/integrations/next`). No visual or
+behavioural change was intended by the migration; the checks below confirm none happened.
+
+- **verify-matrix:** PASS in Chromium, WebKit and Firefox, including the real-zoom row.
+- **Geometry:** identical to the pre-migration (v1) build at 9 of 10 verified viewports. The
+  exception is 320×568, where type differs by 0.3% — v1 rounded its phone floor to 2 decimals,
+  v2's knee computes it exactly (`fluid-design/references/config.md`, "The engine"). Not a
+  regression; the more precise number is v2's.
+- **verify-motion:** `--reveal --scenes --anchors` PASS.

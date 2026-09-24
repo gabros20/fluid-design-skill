@@ -132,7 +132,7 @@ const decls = (pairs, indent) => pairs.map(([k, v]) => `${indent}${k}: ${v};`).j
  *   { properties: string (the @property block),
  *     rules: [{ media: string|null, comment, pairs: [[name, value]] }] }
  */
-export function engineParts(structure, { buildId, aliases = structure.tailwind.aliases } = {}) {
+export function engineParts(structure, { buildId, aliases = structure.aliases } = {}) {
   const specs = settingsSpec(structure)
   const properties = specs
     .filter((s) => s.registered)

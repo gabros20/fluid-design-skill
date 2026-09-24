@@ -7,16 +7,16 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 1. The problem it solves
 2. The model: drawn number × unit
 3. The base unit and its two arms
-4. The reference is a viewport, not the canvas
-5. The type units and their floors
-6. The chrome unit
+4. The reference is a viewport, not the container
+5. The type units and the knee
+6. The ui unit
 7. No ceiling (and when to set one)
-8. Configuration knobs and how each derives
+8. Configuration knobs and where they live
 9. Adding a role
-10. One scale: why sections may not re-anchor it
+10. One scale: why sections may not re-anchor it (and what `fluid-scope` is actually for)
 11. Interop with animation (if any)
 12. Limitations, and browser zoom
-13. The mobile arm (optional)
+13. The bands (phone / tablet / landscape / desktop)
 14. Traps
 
 ---
@@ -25,8 +25,8 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 
 A section built at the numbers of a 1680×900 frame is that size on every screen. It fails on both axes:
 
-- **Height.** A 900px section sits 160px past the bottom edge of the glass in a 1440×740 window. A pinned scene's last act ends
-  below the fold.
+- **Height.** A 900px section sits 160px past the bottom edge of the glass in a 1440×740 window. A pinned scene's
+  last act ends below the fold.
 - **Width.** At 900 tall, where a height-only scale does nothing (its factor is exactly 1.000), the
   drawn three-line heading only holds down to 1440 wide. Below that the copy column narrows against a fixed
   512px stat grid and the heading blows out: four lines at 1280, **seven** at 1100 and 1024.
@@ -52,7 +52,7 @@ written as that number, multiplied by the unit:
 64px in the frame  →  calc(64 * var(--fluid-display))  →  lg:fluid-display-64
 ```
 
-At 1440×900 the result is 64px, exactly the drawn value. At 1440×700 the unit is about 0.88 and the result is 56.3px.
+At 1440×900 the result is 64px, exactly the drawn value. At 1440×700 the unit is about 0.78 and the result is 49.8px.
 Everything shrinks against one shared factor, so the frame's proportions hold by construction. There
 is no table of per-property min/max pairs to keep in sync, which is the failure mode of
 per-property `clamp()` systems.
@@ -70,10 +70,19 @@ calc(var(--mark-h) * var(--fluid))    // INVALID, silently kills the rule
 calc(var(--mark-h-n) * var(--fluid))  // correct
 ```
 
-If a value must be a plain length below the breakpoint and a scaled one above it, keep two tokens.
-`scripts/audit.mjs` flags this (`length-times-unit`), and the SCSS functions `@error` on it.
+If a value must be a plain length below a band's breakpoint and a scaled one above it, keep two tokens.
+`fluid audit <src>` flags this (`length-times-unit`), and the SCSS functions `@error` on it.
 
 ## 3. The base unit and its two arms
+
+Every band computes `--fluid` the same shape: the smaller of a width arm and (desktop only, when
+`fit-height` is on) a height arm, clamped between a floor and a ceiling. Each band reads its own
+settings (`--fluid-<band>-base-width`, `-base-height`, `-scale-min`, `-scale-max`; `references/config.md`
+has the full list), but the formula the generator writes is one shape, once, on `:root, .fluid-scope`
+(`fluid-scope.md` §10) — only the *parameters* a band block points at change per band.
+
+At the defaults, the desktop band (`--fluid-desktop-base-width: 1440`, `-base-height: 900`,
+`-scale-min: 0.58`, `-scale-max` unset):
 
 ```css
 --fluid: max(0.58px, min(100svh / 900, 100vw / 1440));          /* the maths */
@@ -86,7 +95,9 @@ and `clamp()` to that grid. On a unit of about 0.71px that loses up to 1/60px, 1
 drawn number multiplies it. Measured in Firefox 155 at 1024×640: `calc(900 * var(--fluid))` came
 out 630px in a 640px window, so a one-screen section left a 10px gap. Comparing lengths 1000 times
 larger and dividing once afterwards leaves 0.017px (639.983). Chromium and WebKit were exact either
-way. Every unit the generator emits uses this form; a hand-written unit must too.
+way. Every unit the generator emits uses this form; a hand-written unit must too. The engine also
+uses only `min()`/`max()`/`calc()` — no `clamp()`, no `round()` — because `clamp(a, b, c)` is just
+`max(a, min(b, c))` and writing it out keeps every comparison on the same ×1000 lengths.
 
 - **`min()` means fit.** It is `object-fit: contain` written as a scale factor, so the composition can
   never outgrow either axis. `max()` would be cover, and would let text overflow. Separate units per axis
@@ -100,20 +111,28 @@ way. Every unit the generator emits uses this form; a hand-written unit must too
   (Pinned layers use `lvh`; see the `scroll-animation` skill, `references/scroll-scenes.md`.)
 - **`100vw` includes a classic scrollbar gutter.** That is harmless when scrollbars are hidden or overlay. If it bites,
   use `calc((100vw - var(--scrollbar-width)) / 1440)`.
-- **Floor 0.58** was *chosen*, not derived: "structure stops compressing at a 522px-tall section".
-  It is nearly unreachable, because at 1024 wide the width arm is already 0.711.
+- **`--fluid-desktop-scale-min: 0.58`** was *chosen*, not derived: "structure stops compressing at a 522px-tall section".
+  It is nearly unreachable, because at 1024 wide the width arm is already 0.711. Unlike a v1 `floor`, this is a
+  live CSS variable — change it without a regenerate.
+- **`--fluid-desktop-fit-height: 0`** turns the desktop band width-only: `max(scale-min, min(100vw/base-width, scale-max))`.
+  The mobile bands (§13) are width-only by construction — they scale a phone frame, which has no
+  "fits one screen" guarantee to keep.
 
-Below `engageAt` all units are a flat `1px`. Mobile is untouched on purpose: below the breakpoint,
-sections stack and scroll, so there is nothing to fit.
+Below the desktop band's breakpoint (`bands.desktop.minWidth`, default 1024), which band's formula
+runs depends on `bands.phone`: by default (`bands.phone: true`) the phone, tablet and landscape
+bands each scale their own frame the same way (§13). Set `bands.phone: false` and everything below
+desktop is a flat `1px` unit instead — v1's only mobile behaviour.
 
-## 4. The reference is a viewport, not the canvas
+## 4. The reference is a viewport, not the container
 
 This is the most surprising part of the system, and the part most likely to be "fixed" wrongly.
 
 The height reference matches the drawing: frames are 900 tall and the arm divides by 900. The width
 reference does not: frames are 1680 wide, but the arm divides by **1440**. So a number read from
 Figma means "this size at 1440 wide", not "this size in a 1680 frame, scaled". Between 1440 and 1680
-the factor stays pinned at 1.0 by the height arm, and the composition just gains room.
+the factor stays pinned at 1.0 by the height arm, and the composition just gains room. 1680 is the
+default `--fluid-desktop-container-width` — the page container's cap (§6, `fluid-container`), not the
+unit's reference.
 
 The drawing is a wider shape than the screen (1.87:1 against 1.60:1), and a contain fit has to
 letterbox one axis. There is no third answer:
@@ -121,52 +140,56 @@ letterbox one axis. There is no third answer:
 | | Horizontal | Vertical |
 |---|---|---|
 | **1440 reference (this system)** | 240px of drawn content does not fit | sections fill the window exactly |
-| 1680 reference + scaled gutters | pixel-exact at every width | a 771px section in a 900px window |
+| 1680 container width + scaled padding | pixel-exact at every width | a 771px section in a 900px window |
 
 The second option was modelled and **rejected twice**. It shrinks every rendering already approved at 1440 by
 14%, and it breaks `900 × --fluid = 100svh` across most of the range. That guarantee is load-bearing:
 it is what makes a four-act pinned scene exactly 4.00 viewports long.
 
-**Practical consequence: treat 1440 as a content budget, not a canvas.** Drawn content must fit
-`reference.width − 2 × gutter` (1280) at full size. The outer 400px is air a wide screen gains, not
-space to compose in. Check it with `scripts/calc.mjs budget`. A row over budget is fixed in the drawing
-(take the difference out of the whitespace, with design sign-off) or with `cqw`
-(`frame-and-gutter.md`), never by changing the divisor.
+**Practical consequence: treat 1440 as a content budget, not a container.** Drawn content must fit
+`base-width − 2 × container-padding` (1440 − 160 = 1280) at full size. The outer 400px (to the 1680
+container cap) is air a wide screen gains, not space to compose in. Check it with `fluid calc budget`.
+A row over budget is fixed in the drawing (take the difference out of the whitespace, with design
+sign-off) or with `cqw` (`frame-and-gutter.md`), never by changing the divisor.
 
-## 5. The type units and their floors
+## 5. The type units and the knee
 
 Things do not compress equally: halving a section's padding is invisible, and halving 14px body copy
-makes it unreadable. Each type unit is a **damping of `--fluid`**:
+makes it unreadable. Each type unit is a **damping of `--fluid`** (or `--fluid-z` with `zoom: true`,
+§12), plus an optional hard floor:
 
 ```css
---fluid-display: max(0.82px, var(--fluid), calc(0.62 * var(--fluid) + 0.38px));
---fluid-copy:    max(0.90px, var(--fluid), calc(0.33 * var(--fluid) + 0.67px));
+--fluid-display: max(--fluid, d·max(--fluid, knee) + (1 − d), floor);   /* d = --fluid-desktop-display-damping, 0.62 default */
+--fluid-copy:    max(--fluid, d·max(--fluid, knee) + (1 − d), floor);   /* d = --fluid-desktop-copy-damping,    0.33 default */
 ```
 
-Read `0.62` as "display type shrinks at 62% of the rate the layout does". There are three arms, and which one wins
-**is** the behaviour:
+Read `0.62` as "display type shrinks at 62% of the rate the layout does". `floor` is
+`--fluid-desktop-<role>-floor`, an **optional** setting — unset by default, because the knee below
+already holds type up.
 
-| Arm | Wins when | Result |
-|---|---|---|
-| floor | tiny windows | shrinking stops |
-| `var(--fluid)` | above the reference | proportional growth |
-| damped | below the reference | gentle shrink |
-
+- **The knee replaces v1's `floor: "auto"`.** `knee = bands.desktop.minWidth / base-width`
+  (1024 / 1440 = 0.7111 at the defaults) — exact, and it moves live with either setting, no
+  regenerate. On mobile bands the knee is just that band's `scale-min`, which is a no-op: `--fluid`
+  on those bands never drops below its own `scale-min` by construction, so `max(--fluid, knee)`
+  always resolves to `--fluid` there, and mobile type just follows the plain damped curve. Desktop is
+  the one band where the knee does real work, because its `scale-min` (0.58) sits *below* the knee
+  (0.7111): the composition keeps compressing past the knee, and type stops at the value it reached
+  there.
+- **Exactly v1's auto floor, by construction.** `d · engageAt/W + (1 − d)` (v1) and
+  `d · knee + (1 − d)` (v2) are the same expression with `knee = engageAt/W`. The only numeric
+  difference: v1 rounded the floor to 2 decimals; v2 computes it live. Measured on the examples,
+  this only shows up at 320×568, 0.3% of the type size.
 - **Damping is a shrinking idea only.** Extended upward, type would grow slower than its own frame,
   which loosens the type-to-column ratio that governs line breaks. Above the reference every length
   shares one factor, so wrap points match the frame by construction.
 - **The design point is exact for any damping**, since `d·1 + (1−d) = 1`.
 - **Two dampings, because one fails both ways.** Measured: 0.45 blows the heading to five lines at
   1024×900; 0.55 takes body copy to 13.5px at 1440×640. 0.62 and 0.33 hold four lines and 14.5px.
-- **Floors are derived, not picked.** Each floor is the value its curve reaches at the engage
-  breakpoint (`d · engageAt/W + (1−d)`). At the defaults: `0.62·0.711+0.38 = 0.82`, and
-  `0.33·0.711+0.67 = 0.90`. So each role hands over to the mobile layout at exactly the value it
-  reached. In drawn px that means heading 64 → 52.5, body 16 → 14.4, and the smallest run 14 → 12.6. The generator
-  computes this (`floor: "auto"`).
 - **A known knee:** the type floors engage at f ≈ 0.70 while the base keeps going to 0.58, so
-  between those values type is flat while layout still compresses. This only bites under a 639px-tall window.
+  between those values type is flat while layout still compresses. This only bites under a 640px-tall
+  desktop-band window (width ≥ 1024, height short enough that the height arm binds below the knee).
 
-Resolved factors at the defaults (reproduce with `scripts/calc.mjs table`):
+Resolved factors at the defaults (reproduce with `fluid calc table`, run inside a project):
 
 | `--fluid` | at height | at width | display | copy |
 |---|---|---|---|---|
@@ -180,37 +203,44 @@ the type keeps its presence. A floor alone would have let type shrink at the lay
 stop dead.
 
 Which unit a given run of type uses is decided by its **container**; see `typography.md` §Choosing a unit.
+Adding a third role beyond `display`/`copy` is one config entry, not a hand-written formula — §9.
 
-## 6. The chrome unit
+## 6. The ui unit
 
-Site chrome (header row, menu type, dropdowns, footer links) is not section composition. When height
+Site ui (header row, menu type, dropdowns, footer links) is not section composition. When height
 binds on a short-but-wide window, the layout unit correctly shrinks section frames, but the same shrink
 made the nav and footer look undersized without buying any fit.
 
 ```css
---fluid-chrome: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
+--fluid-ui: min(calc(100vw / 1440), max(1px, calc(100svh / 900)));
 /* width always; height never pulls it below the design point */
 ```
 
-| Window | `--fluid` | `--fluid-chrome` |
+| Window | `--fluid` | `--fluid-ui` |
 |---|---|---|
 | 1440×700 (short, wide) | 0.78 | **1.00** |
 | 1024×900 (narrow, tall) | 0.71 | **0.71** (the nav still has to fit) |
 | 2560×1440 | 1.60 | 1.60 |
 
-It has no utility family: call sites spend it the long way, `lg:h-[calc(48*var(--fluid-chrome))]`.
-The page rail (cap and gutter) and the header's inset from the top stay on `--fluid`, so the header
-stays in lockstep with the hero's top padding.
+With `ui: true` (the default) it has its own utility family, `fluid-ui-{p,px,py,gap,w,h,size,text}-*`
+and `fluid-ui-text-*`, and the SCSS/StyleX helpers `fluid-ui()`/`fluidUi()` — v1's chrome had none of
+these; call sites spent it the long way, `lg:h-[calc(48*var(--fluid-chrome))]`. Script reads it as
+`fluidPx(n, 'ui')` (`'chrome'` is accepted as the v1 alias). The header's container (max width and padding) and its
+inset from the top stay on `--fluid`, so the header stays in lockstep with the hero's top
+padding: `--header-h = header-inset·--fluid + safe-top + header-row`, where `header-row` is
+`header-height · --fluid-ui` on desktop and a flat CSS px on mobile (`--fluid-desktop-header-height`,
+`--fluid-<band>-header-height`).
 
-**`ceiling` also caps `--fluid-chrome`.** Chrome does not read `var(--fluid)` (it has
-its own formula, not a damping of the base unit), so a `ceiling` on `--fluid` does nothing to it by
-itself: `--fluid-chrome` is wrapped in its own `min(<ceiling>px, …)`. Without this, chrome keeps
-growing past the point every other role on the page stopped — measured at 3840×2160 with `ceiling:
-1.6`: the hero headline (on the ceiling-capped `--fluid-display`) held at 320px while a footer
-wordmark on `fluid-chrome(200)` reached 480px, 1.5× past everything beside it, on exactly the
-screens a ceiling exists to tame. Chrome still ignores the *floor* (`units.fluid.floor`) — only the
-ceiling half of "independent of floor/ceiling" changed; chrome's own `max(1px, heightArm)` clause
-already does the floor's job for it. See §7.
+**`scale-max` caps `--fluid-ui` too, automatically.** Both units read the same private
+`--_fluid-max` parameter, which the band block points at `--fluid-desktop-scale-max`. Setting that
+one setting caps both — there is no separate ceiling to remember for ui, which is a real trap v1
+had (§6 there needed its own `min(ceiling, …)` wrap on chrome, easy to forget). See §7.
+
+**Intentional v2 change:** with `--fluid-desktop-fit-height: 0` (v1 `heightAxis: false`),
+`--fluid-ui` now also ignores height — it shares `--fluid`'s height-arm input, which `fit-height 0`
+disables. v1's chrome always read the height arm regardless of `heightAxis`, so a short wide window
+kept the header at 1× while the layout grew. If you rely on the old asymmetry, note it when
+migrating.
 
 ## 7. No ceiling (and when to set one)
 
@@ -225,53 +255,92 @@ space. CSS pixels are not device pixels, which keeps this tamer than it sounds:
 | 32" Pro Display XDR | 1.78 | 1600 | 114 | 28 |
 
 The real ceiling is asset resolution. Inline SVG scales perfectly; a 1920-wide raster upscales. Either
-re-export at about 3000 wide or set `ceiling`. The generator then emits `min(<ceiling>px, …)` on the
-base unit, and the type units stop with it — and, separately, `min(<ceiling>px, …)` on
-`--fluid-chrome` too (§6), since chrome does not read `var(--fluid)` and would
-otherwise keep growing past the cap on the very displays that set it.
+re-export at about 3000 wide or set `--fluid-desktop-scale-max` (unset by default — no ceiling). Both
+`--fluid` and, by construction, `--fluid-ui` stop growing with it (§6); the type units stop with
+`--fluid` too, since they are built from it. Check a specific viewport with
+`fluid calc px 64 --unit display --at 3840x2160`, or `fluid explain 3840x2160`.
 
-## 8. Configuration knobs
+## 8. Configuration knobs and where they live
 
-| Knob | Default | Effect |
+Two kinds, split by one rule (`config.md`): **structure** (`fluid.config.json`, needs
+`fluid generate`) changes which CSS rules exist; **settings** (CSS variables, registered with
+`@property`, live in your own `:root`) change a number inside those rules, no regenerate.
+
+| What | v2 name | Kind |
 |---|---|---|
-| `reference` | 1440×900 | Where one unit is 1px. The two divisors in `--fluid`. **Not a free knob; see §4.** |
-| `engageAt` | 1024 | Where the scale turns on. Also where the auto floors are measured. |
-| `units.display.damping` / `units.copy.damping` | 0.62 / 0.33 | How fast type shrinks relative to layout. Lower is gentler. |
-| floors | 0.58 / auto / auto | Where a unit stops shrinking. `auto` is the handover value at `engageAt`. |
-| `ceiling` | null | Caps growth. |
-| `heightAxis` | true | `false` makes the scale width-only: `max(floor, 100vw/W)`. |
-| `canvas.width`, `canvas.gutter` | 1680, 80 | The frame cap and page gutter, used by the frame class and the budget check. |
+| Reference viewport | `--fluid-desktop-base-width` / `-base-height` | setting (default 1440×900) |
+| Where the desktop band switches on, and where the type knee sits (§5) | `bands.desktop.minWidth` | structure (default 1024) |
+| Width-only vs both axes | `--fluid-desktop-fit-height` (1/0) | setting |
+| Where a band's unit stops shrinking / growing | `--fluid-<band>-scale-min` / `-scale-max` | setting (desktop `-scale-max` unset = no ceiling) |
+| Type damping, per band and role | `--fluid-<band>-<role>-damping` | setting |
+| Type hard floor (optional) | `--fluid-<band>-<role>-floor` | setting, unset by default |
+| Page container | `--fluid-<band>-container-width` / `-container-padding` | setting (§4) |
+| Which type roles exist | `roles` | structure (default `["display", "copy"]`, §9) |
+| The ui unit, on/off | `ui` | structure (default on, §6) |
+| Browser-zoom compensation, on/off | `zoom` | structure (default on, §12) |
+| Which bands exist, and their breakpoints | `bands.{phone,tablet,landscape,desktop}` | structure (§13) |
 
 `--fluid` must stay purely proportional on both arms. Adding an intercept to "soften" it breaks §3's
-fit guarantee.
+fit guarantee — that applies whether you are tuning a setting or hand-writing a unit.
+
+The full list, every default and every doc string: `references/config.md` (generated from
+`scripts/lib/spec.mjs`, the one source of truth) or `fluid settings` for the live CSS-variable
+reference against your own config.
 
 ## 9. Adding a role
 
-A new unit is one line. Pick a damping and a floor:
+A new type role is one array entry, not a hand-written formula:
 
-```css
-/* UI chrome that barely moves: 0.15 → 85% of the way to "not fluid at all". */
---fluid-ui: max(0.92px, var(--fluid), calc(0.15 * var(--fluid) + 0.85px));
+```json
+{ "roles": ["display", "copy", "eyebrow"] }
 ```
 
-Add one `@utility` (or one SCSS function) only if it needs a class. A unit that needs a different
-reference or axis mix cannot be a damping of `--fluid`: write it as its own
-`max(floor, min(…))`.
+`fluid generate` then emits, for every band: `--fluid-<band>-eyebrow-damping` and `-eyebrow-floor`
+settings (starting at `copy`'s defaults — mobile 0.6, desktop 0.33 — until you tune them), the
+`--fluid-eyebrow` unit, the `fluid-eyebrow-*` Tailwind utility (with the `/lh` modifier), the SCSS
+`fd.fluid-eyebrow($n)` function or StyleX `fluidEyebrow(n)` helper, and `fluidPx(n, 'eyebrow')` for
+script. Nothing to write by hand; tune it afterwards the same way as `display`/`copy`
+(`--fluid-desktop-eyebrow-damping: 0.5;` in your `:root`).
 
-## 10. One scale: why sections may not re-anchor it
+A role name may not collide with a word the system already uses as a unit, utility or setting —
+`ui`, `text`, `container`, `scope`, `cap`, `build`, a band name, a spacing utility name (`p`, `w`,
+`gap`, …). `fluid.config.json` validation rejects a collision with a did-you-mean.
+
+A unit that needs a different reference or axis mix entirely is not a role — it cannot be a damping
+of `--fluid`. Write it as its own `max(floor, min(…))`, on the ×1000 precision form (§3). It stays
+outside `roles[]`, so `fluid check`'s settings lint does not know about it.
+
+## 10. One scale: why sections may not re-anchor it (and what `fluid-scope` is actually for)
 
 The tempting fix for a section drawn taller than 900 (1198, 987, 973 on the reference build) is to let it
 declare its own drawn height as the reference, so `1198 × --fluid = 100svh` there. It was built
 (`fluid-frame-N`), it worked, and **it was removed**.
 
-- **Re-basing the base re-bases the type.** Custom properties substitute `var()` where they are
-  *declared*. A rule that sets only `--fluid` on a section leaves `--fluid-display` resolving against
-  `:root` (measured: `--fluid` reads 0.5 on the section while `--fluid-display` still reads 0.862). A
-  working re-base therefore has to redeclare all three.
-- **Type then follows its neighbour's height.** Three identical drawn 64px headings rendered at 64,
-  60.5 and 54.9px on one page in one window. A reader sees type change size for no nameable reason.
+- **Re-basing the base re-bases the type — in v1.** Custom properties substitute `var()` where they
+  are *declared*. A v1 rule that set only `--fluid` on a section left `--fluid-display` resolving
+  against `:root` (measured: `--fluid` reads 0.5 on the section while `--fluid-display` still reads
+  0.862). A working re-base had to redeclare all three by hand.
+- **`fluid-scope` fixes the mechanics, not the underlying problem.** Put class `fluid-scope` on an
+  element and set any `--fluid-*` **setting** on it (`<section class="fluid-scope" style="--fluid-desktop-container-width: 1200">`).
+  The engine writes its whole formula block on `:root, .fluid-scope` (§3), so every unit — `--fluid`,
+  every role, `--fluid-ui`, the container — recomputes together inside that subtree from whatever
+  settings are in scope. That is a real, supported way to give one section a different container
+  width, a gentler type damping, or a different `scale-min` — the settings model working as intended.
+  It does **not** make re-anchoring the reference height a good idea: setting
+  `--fluid-desktop-base-height` on a `.fluid-scope` section still recomputes that section's whole
+  scale consistently (the v1 mechanical bug is gone), but the *site-wide* guarantee — one proportional
+  factor describing the whole page — is exactly what a per-section reference breaks. Two sections with
+  different reference heights size the same drawn number differently for no reason a reader can name.
+  That was `fluid-frame-N`, and it was removed for that reason, not because of the mechanical bug.
+- **Declaring a unit directly is still wrong**, `fluid-scope` or not: `--fluid-desktop-base-height:
+  700` on `.fluid-scope` goes through the setting and the formula still runs. `--fluid: 0.5` on any
+  selector *replaces* the engine's formula outright — no clamp, no relationship to the other units —
+  and `fluid check` warns on it.
+- **Settings only apply on `:root` or `.fluid-scope`.** One set inside a media query, or on any other
+  selector, either does nothing (bands already gate per viewport) or never applies. `fluid check`
+  catches both (`scripts/lib/settings.mjs`).
 
-So a section drawn taller than 900 **is** more than one screen at every viewport, and the scale keeps
+So a section drawn taller than the artboard **is** more than one screen at every viewport, and the scale keeps
 it a faithful proportional copy of the drawing. Making it fit is a drawing job: take the room out of
 its padding (622 of one 1198-tall section was whitespace). A second sizing ladder inside a section
 (for example a width-only `--stage` var with `xl:` rules) is the same mistake and must be removed.
@@ -297,24 +366,27 @@ the page, four facts keep the two from fighting:
 - **Entrance offsets stay in fixed px.** Engines resolve `var()` once at animation start, so a scaled
   offset goes stale on resize. That is not worth it for a 24–40px offset.
 - **Travel scales.** A drawn distance typed into motion code (`x: 600`, `end: '+=1800'`) is right
-  only at the reference: at 2560×1440 it is 1.6× too short. Script reads the units with
-  `assets/runtime/fluid-units.js`: `fluidPx(600)` is 600 drawn px in CSS px right now, `fluidUnits()`
-  returns all four, `onFluidChange(cb)` fires when they change. It resolves them through a hidden
-  probe element (`getPropertyValue('--fluid')` returns the formula text, not a number) and costs one
-  layout read per change. The engine recipes (GSAP function values, Motion `useFluidUnit`, and the
+  only at the reference: at 2560×1440 it is 1.6× too short. Script reads the units through the
+  generated `runtime/units.js` (from `assets/runtime/fluid-units.js`, re-exported by `fluid.ts`):
+  `fluidPx(600)` is 600 drawn px in CSS px right now, `fluidPx(24, 'ui')` reads the ui unit
+  (`'chrome'` accepted as the v1 alias), `fluidUnits()` returns all of them, `onFluidChange(cb)`
+  fires when they change. It resolves them through a hidden probe element
+  (`getPropertyValue('--fluid')` returns the formula text, not a number) and costs one layout read
+  per change. The engine recipes (GSAP function values, Motion `useFluidUnit`, and the
   engine-neutral `--scene-p` pattern where CSS does the multiplying) are in the `scroll-animation`
   skill's `references/fluid-interop.md` §3, which ships a mirror of this file so it works alone.
-- **A pin re-measures itself on `ResizeObserver` plus `resize`**, and reads the engage breakpoint and
-  `--header-h` from this skill's config. Details: the `scroll-animation` skill, `references/scroll-scenes.md`.
+- **A pin re-measures itself on `ResizeObserver` plus `resize`**, and reads the desktop breakpoint
+  and `--header-h` from this skill's generated `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`). Details:
+  the `scroll-animation` skill, `references/scroll-scenes.md`.
 
 ## 12. Limitations
 
-1. Desktop only by default (below `engageAt` the unit is 1px). The optional mobile arm (§13)
-   scales phones off their own frame.
+1. Below `bands.desktop.minWidth`, the mobile bands (§13) scale phones, tablets and phones-on-their-side
+   off their own frames by default. `bands.phone: false` makes the unit a flat `1px` down there instead.
 2. When width binds, a one-screen section is shorter than the window. That is fine over a pinned
    render, but it changes a pinned scene's act maths: 3.42 viewports at 1024×900 instead of 4.00.
-3. **Type ignores the user's browser font-size setting from the breakpoint up.** This is deliberate:
-   type is anchored to the viewport so the composition keeps its proportions. Do not "fix" it
+3. **Type ignores the user's browser font-size setting from the desktop breakpoint up.** This is
+   deliberate: type is anchored to the viewport so the composition keeps its proportions. Do not "fix" it
    with a rem-anchored twin. The font-size setting is not browser zoom; zoom is handled below.
 4. Below the floors both arms go flat, and a `fluid-h-900` section stops matching the viewport. Windows that small
    are out of scope.
@@ -326,40 +398,45 @@ the page, four facts keep the two from fighting:
 **The problem.** Desktop zoom (Cmd/Ctrl +) makes a CSS pixel bigger and shrinks the CSS viewport by
 the same factor. A length built only from `vw`/`svh` shrinks by exactly that factor, so it renders
 at the **same physical size at every zoom level**. `--fluid` has no px or rem term, so without help,
-type does not grow at all until zoom pushes the CSS viewport below `engageAt` and the mobile CSS
+type does not grow at all until zoom pushes the CSS viewport below the desktop breakpoint and the mobile CSS
 takes over. Where that happens depends on the window: about 141% on a 1440-wide window, 188% on 1920,
 250% on 2560. Measured with real Chromium zoom, body text on an uncompensated build reached 100% of
 its size at 150% zoom on 2560×1440, and 122% at 200%. That fails WCAG 1.4.4 on every display wider
 than about 1440, and worst on the large displays this system is proudest of.
 
-**The fix, on by default.** `zoomCompensation: true` in `fluid.config.json` emits `--fluid-z`: the
+**The fix, on by default.** `zoom: true` in `fluid.config.json` (v1 `zoomCompensation`) emits `--fluid-z`: the
 `--fluid` formula with each viewport arm multiplied by `var(--fluid-zoom, 1)` *inside* the same floor
-and ceiling, and the two type units read it as their base. `assets/runtime/fluid-zoom.js` detects the
-zoom factor and writes it to `--fluid-zoom` on `<html>`. A viewport arm times the zoom is exactly its
-unzoomed value, and the clamp then lands where it did at 100%, so each type unit resolves to the CSS px it had at 100%
-and renders z times larger: **text zooms 1:1, floors and dampings included.** Measured on the same
-build after installing it: 110/125/150/200% zoom gives 110/125/150/200% text wherever the desktop
-layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
+and ceiling, and the two type units read it as their base instead of `--fluid`. The generated
+`runtime/zoom.js` (from `assets/runtime/fluid-zoom.js`) detects the zoom factor and writes it to
+`--fluid-zoom` on `<html>`. A viewport arm times the zoom is exactly its unzoomed value, and the clamp then
+lands where it did at 100%, so each type unit resolves to the CSS px it had at 100% and renders z
+times larger: **text zooms 1:1, floors and dampings included.** Measured on the same build after
+installing it: 110/125/150/200% zoom gives 110/125/150/200% text wherever the desktop layout is
+still active, at 1440, 1920 and 2560, with no horizontal overflow.
 
-- **Only type is compensated.** `--fluid` (layout) and `--fluid-chrome` stay as they are. Scaling
+- **Only type is compensated.** `--fluid` (layout) and `--fluid-ui` stay as they are. Scaling
   the layout by the zoom would make the composition z times wider than the zoomed viewport. Instead
   the layout keeps fitting, and the larger text reflows inside its columns, which is what zoom is for.
-- **`fluid-text-*` zooms by size** (`zoomTextRange`, default `[24, 48]`): fully up to 24px drawn,
-  not at all from 48px, linearly between. It is type inside a box that scales on `--fluid`, and that
-  box does not zoom. Measured on the Vite example at 2560×1440 and 200%: zooming it fully, the 200px
-  hero title wrapped onto two lines and ran over the body copy beside it. Leaving it out entirely,
-  the body copy that build sets in `fluid-text` (8 of its 14 type styles) did not zoom at all. By size,
-  the title holds its one line and the copy doubles. The share is read from the font size for the
-  line-height too, so a line box never zooms differently from its text (SCSS `fluid-text($lh, $size)`,
-  StyleX `fluidText(lh, size)`; `fluid-type()` and the Tailwind `/lh` modifier do it for you).
-  Display and copy always zoom fully: they sit in fixed measures and wrap.
-- **Fixed chrome does not move out of the way.** A fixed side tab or sticky bar keeps its size and
+- **`fluid-text-*` zooms by size** (`--fluid-zoom-text-full` / `--fluid-zoom-text-none`, settings,
+  default 24 / 48): fully up to 24px drawn, not at all from 48px, linearly between. It is type
+  inside a box that scales on `--fluid`, and that box does not zoom. Measured on the Vite example at
+  2560×1440 and 200%: zooming it fully, the 200px hero title wrapped onto two lines and ran over the
+  body copy beside it. Leaving it out entirely, the body copy that build sets in `fluid-text` (8 of
+  its 14 type styles) did not zoom at all. By size, the title holds its one line and the copy
+  doubles. The share is read from the font size for the line-height too, so a line box never zooms
+  differently from its text (SCSS `fd.fluid-text($n, $size)`, StyleX `fluidText(n, size)`; the
+  Tailwind `fluid-text-*` utility and its `/lh` modifier do it for you). Display, copy and a custom
+  role always zoom fully: they sit in fixed measures and wrap.
+- **Fixed ui does not move out of the way.** A fixed side tab or sticky bar keeps its size and
   position while the text beside it grows, so at 200% it can sit over copy it cleared at 100%
   (seen on the Vite example's reservation tab). Check fixed elements in the zoom screenshots.
 - **Install it inline in `<head>`**, before first paint, or a page opened at a remembered zoom
-  level renders small type and then jumps. Next: `<script dangerouslySetInnerHTML={{ __html:
-  FLUID_ZOOM_INLINE }} />`; anywhere else, the same string in a plain `<script>`. Copy both
-  `fluid-zoom.js` and `fluid-zoom.d.ts` (TypeScript with `allowJs: false` needs the types).
+  level renders small type and then jumps. `output.integration` generates the wiring: Next —
+  `import { FluidHead } from '…/fluid/integrations/next'` → `<head><FluidHead /></head>`; Vite —
+  `import { fluidPlugin } from './fluid/integrations/vite'` → `plugins: [fluidPlugin()]`; otherwise
+  inline `FLUID_ZOOM_INLINE` from the generated `runtime/zoom.js` in a plain `<script>` at the top of
+  `<head>` yourself. `runtime/zoom.d.ts` ships alongside it (TypeScript with `allowJs: false` needs
+  the types).
 - **How it detects zoom, and when it gives up.** No browser exposes the page zoom. Two signals carry
   it in Chromium and Firefox: `outerWidth / innerWidth`, and `devicePixelRatio` over the native ratio.
   Each is ambiguous alone (a side panel inflates the first; dpr 2 is a Retina screen or 200% on a 1x
@@ -392,34 +469,36 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   at 120% or 1× at 240%. The screen size cannot break the tie, because a Retina Mac in "Larger Text"
   mode reports what a 1× screen zoomed in does. A wrong factor inflates type, so Firefox reads 1.
   On Firefox, desktop-layout type on wide windows ignores zoom until the page falls through to
-  mobile; the mobile arm makes that step small. Say so before promising WCAG 1.4.4 to a client.
-- **Check a browser yourself:** serve `assets/runtime/zoom-debug.html` next to `fluid-zoom.js`, open it,
+  mobile; the mobile bands make that step small. Say so before promising WCAG 1.4.4 to a client.
+- **Check a browser yourself:** serve `assets/runtime/zoom-debug.html` next to `zoom.js`, open it,
   zoom, and read the live signals and the detected `--fluid-zoom` off the page.
-- **The mobile handover.** When zoom pushes the CSS viewport below `engageAt`, the page switches to
-  its mobile CSS, and text becomes *mobile size × zoom*. On a window wider than the reference the
-  desktop type had grown past its drawn size, so the handover is a step down. Measured: body copy
-  drawn 15px on mobile against 17.65px on a 1920 desktop reached 170% at 200% zoom (255% at 300%).
-  Keep mobile body copy no smaller than its desktop reference size to shrink that step. The runtime
-  cannot help here, because mobile type is plain px with nothing to multiply.
-- **Check it** with `scripts/verify-matrix.mjs`: its zoom row loads the page under real browser zoom
+- **The mobile handover.** When zoom pushes the CSS viewport below the desktop breakpoint, the page
+  switches to a mobile band, and text becomes *mobile size × zoom*. On a window wider than the
+  reference the desktop type had grown past its drawn size, so the handover is a step down. Measured:
+  body copy drawn 15px on mobile against 17.65px on a 1920 desktop reached 170% at 200% zoom (255% at
+  300%). Keep mobile body copy no smaller than its desktop reference size to shrink that step. The
+  runtime cannot help here, because mobile type is plain px with nothing to multiply, unless the
+  mobile band itself scales it (§13) — which softens the step further, see §13's last bullet.
+- **Check it** with `fluid verify <url>`: its zoom row loads the page under real browser zoom
   and reports physical text growth (`verification.md`). To *see* a zoomed page, capture it through the
   DevTools protocol (`Page.captureScreenshot`); Playwright's own `page.screenshot` crops a zoomed
-  page to its top-left 1/zoom and makes a fitting layout look cut off. `zoomCompensation: false` turns the unit
+  page to its top-left 1/zoom and makes a fitting layout look cut off. `zoom: false` turns the unit
   change off; do that only with the client's informed agreement, and record it in `FLUID.md`.
 
-## 13. The mobile arm (optional)
+## 13. The bands (phone / tablet / landscape / desktop)
 
-Off by default (`mobile.enabled: false`: below `engageAt` every unit is 1px). On, the **phone design
-scales off its own frame** in three bands, and the desktop design keeps its own scale above
-`engageAt`. The usual brief is a desktop frame (1680, reference 1440×900) and a phone frame (390),
-with no tablet design; this is built for that.
+On by default (`bands.phone: true`, and with it `tablet`/`landscape`: `false = a flat 1px below
+desktop`, v1's only mobile behaviour). The **phone design scales off its own frame** in three bands,
+and the desktop design keeps its own scale above the desktop breakpoint. The usual brief is a
+desktop frame (1680 container, reference 1440×900) and a phone frame (390), with no tablet design;
+this is built for that.
 
-| Band | Media condition | Scales off | Clamp | Covers |
+| Band | Media condition | Scales off | Clamp (settings) | Covers |
 |---|---|---|---|---|
-| phone | default | `100vw / 390` | 0.82–1.10 | iPhone SE (320) to Pro Max (430) |
-| tablet | `width >= 600px` | `100vw / 700` | 1.10–1.30 | portrait tablets: iPad mini 1.10, Air 1.17, Pro 11 1.19 |
-| landscape | `(orientation: landscape) and (height <= 500px)` | `100vw / 780` | 1.00–1.20 | a phone on its side: SE 1.00, 15 1.08, Pro Max 1.20 |
-| desktop | `width >= engageAt` | 1440×900, both axes | 0.58– | laptops, and **landscape tablets** (iPad 1024–1366 wide: 0.71–0.95) |
+| phone | default | `100vw / --fluid-phone-base-width` (390) | `--fluid-phone-scale-min/-max` (0.82–1.10) | iPhone SE (320) to Pro Max (430) |
+| tablet | `width >= bands.tablet.minWidth` (600) | `100vw / --fluid-tablet-base-width` (700) | `--fluid-tablet-scale-min/-max` (1.10–1.30) | portrait tablets: iPad mini 1.10, Air 1.17, Pro 11 1.19 |
+| landscape | `(orientation: landscape) and (height <= bands.landscape.maxHeight)` (500) | `100vw / --fluid-landscape-base-width` (780) | `--fluid-landscape-scale-min/-max` (1.00–1.20) | a phone on its side: SE 1.00, 15 1.08, Pro Max 1.20 |
+| desktop | `width >= bands.desktop.minWidth` (1024) | 1440×900, both axes | `--fluid-desktop-scale-min` (0.58–) | laptops, and **landscape tablets** (iPad 1024–1366 wide: 0.71–0.95) |
 
 - **All three mobile bands run the same drawing.** Authors write the phone frame's numbers once
   (`fluid-py-48`, `fluid-display-44/48`); the bands only change what the unit is. No orientation
@@ -427,64 +506,81 @@ with no tablet design; this is built for that.
 - **Why landscape needs its own rule.** By width alone a phone on its side (844×390) and a portrait
   iPad (834×1194) are the same. Height separates them: under 500px tall is a phone. The landscape
   block is emitted after the tablet block so it wins when both match (a Pro Max on its side is 932
-  wide).
+  wide) — `bandAt()` (`scripts/lib/model.mjs`) checks desktop, then landscape, then tablet, then phone.
 - **Continuous, then one switch.** The phone band tops out at 1.10, exactly where the tablet band
   starts, and landscape never goes below 1.00, so rotating never shrinks the design. The only jump
-  is at `engageAt`, where the composition itself changes to the desktop one.
-- **The column cap.** On tablet and landscape the frame is capped at `mobile.column` drawn px
-  (default 560) through `--fluid-column`: the phone composition is centred at 616–728px instead of
-  stretching its lines across an 834px screen. Full-bleed section colour stays full width because
-  it is on the section, not the frame. Tailwind: `max-w-(--fluid-column)` on the frame box (below
-  `lg`); the CSS and SCSS frame helpers apply it themselves. `column: null` turns it off.
-- **Type damping on phones is its own knob** (`mobile.damping`, default display 0.85, copy 0.60).
-  The desktop dampings (0.62 / 0.33) were tuned for a 0.58–1.0 range; across the phone band's
-  0.82–1.10 they leave type nearly static (body 16 → 15.1 at 320). With the phone dampings type
-  follows the layout more closely below 390: heading 44 → 42.6 at 375 and 37.3 at 320, body
-  16 → 15.6 and 14.3. Above the reference, type grows with the layout as on desktop. Smallest drawn
-  labels shrink too (11 → 9.8 at 320): draw phone labels at 12 or more, or raise `copy` toward 0.33.
+  is at the desktop breakpoint, where the composition itself changes to the desktop one.
+- **The container cap.** On tablet and landscape the frame is capped at
+  `--fluid-<band>-container-width` drawn px (default 560, same setting family as the desktop
+  container, §4 and §6) through the `fluid-container` utility: the phone composition is centred at
+  616–728px instead of stretching its lines across an 834px screen. Full-bleed section colour stays
+  full width because it is on the section, not the container. There is no dedicated off switch (v1's
+  `column: null`) — set the band's `container-width` to match your desktop one to stop capping it.
+- **Type damping is its own knob per band**, not shared. `--fluid-phone-display-damping`,
+  `--fluid-tablet-display-damping` and `--fluid-landscape-display-damping` (and the `copy`
+  equivalents) all start at the same default (display 0.85, copy 0.60) but tune independently — v1's
+  `mobile.damping` was one value shared across all three. The desktop dampings (0.62 / 0.33) were
+  tuned for a 0.58–1.0 range; across the phone band's 0.82–1.10 they leave type nearly static (body
+  16 → 15.1 at 320). With the phone dampings type follows the layout more closely below 390: heading
+  44 → 42.6 at 375 and 37.3 at 320, body 16 → 15.6 and 14.3. Above the reference, type grows with the
+  layout as on desktop. Smallest drawn labels shrink too: draw phone labels at 12 or more, or raise
+  `--fluid-phone-copy-damping` toward 0.33.
 - **Why the clamps are narrow.** A phone composition stretched past about 1.3× reads as a toy, and
   outside a clamp the unit is plain px, so text zoom on the phone keeps working there.
-- **A designed tablet.** If the designer draws one (say 834), author its numbers with `md:` and
-  set `mobile.tablet` to that frame: `{ "from": 768, "reference": 834, "min": 0.92, "max": 1.2 }`.
-  Same primitive, a real reference instead of the held phone design.
-- **Holding a band still.** `"min": 1, "max": 1` makes a band plain px; `"enabled": false` on
-  `tablet` or `landscape` leaves those screens on the phone band (held at its 1.10 cap).
+- **A designed tablet.** If the designer draws one (say 834), author its numbers with `md:` (or
+  `fluid-tablet:`) and set `bands.tablet.minWidth` plus the tablet settings to that frame:
+  `--fluid-tablet-base-width: 834`, `--fluid-tablet-scale-min/-max` for the real range. Same
+  primitive, a real reference instead of the held phone design.
+- **Holding a band still.** `--fluid-<band>-scale-min` and `-scale-max` both set to the same number
+  makes that band plain px; `bands.tablet: false` or `bands.landscape: false` leaves those screens on
+  the phone band (held at its 1.10 cap).
 - **Plain Tailwind still works per value.** `text-[15px]` stays 15px everywhere; the arm only moves
   what is written through `fluid-*`. Fluid on desktop with fixed breakpoints below is simply
-  `mobile.enabled: false`.
+  `bands.phone: false`.
 
-Measured on `examples/pizza-next` (hero heading drawn 44 on the phone frame): 320 → 39.2, 375 → 43.0,
-390 → 44.0, 430 → 48.4, iPad mini portrait 48.4, iPad Air portrait 51.5, iPhone 15 landscape 47.6,
-Pro Max landscape 52.6; iPad landscape takes the desktop heading at 0.82 (99.5). Geometry of all
-247 elements at 390×844 identical to the pre-arm build, and both examples pass the full matrix on
-the new device set.
+Measured on `examples/pizza-next` (hero heading `fluid-display-44`, `lg:fluid-display-112/112`,
+`fluid calc px 44 --unit display --at WxH`): phone 320 → 37.3, 375 → 42.6, 390 → 44.0 (reference), 430
+→ 48.4; tablet 768 (iPad mini portrait) → 48.4, 820 (iPad Air portrait) → 51.5; landscape 844×390
+(iPhone 15 landscape) → 47.6, 932×430 (Pro Max landscape) → 52.6; a landscape iPad at 1024×768 is
+already the desktop band (`bandAt()` checks desktop first), at unit 0.821, so the desktop heading
+(`lg:fluid-display-112`) reads 91.9px there instead. Both examples pass `fluid verify` in
+Chromium/WebKit/Firefox plus a real-zoom row, with geometry identical to v1 at 9 of 10 device
+viewports (`references/verification.md`).
 
-- **Converting an existing site:** the phone frame's unit is exactly 1 at 390, so moving mobile px to
-  fluid utilities is a no-op there. Check it by diffing element geometry at 390×844 before and
-  after. Remove `sm:`/`md:` size overrides that were never drawn: they are what makes a tablet jump.
+- **Converting an existing site:** since v2 turns the phone band on by default, an existing site
+  adopting this skill gets it without an extra setting — check the geometry is what you expect at
+  390×844 before and after (the phone frame's unit is exactly 1 there, so moving mobile px to fluid
+  utilities is a no-op). Remove `sm:`/`md:` size overrides that were never drawn: they are what makes
+  a tablet jump. `bands.phone: false` opts back out to v1's flat behaviour.
 - **Keep off it:** input font sizes (iOS zooms into a focused input under 16px; keep inputs at a fixed
   16px), text measures, borders, tracking, entrance offsets, icons of 24px and under.
 - **What the arm does for zoom:** a desktop window zoomed past the breakpoint lands in these bands,
   where mobile type is up to 1.3× its drawn size, so the drop at the handover mostly closes
-  (measured at 1920×1080 and 200%: 166% flat, 212% with the arm).
+  (measured at 1920×1080 and 200%: 166% flat, 212% with the mobile bands on).
 
 ## 14. Traps
 
 - `max()` instead of `min()` to combine the arms: cover, not contain, and text overflows.
 - `dvh` in the unit: type resizes while the reader scrolls on mobile Safari.
-- Anchoring the reference to the canvas (1680) instead of the laptop viewport (1440).
+- Anchoring the reference to the container width (1680) instead of the viewport (1440).
 - An intercept in `--fluid` (`clamp(…, 1px)`, `a·vw + b`): `900 × --fluid` stops equalling `100svh`.
-  (The mobile arm's `clamp(min, 100vw/390, max)` is not this: it has no intercept, and no height
-  guarantee to keep.)
-- With the mobile arm on, a fluid input font size: iOS zooms into inputs under 16px (§13).
-- Overriding `--fluid` on one section: the type units resolved at `:root` do not re-derive (§10).
+  (The mobile bands' `clamp(min, 100vw/base-width, max)` is not this: it has no intercept, and no
+  height guarantee to keep.)
+- With the mobile bands on (the default), a fluid input font size: iOS zooms into inputs under 16px (§13).
+- Declaring a `--fluid-*` unit (`--fluid`, `--fluid-display`, …) yourself instead of the setting it is
+  built from, `.fluid-scope` or not: it replaces the engine's formula outright, and the other units
+  do not recompute with it. `fluid check` warns (§10).
+- Setting a `--fluid-<band>-*` setting inside a media query, or on a selector that is not `:root` or
+  `.fluid-scope`: it either does nothing (bands already gate per viewport) or never applies.
+  `fluid check` catches both (§10).
 - A length times a unit (`64px * var(--fluid)`): invalid, and the declaration drops silently.
-- A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).
 - A hand-written unit that compares sub-pixel lengths in `min()`/`max()`: Firefox rounds the result to
   1/60px, up to 1.6% off per unit (§3). Compare ×1000 lengths and divide once.
-- Shipping without `fluid-zoom.js`: vw/svh type does not grow under browser zoom, a WCAG 1.4.4
-  failure on wide displays (§12, Browser zoom).
+- Not wiring up the browser-zoom script (`FluidHead`/`fluidPlugin`, or the inline `runtime/zoom.js`):
+  vw/svh type does not grow under browser zoom, a WCAG 1.4.4 failure on wide displays (§12, Browser zoom).
 - Multiplying anything already clamped by the zoom: the whole type unit (its px term already zooms:
   146% text at 125% on a 1440 window), or `--fluid` itself where the floor or ceiling binds (plain px
-  there: measured 156% text at 125% on a 3840×2160 window with `ceiling: 1.6`). Multiply the
-  viewport arms, then clamp; that is `--fluid-z`.
+  there: measured 156% text at 125% on a 3840×2160 window with `--fluid-desktop-scale-max: 1.6`).
+  Multiply the viewport arms, then clamp; that is `--fluid-z`.
+- A custom role name that collides with a reserved word (`ui`, `text`, `container`, `scope`, `cap`,
+  a band name, a spacing utility name): config validation rejects it with a did-you-mean (§9).

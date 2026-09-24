@@ -79,7 +79,7 @@
 
 /* phone — portrait phones, the 390 artboard (the default band) */
 :root, .fluid-scope {
-  --fluid-build: "2.0.0+52634b61";
+  --fluid-build: "2.0.0+98261d69";
   --_fluid-base-w: var(--fluid-phone-base-width, 390);
   --_fluid-base-h: var(--_fluid-base-w);
   --_fluid-fit-h: 0;

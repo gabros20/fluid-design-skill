@@ -40,7 +40,7 @@
       "scroll": true,
       "space": true,
       "rounded": true
-    },
-    "aliases": false
-  }
+    }
+  },
+  "aliases": false
 }

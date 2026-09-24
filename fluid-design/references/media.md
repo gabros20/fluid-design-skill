@@ -18,7 +18,7 @@ viewport units a full-bleed picture uses.
 
 ## 1. Size media in fluid units; CSS owns width and height
 
-Media drawn in the frame is drawn geometry like anything else: write the drawn number through a
+Media drawn in the container is drawn geometry like anything else: write the drawn number through a
 fluid utility (`lg:fluid-w-512`, `lg:fluid-h-46`, `lg:fluid-size-24`), or give it a fraction of a
 scaling box. A logo, icon or photo frozen at its px size while the gaps around it scale changes the
 drawing's proportions (`section-recipe.md` checklist item 6).
@@ -191,7 +191,7 @@ video (§1), so the two register exactly at every scale.
   whole graphic to nothing (§4.1).
 - An SVG's own `width`/`height` attributes beat a layered utility class sizing it in Safari — strip
   them at import time (§4.4).
-- A `sizes` px cap written against the canvas: the image renders soft above the reference (§3).
+- A `sizes` px cap written against the container: the image renders soft above the reference (§3).
 - Media with no reserved box: layout shift, and a one-screen section that overflows until it loads (§2).
 - A video without `muted playsInline` goes fullscreen or refuses to start on iOS (§5.1).
 - A poster pulled from the pre-encode master, not the delivered file, visibly mismatches the decoded

@@ -46,7 +46,7 @@ Two kinds of configuration, split by one rule:
 | `tailwind.utilities.scroll` | `true` | scroll-mt/pt/mb/pb. |
 | `tailwind.utilities.space` | `true` | fluid-space-x/y-*. |
 | `tailwind.utilities.rounded` | `true` | Scaled radii: fluid-rounded-*. |
-| `tailwind.aliases` | `false` | Also emit the v1 names (--fluid-chrome, --fluid-column, fluid-frame). `fluid migrate` turns this on. |
+| `aliases` | `false` | Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on. |
 
 ## Settings: CSS variables
 
@@ -138,6 +138,6 @@ desktop — 1024px and wider: the 1440×900 artboard.
 `--fluid`, `--fluid-z` (zoom on), `--fluid-<role>`, `--fluid-ui` (ui on),
 `--fluid-container-width`, `--fluid-container-padding`, `--header-h`,
 `--safe-top`, `--safe-bottom`, `--browser-bar`, `--fluid-build`. With
-`tailwind.aliases`: `--fluid-chrome`, `--fluid-column`. Set by the runtime:
+`aliases`: `--fluid-chrome`, `--fluid-column`. Set by the runtime:
 `--fluid-zoom`. Private: `--_fluid-*`. Never set any of these yourself; set
 the settings they are built from.

@@ -101,7 +101,7 @@ ${bandTables}
 \`--fluid\`, \`--fluid-z\` (zoom on), \`--fluid-<role>\`, \`--fluid-ui\` (ui on),
 \`--fluid-container-width\`, \`--fluid-container-padding\`, \`--header-h\`,
 \`--safe-top\`, \`--safe-bottom\`, \`--browser-bar\`, \`--fluid-build\`. With
-\`tailwind.aliases\`: \`--fluid-chrome\`, \`--fluid-column\`. Set by the runtime:
+\`aliases\`: \`--fluid-chrome\`, \`--fluid-column\`. Set by the runtime:
 \`--fluid-zoom\`. Private: \`--_fluid-*\`. Never set any of these yourself; set
 the settings they are built from.
 `
@@ -146,8 +146,8 @@ function checkInvariants(label, structure, problems) {
   for (const r of structure.roles) if (!css.includes(`--fluid-${r}: calc(`)) say(`role ${r} has no unit`)
   if (structure.zoom !== css.includes('--fluid-z: calc(')) say(`--fluid-z ${structure.zoom ? 'missing' : 'emitted'} with zoom ${structure.zoom}`)
   if (structure.ui !== css.includes('--fluid-ui: calc(')) say(`--fluid-ui ${structure.ui ? 'missing' : 'emitted'} with ui ${structure.ui}`)
-  if (structure.tailwind.aliases && structure.ui && !css.includes('--fluid-chrome: var(--fluid-ui)')) say('aliases on but no --fluid-chrome')
-  if (!structure.tailwind.aliases && css.includes('--fluid-chrome')) say('aliases off but --fluid-chrome emitted')
+  if (structure.aliases && structure.ui && !css.includes('--fluid-chrome: var(--fluid-ui)')) say('aliases on but no --fluid-chrome')
+  if (!structure.aliases && css.includes('--fluid-chrome')) say('aliases off but --fluid-chrome emitted')
   if (structure.output.base !== ('base.css' in files)) say('base.css presence does not follow output.base')
   if (structure.output.stack === 'tailwind-v4') {
     const u = structure.tailwind.utilities
