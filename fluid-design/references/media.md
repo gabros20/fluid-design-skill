@@ -45,7 +45,7 @@ budget ≤ 0.1, `performance.md` §6), and a one-screen section's fit changes un
 
 - `sizes` must allow for growth above the reference, and cannot read `var(--fluid)`: write it in
   `vw`. Worked numbers are in `performance.md` §3 (a half-width image at f = 1.6 is about 1344px wide).
-- Ship candidates up to about twice the largest slot, or set a `ceiling` (`fluid-scale.md` §7). A
+- Ship candidates up to about twice the largest slot, or set `--fluid-desktop-scale-max` (`fluid-scale.md` §7). A
   1920-wide raster upscales about 1.3× on a 27" 5K.
 - Art direction (a different crop per breakpoint) is `<picture>` with `<source media>`; it
   re-evaluates on resize, unlike a video's `<source media>`.

@@ -550,3 +550,54 @@ Each phase is committed separately and verified before the next (§6).
 - **Binary:** the build-bin smoke test on macOS here, and Windows and Linux in CI.
 - **The review's reproductions become regression tests.** Each verified finding above gets a
   test that fails before its fix and passes after.
+
+## Outcome (implemented)
+
+Phases 1–6 landed in commits `8351a92` (engine, runtime), `6f1623b` (lint, audit), `068af44`
+(CLI), `0b81419` (Tailwind) and the Phase 6 docs pass.
+
+| # | What landed |
+|---|---|
+| P1 | Mirrors `inherits: false`, `initial-value: 0px`; `fluidPx(n, unit, el)` walks up to the nearest scope. WebKit 45–59 → ~11 ms per resize step on the 50-scope page; Chromium ~5 ms either way. Numbers in `performance.md` §1 |
+| P2 | `translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0)`; a lone `fluid-translate-y-24` is in the compile test |
+| P3 | CRLF normalised; a generated `.gitattributes` (`* -text linguist-generated=true`) in `output.dir`; init adds the folder to `.prettierignore` and names the `biome.json` change; a formatting-only diff is "reformatted", a warning |
+| P4 | `lib/css-scan.mjs` tokenizer: `@layer`/`@supports` transparent, selector lists split, scope blocks recognised; unknown `--fluid-*` is an error only for a near-typo (edit distance ≤ 2) or an engine-owned name, info otherwise; "must be a whole number" |
+| P5 | `CliError` thrown everywhere, handled in `run()`; `generate --watch` survives an invalid save |
+| P6 | Height cross-check (implied toolbar 0–200 window px) in Chromium; `scripts/test/zoom-detect.mjs` table. Known limit below |
+| P7 | `document.adoptedStyleSheets` (style-attribute fallback); `FluidHead({ nonce })`, `fluidPlugin({ nonce })`; `FLUID_ZOOM_INLINE` a literal plus `FLUID_ZOOM_SHA256`; `zoom.classic.js` with no integration |
+| P8 | Classic `min-width`/`max-height` engine media, nested `not all` for the exclusive SCSS mixins. Floor per stack in `contract.md` §0 and the README. `fluid.ts` `MEDIA` and the Tailwind band variants keep range syntax (Tailwind floor). `docs/REVIEW-2026-09.md` was not changed: its floor line describes the v1 Tailwind stack it reviewed, and is correct for it |
+| P9 | `--fluid-header-h`, `--fluid-safe-top`, `--fluid-safe-bottom`, `--fluid-browser-bar`; the old names only with `aliases` |
+| P10 | `fluid-desktop:` removed (audit rule `fluid-desktop-variant`, error); `band-variant-with-breakpoint` (warn, `lg:`/`xl:`/`2xl:` exempt); init sets `breakpoints: "none"` on a site's own `--breakpoint-*`; check errors on one next to the ladder |
+| P11 | `[number]` values and modifiers; `cn` accepts exactly what compiles; `fluid-leading-ratio` (M < 4) |
+| P12 | No lock and a differing file: refused without `--force`; an edited orphan is kept and named |
+| P13 | `explain --url --zoom` sets `--fluid-zoom` on the page (labelled emulated); `--zoom` validated 0.25–5 |
+| P14 | Init decides in memory and runs the hand-edit guard first, so a refusal writes nothing; `--force` backs up a v1 config |
+| P15 | Tailwind 3 → css stack with a note; `globals.scss` candidates; brownfield and insertion (never above `@charset`) through the tokenizer |
+| P16 | One reader, `lib/live.mjs`; a v1 config is checked against its migrated numbers in `explain --url` and `verify` |
+| P17 | `audit` loads the config (prefix, roles, stack, output dir); `--desktop-variant`, `--engage` kept as an alias |
+| P18 | Scope selector: important and variant forms of `fluid-off`, `[class*="[--fluid-"]`; no match on `fluid-offset`; `limit-on-children` for `*:`/`[&_…]:` |
+| P19 | `max(1, var(--fluid-<band>-base-width/-height, …))` on the reads |
+| P20 | One ResizeObserver, disconnected on rebuild; `fluidUnits()` returns a frozen copy; the no-`@property` fallback documented. Not done: see (b) |
+| P21 | A role whose name or first word is a utility family or unit is rejected (`min-w`, `gap-x`, `ui-text`) |
+| P22 | `header-limit` is an audit rule on a tag scanner; `verify-matrix` usage text fixed |
+| P23 | The drift fixes, one head-script story, the CSP subsection. Not done: `spec.mjs` doc strings still say "(v1 engageAt)", list `<prefix>-desktop:` under `tailwind.variants`, and leave `--header-h` out of the `aliases` doc, so the generated `config.md` repeats them; `spec.mjs` was out of scope for the docs pass |
+| S1 | `explain --url` has probe's verdicts and exit codes (OK 0 · STALE/MISMATCH/V1 1 · MISSING 2); `fluid probe` is an alias |
+| S2 | 49 → 43 settings at the defaults (see (c)) |
+| S3 | `fluid-up`, `ENGAGE_*`, the runtime's `chrome` and the pre-namespace names only with `aliases`; v1 prose moved into `brownfield-migration.md` (a v1 → v2 name table) |
+| S4 | As decided: `settings.reference.css` kept, the generated README links to it |
+| S5 | `contract.md` §1 and `fluid-scale.md` §8 point at `config.md`; the zoom diary is `docs/zoom-measurements.md`; `verification.md` §6 is the one home of the stale-stylesheet story; `scripts/README.md` is out of the npm package |
+| S6 | `check` runs the audit's `CHECK_RULES` with the project context |
+
+**Corrections to the plan.**
+- (a) P1's claim that the SCSS scope mixin lacked the mirrors was wrong: `scopeBody()` is built
+  from `engineParts`, so it always had them. The new engine-matrix scope cases confirm the walk
+  reads them.
+- (b) P20's "don't mark the cache dirty on window resize" was not done. The dirty read costs one
+  layout read, which is about free when layout is clean, so the extra complexity wasn't worth it.
+- (c) S2 landed as 49 → 43 settings (36 → 30 registered, 13 optional). The plan's "35" counted the
+  tablet and landscape container/header settings as removed; they are optional instead, falling
+  back to the phone's.
+- (d) P6 known limit: Windows 150% display scaling plus a 1/6-width side panel plus a tall toolbar
+  (a bookmarks bar, about 114 window px or more on a 680-tall window) still reads 1.2
+  (`docs/zoom-measurements.md`).
+- (e) S7: adopted. Registering the viewport-independent intermediates as `<number>` made a resize step ~20% faster in WebKit (≈10 → 8 ms) and ~34% faster in Chromium (≈7.7 → 5.1 ms) on the 2,000-element page, and parity held: engine matrix 18,840 checks and the SCSS suite 7,548 checks, 0 failures in 3 browsers. The numbers are in `references/performance.md` §1; `scripts/test/resize-perf.mjs` guards the scope cost.

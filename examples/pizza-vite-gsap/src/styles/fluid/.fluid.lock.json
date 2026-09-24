@@ -1,9 +1,9 @@
 {
   "generator": "fluid-design 2.0.0",
-  "build": "2.0.0+358498dc",
+  "build": "2.0.0+db44c23b",
   "stack": "scss",
   "files": {
-    "fluid.css": "16e6c3e5b3c7cb2f",
+    "fluid.css": "33119f21bff1a392",
     "base.css": "6f20df579330e8c1",
     "settings.reference.css": "ebe27b8776a646c5",
     "fluid.css-data.json": "2487abf3d84cfe6f",
@@ -14,7 +14,7 @@
     "runtime/zoom.js": "566ad8ece58b22a0",
     "runtime/zoom.d.ts": "d4c22e99f03d1f91",
     "integrations/vite.ts": "3d755f9a4943c5ba",
-    "README.md": "2c38ac1a4211fabf",
+    "README.md": "fde66969c966c60e",
     ".gitattributes": "00aeeb7b53fd7b02"
   }
 }

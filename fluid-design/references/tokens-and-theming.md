@@ -6,9 +6,8 @@ Skip when: working on pure layout.
 
 ## Tokens live in `globals.css`, next to the fluid settings
 
-There is no separate tokens file to copy from (v1 shipped a `tokens.example.css` starter; v2 doesn't
-— nothing under `output.dir` is meant to hold your tokens, and `fluid generate` never touches your
-`:root`). Tokens go straight into your own stylesheet, `@theme` for the ramp and roles, `:root` for
+There is no separate tokens file to copy from — nothing under `output.dir` is meant to hold your
+tokens, and `fluid generate` never touches your `:root`. Tokens go straight into your own stylesheet, `@theme` for the ramp and roles, `:root` for
 anything that isn't a Tailwind theme value — the same file, right below the one `fluid generate`
 told you to add: this is the shadcn pattern, one `globals.css` owning both the design tokens and the
 handful of fluid settings you've chosen to override:
@@ -91,11 +90,11 @@ Keep every component on role names. A dark theme is then one extra block redefin
 under `[data-theme='dark']`, plus one `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *))`,
 and not an edit to thirty components.
 
-## Header ink and `--header-h`
+## Header ink and `--fluid-header-h`
 
 Header ink that follows the section underneath (`data-header-theme`, the scroll probe, the shared
 colour transition) is scroll behaviour: see the `scroll-animation` skill, `references/header-theme.md`.
-This skill owns only the header's size: `--header-h` (`section-recipe.md` §Heroes under a fixed,
+This skill owns only the header's size: `--fluid-header-h` (`section-recipe.md` §Heroes under a fixed,
 floating header), which that skill reads.
 
 ## Small hit targets in a drawn row
@@ -115,5 +114,5 @@ element, so `:hover` and `onMouseEnter` fire on it.
 - [ ] Components use role tokens only; there are no raw hexes in sections.
 - [ ] Brand hue as text uses an `-ink` step that clears AA.
 - [ ] No `dark:` without a custom variant; no `rounded-*` on a square design.
-- [ ] A fixed header's clearance comes from `--header-h`, never a hand-typed offset.
+- [ ] A fixed header's clearance comes from `--fluid-header-h`, never a hand-typed offset.
 - [ ] Foreign component sets are namespaced.

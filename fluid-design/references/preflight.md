@@ -31,7 +31,7 @@ which has its own preflight.
 | `tailwind.config.*` | v3 (see the v3 note in `stacks.md`) |
 | an existing `fluid.config.json` with no `"version": 2"` | a v1 project — route to `brownfield-migration.md` §"From fluid-design v1" instead of this preflight |
 | container classes | `.container`, `max-w-7xl mx-auto px-*`, a hand-rolled wrapper: that is your current container width and padding |
-| breakpoints in use | the one where the desktop layout starts is your `bands.desktop.minWidth` candidate |
+| breakpoints in use | the one where the desktop layout starts is your `bands.desktop.minWidth` candidate. Custom `--breakpoint-*` in `@theme`: `fluid init` keeps them (`tailwind.breakpoints: "none"`), and `--breakpoint-lg` must then equal the desktop band |
 | existing `vw`/`clamp` type | a prior fluid attempt; inventory it before replacing it (`brownfield-migration.md`) |
 | `<video>` count, sticky/pinned sections | the media rendering work (`media.md`); any scene or playback work is for the `scroll-animation` skill |
 | Figma links or exported frames in the repo | the artboard's width and height |
@@ -45,7 +45,10 @@ which has its own preflight.
 Default: **Tailwind v4** (`"tailwind-v4"`) if it is present or the project is greenfield. Otherwise use the stack the project already has.
 - Tailwind v4 gets the richest artifact: arbitrary-number `@utility` families (`lg:fluid-py-120`).
 - On Tailwind v3, recommend upgrading. If that is not possible, use `"css"` plus arbitrary values
-  `lg:py-[calc(120*var(--fluid))]`. v3 has no functional `@utility`.
+  `lg:py-[calc(120*var(--fluid))]`. v3 has no functional `@utility`. `fluid init` detects v3 and
+  picks `"css"` itself, with a note.
+- Browser floor: Tailwind v4's own (Safari 16.4); the css, scss and stylex stacks go down to Safari
+  15.4 / Chrome 108 / Firefox 101 (`contract.md` §0). Ask only if the client names older browsers.
 - `"scss"`, `"css"` (also covers CSS Modules and plain CSS) and `"stylex"` all use the same units,
   through functions or `calc()` inside each band's rules.
 - Ask when: nothing is installed yet, or two systems coexist.
@@ -78,8 +81,7 @@ default in v2) or, with them off, every unit is a flat 1px and mobile is plain r
 Default: **on** (`1`). The height arm is what makes "one screen tall" possible.
 - Turn it off (`--fluid-desktop-fit-height: 0;`) for document-style sites such as docs, blogs or
   dashboards. On those, scaling on a short window only shrinks things without buying any fit.
-- With it off, `--fluid-ui` also scales by width only (v2 behaviour; v1's `--fluid-chrome` kept
-  reading height even with `heightAxis: false` — `brownfield-migration.md` §"Two numbers that move").
+- With it off, `--fluid-ui` also scales by width only.
 - Ask when: the design has no full-viewport sections.
 
 ### 5. Growth ceiling (setting: `--fluid-desktop-scale-max`)
@@ -89,7 +91,7 @@ Default: **unset** (no ceiling). Above the artboard the whole composition grows 
 - Ask when: the hero art or video is raster and below about 2400px wide.
 - **Limits** are the finer tool: one part of the page stops scaling at a window width while the rest
   keeps growing. Site header or nav held at its 1680 size: `:root { --fluid-ui-grow-until: 1680; }`
-  (keeps `--header-h` in step; never a limit class on `<header>`). Any other part: a utility on its
+  (keeps `--fluid-header-h` in step; never a limit class on `<header>`). Any other part: a utility on its
   wrapper (`fluid-grow-until-1680`, `fluid-shrink-until-1280`, `fluid-off`). Whole site stops at a
   width: `:root { --fluid-grow-until: 1920; }`. `fluid-scale.md` §10.
 - Ask when: the design shows a component staying the same size on large screens, or the client asks
@@ -108,10 +110,12 @@ bands hold it across phones and tablets: phones scale 0.82–1.10, portrait tabl
 design at 1.10–1.30 in a centred container, landscape phones at 1.00–1.20, and landscape tablets
 (desktop-breakpoint width and up) get the desktop design scaled down.
 - Turn all three off (`bands.phone: false`) for a flat 1px below the desktop band — mobile then
-  stays plain, hand-authored responsive CSS with no scaling at all (v1's old default).
+  stays plain, hand-authored responsive CSS with no scaling at all.
 - Ask: **is there a tablet design?** No (the usual case): keep the default three bands, or the
-  defaults on their own settings. Yes: give `--fluid-tablet-base-width` the tablet frame's width and
-  author `md:` values against it.
+  defaults on their own settings. The container and header settings are set once on phone; tablet
+  and landscape follow unless you set theirs. Yes: give `--fluid-tablet-base-width` the tablet
+  frame's width and author `md:` values against it (not mixed with `fluid-tablet:` on the same
+  property, `contract.md` §3).
 - Detect: a mobile frame in Figma, or a brief that says the phone layout must look the same on
   every phone. Brownfield: converting the mobile px is a no-op at the artboard width, so it can be
   done file by file and checked by diffing geometry at 390×844.
@@ -128,7 +132,7 @@ that, never narrows below it in CSS px).
 - Ask when: the design's container differs from the defaults, or differs between mobile and desktop.
 
 ### 9. UI (structure: `ui`)
-Default: **on**. Emits `--fluid-ui` (v1 `chrome`) — the header/nav/footer unit: follows width,
+Default: **on**. Emits `--fluid-ui` — the header/nav/footer unit: follows width,
 never shrinks for a short window, unlike the damped type roles or the plain layout unit.
 - Turn it off only if the header and footer should scale on the plain `--fluid` unit like everything else.
 - Ask when: the header design intentionally shrinks on a short, wide window (rare).
@@ -140,8 +144,9 @@ Default: **`["display", "copy"]`**. Each role becomes its own `--fluid-<role>` u
   differently from display and copy — a custom role starts with copy's dampings
   (`--fluid-desktop-<role>-damping: 0.33`) and is tuned from there as a setting.
 - Role names may not collide with a unit, utility or settings word already in use (`fluid`, `ui`,
-  `text`, `container`, band names, and the CSS property abbreviations `p`/`m`/`w`/`h`/… are
-  reserved — `fluid check` and `fluid.config.schema.json` both reject a collision).
+  `text`, `container`, band names, and the utility families `p`/`m`/`w`/`h`/`min`/`gap`/… are
+  reserved, as the first word too: `min-w` is rejected — `fluid check` and
+  `fluid.config.schema.json` both reject a collision).
 - Ask when: the design has more than two damped type curves.
 
 ### 11. Browser zoom (structure: `zoom`)
@@ -149,7 +154,7 @@ Default: **on** (`zoom: true`), which also emits the browser-zoom runtime
 (`assets/runtime/fluid-zoom.js`, generated into `output.dir/runtime/zoom.js`).
 - Viewport-derived type does not grow under browser zoom on its own, which fails WCAG 1.4.4 on
   displays wider than about 1440 (`fluid-scale.md` §12, Browser zoom). The runtime restores 1:1 text
-  zoom in Chromium; Safari and Firefox are unverified.
+  zoom in Chromium and Safari; Firefox exposes no reliable signal and stays uncompensated.
 - Ask when: the site has a legal accessibility obligation (public sector, the EU Accessibility Act,
   a WCAG AA contract). Then say plainly that compliance must be checked in the client's target
   browsers, and that mobile body copy should be drawn no smaller than the desktop size.
@@ -161,10 +166,13 @@ else `"none"`).
 - With `zoom: true`, the runtime script has to run before first paint, or a page opened at a
   remembered zoom level paints its type at the wrong size and then jumps. `"next"` generates
   `integrations/next.tsx`'s `<FluidHead />` for `app/layout.tsx`; `"vite"` generates
-  `integrations/vite.ts`'s `fluidPlugin()` for `vite.config.ts`. `"none"` prints the inline script
-  (`FLUID_ZOOM_INLINE` from `runtime/zoom.js`) to add to `<head>` by hand.
-- Ask when: the framework is neither Next nor Vite and `zoom` is on — the team needs to wire the
-  inline script into their own head themselves.
+  `integrations/vite.ts`'s `fluidPlugin()` for `vite.config.ts`. `"none"` generates
+  `runtime/zoom.classic.js`, loaded as the first `<script src>` in `<head>` (or its line pasted
+  inline).
+- A strict CSP: `<FluidHead nonce={…} />` / `fluidPlugin({ nonce })`, or allow
+  `FLUID_ZOOM_SHA256` in `script-src` (`fluid-scale.md` §12). Not a question; note it in `FLUID.md`.
+- Ask when: the framework is neither Next nor Vite and `zoom` is on — the team needs to add the
+  script tag to their own head themselves.
 
 ### 13. Class merging (Tailwind): an existing `cn`
 Default: **reuse the project's `cn`** when one exists; the generated `cn` only when none does.

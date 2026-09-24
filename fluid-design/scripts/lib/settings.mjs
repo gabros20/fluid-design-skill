@@ -15,7 +15,7 @@
 // own token and gets an info note.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative, extname } from 'node:path'
+import { join, relative, extname, sep } from 'node:path'
 import { settingsSpec, unitNames } from './spec.mjs'
 import { cssDeclarations } from './css-scan.mjs'
 
@@ -183,7 +183,7 @@ export function projectStyleFiles(root, generatedDir) {
 export function scanProject(structure, root, generatedDir) {
   const decls = []
   for (const f of projectStyleFiles(root, generatedDir)) {
-    decls.push(...scanDeclarations(readFileSync(f, 'utf8'), relative(root, f), { prefix: structure.prefix }))
+    decls.push(...scanDeclarations(readFileSync(f, 'utf8'), relative(root, f).split(sep).join("/"), { prefix: structure.prefix }))
   }
   return lintSettings(structure, decls)
 }

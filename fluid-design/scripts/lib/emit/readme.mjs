@@ -78,7 +78,7 @@ what everything resolves to at a viewport and where each value came from.
 
 ## Bands
 
-${bands.map((b) => `- **${b}** — ${bandBlurb(structure, b)}. \`${ex[b].query}\``).join('\n')}
+${bands.map((b) => `- **${b}** — ${bandBlurb(structure, b).replace(/^\S+ — /, '')}. ${ex[b].nest.map((q) => `\`${q}\``).join(' and ')}`).join('\n')}
 
 Authors write each drawing once: the phone numbers for every mobile band,
 the desktop numbers from \`lg:\` up. Only the unit changes between bands.

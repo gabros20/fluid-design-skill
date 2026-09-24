@@ -15,8 +15,9 @@ With `--write` it backs up the old file as `fluid.config.v1.json`, writes the v2
 number that was not already a v2 default — paste that into your globals.css `:root`, next to your
 tokens, then run `fluid generate`.
 
-Every command refuses to run against a v1 config first (`fluid check`, `fluid explain`, …) — it
-tells you to run `fluid migrate --write`.
+`fluid check`, `generate`, `settings` and an offline `explain` refuse a v1 config and tell you to run
+`fluid migrate --write`; `fluid calc`, `fluid verify` and `fluid explain --url` migrate it in
+memory, so they work before you do. `fluid init --force` over a v1 config also keeps it as `fluid.config.v1.json`.
 
 ### What moves
 
@@ -33,10 +34,9 @@ tells you to run `fluid migrate --write`.
   `--fluid-desktop-container-width/-padding`; every `mobile.*` number → the matching
   `--fluid-{phone,tablet,landscape}-*` setting; `zoomTextRange` → `--fluid-zoom-text-full/-none`.
 - **`aliases: true`** is set automatically by the migration (top-level key, every stack — not only
-  Tailwind). It re-emits the v1 names — `--fluid-chrome`, `--fluid-column`, the `fluid-frame`
-  class/mixin, SCSS's `fluid-chrome()` — as thin wrappers around their v2 equivalents, so existing
-  call sites keep working the moment you regenerate. Turn it off once every call site has moved to
-  `--fluid-ui` / `--fluid-container-*` / `fluid-container`.
+  Tailwind). It re-emits every v1 name as a thin wrapper around its v2 equivalent, so existing call
+  sites keep working the moment you regenerate (table below). Turn it off once every call site has
+  moved.
 - **The one import.** v1 projects typically had several: `fluid.css`, `base.css`,
   `tokens.example.css`, plus hand-copied `cn.ts` and runtime files. Delete all of those imports and
   replace them with the single line `fluid init`/`fluid migrate` points at:
@@ -50,8 +50,33 @@ tells you to run `fluid migrate --write`.
   are generated, not copied. Delete your hand-copied versions and update imports to point at the
   generated ones (`<output.dir>/fluid.ts`, `<output.dir>/cn.ts`, `<output.dir>/runtime/…`). Same
   for a hand-written `fluid.config.ts` (`ENGAGE_PX`/`ENGAGE_QUERY`): delete it, the generated
-  `fluid.ts` now exports `DESKTOP_PX`/`DESKTOP_QUERY` plus those same v1 names as aliases
+  `fluid.ts` exports `DESKTOP_PX`/`DESKTOP_QUERY`, plus those same v1 names while `aliases` is on
   (`contract.md` §5, §7).
+
+### v1 names and their v2 equivalents
+
+With `aliases: true`, the left column still works; without it, only the right one exists.
+
+| v1 | v2 |
+|---|---|
+| `--header-h`, `--safe-top`, `--safe-bottom`, `--browser-bar` | `--fluid-header-h`, `--fluid-safe-top`, `--fluid-safe-bottom`, `--fluid-browser-bar` (namespaced so a site's own `--header-h` is left alone) |
+| `--fluid-chrome`, `fluidPx(n, 'chrome')`, SCSS `fd.fluid-chrome($n)` | `--fluid-ui`, `fluidPx(n, 'ui')`, `fd.fluid-ui($n)` |
+| `--fluid-column` | `--fluid-container-width` |
+| `.fluid-frame` / `fd.fluid-frame` | `fluid-container` / `fd.fluid-container` |
+| SCSS `fd.fluid-up` | `fd.fluid-desktop` |
+| `ENGAGE_PX` / `ENGAGE_QUERY` | `DESKTOP_PX` / `DESKTOP_QUERY` |
+
+Not aliased, because they were never v1 names: the Tailwind `fluid-desktop:` variant is gone (use
+`lg:`; audit rule `fluid-desktop-variant` finds it), and the mobile `*-floor` settings are gone
+(`fluid check` names the replacement: `--fluid-<band>-<role>-damping` or `-scale-min`).
+
+Config and concept names that changed (no alias; `fluid migrate` carries the values): `engageAt` →
+`bands.desktop.minWidth`; `chrome` → `ui`; `zoomCompensation` → `zoom`; `heightAxis: false` →
+`--fluid-desktop-fit-height: 0`; `ceiling` → `--fluid-desktop-scale-max`; `floor` →
+`--fluid-desktop-scale-min`; `canvas.width` / `canvas.gutter` → `--fluid-desktop-container-width` /
+`-padding` (settings, not structure); the shared `mobile.damping` → one damping per band and role;
+`mobile.column: null` → set the band's `container-width` to the desktop one; the
+`tokens.example.css` starter is gone (tokens live in your own `globals.css`).
 
 ### Two numbers that move
 
@@ -61,7 +86,8 @@ what is listed here). Two things are intentionally different:
 1. **Floor rounding.** v1's `floor: "auto"` rounded the type floor to 2 decimals; v2 replaces the
    "auto" floor with the **knee** — an exact, live value (`bands.desktop.minWidth / base-width` on
    desktop) that needs no rounding, because it follows your settings instead of being computed once
-   at generate time. Measured across the examples, the only place this changes anything is at
+   at generate time. It is the same expression: v1's `d · engageAt/W + (1 − d)` is v2's
+   `d · knee + (1 − d)` with `knee = engageAt/W`. Measured across the examples, the only place this changes anything is at
    320×568, where type sits about 0.3% larger or smaller than it did under v1's rounded floor.
 2. **`--fluid-ui` under `fit-height: 0`** (v1 `heightAxis: false`). v1's `--fluid-chrome` still read
    the height arm even with `heightAxis: false`, so a short, wide window kept the header at its full
@@ -113,7 +139,7 @@ to the design.
 8. **Header and footer last,** on `--fluid-ui`. The header/footer unit is shared by every route, so it
    moves once all routes can take it. **Keep any existing header animation and colour logic, and
    take over only sizing**: the row height, inset, type and gaps move onto `--fluid-ui` (or the
-   `fluid-ui-*` utilities) and `--header-h`; the script that hides, shows or re-inks the header stays
+   `fluid-ui-*` utilities) and `--fluid-header-h`; the script that hides, shows or re-inks the header stays
    as it is. Two writers on one property fight, so do not add a second one here. Changing that
    behaviour is a `scroll-animation` decision.
 
@@ -154,8 +180,10 @@ where the site looks right today (usually 1024 / 1440).
 | An override class is ignored | fluid families not registered in `cn.ts`, or two classes outside `cn()` |
 | Sticky stopped working | `overflow-x: hidden` on body or a wrapper |
 | Mixed sizes on one page: a migrated chip next to an old one | an atom used without its `fluid` prop on a migrated route |
-| Everything looks unstyled or full-bleed after a CSS change | a **stale stylesheet** in an open tab, not a code bug (`verification.md`) |
-| `fluid check` fails on generated files | `output.dir` was hand-edited, or `fluid.config.json` changed since the last `fluid generate` |
+| Everything looks unstyled or full-bleed after a CSS change | a **stale stylesheet** in an open tab, not a code bug (`verification.md` §6) |
+| `fluid check` fails on generated files | `output.dir` was hand-edited, or `fluid.config.json` changed since the last `fluid generate`. A formatter's rewrite is only a warning: add the folder to `.prettierignore` (`fluid init` does) or Biome's `files.ignore` |
+| A band-only tweak is ignored at some widths, or wins where it shouldn't | a band variant (`fluid-tablet:`) and a breakpoint (`md:`) on one property: the band variant always wins (`contract.md` §3) |
+| The site's own `--breakpoint-*` reorder `lg:` | they compete with the generated px ladder: `tailwind.breakpoints: "none"` (what `fluid init` sets when it finds them) |
 
 ## Traps
 - [ ] Old `clamp`/`vw` ladders are removed per section as it migrates, never left alongside.
@@ -165,8 +193,8 @@ where the site looks right today (usually 1024 / 1440).
 - [ ] Header migration changes sizing only; its existing animation and colour logic are untouched.
 - [ ] Motion libraries are noted for `scroll-animation`, not removed.
 - [ ] A v1 migration runs `fluid migrate --write` before anything else touches `fluid.config.json`,
-      and keeps `aliases: true` until every `--fluid-chrome`/`--fluid-column`/`.fluid-frame` call
-      site has moved.
+      and keeps `aliases: true` until every v1 name (`--header-h`, `--fluid-chrome`,
+      `--fluid-column`, `.fluid-frame`, `fluid-up`, `ENGAGE_*`) has moved.
 
 ## A project that already has `cn` (shadcn and friends)
 

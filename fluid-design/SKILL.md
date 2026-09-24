@@ -32,7 +32,7 @@ This skill contains no animation. For entrances, scroll scenes and video playbac
 
 | Piece | Where |
 |---|---|
-| The CLI: `init`, `generate`, `check`, `settings`, `explain`, `migrate`, `calc`, `probe`, `verify`, `audit` | `bin/fluid` (run it as `node <skill>/bin/fluid …` or put `bin/` on PATH). The same CLI ships as `npx fluid-design-cli@2` and as a standalone binary for people without an agent (`README.md` in this folder); a project may already use one of those, so don't install a second |
+| The CLI: `init`, `generate`, `check`, `settings`, `explain`, `migrate`, `calc`, `verify`, `audit` | `bin/fluid` (run it as `node <skill>/bin/fluid …` or put `bin/` on PATH). The same CLI ships as `npx fluid-design-cli@2` and as a standalone binary for people without an agent (`README.md` in this folder); a project may already use one of those, so don't install a second |
 | Everything a project needs, generated into ONE folder (`output.dir`, default `src/styles/fluid/`) | `fluid.css` (the one import), `base.css`, `settings.reference.css`, `fluid.ts`, `cn.ts` / `_index.scss` / `fluid.stylex.ts`, `runtime/`, `integrations/`, `README.md` |
 | Reference output per stack, at the defaults | `assets/styles/{tailwind-v4,css,scss,stylex}/` |
 | The method, rules and the reasons behind them | `references/*.md` (read on demand, see the map below) |
@@ -50,7 +50,9 @@ breakpoints and container widths, the framework and router, and whether the work
 brownfield. Then settle the decisions in `references/preflight.md`. Each has a default; ask only
 where the codebase does not already answer it and the choice matters.
 
-- **Stack**: Tailwind v4 (default), CSS, SCSS, StyleX (CSS Modules use the CSS stack). `fluid init` detects it.
+- **Stack**: Tailwind v4 (default), CSS, SCSS, StyleX (CSS Modules use the CSS stack). `fluid init` detects it
+  (Tailwind 3 gets the CSS stack). Browser floor: Tailwind v4's own; Safari 15.4 on the others
+  (`references/contract.md` §0).
 - **Artboards**: desktop base width × height (default 1440×900) and the phone artboard (390). These
   are settings; set them only if the design differs.
 - **Bands**: phone, tablet (≥600), landscape phone (≤500 tall), desktop (≥1024). All on by default.
@@ -94,9 +96,10 @@ The result, for Tailwind:
 ```
 
 - **Browser zoom**: Next `<head><FluidHead /></head>` from `integrations/next`; Vite
-  `plugins: [fluidPlugin()]` from `integrations/vite`; otherwise inline `FLUID_ZOOM_INLINE` from
-  `runtime/zoom.js` first in `<head>`. Viewport-derived type does not grow under browser zoom on its
-  own (`references/fluid-scale.md` §12).
+  `plugins: [fluidPlugin()]` from `integrations/vite`; anything else
+  `<script src="…/runtime/zoom.classic.js">` first in `<head>` (or `FLUID_ZOOM_INLINE` pasted into
+  it). Under a strict CSP pass `nonce` to `FluidHead`/`fluidPlugin`, or allow `FLUID_ZOOM_SHA256`.
+  Viewport-derived type does not grow under browser zoom on its own (`references/fluid-scale.md` §12).
 - **Tailwind `cn`**: every component that takes `className` needs a `cn` that knows the fluid
   classes, or two fluid classes for one property both ship and stylesheet order picks the winner.
   **If the project already has one** (shadcn's `src/lib/utils.ts`, any file importing
@@ -113,7 +116,8 @@ The result, for Tailwind:
 - **SCSS**: import `fluid/fluid.css` once from the entry; `@use 'fluid' as fd;` for the functions
   and band mixins.
 - Run `fluid check`, then **restart the dev server and open a fresh tab**, then
-  `fluid probe <url>`. A stale stylesheet looks exactly like broken code (`references/verification.md` §6).
+  `fluid explain 1440x900 --url <url> --brief` (verdict OK / STALE / MISMATCH / V1 / MISSING). A
+  stale stylesheet looks exactly like broken code (`references/verification.md` §6).
 
 ### 3. Build or convert sections, one at a time
 
@@ -126,6 +130,8 @@ Follow `references/section-recipe.md`. The core:
   A row over budget is a drawing problem or a `cqw` problem; a smaller padding never fixes it.
 - Write every drawn number through a fluid utility: `lg:py-[120px]` becomes `lg:fluid-py-120`, and
   the phone number beside it: `fluid-py-48 lg:fluid-py-120`. Write the drawn number, never a converted one.
+  Bare numbers in 0.25 steps, anything else bracketed (`fluid-p-[8.3]`). The `/lh` modifier is drawn px
+  too (`fluid-copy-18/26`); for a ratio use `leading-[1.2]`.
 - Pick each type unit by what its container does (`references/typography.md`): `fluid-display-*` in
   a fixed column, `fluid-text-*` in a box that scales, `fluid-copy-*` for small labels and controls,
   `fluid-ui-*` in the header, nav and footer.
@@ -134,12 +140,14 @@ Follow `references/section-recipe.md`. The core:
 - Off the scale on purpose: border and stroke widths, `em` tracking, text measures. Radii scale with
   their box (`fluid-rounded-*`).
 - Need a band-only tweak? `fluid-tablet:`, `fluid-landscape:` (exclusive band variants), or a
-  setting.
+  setting. The desktop band is `lg:`. Never put a band variant and `sm:`/`md:`/`max-*:` on the same
+  property: band variants sort after every breakpoint, so they always win (`references/contract.md` §3).
 - Need part of the page to stop scaling? A **limit**, in window px, on its wrapper:
   `fluid-grow-until-1680` (holds its size above a 1680 window), `fluid-shrink-until-1280`,
   `fluid-off` (no scaling inside). Everything inside follows. For the site header use
-  `:root { --fluid-ui-grow-until: 1680; }` so `--header-h` follows too (`references/fluid-scale.md` §10).
-  Any other setting for one section: `class="fluid-scope"` plus the setting on it.
+  `:root { --fluid-ui-grow-until: 1680; }` so `--fluid-header-h` follows too (`references/fluid-scale.md` §10).
+  Any other setting for one section: `class="fluid-scope"` plus the setting on it. A limit behind
+  `*:` or `[&_…]:` makes nothing a scope; put it on the element itself.
 
 ### 4. Tune with settings, not code
 
@@ -164,8 +172,10 @@ video *plays* is the `scroll-animation` skill.
 
 ### 6. Verify: at a matrix of viewports, never one
 
-- `fluid check` — config, generated files, settings lint, a `cn` without `withFluid`, a limit class on
-  `<header>`. Resolve every error **and every warning** before calling the work done; put it in CI.
+- `fluid check` — config, generated files, settings lint, and the audit's source rules (a `cn` without
+  `withFluid`, a limit class on `<header>`, a band variant mixed with a breakpoint, a limit on
+  children, a `/1.5` line-height ratio). Resolve every error **and every warning** before calling
+  the work done; put it in CI. `--verbose` adds info notes (your own `--fluid-*` tokens).
 - `fluid audit src` — a static scan for the silent failure modes. Fix every error.
 - `fluid verify <url> --screens --fit-selector '[data-fit=screen]'` — widths 1024–2560 × heights
   640–1440 plus the phone/tablet/landscape set: horizontal overflow, every unit against the maths
@@ -192,11 +202,12 @@ video *plays* is the `scroll-animation` skill.
 This skill makes the page the right size. The `scroll-animation` skill makes it move: triggered
 entrances, pinned and scrubbed scenes, scroll wells, video playback, header ink, motion performance
 and verification, coexistence with GSAP, Lenis and header scripts. Each works alone. Together they
-meet at three points, all owned here (`references/contract.md` §4):
+meet at three points, all owned here (`references/contract.md` §7):
 
-- **The desktop breakpoint.** `bands.desktop.minWidth`, emitted as `DESKTOP_QUERY` (alias
-  `ENGAGE_QUERY`) in the generated `fluid.ts`. `scroll-animation` imports it rather than keeping its own number.
-- **`--header-h`.** The fixed header's resting height (header settings). Anchor offsets, sticky tops and header-ink probes read it.
+- **The desktop breakpoint.** `bands.desktop.minWidth`, emitted as `DESKTOP_QUERY` in the generated
+  `fluid.ts`. `scroll-animation` imports it rather than keeping its own number.
+- **`--fluid-header-h`.** The fixed header's resting height (header settings). Anchor offsets, sticky
+  tops and header-ink probes read it (`--header-h` is its v1 name, emitted only with `aliases: true`).
 - **The `translate` property.** `fluid-translate-*` writes `translate`, so Motion's per-frame
   `transform` composes with it. GSAP folds `translate` into its own transform and freezes a
   px/`calc()` value, so with GSAP the offset goes on a child GSAP never tweens (`fluid-scale.md`
@@ -215,7 +226,7 @@ meet at three points, all owned here (`references/contract.md` §4):
 | `references/tokens-and-theming.md` | colour and semantic tokens, stack traps |
 | `references/brownfield-migration.md` | converting an existing site, or a v1 fluid-design project |
 | `references/stacks.md` | the differences between Tailwind v4, CSS, SCSS, StyleX and CSS Modules |
-| `references/contract.md` | exact names of emitted custom properties, utilities, variants, `fluid.ts` exports, `data-*` attributes, and the interface with `scroll-animation` |
+| `references/contract.md` | browser floor per stack; exact names of emitted custom properties, utilities, variants, `fluid.ts` exports, `data-*` attributes, and the interface with `scroll-animation` |
 | `references/media.md` | any image, SVG or `<video>` element: sizing, reserving, Safari SVG rules, posters |
 | `references/ios-safari.md` | anything mobile, Safari, full-height, sticky, or the toolbar tint |
 | `references/performance.md` | before shipping: image `sizes` on a growing page, fonts, budgets |

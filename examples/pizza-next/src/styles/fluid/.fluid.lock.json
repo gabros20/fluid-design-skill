@@ -1,9 +1,9 @@
 {
   "generator": "fluid-design 2.0.0",
-  "build": "2.0.0+2ee99a73",
+  "build": "2.0.0+ccc5f1d1",
   "stack": "tailwind-v4",
   "files": {
-    "fluid.css": "1fdef4b0d7f73790",
+    "fluid.css": "14bf32fa9f2d2462",
     "base.css": "6f20df579330e8c1",
     "settings.reference.css": "ebe27b8776a646c5",
     "fluid.css-data.json": "2487abf3d84cfe6f",
@@ -14,7 +14,7 @@
     "runtime/zoom.js": "566ad8ece58b22a0",
     "runtime/zoom.d.ts": "d4c22e99f03d1f91",
     "integrations/next.tsx": "fda5fc3c67b6fa87",
-    "README.md": "7afb3cfb10b0ae65",
+    "README.md": "1057cdb64e1532fd",
     ".gitattributes": "00aeeb7b53fd7b02"
   }
 }

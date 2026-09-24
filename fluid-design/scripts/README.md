@@ -1,14 +1,14 @@
 # fluid-design scripts
 
 Node 20+, ESM, zero runtime dependencies except `playwright` (only needed by
-`probe.mjs`, `verify-matrix.mjs` and the browser tests under `test/`,
-resolved from the target project — see below).
+`fluid explain --url`, `verify-matrix.mjs` and the browser tests under
+`test/`, resolved from the target project by `lib/live.mjs` — see below).
 
 `bin/fluid` (`cli.mjs`) is the `fluid` command projects use day to day. It
 finds the nearest `fluid.config.json` (walking up from `cwd`, or `--config
 <file>`) and either runs its own logic or forwards straight to one of the
-standalone tools below (`fluid calc|probe|verify|audit` == `node
-calc.mjs|probe.mjs|verify-matrix.mjs|audit.mjs`). All of it — the CLI and the
+standalone tools below (`fluid calc|verify|audit` == `node
+calc.mjs|verify-matrix.mjs|audit.mjs`). All of it — the CLI and the
 tools — is built on `lib/`, never duplicates a formula, and never hand-writes
 a config default: everything traces back to `lib/spec.mjs`.
 
@@ -24,12 +24,17 @@ fluid init [--yes] [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integ
            [--out dir] [--css globals.css] [--desktop 1440x900] [--desktop-at 1024] [--no-mobile]
            [--phone 390] [--max-width 1680] [--set --fluid-<setting>=<n> …] [--force] [--interactive]
 fluid generate [--dry] [--force] [--watch]
-fluid check
+fluid check [--verbose]
 fluid settings [--json]
-fluid explain <W>x<H> [--zoom z] [--set --fluid-<setting>=<n> …] [--url http://… [--at <selector>]]
+fluid explain <W>x<H> [--zoom z] [--set --fluid-<setting>=<n> …] [--url http://… [--at <selector>] [--brief]]
 fluid migrate [--write]
-fluid calc | probe | verify | audit …   (the tools below)
+fluid probe <url> [--width 1440] [--height 900]   (old name: explain <W>x<H> --url <url> --brief)
+fluid calc | verify | audit …   (the tools below)
 ```
+
+Errors are thrown (`CliError`) and turned into a message and an exit code
+only in `run()`, so `generate --watch` survives an invalid save and the CLI
+test runs in process.
 
 - **`init`** — detects the stack and framework from `package.json` (or, with
   none, from the stylesheet: Rails, Phoenix, Hugo and plain-HTML paths are
@@ -48,46 +53,75 @@ fluid calc | probe | verify | audit …   (the tools below)
   `.scss` stylesheet is never edited: init prints the `@use` and the
   engine import. With no framework integration it also generates
   `runtime/zoom.classic.js`, the zoom runtime as a classic `<script src>`.
-  Refuses to run twice without `--force`.
-- **`generate`** — writes `output.dir` from the current `fluid.config.json`.
-  Compares against `.fluid.lock.json` first: a file that was hand-edited
-  since the last generate is left alone (and the whole run fails) unless
-  `--force`. `--dry` prints what would change without writing. `--watch`
-  regenerates on every save of `fluid.config.json` (it watches the folder,
-  since editors often replace the file).
-- **`check`** — the CI gate, zero browser: (1) the generated output matches
-  what the config would produce right now — missing / stale / hand-edited /
-  orphaned; (2) every `--fluid-*` declaration in the project's own CSS is
-  linted (unknown name with a did-you-mean, out-of-range value, non-numeric
-  value, `scale-min` above `scale-max`, a setting declared outside
-  `:root`/`.fluid-scope`, one shadowing another); (3) on
-  `tailwind.breakpoints: "none"`, any hand-maintained `--breakpoint-lg` still
-  agrees with `bands.desktop.minWidth`. It also names a generator version
-  mismatch (the lock records the CLI version that generated the folder), so
-  a teammate's binary and CI's `npx` can't silently disagree. Non-zero exit
-  on any problem.
+  Tailwind 3 in `package.json` gives the css stack (with a note); a site's
+  own `--breakpoint-*` gives `tailwind.breakpoints: "none"`; `globals.scss`
+  candidates are searched too; the import goes after `@charset` and any
+  leading `@import`/`@use`, never above `@charset` (`lib/css-scan.mjs`). With
+  Prettier it adds `output.dir` to `.prettierignore`; with Biome it names
+  the `files.ignore` line to add. Everything is decided in memory first and
+  the hand-edit guard runs on the target folder before anything is written,
+  so a refusal writes nothing. Refuses to run twice without `--force`;
+  `--force` over a v1 config keeps it as `fluid.config.v1.json`.
+- **`generate`** — writes `output.dir` from the current `fluid.config.json`,
+  plus a `.gitattributes` (`* -text`) so Git's CRLF conversion leaves the
+  files byte-exact. Compares against `.fluid.lock.json` first, with line
+  endings normalised: a file that was hand-edited since the last generate is
+  left alone (and the whole run fails) unless `--force`; a formatter's
+  rewrite (equal once whitespace and quotes go) is a warning and is
+  regenerated; with no lock, a file that differs is refused rather than
+  overwritten; an orphan is deleted only if unedited since. `--dry` prints
+  what would change without writing. `--watch` regenerates on every save of
+  `fluid.config.json` (it watches the folder, since editors often replace the
+  file), prints an invalid save's error and keeps watching.
+- **`check [--verbose]`** — the CI gate, zero browser: (1) the generated
+  output matches what the config would produce right now — missing / stale /
+  hand-edited / reformatted (a warning) / orphaned; (2) every `--fluid-*`
+  declaration in the project's own CSS is linted: a near-typo of a setting
+  (edit distance ≤ 2, with a did-you-mean) or an engine-owned name is an
+  error, any other unknown `--fluid-*` name is an info note ("fine if it's
+  your own token"); out-of-range or non-numeric values, `scale-min` above
+  `scale-max`, a removed mobile floor (named with its replacement); a
+  setting inside `@media`, on a qualified root or on a non-scope selector is
+  a note; (3) the audit's source rules (`CHECK_RULES`: `header-limit`,
+  `cn-without-withfluid`, `band-variant-with-breakpoint`,
+  `fluid-desktop-variant`, `limit-on-children`, `fluid-leading-ratio`); (4)
+  on `tailwind.breakpoints: "ladder"`, any `--breakpoint-*` the project
+  declares is an error; on `"none"`, `--breakpoint-lg` must equal
+  `bands.desktop.minWidth`. It also names a generator version mismatch (the
+  lock records the CLI version that generated the folder), so a teammate's
+  binary and CI's `npx` can't silently disagree. Info notes print only with
+  `--verbose`. Non-zero exit on any error.
 - **`settings [--json]`** — prints `settings.reference.css` (every setting,
   commented, with its default), or with `--json` the same as structured data.
-- **`explain <W>x<H> [--zoom z] [--url http://…]`** — the band a viewport
-  falls in, every resolved unit, and where each setting in play came from
-  (default, or `file:line` in the project's CSS). With `--url` it loads the
-  live page in a headless browser instead, reads its own computed settings,
-  and compares the page's resolved units and build stamp against what the
-  config generates now (`verification.md` §6), then lists every scope on the
-  page with its settings, units and how many elements inside follow the
-  scale (a limit with nothing fluid inside is flagged). `--at <selector>`
-  explains one element; `--set` changes the prediction without editing.
+- **`explain <W>x<H> [--zoom z] [--url http://… [--brief]]`** — the band a
+  viewport falls in, every resolved unit, and where each setting in play came
+  from (default, or `file:line` in the project's CSS). With `--url` it loads
+  the live page in a headless browser instead (`lib/live.mjs`), reads its own
+  computed settings, compares the page's resolved units and build stamp
+  against what the config generates now, lists every scope on the page with
+  its settings, units and how many elements inside follow the scale (a limit
+  with nothing fluid inside is flagged), and ends with a verdict: **OK** (0),
+  **STALE** / **MISMATCH** / **V1** (1), **MISSING** (2)
+  (`references/verification.md` §6). On a v1 config it expects the migrated
+  numbers. `--zoom` (0.25–5) is emulated on the page by setting
+  `--fluid-zoom`, so the model and the page see the same input. `--brief`
+  prints only the units and the verdict. `--at <selector>` explains one
+  element; `--set` changes the prediction without editing.
+- **`probe <url>`** — the old one-shot freshness check, now
+  `explain <W>x<H> --url <url> --brief` (1440×900 unless
+  `--width`/`--height`). Kept as an alias.
 - **`migrate [--write]`** — converts a v1 `fluid.config.json` to v2: prints
   what moved, the new config, and a `:root` snippet of every v1 number that
   differed from its v2 default (nothing to carry over prints instead).
   `--write` replaces the config (keeping the v1 file as
   `fluid.config.v1.json`) and turns the top-level `aliases` setting on, so a
-  brownfield migration keeps emitting the v1 custom-property/class names
-  (`--fluid-chrome`, `--fluid-column`, `.fluid-frame`) alongside the v2 ones
-  until callers are moved over.
-- **`calc | probe | verify | audit`** — `calc.mjs`, `probe.mjs`,
-  `verify-matrix.mjs`, `audit.mjs` (below), imported in process with the
-  remaining args forwarded verbatim (a compiled binary has no node to spawn).
+  brownfield migration keeps emitting the v1 names (`--header-h`,
+  `--safe-*`, `--browser-bar`, `--fluid-chrome`, `--fluid-column`,
+  `.fluid-frame`, SCSS `fluid-up`, `ENGAGE_*`, `fluidPx(n, 'chrome')`)
+  alongside the v2 ones until callers are moved over.
+- **`calc | verify | audit`** — `calc.mjs`, `verify-matrix.mjs`, `audit.mjs`
+  (below), imported in process with the remaining args forwarded verbatim (a
+  compiled binary has no node to spawn).
 
 ## Distribution: npm, binaries, the skill folder
 
@@ -103,8 +137,9 @@ One source, three ways to run it (`docs/DISTRIBUTION.md` has the reasoning):
   runs the host binary through init, check, calc, explain and audit in a
   project without Node. The runtime files are embedded through
   `lib/emit/runtime-assets.mjs` (generated from `assets/runtime/`), so the
-  binary reads nothing from the skill. `verify`, `probe` and `explain --url`
-  need Playwright, so the binary refuses them and prints the `npx` command.
+  binary reads nothing from the skill. `verify` and `explain --url` (and
+  `probe`) need Playwright, so the binary refuses them and prints the `npx`
+  command.
   The repo's `.github/workflows/release.yml` runs it on a `v*` tag and
   attaches the output to the GitHub Release, which `install.sh` and
   `install.ps1` at the repo root download from after checking the sha256.
@@ -140,32 +175,12 @@ sets at the top level (`lib/context.mjs`'s `loadContext`, the same scan
 
 Exit codes: `0` ok / budget PASS, `1` budget OVER, `2` usage error.
 
-## probe.mjs — one-shot freshness check
+## probe.mjs — kept for old commands
 
-```
-node probe.mjs <url> [--config f] [--width 1440] [--height 900]
-node probe.mjs --help
-```
-
-Loads `<url>` in a headless browser at one viewport, reads every registered
-`--fluid-*` setting the page's `:root` resolves to a number plus every unit
-(`getPropertyValue` returns the unevaluated expression, not a number, so each
-unit is measured with a probe element sized `calc(1000 * var(--fluid...))`),
-computes what the model expects from those settings, and reads the
-`--fluid-build` stamp. Prints a verdict:
-
-- **FRESH** — every resolved unit matches expected within `0.002`, and the
-  page's build stamp matches what the current `fluid.config.json` generates.
-- **STALE** — a unit drifted, or the build stamp doesn't match. Almost always
-  the classic bug, not a code bug: Next dev pushes CSS over the HMR socket, a
-  server restart kills that socket, and an already-open tab does not reliably
-  re-fetch on reconnect. Safari holds it hardest. Fix: close the tab and open
-  a fresh one; if that doesn't clear it, blow away the build cache (`rm -rf
-  .next`) and restart the dev server. `--help` prints the full explanation.
-- **MISSING** — no unit resolves to anything (wrong URL, a build that
-  predates the scale, or it's genuinely not wired up here).
-
-Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
+`node probe.mjs <url> [--config f] [--width 1440] [--height 900]` runs
+`fluid probe`, which is `fluid explain <W>x<H> --url <url> --brief` (above).
+The verdicts are explain's: OK / STALE / MISMATCH / V1 / MISSING, exit codes
+0 · 1 · 2.
 
 ## verify-matrix.mjs — the browser harness
 
@@ -184,8 +199,9 @@ exact `--mobile WxH` pair, and for each one checks:
   offending elements (`rect.right > innerWidth`), shallowest DOM depth first.
 - **(b) units** — the page's OWN settings (every registered `--fluid-*`
   custom property it resolves) run through the model, then compared against
-  what the page actually renders — the same probe-element technique as
-  `probe.mjs`, within `0.002`. A failing row is diagnosed from the
+  what the page actually renders — the same page reader as `explain --url`
+  (`lib/live.mjs`), within `0.002`. A v1 config is checked against its
+  migrated numbers. A failing row is diagnosed from the
   `--fluid-build` stamp: `missing` (no fluid stylesheet at all), `v1` (a
   stylesheet with no build stamp), `stale` (a stamp that doesn't match what
   `fluid.config.json` generates now), or `mismatch` (current build, wrong
@@ -235,12 +251,14 @@ or playwright could not be resolved/launched.
 ## audit.mjs — static scanner
 
 ```
-node audit.mjs <srcDir> [--engage lg] [--json]
+node audit.mjs [srcDir] [--desktop-variant lg] [--prefix fluid] [--json]
 node audit.mjs --selftest
 node audit.mjs --help
 ```
 
-Unchanged in shape from v1: walks `<srcDir>` (skipping `node_modules`, `.git`,
+With a `fluid.config.json` at or above `srcDir`, the class prefix, roles,
+stack and output folder come from it (flags still win). `--engage` is kept
+as a silent alias of `--desktop-variant`. Walks `<srcDir>` (skipping `node_modules`, `.git`,
 `.next`, `dist`, `build`, `.turbo`, `.cache`, `out`) and reports rule
 violations, each with a rule id, `file:line`, the offending snippet, a
 one-line *why*, and a *fix*. Some rules need repo-wide context (e.g. whether
@@ -258,7 +276,18 @@ above), `length-times-unit` (error), `dvh-on-scaled` (warn),
 `overflow-hidden-x` (warn), `dark-variant` (warn), `rounded-with-zero-token`
 (info), `tw-breakpoint-units` (error — a mixed-unit or partial
 `--breakpoint-*` set, the Tailwind v4 variant-ordering trap), `img-svg`
-(warn), `double-fluid-same-prop` (warn), `type-unit-mismatch` (info).
+(warn), `double-fluid-same-prop` (warn), `type-unit-mismatch` (info),
+`header-limit` (warn — a limit class on `<header>`: `--fluid-header-h` would
+not follow), `cn-without-withfluid` (warn), `band-variant-with-breakpoint`
+(warn — a band variant and a `sm:`/`md:`/`max-*:` breakpoint on one
+property; band variants always win), `fluid-desktop-variant` (error — the
+removed variant; use `lg:`), `limit-on-children` (warn — a limit behind
+`*:`/`[&_…]:` makes nothing a scope), `fluid-leading-ratio` (warn —
+`fluid-copy-18/1.5` is 1.5 drawn px, not a ratio).
+
+`runAudit({ root, prefix, desktopVariant, rules, … })` is the programmatic
+entry; `fluid check` runs it with `rules: CHECK_RULES` (the last six above)
+and the project's context.
 
 Motion-specific rules (`motion-strict`, `scroll-well-vs-smooth-scroll`,
 `fractional-amount`, `contents-reveal`, `video-attrs`, plus
@@ -318,17 +347,31 @@ node scripts/audit.mjs --selftest` — the full no-browser gate.
   `bandAt()`/`bandMedia()`/`exclusiveMedia()`, and `migrateV1()`/`isV1()`
   (v1 config → v2 structure + settings, with human-readable notes on what moved).
 - **`settings.mjs`** — `scanDeclarations()` (every `--fluid-*`/`--_fluid-*`
-  declaration in a CSS/SCSS file, with its line and selector context) and
-  `lintSettings()` (the rules `fluid check` reports: unknown name, bad value,
-  range, redundant media query, wrong scope, shadowing). `scanProject()`
-  walks every style file under a project root except `output.dir`.
+  declaration in a CSS/SCSS file, with its line, selector list, enclosing
+  at-rules and scope flag, via `css-scan.mjs`) and `lintSettings()` (the rules
+  `fluid check` reports: typo'd or engine-owned name, bad value, range,
+  removed mobile floor, redundant media query, variant or non-scope selector,
+  shadowing; an unknown name that is neither is an info note).
+  `scanProject()` walks every style file under a project root except
+  `output.dir`.
+- **`css-scan.mjs`** — a zero-dependency CSS/SCSS block tokenizer, not a
+  parser: comments and strings masked, nesting tracked, `@layer`/`@supports`
+  transparent, selector lists split, scope blocks recognised (a scope
+  selector, or `@include <ns>.fluid-scope`/a limit mixin). Also finds `init`'s
+  import point (`findImportInsertion`), the first top-level `:root`
+  (`findRootBlock`) and a brownfield base layer (`hasBaseRules`).
+- **`live.mjs`** — reading a running page: the one Playwright resolver
+  (project first, then beside the skill) and the one reader of a page's
+  units, settings, build stamp and scopes. Used by `explain --url` and
+  `verify-matrix.mjs`.
 - **`context.mjs`** — `loadContext()`: what every static tool (`calc`,
-  `probe`, `verify-matrix`, `explain`) needs in one call — the structure, the
+  `verify-matrix`, `explain --url`, `audit`) needs in one call — the structure, the
   resolved settings with where each came from, and the output dir. A v1
   config is migrated in memory so these tools work before `fluid migrate`.
 - **`emit/engine.mjs`** — the unit engine as CSS: `@property` registrations,
-  band parameter blocks, and the formulas (written once, on `:root,
-  .<prefix>-scope`). Owns the ×1000 precision form (Firefox rounds a
+  band parameter blocks (classic `min-width` media), and the formulas
+  (written once, on `:root` and every scope: `scopeSelector()`). Owns the
+  ×1000 precision form (Firefox rounds a
   `min()`/`max()` result to 1/60px) and the knee (the desktop damping curve
   read at `bands.desktop.minWidth / base-width` instead of a v1-style rounded
   "auto floor"). `min()`/`max()`/`calc()` only — no `clamp()`, no `round()`.
@@ -380,23 +423,35 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   `init --interactive` with scripted answers, a Rails-style project with no
   `package.json` (css stack, output beside the stylesheet, the classic zoom
   script), `explain --set`, a version-mismatched lock, and
-  `generate --watch`. `node scripts/test/cli.mjs`.
+  `generate --watch`. And the September regressions: CRLF line endings, a
+  formatter-reformatted file, a missing lock, an edited orphan, the
+  `.prettierignore` and `.gitattributes`, `@charset` insertion, a site's own
+  breakpoints (kept by init, an error next to the ladder), Tailwind 3
+  detection, `init --force` over v1, init refusing over hand-edited output,
+  `--zoom` validation, and watch surviving an invalid save.
+  `node scripts/test/cli.mjs`.
 - **`test/engine-matrix.mjs`** — the generated engine CSS against
   `model.evaluate()`, in real browsers. For each of a set of structures
   (defaults, flat below desktop, zoom off, ui off, a custom role, no
   tablet/landscape, width-only + ceiling, floors set, desktop at a moved
   `minWidth`) plus every migrated v1 fixture, it renders a probe page and
   measures every unit at a viewport × zoom grid. Then, on the defaults: a
-  live setting override, an invalid value falling back to its default, and
-  the same numbers with `@property` stripped. `node scripts/test/engine-matrix.mjs
+  live setting override, an invalid value falling back to its default, the
+  same numbers with `@property` stripped, and every kind of scope (limit
+  classes in their variant and important forms, an arbitrary property,
+  `fluid-scope`, `data-fluid-scope`) with `fluidPx(n, unit, el)`'s walk read
+  against the model. `node scripts/test/engine-matrix.mjs
   [--browsers chromium,webkit,firefox]` — needs `playwright`, resolved from
   the current directory first, so run it from a project that has it, e.g.
   `cd examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs`.
 - **`test/tailwind-compile.mjs`** — the generated Tailwind layer through the
-  real Tailwind v4 compiler (`@tailwindcss/postcss`): band variants, every
-  utility family, a custom role, the container, negatives all compile to the
-  expected CSS. Then in a browser: exactly one band variant matches at each
-  viewport, and `.fluid-scope` re-scopes a setting to a subtree. Needs
+  real Tailwind v4 compiler (`@tailwindcss/postcss`): band variants (and no
+  `fluid-desktop:`), every utility family, a custom role, the container,
+  negatives, bracket values and modifiers (`fluid-p-[8.3]`,
+  `fluid-copy-18/[26.5]`) all compile to the expected CSS, and `cn` accepts
+  exactly what compiles. Then in a browser: exactly one band variant matches
+  at each viewport, a lone `fluid-translate-y-24` moves its element, and
+  `.fluid-scope` re-scopes a setting to a subtree. Needs
   `tailwindcss`, `@tailwindcss/postcss`, `postcss` and `playwright` in the
   current project — same caveat as `engine-matrix.mjs`, run it from
   `examples/pizza-next`.
@@ -408,7 +463,16 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   `fluid-off`). Run it from `examples/pizza-vite-gsap` (sass + playwright).
 - **`test/explain-live.mjs`** — `fluid explain --url` against a served page:
   the scopes report (a limit with nothing fluid inside must warn), `--at`,
-  and `--at` with no match. Needs playwright.
+  `--at` with no match, the verdicts and exit codes (via `probe`), and
+  `--zoom` emulated with no false drift. Needs playwright.
+- **`test/zoom-detect.mjs`** — the zoom runtime in Node with stubbed
+  `window`/`document`/`navigator`: real zoom that must be read, the
+  side-panel and docked-DevTools geometries that must read 1, Safari's
+  steps, Firefox gated off; each row through `installFluidZoom` and through
+  the generated `FLUID_ZOOM_INLINE` string. It also checks `FLUID_ZOOM_SHA256`
+  and `zoom.classic.js` against that string, and both write paths (adopted
+  stylesheet, `<html>` style fallback). No browser.
+  `node scripts/test/zoom-detect.mjs`.
 
 ## fixtures/
 

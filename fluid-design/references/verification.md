@@ -5,8 +5,8 @@ anything else that needs checking across viewports rather than at one window siz
 **Skip when:** the change is a static, non-responsive tweak with no viewport dependency — a plain
 visual diff is enough. Verifying an animation (reveals, scene progress, anchor jumps through a
 scroll well) is the `scroll-animation` skill's `references/verification.md`.
-**Depends on:** `ios-safari.md` §9 for the stale-stylesheet mechanism this document's harness assumes
-you've already ruled out.
+**Depends on:** nothing. This is the one home of the stale-stylesheet diagnosis (§6); the other
+references link here.
 
 Three tiers, cheapest and most automatable first. The order matters: a bug the scripted tiers can
 catch should never wait for a real device, because a real device is the scarcest resource in this list.
@@ -20,7 +20,7 @@ a bad setting before you spend a viewport sweep chasing something that was never
 3. [Tier 3 — a real device](#3-tier-3--a-real-device)
 4. [Real-device render checks](#4-real-device-render-checks)
 5. [The viewport matrix, cell by cell](#5-the-viewport-matrix-cell-by-cell)
-6. [The stale-stylesheet probe](#6-the-stale-stylesheet-probe)
+6. [The stale stylesheet](#6-the-stale-stylesheet)
 7. [The scripts](#7-the-scripts)
 8. [Traps](#traps)
 
@@ -41,9 +41,9 @@ script and reading numbers out of it.**
   reading one of these, not by looking harder at a screenshot, and none of them were visible from
   reading the source in isolation.
 
-`fluid verify` and `fluid probe` (§7 — thin CLI wrappers over `scripts/verify-matrix.mjs` and
-`scripts/probe.mjs`) are this tier, packaged. `fluid explain <W>x<H>` (§7) is the same read-state
-discipline with no browser at all: what every unit resolves to and which setting produced it.
+`fluid verify` and `fluid explain <W>x<H> --url` (§7) are this tier, packaged. `fluid explain
+<W>x<H>` without `--url` is the same read-state discipline with no browser at all: what every unit
+resolves to and which setting produced it.
 
 ## 2. Tier 2 — the viewport matrix
 
@@ -64,10 +64,13 @@ makes it gate the run.
 
 Reading a failure:
 - `--fluid-zoom (unset)` on desktop cells: the zoom runtime is not installed on this page — render
-  `<FluidHead/>` (Next), add `fluidPlugin()` (Vite), or inline `FLUID_ZOOM_INLINE` from `runtime/zoom.js`
-  in `<head>`.
+  `<FluidHead nonce={…} />` (Next), add `fluidPlugin()` (Vite), or, anything else, load
+  `runtime/zoom.classic.js` as the first `<script>` in `<head>` (or paste `FLUID_ZOOM_INLINE` from
+  `runtime/zoom.js` into it). Under a strict CSP, a blocked script reads the same way: check the
+  console for a `script-src` violation (`fluid-scale.md` §12, CSP).
 - `--fluid-zoom` set to `1`: the runtime is installed but detected no zoom — check it runs in the top
-  window, and that `fluid.config.json` has `zoom: true`.
+  window, and that `fluid.config.json` has `zoom: true`. A side panel or bottom-docked DevTools
+  also reads 1 by design.
 - set, growing, but the text still failed: the stylesheet was generated with `zoom: false`, or the
   text sits on `--fluid` (layout) directly, which is never compensated. `--fluid-<role>` (`display`,
   `copy`, …) always compensates fully; `fluid-text-*` compensates by size, in full below
@@ -102,14 +105,14 @@ skipped:
 
 - **Confirm the deployed build actually contains the fix before asking for a device test.** Build/CDN
   propagation lag is enough for a device test to run against the previous deployment and produce a
-  false negative that reads as "the fix didn't work." `fluid explain --url <deployed-url>` (§7) or
-  `fluid probe` names the exact build stamp the live page is running (§6) — check it before asking.
+  false negative that reads as "the fix didn't work." `fluid explain 1440x900 --url <deployed-url>
+  --brief` (§7) names the exact build stamp the live page is running (§6) — check it before asking.
 - **A tint/chrome-sampling result is never trustworthy from anything but the physical device class it
   claims to fix** — a fix verified on one iOS version is not verified on another if the underlying
   WebKit sampling behaviour changed between them.
 
 What only a device can verify here: the iOS toolbar tint (`ios-safari.md` §3), the `lvh` shortfall
-and hero overshoot (§5 there), safe-area and `--browser-bar` padding (§2 there), and the 16px input
+and hero overshoot (§5 there), safe-area and `--fluid-browser-bar` padding (§2 there), and the 16px input
 auto-zoom (§7 there). Video compositing and scroll-driven behaviour on a device are the
 `scroll-animation` skill's checks.
 
@@ -134,51 +137,82 @@ At each cell, check: nothing overflows, no heading's line count changes unexpect
 reference cell (1440×900, or whatever a project's `fluid.config.json` bands.desktop artboard is)
 renders pixel-identical to the drawn frame.
 
-## 6. The stale-stylesheet probe
+## 6. The stale stylesheet
 
-Before debugging any layout or pin behaviour that "suddenly broke," rule out a stale stylesheet
-first — full mechanism and fix in `ios-safari.md` §9. Every generated stylesheet stamps a build id on
-`:root`:
+**This is almost always the actual cause of "the scroll-driven video/pin is broken" or "the layout
+lost its sizes" reports right after a CSS edit.** Rule it out before reading any layout, scrub or
+pin code.
+
+**Why it happens.** A dev server pushes CSS over its HMR socket (Next dev does). Restarting the
+server kills that socket, and a tab that was already open does not reliably re-fetch the stylesheet
+on reconnect — it keeps the previous one in memory. Safari holds it hardest: a plain Cmd+R often
+re-runs the page against the cached CSS, so the reload appears to "not work" while closing the tab
+fixes it instantly. The trigger is always the same pair: **the fluid output changed (a
+`fluid generate`, or an edit to a global stylesheet such as `globals.css`) AND the server restarted
+while a tab stayed open.**
+
+**Why it looks like a motion or layout bug.** Utilities defined through an at-rule (Tailwind v4's
+`@utility`) are still in the rendered HTML with no rule behind them once the stylesheet goes stale:
+the class name is there, the CSS that gives it meaning isn't. A missing height utility on a pinned
+scene's frame collapses it to `height: auto`, so the pin keeps its 0→1 progress but has almost no
+travel to spread it over: it holds the first frame, then snaps to the last. A missing container
+utility makes the render full-bleed. It reads like a scroll-math bug and sends a debugging session
+into the wrong file.
+
+**The check.** Every generated stylesheet stamps a build id on `:root`:
 
 ```js
 getComputedStyle(document.documentElement).getPropertyValue('--fluid-build')
 ```
 
-It reads `"<skill-version>+<config-hash>"`, e.g. `"2.0.0+a1b2c3d4"`. Compare it with what the current
-`fluid.config.json` generates — `fluid explain <W>x<H> --url <page-url>` prints both the page's build
-and the config's, and flags a mismatch; `fluid probe <url>` (§7) does the same as a one-shot pass/fail.
-A missing `--fluid-build` with no fluid units at all means the page isn't running a fluid stylesheet;
-present but different from what the config generates now means **stale**: close the tab, open a fresh
-one, and only resume debugging application logic if the symptom survives that.
+It reads `"<skill-version>+<config-hash>"`, e.g. `"2.0.0+a1b2c3d4"`. `fluid explain 1440x900 --url
+<page-url> --brief` compares it with what the current `fluid.config.json` generates and ends with a
+verdict (`fluid probe <url>` is the old name, kept as an alias):
 
-Why it goes stale: Next dev pushes CSS over the HMR socket. Restarting the dev server kills that
-socket, and a tab that was already open does not reliably re-fetch the stylesheet on reconnect — it
-keeps the previous one in memory. Safari holds it hardest: a plain Cmd+R often re-runs the page
-against the cached CSS, so the reload appears to "not work" while closing the tab fixes it instantly.
-The trigger is always the same pair: **the fluid output changed (a `fluid generate`, or a hand edit to
-`globals.css`) AND the server restarted while a tab stayed open.** Fix: close the tab and open a fresh
-one; if that doesn't clear it, blow away the build cache and restart the dev server (e.g. `rm -rf
-.next && pnpm dev`).
+| Verdict | Means | Exit |
+|---|---|---|
+| **OK** | current build, units match the model | 0 |
+| **STALE** | the page's build stamp differs from what the config generates now | 1 |
+| **MISMATCH** | current build, but a unit drifts: a hand-edited `fluid.css`, or a setting redeclared where `fluid check` doesn't look | 1 |
+| **V1** | a stylesheet with no `--fluid-build` (v1, or hand-written) against a v2 config | 1 |
+| **MISSING** | no fluid unit resolves: the page doesn't load the fluid stylesheet (wrong URL or build, or not wired up) | 2 |
+
+**The fix.** Close the tab and open a fresh one. If the symptom survives that, clear the build cache
+and restart the dev server (`rm -rf .next`, or the framework's equivalent). **Closing the tab fixing
+it is proof the code was fine** — a genuine logic bug doesn't care which tab is open.
+
+**After any change to a global stylesheet** (or a `fluid generate`): restart the dev server and open
+a fresh tab before judging what's on screen. At-rule utilities only exist in a freshly rebuilt
+stylesheet; there's no partial-HMR path for them.
 
 ## 7. The scripts
 
 All of these are also reachable through the `fluid` CLI (`fluid check`, `fluid explain`, `fluid
-verify`, `fluid probe`, `fluid calc`, `fluid audit`), which finds the nearest `fluid.config.json` for
+verify`, `fluid calc`, `fluid audit`), which finds the nearest `fluid.config.json` for
 you; call the underlying script directly with `--config <file>` when you need to point at a config
 that isn't an ancestor of the current directory. Referenced here by intent rather than a frozen flag
 list — check each script's own `--help` for the current surface:
 
-- **`fluid check`** — the zero-browser CI gate. Confirms the generated output in `output.dir` matches
-  what `fluid.config.json` would produce right now (missing / stale / hand-edited / orphaned files),
-  lints every `--fluid-*` setting your project's CSS declares (unknown name, out-of-range value,
-  `scale-min` above `scale-max`, a setting set outside `:root`/`.fluid-scope`), and — on
-  `tailwind.breakpoints: "none"` — checks any hand-maintained `--breakpoint-lg` still agrees with
-  `bands.desktop.minWidth`. Non-zero exit on any problem: put it in CI ahead of a build.
-- **`fluid explain <W>x<H> [--zoom z] [--url http://…]`** — every unit at one viewport, the band it
-  falls in, and where each setting in play came from (default, or `file:line` in your CSS). With
-  `--url` it loads the live page instead: reads its *own* computed settings (so a page that overrides
-  a setting is checked against that override, not flagged for it), compares resolved units against
-  what the model computes from them, and compares build stamps (§6). It also lists every scope on
+- **`fluid check [--verbose]`** — the zero-browser CI gate. Confirms the generated output in
+  `output.dir` matches what `fluid.config.json` would produce right now (missing / stale /
+  hand-edited / orphaned files; a formatter's whitespace-and-quotes rewrite is a warning, with the
+  ignore-file line to add), lints every `--fluid-*` setting your project's CSS declares (a typo'd
+  or engine-owned name, out-of-range value, `scale-min` above `scale-max`; `@layer`/`@supports`
+  wrappers and selector lists are read correctly), runs the audit's source rules (`header-limit`,
+  `cn-without-withfluid`, `band-variant-with-breakpoint`, `fluid-desktop-variant`,
+  `limit-on-children`, `fluid-leading-ratio`), errors on a `--breakpoint-*` declared next to the px
+  ladder, and — on `tailwind.breakpoints: "none"` — checks your own `--breakpoint-lg` still agrees
+  with `bands.desktop.minWidth`. Info notes (your own `--fluid-*` token, a setting inside a media
+  query or on a non-scope selector) print only with `--verbose`. Non-zero exit on any error: put it
+  in CI ahead of a build.
+- **`fluid explain <W>x<H> [--zoom z] [--url http://… [--brief]]`** — every unit at one viewport,
+  the band it falls in, and where each setting in play came from (default, or `file:line` in your
+  CSS). With `--url` it loads the live page instead: reads its *own* computed settings (so a page
+  that overrides a setting is checked against that override, not flagged for it), compares resolved
+  units against what the model computes from them, compares build stamps, and ends with a verdict
+  (§6's table). It works on a v1 config too, expecting its migrated numbers. `--zoom` with `--url`
+  is emulated (it sets the runtime's `--fluid-zoom` on the page, not browser zoom; `fluid verify`
+  covers real zoom). `--brief` prints just the units and the verdict. It also lists every scope on
   the page (limit utilities, `.fluid-scope`, `[data-fluid-scope]`, and any element where a setting
   changes, which is how an SCSS/StyleX mixin scope shows up) with its own settings, its units next
   to the page's, and how many elements inside follow the scale; a scope with none is flagged, since
@@ -203,12 +237,6 @@ list — check each script's own `--help` for the current surface:
   zoom row needs Chromium and is skipped on the others. Exit codes: 0 pass, 1 a check failed, 2 usage
   error or Playwright not found. Reveal checking and anchor-jump checking are not here: they are
   the `scroll-animation` skill's `verify-motion` script.
-- **`fluid probe <url>`** (`scripts/probe.mjs`) — a single-viewport, single-pass version of the same
-  read-state discipline in §1: reads every fluid custom property and setting the page defines, resolves
-  each unit against what the model computes from those settings, checks the build stamp (§6), and
-  prints one verdict: **FRESH** (units match, current build), **STALE** (drift, or a build stamp that
-  doesn't match `fluid.config.json`), or **MISSING** (no fluid unit resolves at all). A fast sanity
-  check between matrix runs.
 - **`fluid calc table|px|budget`** (`scripts/calc.mjs`) — a standalone calculator for the fluid-scale
   arithmetic itself, reading settings from the nearest `fluid.config.json` and the project's own CSS
   (or `--config`): `table` prints the resolved unit at a set of viewports plus which arm is binding
@@ -219,9 +247,12 @@ list — check each script's own `--help` for the current surface:
   built, rather than after it ships and overflows, suggesting `cqw` fractions of the container's
   content box on OVER (`fluid-scale.md` §4.1's container-query escape).
 - **`fluid audit <src>`** (`scripts/audit.mjs`) — the static scanner: walks your project's source,
-  applying the rule table in `scripts/README.md` (`fixed-px-at-engage`, `length-times-unit`, and the
-  rest), each finding carrying a rule id, `file:line`, the offending snippet, a *why* and a *fix*.
-  `--selftest` runs it over its own positive/negative fixtures and asserts each trips (or doesn't).
+  applying the rule table in `scripts/README.md` (`fixed-px-at-engage`, `length-times-unit`,
+  `band-variant-with-breakpoint`, `limit-on-children`, and the rest), each finding carrying a rule
+  id, `file:line`, the offending snippet, a *why* and a *fix*. With a `fluid.config.json` above the
+  source it takes the prefix, roles and stack from it; `--desktop-variant` names the desktop
+  breakpoint (default `lg`). `--selftest` runs it over its own positive/negative fixtures and
+  asserts each trips (or doesn't).
 
 ## Traps
 

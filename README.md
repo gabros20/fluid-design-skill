@@ -18,8 +18,8 @@ viewport-matrix verifier with a real-browser-zoom row.
 scrubbed scenes, scroll wells, video playback, header ink that follows the section underneath, and
 coexistence with existing GSAP, Lenis or header scripts live in the companion skill,
 [`scroll-animation`](https://github.com/gabros20/scroll-animation-skill). Each works alone; together
-they share the desktop band's `minWidth`, `--header-h` and the `translate` property
-(`fluid-design/references/contract.md` §4).
+they share the desktop band's `minWidth`, `--fluid-header-h` and the `translate` property
+(`fluid-design/references/contract.md` §7).
 
 The whole thing is extracted from a production marketing site. Nearly every rule in `references/`
 records the bug it prevents and the measurement behind it.
@@ -89,7 +89,12 @@ Then, before trusting any of it:
 fluid check                # CI gate: generated output current? settings valid? zero browser.
 fluid explain 390x844      # every unit at a viewport, and where each setting came from
 fluid verify <url>         # the viewport matrix + zoom row, in a real browser
+fluid explain 1440x900 --url <url> --brief   # is the open page running the current stylesheet?
 ```
+
+Browser floor: Tailwind v4's own (Safari 16.4, Chrome 111, Firefox 128) on the Tailwind stack;
+Safari 15.4, Chrome 108, Firefox 101 on the CSS, SCSS and StyleX stacks
+(`fluid-design/references/contract.md` §0).
 
 Ask the agent for what you want, for example "make this landing page match our 1680×900 Figma
 frames at every laptop size" or "convert this Tailwind site to fluid scaling." The skill runs a
@@ -114,28 +119,31 @@ fluid-design/                      the skill: copy this folder into your skills 
     media.md                       images, inline SVG rules, video element rendering, posters
     ios-safari.md                  svh/lvh/dvh, safe areas, toolbar tint, hero overshoot, sticky
     performance.md                 render budget: image sizes on a growing page, fonts, budgets
-    verification.md                fluid check/explain/verify/probe/audit, the matrix, real-device checks
-    contract.md                    exact config keys, custom properties, utilities, attributes
+    verification.md                fluid check/explain/verify/audit, the matrix, real-device checks, the stale stylesheet
+    contract.md                    browser floor, exact config keys, custom properties, utilities, attributes
   assets/
     fluid.config.json (+ schema)   the example config, and its JSON Schema
     styles/                        pre-generated reference output per stack (tailwind-v4 · css · scss ·
                                    stylex): fluid.css, base.css, settings.reference.css, fluid.ts, …
-    runtime/fluid-zoom.js (+ .d.ts) makes fluid type follow browser zoom (fluid generate copies + stamps it)
+    runtime/fluid-zoom.js (+ .d.ts) makes fluid type follow browser zoom (fluid generate stamps it and adds
+                                   the CSP literal + hash, and zoom.classic.js with no framework)
     runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
   README.md                        the by-hand guide (no agent), also the npm page
   bin/fluid                        the `fluid` CLI (node scripts/cli.mjs); scripts/bin-entry.mjs for the binary
   scripts/
-    cli.mjs                        fluid init/generate/check/settings/explain/migrate, + calc/probe/verify/audit passthrough
+    cli.mjs                        fluid init/generate/check/settings/explain/migrate, + calc/verify/audit passthrough
     calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
-    probe.mjs                      one-shot stale-stylesheet diagnosis (--fluid-build vs the config)
+    probe.mjs                      old name for `fluid explain --url --brief` (the stale-stylesheet verdict)
     verify-matrix.mjs              Playwright: overflow, unit maths, one-screen fit, grid column counts,
                                    screenshots, the real-zoom row, across a viewport matrix
     audit.mjs                      static scan for the silent layout failure modes (self-tested)
     generate-fluid.mjs             the skill's OWN generator: regenerates assets/ and references/config.md
                                    from scripts/lib/spec.mjs; --check also runs the tests below
     lib/                           spec (the one source of truth) · model (the maths) · settings (the lint) ·
+                                   css-scan (the CSS tokenizer) · live (the live-page reader) ·
                                    context (what the CLI/tools share) · emit/ (CSS/Tailwind/SCSS/StyleX/project)
     test/                          parity.mjs (v1 maths, no browser) · cli.mjs (the CLI, no browser) ·
+                                   zoom-detect.mjs (the zoom runtime, no browser) ·
                                    engine-matrix.mjs + tailwind-compile.mjs (real browsers, run from a
                                    project with playwright/tailwind — see examples/pizza-next)
     fixtures/                      v1-configs (parity fixtures) · configs (v2 structures) · audit (rule fixtures)
@@ -143,7 +151,7 @@ fluid-design/                      the skill: copy this folder into your skills 
 
 examples/                          integration examples using both skills
   pizza-next/                      Next 16 + Tailwind v4 + Motion editorial restaurant page (default stack)
-  pizza-vite-gsap/                 Vite + SCSS + GSAP, non-default settings (container 1600/64, ceiling 1.6)
+  pizza-vite-gsap/                 Vite + SCSS + GSAP, non-default settings (container 1600/64, scale-max 1.6)
 ```
 
 Both examples were migrated to v2 (`fluid migrate --write` then `fluid generate`) with no visual or

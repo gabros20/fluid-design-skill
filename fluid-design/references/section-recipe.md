@@ -16,7 +16,7 @@ animation (the `scroll-animation` skill).
    - Drawn taller: `lg:fluid-min-h-<drawn>`. It is a floor, so content grows the section instead of spilling
      out of a locked box. It is more than one screen, honestly.
    - Content-driven (lists, prose): no fixed height. Block padding only (`lg:fluid-py-80`).
-3. **Cancel any mobile floor that would out-argue the scaled height.** If the section carries an
+3. **Cancel any mobile min-height that would out-argue the scaled height.** If the section carries an
    unscoped `min-h-*` (for example `min-h-[max(640px,100svh)]`), add `lg:min-h-0`. Add it *only* then;
    otherwise you have two min-heights at one breakpoint and stylesheet order picks the winner.
 4. **Container:** `fluid-container` on the section's inner wrapper (`frame-and-gutter.md`). It needs
@@ -28,10 +28,11 @@ animation (the `scroll-animation` skill).
    `lg:fluid-py-120`; `lg:gap-12` (48) becomes `lg:fluid-gap-48`; `lg:w-[512px]` becomes `lg:fluid-w-512`;
    an absolutely positioned decoration at `top: 40px` becomes `lg:fluid-top-40`. Negatives take the
    leading minus: `lg:-fluid-top-8` (`tailwind.utilities.negative`, on by default).
-   **The `lg:` (or `fluid-desktop:`) prefix is a choice, not a rule:** it scopes a class to the
-   desktop band. Drop it, or swap it for `fluid-phone:`/`fluid-tablet:`/`fluid-landscape:`, wherever
-   mobile and desktop share one drawn composition and just need different band settings, not
-   different classes. Keep it wherever mobile and desktop are genuinely separate drawings (a
+   **The `lg:` prefix is a choice, not a rule:** it scopes a class to the desktop band. Drop it
+   wherever mobile and desktop share one drawn composition and just need different band settings,
+   not different classes. For a band-only tweak, `fluid-tablet:`/`fluid-landscape:` work, but never
+   next to `sm:`/`md:`/`max-*:` on the same property: band variants always win over those
+   (`contract.md` §3, audit rule `band-variant-with-breakpoint`). Keep it wherever mobile and desktop are genuinely separate drawings (a
    different column count, a different stack order) — which is most of the time, since mobile and
    desktop are usually different Figma frames, not one frame scaled down.
 6. **Do not stop at the vertical values.** Scaling the whitespace while leaving the contents fixed is
@@ -97,33 +98,35 @@ What to notice:
 The same section in SCSS:
 
 ```scss
+@use 'fluid' as fd;
+
 .hero { min-height: max(640px, 100svh); padding: 80px 24px 40px;
-  @include fluid-up { height: fluid(900); min-height: 0; padding-block: fluid(120); }
-  &__inner { @include fluid-container; }
+  @include fd.fluid-desktop { height: fd.fluid(900); min-height: 0; padding-block: fd.fluid(120); }
+  &__inner { @include fd.fluid-container; }
   &__title { font-size: 40px; line-height: 1.2;
-    @include fluid-up { @include fluid-type(64, 72, display); } }
+    @include fd.fluid-desktop { @include fd.fluid-type(64, 72, display); } }
 }
 ```
 
 ## Heroes under a fixed, floating header
 
 A fixed header contributes nothing to layout, so anything positioned against the viewport top slides
-under it unless it subtracts the header's height. `--header-h` is emitted by the engine from the
+under it unless it subtracts the header's height. `--fluid-header-h` is emitted by the engine from the
 header settings, combining three terms: the resting inset (`--fluid-header-inset × --fluid`, 24 by
 default), the safe area, and the row (`--fluid-<band>-header-height`: 34 CSS px on mobile bands, not
-scaled; `48 × --fluid-ui` on desktop). It uses the **resting** inset, not the scrolled one, so it
-also holds through the header's transition.
+scaled, set once on phone; `48 × --fluid-ui` on desktop). It uses the **resting** inset, not the
+scrolled one, so it also holds through the header's transition. (`--header-h` is its v1 name,
+emitted as an alias only with `aliases: true`.)
 
-- Plate heroes: `pt-[calc(var(--header-h)+40px)] lg:pt-[calc(var(--header-h)+80*var(--fluid))]`.
-- Anchor targets and sticky rails: `scroll-margin-top: calc(var(--header-h) + 24px)`, `top: var(--header-h)`.
+- Plate heroes: `pt-[calc(var(--fluid-header-h)+40px)] lg:pt-[calc(var(--fluid-header-h)+80*var(--fluid))]`.
+- Anchor targets and sticky rails: `scroll-margin-top: calc(var(--fluid-header-h) + 24px)`, `top: var(--fluid-header-h)`.
 - Full-viewport heroes: `min-h-[100svh]` on mobile, `lg:h-[100svh] lg:min-h-0` or `lg:fluid-h-900`.
   iOS 26 measures even `100lvh` short of the physical screen; see `ios-safari.md` §5.
 - Header, nav and footer own utilities: `fluid-ui-p-*`, `fluid-ui-px-*`, `fluid-ui-py-*`,
   `fluid-ui-gap-*`, `fluid-ui-w-*`, `fluid-ui-h-*`, `fluid-ui-size-*`, `fluid-ui-text-*` — all on
-  `--fluid-ui`, the unit that follows width and never shrinks for a short window (v1 called this
-  "chrome").
+  `--fluid-ui`, the unit that follows width and never shrinks for a short window.
 
-## Mobile floors: use `svh`, and put the baseline on screen
+## Mobile min-heights: use `svh`, and put the baseline on screen
 
 Below the breakpoint the height is the **screen**, not the mobile artboard's drawn 900. A mark on the section's baseline
 in a layer taller than the viewport sits below the fold at rest. On one project, 900px against an
@@ -140,7 +143,7 @@ Copy sections inside a pinned scene have extra rules (no background, no `overflo
 - [ ] `lg:min-h-0` only where an unscoped mobile `min-h` exists.
 - [ ] Contents scale along with the whitespace: sizes, icons, controls, decorations.
 - [ ] No second sizing ladder inside a section (`xl:` rules on a private var).
-- [ ] Mobile floors in `svh`; fixed header subtracted via `--header-h`.
+- [ ] Mobile min-heights in `svh`; fixed header subtracted via `--fluid-header-h`.
 - [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (the `scroll-animation`
       skill explains why; `audit.mjs` no longer checks it here).
 - [ ] A part that must stop scaling has a limit on its wrapper (`fluid-grow-until-*`,
@@ -152,5 +155,5 @@ Copy sections inside a pinned scene have extra rules (no background, no `overflo
 
 Put a limit on its wrapper, in window px: `fluid-grow-until-1680`, `fluid-shrink-until-1280`,
 `fluid-off`. Everything inside follows; nothing outside changes. The site header is the exception:
-limit it with `:root { --fluid-ui-grow-until: 1680; }` so `--header-h` (anchor offsets, hero padding)
+limit it with `:root { --fluid-ui-grow-until: 1680; }` so `--fluid-header-h` (anchor offsets, hero padding)
 follows it (`fluid-scale.md` §10).

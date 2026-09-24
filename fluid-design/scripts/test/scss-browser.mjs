@@ -2,7 +2,7 @@
 // scss-browser.mjs — the generated SCSS stack's `_index.scss` (functions,
 // band mixins, the limit/scope mixins fluid-grow-until()/fluid-shrink-until()/
 // fluid-ui-grow-until()/fluid-off/fluid-scope, fluid-container, fluid-type,
-// and the always-emitted v1 alias fluid-up) against model.evaluate(),
+// and, with aliases on, the v1 alias fluid-up) against model.evaluate(),
 // compiled by real Sass and rendered in real browsers.
 //
 //   node scss-browser.mjs [--browsers chromium,webkit,firefox]
@@ -79,14 +79,14 @@ function buildStructureCase(label, extra) {
   if (ui) fnProbes.push(['ui', `fd.${p}-ui(1000)`, (w, h, z) => evaluateDefaults(structure, w, h, z).ui * 1000])
   for (const [id, expr, expect] of fnProbes) widthProbe(id, expr, expect)
 
-  // band mixins: one per band, plus the always-emitted v1 alias fluid-up (= desktop)
+  // band mixins: one per band, plus the v1 alias fluid-up (= desktop) when aliases are on
   for (const b of BANDS) {
     const id = `band-${b}`
     scss.push(`#${id} { width: 1px; @include fd.${p}-${b} { width: fd.${p}(500); } }`)
     html.push(`<div class="p" id="${id}"></div>`)
     checks.push({ id, kind: 'width', scaled: false, expect: (w, h, z) => (bandAt(structure, w, h) === b ? evaluateDefaults(structure, w, h, z).fluid * 500 : 1) })
   }
-  {
+  if (structure.aliases) {
     const id = 'band-up'
     scss.push(`#${id} { width: 1px; @include fd.${p}-up { width: fd.${p}(500); } }`)
     html.push(`<div class="p" id="${id}"></div>`)
@@ -193,7 +193,7 @@ function buildStructureCase(label, extra) {
 
 const cases = [
   buildStructureCase('SCSS default (roles: display, copy)', {}),
-  buildStructureCase('SCSS custom roles (display, copy, caption)', { roles: ['display', 'copy', 'caption'] })
+  buildStructureCase('SCSS custom roles (display, copy, caption) + aliases', { roles: ['display', 'copy', 'caption'], aliases: true })
 ]
 
 // ── build fluid/ for each structure + compile the probe scss ───────────

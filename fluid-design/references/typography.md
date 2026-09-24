@@ -45,7 +45,10 @@ padding on a short window, where the two units diverge by up to 27%.
 ## The `/lh` modifier
 
 `lg:fluid-display-64/72` is 64px type on a 72px line box, both scaled by the same unit. Omit the modifier and
-only `font-size` is emitted. A unitless `leading-[1.2]` also works, and follows the size for free. Keep line
+only `font-size` is emitted. The modifier is drawn px like every number here, bare in 0.25 steps or
+bracketed (`/[26.5]`): `/1.2` is a 1.2px line box, not a ratio (`fluid audit` flags it as
+`fluid-leading-ratio`). For a ratio, a unitless `leading-[1.2]` next to the size works, and follows
+the size for free. Keep line
 boxes pinned to the drawn value when the font's natural metrics differ from the drawing. A body face
 that was once substituted (a wider, looser font) is why every run of type on the reference build pins its
 leading; after the correct face shipped, the pins simply agree with it.
@@ -132,7 +135,8 @@ These are two different things.
 - **Browser zoom** (Cmd/Ctrl +). This one must work: it is what WCAG 1.4.4 tests. Viewport-derived
   type cancels zoom on its own, so the type units read a `--fluid-zoom` factor that the generated
   `runtime/zoom.js` (from `assets/runtime/fluid-zoom.js`) measures (`fluid-scale.md` §12, Browser
-  zoom). Wire it up with `FluidHead`/`fluidPlugin` (`output.integration`) or inline it yourself, and
+  zoom). Wire it up with `FluidHead`/`fluidPlugin` (`output.integration`) or `runtime/zoom.classic.js`
+first in `<head>`, and
   draw mobile body copy no smaller than its desktop reference size. Display, copy and any custom role
   zoom fully; `fluid-text-*` zooms fully up to `--fluid-zoom-text-full` drawn (default 24) and not at
   all from `--fluid-zoom-text-none` (default 48) — both are live settings, so a project can tune the

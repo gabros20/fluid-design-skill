@@ -72,7 +72,7 @@ export const STRUCTURE = {
         desktop: {
           type: 'object',
           doc: 'The desktop artboard, scaled. Every width from minWidth up.',
-          props: { minWidth: px('Viewport width (CSS px) where the desktop design takes over (v1 engageAt).', 1024) }
+          props: { minWidth: px('Viewport width (CSS px) where the desktop design takes over; the Tailwind lg: breakpoint is set to it.', 1024) }
         }
       }
     },
@@ -80,8 +80,8 @@ export const STRUCTURE = {
       type: 'roles', default: ['display', 'copy'],
       doc: 'Damped type roles. Each becomes --fluid-<role>, a fluid-<role>-* text utility and fluidPx(n, "<role>"). Add e.g. "caption".'
     },
-    ui: { type: 'boolean', default: true, doc: 'Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window (v1 chrome).' },
-    zoom: { type: 'boolean', default: true, doc: 'Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl + (v1 zoomCompensation).' },
+    ui: { type: 'boolean', default: true, doc: 'Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window.' },
+    zoom: { type: 'boolean', default: true, doc: 'Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl +.' },
     output: {
       type: 'object',
       doc: 'What `fluid generate` writes, and where.',
@@ -97,7 +97,7 @@ export const STRUCTURE = {
       doc: 'Tailwind v4 stack only.',
       props: {
         breakpoints: { type: 'string', enum: ['ladder', 'none'], default: 'ladder', doc: 'ladder: emit the whole sm-2xl ladder in px with lg = the desktop band (v4 cannot sort mixed px/rem). none: leave @theme breakpoints to you.' },
-        variants: { type: 'boolean', default: true, doc: 'Emit band variants: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape:, <prefix>-desktop:.' },
+        variants: { type: 'boolean', default: true, doc: 'Emit the band variants below desktop: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape: (desktop is lg:). Do not mix one with sm:/md: on a property: a band variant always wins.' },
         utilities: {
           type: 'object',
           doc: 'Optional utility families.',
@@ -112,7 +112,7 @@ export const STRUCTURE = {
         }
       }
     },
-    aliases: { type: 'boolean', default: false, doc: 'Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on.' }
+    aliases: { type: 'boolean', default: false, doc: 'Also emit the older names in every stack: --fluid-chrome, --fluid-column, --header-h, --safe-top, --safe-bottom, --browser-bar, fluid-frame (class/mixin), fluid-chrome() and fluid-up (SCSS), ENGAGE_PX/ENGAGE_QUERY (fluid.ts), the chrome unit (fluidPx). `fluid migrate` turns this on.' }
   }
 }
 

@@ -24,8 +24,11 @@ import { readmeMd } from './readme.mjs'
 // compiled into a single binary.
 import { RUNTIME } from './runtime-assets.mjs'
 
+/** The build stamp's hash: the structure AND the engine it generates, so an
+ * engine change inside one version (a fix) also marks an open tab's old
+ * stylesheet as stale, not just a config change. */
 export function structureHash(structure) {
-  return createHash('sha256').update(JSON.stringify(structure)).digest('hex').slice(0, 8)
+  return createHash('sha256').update(JSON.stringify(structure)).update(engineCss(structure)).digest('hex').slice(0, 8)
 }
 
 export function fileHash(content) {

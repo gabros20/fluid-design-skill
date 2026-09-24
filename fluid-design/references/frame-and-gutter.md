@@ -1,9 +1,8 @@
 # The container: one box, scaled padding, and constants that drift
 
-v1 called this a "frame" (or "canvas"), and its side padding a "gutter" — `.fluid-frame`,
-`canvas.width`, `canvas.gutter`. v2 renamed the whole thing to **container** and gave it one
-utility, `fluid-container`, plus two per-band settings. The mechanics below are unchanged; only the
-name and the API are new. (Filename kept for continuity; the doc is about the container.)
+The page **container**: one utility, `fluid-container`, plus two per-band settings. (v1 called it
+the frame and its padding the gutter, hence the filename; `brownfield-migration.md` maps the old
+names.)
 
 Read when: writing any section's outer structure, a row will not fit the container, a grid changes
 its column count on big screens, or a section sits a few pixels off its neighbours' rail.
@@ -24,7 +23,7 @@ Skip when: you are only adjusting type inside an existing container.
   <div className="fluid-container relative flex w-full flex-col …">
 ```
 
-Every example below adds `lg:` (or `fluid-desktop:`) to whatever sits *inside* the container,
+Every example below adds `lg:` to whatever sits *inside* the container,
 because most drawings only change above the desktop band. `fluid-container` itself needs no prefix
 at all — its width and padding are already per-band settings, so it does the right thing at
 whichever band is active, mobile bands included. SCSS uses the `fluid-container` mixin, which is
@@ -34,8 +33,8 @@ the same box.
 - `fluid-container` is one utility for the whole thing: `width: 100%`, `margin-inline: auto`,
   `max-width: var(--fluid-container-width)`, `padding-inline: var(--fluid-container-padding)`. Both
   variables are per-band settings — `--fluid-<band>-container-width` / `-container-padding` — at
-  1680/80 desktop and 560/24 phone/tablet/landscape by default. Apply it once per section, on its
-  inner wrapper.
+  1680/80 desktop and 560/24 phone by default (tablet and landscape use the phone values unless
+  set). Apply it once per section, on its inner wrapper.
 - **`--fluid-desktop-container-width` only grows**: `max(1680px, 1680 × --fluid)`. Below the
   reference the drawn width already fits, and shrinking it would narrow the composition on exactly
   the screens that need room. Above the reference it has to grow, or the section gets taller

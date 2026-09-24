@@ -50,10 +50,10 @@ what everything resolves to at a viewport and where each value came from.
 
 ## Bands
 
-- **phone** — phone — portrait phones, the 390 artboard. `(width < 600px) and (not ((orientation: landscape) and (height <= 500px)))`
-- **tablet** — tablet — 600px and wider: the phone design, scaled up. `(600px <= width < 1024px) and (not ((orientation: landscape) and (height <= 500px)))`
-- **landscape** — landscape — a phone on its side (500px tall or less): the phone design, scaled a bit. `(width < 1024px) and (orientation: landscape) and (height <= 500px)`
-- **desktop** — desktop — 1024px and wider: the 1440×900 artboard. `(width >= 1024px)`
+- **phone** — portrait phones, the 390 artboard. `not all and (min-width: 600px)` and `not all and (orientation: landscape) and (max-height: 500px)`
+- **tablet** — 600px and wider: the phone design, scaled up. `(min-width: 600px)` and `not all and (min-width: 1024px)` and `not all and (orientation: landscape) and (max-height: 500px)`
+- **landscape** — a phone on its side (500px tall or less): the phone design, scaled a bit. `(orientation: landscape) and (max-height: 500px)` and `not all and (min-width: 1024px)`
+- **desktop** — 1024px and wider: the 1440×900 artboard. `(min-width: 1024px)`
 
 Authors write each drawing once: the phone numbers for every mobile band,
 the desktop numbers from `lg:` up. Only the unit changes between bands.

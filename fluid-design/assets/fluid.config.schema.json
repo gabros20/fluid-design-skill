@@ -100,7 +100,7 @@
           "additionalProperties": false,
           "properties": {
             "minWidth": {
-              "description": "Viewport width (CSS px) where the desktop design takes over (v1 engageAt).",
+              "description": "Viewport width (CSS px) where the desktop design takes over; the Tailwind lg: breakpoint is set to it.",
               "type": "integer",
               "minimum": 1,
               "default": 1024
@@ -189,12 +189,12 @@
       ]
     },
     "ui": {
-      "description": "Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window (v1 chrome).",
+      "description": "Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window.",
       "type": "boolean",
       "default": true
     },
     "zoom": {
-      "description": "Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl + (v1 zoomCompensation).",
+      "description": "Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl +.",
       "type": "boolean",
       "default": true
     },
@@ -251,7 +251,7 @@
           "default": "ladder"
         },
         "variants": {
-          "description": "Emit band variants: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape:, <prefix>-desktop:.",
+          "description": "Emit the band variants below desktop: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape: (desktop is lg:). Do not mix one with sm:/md: on a property: a band variant always wins.",
           "type": "boolean",
           "default": true
         },
@@ -295,7 +295,7 @@
       }
     },
     "aliases": {
-      "description": "Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on.",
+      "description": "Also emit the older names in every stack: --fluid-chrome, --fluid-column, --header-h, --safe-top, --safe-bottom, --browser-bar, fluid-frame (class/mixin), fluid-chrome() and fluid-up (SCSS), ENGAGE_PX/ENGAGE_QUERY (fluid.ts), the chrome unit (fluidPx). `fluid migrate` turns this on.",
       "type": "boolean",
       "default": false
     }

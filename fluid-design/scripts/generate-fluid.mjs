@@ -191,7 +191,7 @@ function main() {
   for (const [rel, content] of Object.entries(files)) {
     const abs = join(SKILL, rel)
     if (!existsSync(abs)) problems.push(`missing: ${rel}`)
-    else if (readFileSync(abs, 'utf8') !== content) problems.push(`stale: ${rel}`)
+    else if (readFileSync(abs, 'utf8').replace(/\r\n/g, '\n') !== content) problems.push(`stale: ${rel}`)
   }
   // Every utility family's first word is a reserved role name, so a custom
   // role can never collide with one (fluid-<role>-* vs fluid-min-w-*).

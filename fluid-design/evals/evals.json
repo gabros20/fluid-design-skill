@@ -10,7 +10,7 @@
       "assertions": [
         {
           "text": "the generated engine defines --fluid from the band's registered settings (min()/max() only, no clamp(), the ×1000 precision form)",
-          "check": "grep -rE \"^\\s*--fluid: calc\\(max\\(calc\\(var\\(--_fluid-min\\) \\* 1000px\\), min\\(var\\(--_fluid-h\\), var\\(--_fluid-w\\)\" examples/pizza-next/src"
+          "check": "grep -rE \"^\\s*--fluid: calc\\(max\\(calc\\(var\\(--_fluid-min-x\\) \\* 1000px\\), min\\(var\\(--_fluid-h\\), var\\(--_fluid-w\\)\" examples/pizza-next/src"
         },
         {
           "text": "sections use fluid utilities at lg (>= 40 occurrences)",
@@ -71,7 +71,7 @@
       "id": 3,
       "name": "debug-stale-stylesheet",
       "prompt": "after I edited globals.css and restarted the dev server my scroll video on the homepage just sits on the first frame and then jumps to the end, and the video is full width with no gutters anymore. what broke in ScrubStage?",
-      "expected_output": "Diagnoses a stale stylesheet (missing fluid-* rules, or a --fluid-build stamp that doesn't match what fluid.config.json generates now) before touching scrub code; gives the --fluid-build computed-style check, `fluid probe`/`fluid explain --url`, and the close-tab / rm -rf .next fix; explains why missing fluid-h removes the pin's travel.",
+      "expected_output": "Diagnoses a stale stylesheet (missing fluid-* rules, or a --fluid-build stamp that doesn't match what fluid.config.json generates now) before touching scrub code; gives the --fluid-build computed-style check and `fluid explain <W>x<H> --url <url> --brief` (verdict STALE; `fluid probe` is its old name), and the close-tab / rm -rf .next fix; explains why missing fluid-h removes the pin's travel.",
       "files": [],
       "assertions": [
         {
@@ -79,8 +79,8 @@
           "check": "response mentions stale stylesheet/CSS"
         },
         {
-          "text": "gives the --fluid-build computed-style check, fluid probe, or fluid explain --url",
-          "check": "response contains getPropertyValue('--fluid-build') or fluid probe or fluid explain"
+          "text": "gives the --fluid-build computed-style check or fluid explain --url (--brief)",
+          "check": "response contains getPropertyValue('--fluid-build') or fluid explain … --url (fluid probe accepted as the old alias)"
         },
         {
           "text": "fix: close tab / fresh tab, then rm -rf .next",
@@ -96,7 +96,7 @@
       "id": 4,
       "name": "browser-zoom-a11y",
       "prompt": "Accessibility audit came back on our fluid marketing site: on a 27-inch monitor, Cmd+ zooming to 150% or 200% barely makes the text bigger. Our type is all lg:fluid-copy-* / lg:fluid-display-*. Is this our bug, and how do we fix it without breaking the layout?",
-      "expected_output": "Explains that vw/svh-derived units cancel desktop zoom (CSS viewport shrinks by the zoom factor) and that text only grows once the viewport falls below the desktop band's minWidth; distinguishes zoom from the browser font-size setting; installs the generated zoom runtime inline in <head> before first paint (`<FluidHead/>` for Next, `fluidPlugin()` for Vite, or FLUID_ZOOM_INLINE from runtime/zoom.js otherwise) with `zoom: true` in fluid.config.json (type roles read --fluid-z, which folds in --fluid-zoom; --fluid itself, the layout unit, is never multiplied by zoom, so layout keeps fitting); verifies with `fluid verify`'s zoom row; mentions the mobile-handover step and that Safari/Firefox need checking.",
+      "expected_output": "Explains that vw/svh-derived units cancel desktop zoom (CSS viewport shrinks by the zoom factor) and that text only grows once the viewport falls below the desktop band's minWidth; distinguishes zoom from the browser font-size setting; installs the generated zoom runtime first in <head> before first paint (`<FluidHead/>` for Next, `fluidPlugin()` for Vite, otherwise `runtime/zoom.classic.js` as the first classic <script>, or FLUID_ZOOM_INLINE pasted into it; a nonce or FLUID_ZOOM_SHA256 under a strict CSP) with `zoom: true` in fluid.config.json (type roles read --fluid-z, which folds in --fluid-zoom; --fluid itself, the layout unit, is never multiplied by zoom, so layout keeps fitting); verifies with `fluid verify`'s zoom row; mentions the mobile-handover step, and that Chromium and Safari are compensated while Firefox reads 1 (no reliable signal).",
       "files": [],
       "assertions": [
         {
@@ -108,8 +108,8 @@
           "check": "no rem twin / no intercept in --fluid"
         },
         {
-          "text": "installs the generated zoom runtime (FluidHead / fluidPlugin / FLUID_ZOOM_INLINE, installFluidZoom) with zoom: true",
-          "check": "response contains FLUID_ZOOM_INLINE or FluidHead or fluidPlugin or installFluidZoom"
+          "text": "installs the generated zoom runtime (FluidHead / fluidPlugin / zoom.classic.js / FLUID_ZOOM_INLINE, installFluidZoom) with zoom: true",
+          "check": "response contains FluidHead or fluidPlugin or zoom.classic.js or FLUID_ZOOM_INLINE or installFluidZoom"
         },
         {
           "text": "compensates type only, not layout",
@@ -150,7 +150,7 @@
       "id": 6,
       "name": "header-stops-scaling",
       "prompt": "On our fluid site the header and nav keep growing on 2560 and 5K screens and look huge. The design says the header should stay at its 1680 size above that, while the page content keeps scaling. How do we do that?",
-      "expected_output": "Uses a limit in window px, not fixed px on the header's children: sets :root { --fluid-ui-grow-until: 1680; } because the header spends --fluid-ui and --header-h is built from it, so the header and the page's --header-h (anchor offsets, hero padding) stay in step; explains that a fluid-grow-until-1680 class on <header> would limit the bar but not --header-h, and that fluid check warns on it; notes the page content keeps scaling; mentions fluid-grow-until-* on a wrapper for any other component, and fluid explain 2560x1440 to confirm (--fluid-ui 1.167).",
+      "expected_output": "Uses a limit in window px, not fixed px on the header's children: sets :root { --fluid-ui-grow-until: 1680; } because the header spends --fluid-ui and --fluid-header-h is built from it, so the header and the page's --fluid-header-h (anchor offsets, hero padding) stay in step; explains that a fluid-grow-until-1680 class on <header> would limit the bar but not --fluid-header-h, and that fluid check warns on it (audit rule header-limit); notes the page content keeps scaling; mentions fluid-grow-until-* on a wrapper for any other component, and fluid explain 2560x1440 to confirm (--fluid-ui 1.167).",
       "files": [],
       "assertions": [
         {
@@ -158,8 +158,8 @@
           "check": "response contains --fluid-ui-grow-until: 1680 in a :root rule"
         },
         {
-          "text": "explains why not a limit class on <header> (--header-h would not follow)",
-          "check": "mentions --header-h drifting / not following"
+          "text": "explains why not a limit class on <header> (--fluid-header-h would not follow)",
+          "check": "mentions --fluid-header-h (or --header-h on a v1/aliased project) drifting / not following"
         },
         {
           "text": "does not replace fluid utilities on the header's children with fixed px or max() caps",

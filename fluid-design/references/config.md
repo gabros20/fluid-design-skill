@@ -27,10 +27,10 @@ Two kinds of configuration, split by one rule:
 | `bands.landscape.enabled` | `true` | Turn the landscape band on. |
 | `bands.landscape.maxHeight` | `500` | Landscape viewports this short or shorter (CSS px) are a phone on its side. |
 | `bands.desktop` |  | The desktop artboard, scaled. Every width from minWidth up. |
-| `bands.desktop.minWidth` | `1024` | Viewport width (CSS px) where the desktop design takes over (v1 engageAt). |
+| `bands.desktop.minWidth` | `1024` | Viewport width (CSS px) where the desktop design takes over; the Tailwind lg: breakpoint is set to it. |
 | `roles` | `["display","copy"]` | Damped type roles. Each becomes --fluid-<role>, a fluid-<role>-* text utility and fluidPx(n, "<role>"). Add e.g. "caption". |
-| `ui` | `true` | Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window (v1 chrome). |
-| `zoom` | `true` | Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl + (v1 zoomCompensation). |
+| `ui` | `true` | Emit --fluid-ui, the unit for the header, nav and footer: follows width, never shrinks for a short window. |
+| `zoom` | `true` | Browser-zoom compensation: type reads --fluid-z so text grows with Cmd/Ctrl +. |
 | `output` |  | What `fluid generate` writes, and where. |
 | `output.dir` | `"src/styles/fluid"` | Output folder, relative to this config file. Generated; never edit inside it. |
 | `output.stack` | `"tailwind-v4"` | Styling stack. (`tailwind-v4` / `css` / `scss` / `stylex`) |
@@ -38,7 +38,7 @@ Two kinds of configuration, split by one rule:
 | `output.integration` | `"none"` | Emit a head-script integration for browser zoom: next (<FluidHead/>) or vite (fluidPlugin()). (`none` / `next` / `vite`) |
 | `tailwind` |  | Tailwind v4 stack only. |
 | `tailwind.breakpoints` | `"ladder"` | ladder: emit the whole sm-2xl ladder in px with lg = the desktop band (v4 cannot sort mixed px/rem). none: leave @theme breakpoints to you. (`ladder` / `none`) |
-| `tailwind.variants` | `true` | Emit band variants: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape:, <prefix>-desktop:. |
+| `tailwind.variants` | `true` | Emit the band variants below desktop: <prefix>-phone:, <prefix>-tablet:, <prefix>-landscape: (desktop is lg:). Do not mix one with sm:/md: on a property: a band variant always wins. |
 | `tailwind.utilities` |  | Optional utility families. |
 | `tailwind.utilities.negative` | `true` | Leading-minus negatives: -fluid-mt-8. |
 | `tailwind.utilities.logical` | `true` | ps/pe/ms/me/start/end/inset-x/inset-y. |
@@ -46,7 +46,7 @@ Two kinds of configuration, split by one rule:
 | `tailwind.utilities.scroll` | `true` | scroll-mt/pt/mb/pb. |
 | `tailwind.utilities.space` | `true` | fluid-space-x/y-*. |
 | `tailwind.utilities.rounded` | `true` | Scaled radii: fluid-rounded-*. |
-| `aliases` | `false` | Also emit the v1 names in every stack: --fluid-chrome, --fluid-column, fluid-frame (class/mixin), fluid-chrome() (SCSS). `fluid migrate` turns this on. |
+| `aliases` | `false` | Also emit the older names in every stack: --fluid-chrome, --fluid-column, --header-h, --safe-top, --safe-bottom, --browser-bar, fluid-frame (class/mixin), fluid-chrome() and fluid-up (SCSS), ENGAGE_PX/ENGAGE_QUERY (fluid.ts), the chrome unit (fluidPx). `fluid migrate` turns this on. |
 
 ## Settings: CSS variables
 

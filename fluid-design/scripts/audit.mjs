@@ -23,7 +23,7 @@
 // finding, 2 = usage/invocation error.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative, extname, resolve as resolvePath } from 'node:path'
+import { join, relative, extname, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname_ = fileURLToPath(new URL('.', import.meta.url))
@@ -999,7 +999,7 @@ export function runAudit({ root = '.', prefix = 'fluid', desktopVariant = 'lg', 
       rule.run(content, file, ctx, findings, options)
     }
   }
-  for (const f of findings) f.rel = relative(root, f.file)
+  for (const f of findings) f.rel = relative(root, f.file).split(sep).join("/")
   return findings
 }
 
@@ -1018,7 +1018,7 @@ function printTable(findings, root) {
   const order = { error: 0, warn: 1, info: 2 }
   const sorted = [...findings].sort((a, b) => order[a.severity] - order[b.severity] || a.file.localeCompare(b.file) || a.line - b.line)
   for (const f of sorted) {
-    const loc = `${relative(root, f.file)}:${f.line}`
+    const loc = `${relative(root, f.file).split(sep).join("/")}:${f.line}`
     console.log(`[${f.severity.toUpperCase()}] ${f.rule}  ${loc}`)
     console.log(`  ${f.snippet}`)
     console.log(`  why: ${f.why}`)

@@ -37,6 +37,32 @@
 @property --fluid-header-inset { syntax: '<number>'; inherits: true; initial-value: 24; }
 @property --fluid-zoom-text-full { syntax: '<number>'; inherits: true; initial-value: 24; }
 @property --fluid-zoom-text-none { syntax: '<number>'; inherits: true; initial-value: 48; }
+@property --_fluid-lo { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-hi { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-base-w { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-base-h { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-fit-h { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-min { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-max { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-knee { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-ui-min { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-cw { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-cw-grow { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-pad { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-display-d { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-display-floor { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-copy-d { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-copy-floor { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-in-grow { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-in-shrink { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-max-l { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-min-l { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-max-x { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-min-x { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-in-ui { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-ui-max { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-ui-min-l { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --_fluid-ui-min-x { syntax: '<number>'; inherits: true; initial-value: 0; }
 @property --_fluid-m-fluid { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --_fluid-m-display { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --_fluid-m-copy { syntax: '<length>'; inherits: false; initial-value: 0px; }
@@ -59,7 +85,7 @@
 [class*=":!fluid-off "],
 [class$=":!fluid-off"],
 [class*="[--fluid-"] {
-  --fluid-build: "2.0.0+358498dc";
+  --fluid-build: "2.0.0+db44c23b";
   --_fluid-lo: 0;
   --_fluid-hi: 600;
   --_fluid-base-w: max(1, var(--fluid-phone-base-width, 390));

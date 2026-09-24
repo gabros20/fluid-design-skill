@@ -42,9 +42,18 @@ Enter keeps it:
 It then:
 
 - writes `fluid.config.json`
-- generates the output folder
+- generates the output folder (with a `.gitattributes` inside, so Git's line-ending conversion
+  leaves the generated files byte-exact)
 - adds one import to your stylesheet
 - puts your answers into your `:root` as CSS variables
+- adds the output folder to `.prettierignore` when you use Prettier (with Biome, it tells you the
+  `files.ignore` line to add to `biome.json`), so a formatter doesn't rewrite generated files
+- keeps your own Tailwind `--breakpoint-*` if it finds any (`"tailwind": { "breakpoints": "none" }`),
+  and on Tailwind 3 picks the css stack, since the utilities need Tailwind 4
+
+It decides everything before writing anything: if the output folder holds hand-edited files, it
+refuses and writes nothing. `--force` overwrites them, and keeps a v1 config as
+`fluid.config.v1.json`.
 
 ```css
 @import 'tailwindcss';
@@ -60,7 +69,11 @@ It then:
 ```
 
 It finishes by printing the one line of framework wiring for browser zoom, which you add yourself:
-`<FluidHead />` for Next, `fluidPlugin()` for Vite, or a `<script>` tag.
+`<FluidHead />` for Next, `fluidPlugin()` for Vite, or, for anything else, a
+`<script src="…/runtime/zoom.classic.js"></script>` as the first script in `<head>`. Under a strict
+Content Security Policy, pass your nonce (`<FluidHead nonce={nonce} />`, `fluidPlugin({ nonce })`,
+or `nonce` on the script tag), or allow the hash `FLUID_ZOOM_SHA256` (exported by
+`runtime/zoom.js`) in `script-src`.
 
 **Scripts and CI:** every answer is also a flag, and `--yes` (or no terminal) skips the questions:
 
@@ -86,7 +99,10 @@ like any other Tailwind class:
 ```
 
 - **Tailwind:** also `fluid-ui-*` for the header, nav and footer, and the band variants
-  `fluid-phone:` / `fluid-tablet:` / `fluid-landscape:` / `fluid-desktop:`.
+  `fluid-phone:` / `fluid-tablet:` / `fluid-landscape:` (the desktop band is `lg:`). Values are bare
+  numbers in 0.25 steps (`fluid-p-24`, `fluid-p-37.5`) or bracketed (`fluid-p-[8.3]`). The
+  line-height modifier is drawn px too: `fluid-copy-18/26` is 18 on 26. `/1.5` would be 1.5 px, so
+  for a ratio use `leading-[1.5]`.
 - **CSS:** `calc(64 * var(--fluid-display))`.
 - **SCSS:** `@use 'fluid' as fd` gives `fd.fluid(64)`, `fd.fluid-display(64)` and the band
   mixins.
@@ -99,17 +115,36 @@ growing on a 2560 screen:
 <footer class="fluid-ui-grow-until-1920">…</footer>      <!-- this subtree only -->
 ```
 ```css
-:root { --fluid-ui-grow-until: 1680; }   /* the site header: the whole page's ui, and --header-h with it */
+:root { --fluid-ui-grow-until: 1680; }   /* the site header: the whole page's ui, and --fluid-header-h with it */
 ```
 
-`fluid-grow-until-*`, `fluid-shrink-until-*` and `fluid-off` work the same way.
+`fluid-grow-until-*`, `fluid-shrink-until-*` and `fluid-off` work the same way, and so does an
+arbitrary property like `[--fluid-grow-until:1680]`. Put the class on the element itself: behind
+`*:` it limits nothing.
+
+### Band variants vs breakpoints
+
+Tailwind v4 emits every custom variant after every breakpoint variant. So on one property,
+`fluid-phone:` / `fluid-tablet:` / `fluid-landscape:` always beat `sm:`, `md:` and `max-*:`,
+whatever the window width: `fluid-tablet:p-4 md:p-8` stays `p-4` on an 800px tablet.
+
+- Use one system per property: the band variants alone, or breakpoints alone (`max-lg:`,
+  `md:max-lg:`).
+- `lg:`, `xl:` and `2xl:` are safe next to a band variant, because they start at the desktop band,
+  where no band variant matches.
+- `fluid check` and `fluid audit` flag the mix (`band-variant-with-breakpoint`).
 
 ## 3. Tune: settings are CSS variables
 
 Every number is a CSS variable, set in your `:root`. It takes effect immediately, with no
-regenerate. `settings.reference.css` in the output folder lists all of them with their defaults,
-and `fluid settings` prints the same list. An invalid value (`0.8px`, a typo'd number) falls back to
-the default instead of breaking the page.
+regenerate. `settings.reference.css` in the output folder lists all of them with their defaults
+(43 at the default structure), and `fluid settings` prints the same list. Tablet and landscape
+reuse the phone's container and header settings unless you set theirs, so mobile is set once. An
+invalid value (`0.8px`, a typo'd number) falls back to the default instead of breaking the page.
+
+Your own `--fluid-*` tokens are fine: `fluid check` only errors on a name that is a near-typo of a
+setting or one the engine owns (`--fluid`, `--fluid-header-h`, …), and mentions the rest with
+`--verbose`.
 
 ```css
 :root {
@@ -126,7 +161,12 @@ fluid explain 390x844
 fluid explain 1920x1080 --set --fluid-grow-until=1680    # what if, without editing anything
 fluid explain 1920x1080 --url http://localhost:3000      # the live page, and every limited subtree on it
 fluid explain 1920x1080 --url http://localhost:3000 --at header
+fluid explain 1440x900 --url http://localhost:3000 --brief   # just the verdict: is the page current?
 ```
+
+`--url` ends with a verdict and an exit code: OK (0), STALE, MISMATCH or V1 (1), MISSING (2).
+STALE almost always means an open tab kept an old stylesheet after a restart: close it and open a
+fresh one.
 
 ## 4. Change the structure
 
@@ -139,11 +179,12 @@ fluid explain 1920x1080 --url http://localhost:3000 --at header
 - the output folder and stack
 
 After an edit, run `fluid generate`. Or keep `fluid generate --watch` running next to your dev
-server: it regenerates on every save. Your editor completes and validates the file through
-`fluid.config.schema.json`.
+server: it regenerates on every save, and an invalid save prints the error and keeps watching. Your
+editor completes and validates the file through `fluid.config.schema.json`.
 
 The generated folder is never edited by hand. `generate` refuses to overwrite a hand edit (use
-`--force` once you've moved the change into a setting or the config).
+`--force` once you've moved the change into a setting or the config). A formatter's rewrite
+(whitespace, quotes) is only a warning, and the message names the ignore file to add it to.
 
 ## 5. Check it, in CI too
 
@@ -156,10 +197,14 @@ It fails the build on:
 - a config error
 - a mistyped or out-of-range setting, with a suggestion
 - generated files that are stale or hand-edited
-- a breakpoint that disagrees with the bands
+- a breakpoint that disagrees with the bands, or a `--breakpoint-*` of your own next to the
+  generated px ladder
+- a leftover `fluid-desktop:` variant (removed: it was `lg:`)
 
 It warns on a `tailwind-merge` that doesn't know the fluid classes, a limit that won't do what you
-meant, and output generated by a different version of the CLI.
+meant (on `<header>`, or behind `*:`), a band variant mixed with a breakpoint, a `/1.5` line-height
+ratio, a formatter's rewrite of the generated files, and output generated by a different version of
+the CLI. `fluid check --verbose` also prints info notes.
 
 ```yaml
 # .github/workflows/ci.yml
@@ -176,8 +221,24 @@ npx fluid-design-cli@2 verify http://localhost:3000
 ```
 
 `verify` renders a matrix of viewports and a real browser-zoom row. It checks for overflow, the
-unit maths, one-screen fit, grid columns and screenshots. `probe` is a one-shot check for a stale
-stylesheet. Both need Node, so the standalone binary points you to the `npx` command.
+unit maths, one-screen fit, grid columns and screenshots. `fluid explain <W>x<H> --url <url>
+--brief` is a one-shot check for a stale stylesheet (`fluid probe <url>` still works as its old
+name). Both need Node, so the standalone binary points you to the `npx` command.
+
+## Browser support
+
+| Stack | Floor |
+|---|---|
+| CSS, SCSS, StyleX | Safari 15.4, Chrome 108, Firefox 101 (what `svh` needs; the generated media queries use classic `min-width` syntax) |
+| Tailwind v4 | Tailwind v4's own: Safari 16.4, Chrome 111, Firefox 128 |
+
+Without `@property` (Firefox before 128, Safari before 16.4) the numbers are still right. You lose
+only two things: an invalid setting no longer falls back to its default, and `fluidPx(n, unit, el)`
+reads the page's units instead of the element's. `fluid.ts`'s `MEDIA` strings use range syntax
+(Safari 16.4); `DESKTOP_QUERY` is classic.
+
+Browser zoom is compensated in Chromium and Safari. Firefox exposes no reliable signal, so there
+fluid type doesn't grow with zoom until the page falls through to the mobile layout.
 
 ## Editor support
 

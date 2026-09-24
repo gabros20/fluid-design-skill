@@ -200,10 +200,24 @@ const decls = (pairs, indent) => pairs.map(([k, v]) => `${indent}${k}: ${v};`).j
  *   { properties: string (the @property block),
  *     rules: [{ media: string|null, comment, pairs: [[name, value]] }] }
  */
+/** The private parameters that never depend on the viewport: the band
+ * mapping (all numbers) and the limit/off arithmetic. Registered as
+ * <number>, each computes once to a plain number where it is declared
+ * (:root, a scope), so the long unit formulas carry numbers instead of
+ * re-expanding these on every element. Measured on a 2000-element page:
+ * a resize step ~20% faster in WebKit, ~34% in Chromium. What depends on
+ * the viewport (--_fluid-w, --_fluid-h, the units) stays unregistered. */
+function numericPrivates(structure) {
+  const band = ['lo', 'hi', 'base-w', 'base-h', 'fit-h', 'min', 'max', 'knee', 'ui-min', 'cw', 'cw-grow', 'pad', ...structure.roles.flatMap((r) => [`${r}-d`, `${r}-floor`])]
+  const limits = ['in-grow', 'in-shrink', 'max-l', 'min-l', 'max-x', 'min-x', ...(structure.ui ? ['in-ui', 'ui-max', 'ui-min-l', 'ui-min-x'] : [])]
+  return [...band, ...limits].map((k) => `--_fluid-${k}`)
+}
+
 export function engineParts(structure, { buildId, aliases = structure.aliases } = {}) {
   const specs = settingsSpec(structure)
   const properties = [
     ...specs.filter((s) => s.registered).map((s) => `@property ${s.name} { syntax: '<number>'; inherits: true; initial-value: ${num(s.default)}; }`),
+    ...numericPrivates(structure).map((n) => `@property ${n} { syntax: '<number>'; inherits: true; initial-value: 0; }`),
     ...measuredUnits(structure).map((u) => `@property --_fluid-m-${u} { syntax: '<length>'; inherits: false; initial-value: 0px; }`)
   ].join('\n')
   const media = bandMedia(structure)

@@ -48,6 +48,40 @@ unique rule per element (CSS-in-JS generating one class per instance, inline sty
 nine times more style recalculation, a whole frame per step. Scrolling costs nothing either way.
 Evidence and harness: the repository's `docs/review-2026-09/`.
 
+**WebKit, and why the unit mirrors don't inherit.** `fluidPx(n, unit, el)` reads a unit at an
+element through a registered `<length>` mirror (`--_fluid-m-<unit>`) that the engine sets on
+`:root` and every scope. Its value depends on the viewport. Registered with `inherits: true`, it
+made WebKit re-resolve it on every element on every resize. Measured on a 2,000-element page with
+50 limit scopes, main-thread time per resize step:
+
+| Mirrors | WebKit (width / height) | Chromium |
+|---|--:|--:|
+| inherited (before) | 44.9 / 58.9 ms | about 5 ms |
+| not inherited (now) | 11.3 / 9.5 ms | about 5 ms |
+| none at all | 10.3 / 8.6 ms | about 5 ms |
+
+A non-inherited property costs nothing on elements that don't declare it, so the mirrors are
+`inherits: false` with `initial-value: 0px`, and `fluidPx` walks up from `el` to the first ancestor
+whose mirror is non-zero: one `getComputedStyle` per ancestor, on that call path only. Cache the
+result per frame, not per tween tick.
+
+**Registered intermediates.** Every private parameter that doesn't depend on the viewport is
+registered as a `<number>`: the band mapping (`--_fluid-base-w`, `--_fluid-min`, the dampings, the
+knee…) and the limit and `off` arithmetic (`--_fluid-min-x`, `--_fluid-max-x`…). Each one computes
+once to a plain number where it's declared, on `:root` or a scope. The long unit formulas then carry
+numbers instead of re-expanding every parameter on every element that spends a unit. It's the
+opposite of the mirrors: these never change on resize, so being inherited costs nothing. The page
+is the same 2,000 elements (30 classes × 4 declarations), timed per resize step:
+
+| Intermediates | WebKit | Chromium |
+|---|--:|--:|
+| unregistered | 9.8–10.2 ms | 7.7–7.9 ms |
+| registered `<number>` (now) | 7.8–8.4 ms | 5.0–5.1 ms |
+
+`scripts/test/resize-perf.mjs` guards both findings in WebKit and Chromium. It checks that 50 limit
+scopes cost at most 1.6× the same page without them (the inherited mirrors measured 2.2× there), and
+it runs in `npm run test:browsers` and CI.
+
 ## 2. No `dvh` thrash
 
 `dvh` tracks the mobile toolbar's collapse animation live. Anything sized or scaled in `dvh`
@@ -86,8 +120,8 @@ pixels on a 2× display. That is where the "re-export at about 3000 wide" advice
   (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled padding is `80·f`).
 - **`sizes` cannot read `var(--fluid)`.** It is parsed before any stylesheet, so custom properties
   and the `fluid-*` utilities mean nothing there. Express the slot in `vw` and `px` only.
-- **Ship candidates up to twice the largest slot**, or set a `ceiling` (`fluid-scale.md` §7). With
-  `ceiling: 1.5` the half-container slot stops at 1260.
+- **Ship candidates up to twice the largest slot**, or set `--fluid-desktop-scale-max`
+  (`fluid-scale.md` §7). At 1.5 the half-container slot stops at 1260.
 - Framework image components (`next/image` and friends) take the same `sizes` string; the default
   `100vw` is only correct for a full-bleed image.
 - Reserve every image's box so the scale's own resize never shifts content: see `media.md` §2.
