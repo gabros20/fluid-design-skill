@@ -34,8 +34,8 @@ export function Hero() {
         trigger="mount"
         className={cn(
           'fluid-container',
-          'relative flex min-h-[max(640px,100svh)] flex-col pt-[calc(var(--header-h)+40*var(--fluid))] fluid-pb-32',
-          'lg:fluid-pb-40 lg:h-full lg:min-h-0 lg:pt-[calc(var(--header-h)+70*var(--fluid))]'
+          'relative flex min-h-[max(640px,100svh)] flex-col pt-[calc(var(--fluid-header-h)+40*var(--fluid))] fluid-pb-32',
+          'lg:fluid-pb-40 lg:h-full lg:min-h-0 lg:pt-[calc(var(--fluid-header-h)+70*var(--fluid))]'
         )}
       >
         <div className="flex flex-col items-center text-center">

@@ -3,17 +3,18 @@
   "build": "2.0.0+2ee99a73",
   "stack": "tailwind-v4",
   "files": {
-    "fluid.css": "12bc8655aaedc13f",
+    "fluid.css": "1fdef4b0d7f73790",
     "base.css": "6f20df579330e8c1",
-    "settings.reference.css": "f2bcb754b9b1e81c",
-    "fluid.css-data.json": "26d04ff29c56cbe5",
-    "fluid.ts": "ec819beb05bd83a7",
-    "cn.ts": "7f7df34395ed6d45",
-    "runtime/units.js": "a5cdd613cac72d9d",
-    "runtime/units.d.ts": "021649ce164e3328",
-    "runtime/zoom.js": "483ffb5d2b02db27",
-    "runtime/zoom.d.ts": "756e03c950308408",
-    "integrations/next.tsx": "bdcb1790ea18e836",
-    "README.md": "70b1bd631009227c"
+    "settings.reference.css": "ebe27b8776a646c5",
+    "fluid.css-data.json": "2487abf3d84cfe6f",
+    "fluid.ts": "f833b60cca4041ac",
+    "cn.ts": "3f2cc24b9441b326",
+    "runtime/units.js": "2d4de3a04c42adc3",
+    "runtime/units.d.ts": "21ad5e18ce59f7e8",
+    "runtime/zoom.js": "566ad8ece58b22a0",
+    "runtime/zoom.d.ts": "d4c22e99f03d1f91",
+    "integrations/next.tsx": "fda5fc3c67b6fa87",
+    "README.md": "7afb3cfb10b0ae65",
+    ".gitattributes": "00aeeb7b53fd7b02"
   }
 }

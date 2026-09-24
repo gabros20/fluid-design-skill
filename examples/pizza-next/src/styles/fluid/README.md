@@ -24,6 +24,13 @@ import { FluidHead } from '@/styles/fluid/integrations/next'
 <html><head><FluidHead /></head>…
 ```
 
+It writes `--fluid-zoom` to an adopted stylesheet (`:root`), not to an
+attribute on `<html>`, so React sees no hydration mismatch; read it with
+`getComputedStyle`. Under a strict CSP, pass your middleware's nonce,
+`<FluidHead nonce={(await headers()).get('x-nonce') ?? undefined} />`, or
+allow `FLUID_ZOOM_SHA256` from runtime/zoom.js in `script-src` (the script
+text is a literal fixed at generate time, so the hash holds).
+
 ## Tuning: settings are CSS variables
 
 Every number you tune is a CSS variable with a registered default. Set the
@@ -61,7 +68,7 @@ the desktop numbers from `lg:` up. Only the unit changes between bands.
 | `--fluid-text` (via `fluid-text-*`) | type inside a box that scales with the layout |
 | `--fluid-ui` | the header, nav, footer: follows the width, never shrinks for a short window (`fluid-ui-h-*`, …) |
 | `--fluid-container-width` / `-padding` | the page container (`fluid-container`) |
-| `--header-h` | the header's height, safe area included |
+| `--fluid-header-h` | the header's height, safe area included |
 
 Scripts read the same units as numbers: `fluidPx(600)`, `fluidPx(24, 'copy')` (from `fluid.ts`).
 

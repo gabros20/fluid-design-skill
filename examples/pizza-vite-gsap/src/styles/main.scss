@@ -88,7 +88,7 @@ em {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
-  padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
+  padding-top: calc(#{fd.fluid(24)} + var(--fluid-safe-top));
   color: var(--header-ink, var(--text-heading));
   transition: color 0.3s linear;
   pointer-events: none;
@@ -98,7 +98,7 @@ em {
   }
 
   @include fd.fluid-desktop {
-    padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
+    padding-top: calc(#{fd.fluid(24)} + var(--fluid-safe-top));
   }
 }
 
@@ -183,7 +183,7 @@ em {
   align-items: center;
   gap: fd.fluid(24);
   min-height: max(640px, 100svh);
-  padding-top: calc(var(--header-h) + #{fd.fluid(40)});
+  padding-top: calc(var(--fluid-header-h) + #{fd.fluid(40)});
   padding-bottom: fd.fluid(48);
 
   @include fd.fluid-desktop {

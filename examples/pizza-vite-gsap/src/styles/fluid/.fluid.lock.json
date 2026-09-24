@@ -3,17 +3,18 @@
   "build": "2.0.0+358498dc",
   "stack": "scss",
   "files": {
-    "fluid.css": "47ded86ea5381d64",
+    "fluid.css": "16e6c3e5b3c7cb2f",
     "base.css": "6f20df579330e8c1",
-    "settings.reference.css": "f2bcb754b9b1e81c",
-    "fluid.css-data.json": "26d04ff29c56cbe5",
-    "fluid.ts": "ec819beb05bd83a7",
-    "_index.scss": "235a24b4b6783b7f",
-    "runtime/units.js": "a5cdd613cac72d9d",
-    "runtime/units.d.ts": "021649ce164e3328",
-    "runtime/zoom.js": "483ffb5d2b02db27",
-    "runtime/zoom.d.ts": "756e03c950308408",
-    "integrations/vite.ts": "c3a44cda1e53b2f1",
-    "README.md": "bca25d9a91dcdbce"
+    "settings.reference.css": "ebe27b8776a646c5",
+    "fluid.css-data.json": "2487abf3d84cfe6f",
+    "fluid.ts": "f833b60cca4041ac",
+    "_index.scss": "8790fb51c206bc97",
+    "runtime/units.js": "2d4de3a04c42adc3",
+    "runtime/units.d.ts": "21ad5e18ce59f7e8",
+    "runtime/zoom.js": "566ad8ece58b22a0",
+    "runtime/zoom.d.ts": "d4c22e99f03d1f91",
+    "integrations/vite.ts": "3d755f9a4943c5ba",
+    "README.md": "2c38ac1a4211fabf",
+    ".gitattributes": "00aeeb7b53fd7b02"
   }
 }
