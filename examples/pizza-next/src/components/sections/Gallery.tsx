@@ -71,7 +71,7 @@ export function Gallery() {
         {/* Pull quote: display type in a fixed measure. */}
         <Stage trigger="view" className="mx-auto fluid-mt-80 max-w-[980px] text-center lg:fluid-mt-140">
           <blockquote>
-            <p className="font-display fluid-display-30 leading-[1.25] font-light tracking-[-0.015em] text-text-heading sm:text-[38px] lg:fluid-display-52/66">
+            <p className="font-display fluid-display-30 leading-[1.25] font-light tracking-[-0.015em] text-text-heading lg:fluid-display-52/66">
               <StageItem as="span" variant="liftFade" className="block [--hero-lift:24px] lg:[--hero-lift:32px]">
                 “In Rome they called it pinsa, from pinsere:
               </StageItem>

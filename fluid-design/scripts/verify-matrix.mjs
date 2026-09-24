@@ -23,7 +23,7 @@
 import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { loadConfig, factors, cssUnits } from './lib/fluid-math.mjs'
+import { loadConfig, factors, cssUnits, unitVarsAt } from './lib/fluid-math.mjs'
 
 const UNIT_TOLERANCE = 0.002
 
@@ -45,9 +45,9 @@ const KNOWN_STALE_SIGNATURES = [
 /** The exact expression cssUnits(cfg) would emit for `key` ('fluid'|'display'|'copy'|'chrome')
  * at `width` CSS px, or null if this property isn't emitted at all for this config
  * (e.g. --fluid-chrome when units.chrome.enabled is false). */
-function expectedRawExpr(units, key, width, engageAt) {
+function expectedRawExpr(cfg, units, key, width, height) {
   const prop = key === 'fluid' ? '--fluid' : `--fluid-${key}`
-  const bucket = width >= engageAt ? units.engaged : units.root
+  const bucket = unitVarsAt(cfg, units, width, height)
   return prop in bucket ? bucket[prop] : null
 }
 
@@ -343,7 +343,7 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
   const unitRows = ['fluid', 'display', 'copy', 'chrome'].map((key) => {
     const r = resolved[key]
     const drift = Number.isFinite(r) ? Math.abs(r - expected[key]) : Infinity
-    const expectedExpr = expectedRawExpr(expectedUnits, key, viewport.width, cfg.engageAt)
+    const expectedExpr = expectedRawExpr(cfg, expectedUnits, key, viewport.width, viewport.height)
     const pass = drift <= UNIT_TOLERANCE
     return {
       unit: key,
@@ -692,7 +692,7 @@ async function main() {
     // With the mobile arm on, the phone matrix spans the clamp: a small phone
     // (below the reference), the reference, a large phone, and a tablet on
     // the cap, so every arm of clamp(min, 100vw/ref, max) is checked.
-    const defaultMobile = cfg.mobile.enabled ? '360x780,390x844,430x932,768x1024' : '390x844,375x667'
+    const defaultMobile = cfg.mobile.enabled ? '320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194' : '390x844,375x667'
     mobiles = parseWxHList(args.mobile ?? defaultMobile)
   } catch (err) {
     console.error(`[verify-matrix] ${err.message}`)

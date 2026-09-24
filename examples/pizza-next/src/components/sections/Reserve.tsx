@@ -31,7 +31,7 @@ export function Reserve() {
                 Réservation
               </p>
             </StageItem>
-            <h2 className="fluid-mt-16 font-display fluid-display-48 leading-[1] font-light tracking-[-0.025em] sm:text-[72px] lg:fluid-mt-24 lg:fluid-display-100/100">
+            <h2 className="fluid-mt-16 font-display fluid-display-48 leading-[1] font-light tracking-[-0.025em] lg:fluid-mt-24 lg:fluid-display-100/100">
               <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px] lg:[--hero-lift:48px]">
                 Book a table,
               </StageItem>

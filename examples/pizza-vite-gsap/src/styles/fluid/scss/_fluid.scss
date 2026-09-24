@@ -139,8 +139,11 @@ $fluid-zoom-text-none: 48;
   width: 100%;
   margin-inline: auto;
   max-width: #{$fluid-canvas-width}px;
-  // Mobile arm: the phone frame's 24px gutter, scaled (30px at the 1.25 cap).
+  // Mobile arm: the phone frame's 24px gutter, scaled, and on tablet and
+  // landscape a centred column (--fluid-column) so the phone design keeps
+  // its line lengths instead of stretching across the screen.
   padding-inline: fluid(24);
+  max-width: var(--fluid-column);
 
   @include fluid-up {
     max-width: fluid-cap($fluid-canvas-width);
@@ -153,17 +156,35 @@ $fluid-zoom-text-none: 48;
 // Every declaration below is copied verbatim from cssUnits(cfg) — see the
 // note at the top of this file's Functions section.
 @mixin fluid-units {
-  --fluid: calc(clamp(850px, calc(100vw * 1000 / 390), 1250px) / 1000);
-  --fluid-z: calc(clamp(850px, calc(100vw * 1000 / 390 * var(--fluid-zoom, 1)), 1250px) / 1000);
-  --fluid-display: calc(max(910px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
-  --fluid-copy: calc(max(950px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+  --fluid: calc(clamp(820px, calc(100vw * 1000 / 390), 1100px) / 1000);
+  --fluid-z: calc(clamp(820px, calc(100vw * 1000 / 390 * var(--fluid-zoom, 1)), 1100px) / 1000);
+  --fluid-display: calc(max(890px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
+  --fluid-copy: calc(max(940px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
   --fluid-chrome: var(--fluid);
+  --fluid-column: 1600px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --browser-bar: calc(100lvh - 100svh);
   --header-h: calc(24 * var(--fluid) + var(--safe-top) + 34px);
+  @media (width >= 600px) {
+    --fluid: calc(clamp(1100px, calc(100vw * 1000 / 700), 1300px) / 1000);
+    --fluid-z: calc(clamp(1100px, calc(100vw * 1000 / 700 * var(--fluid-zoom, 1)), 1300px) / 1000);
+    --fluid-display: calc(max(1060px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
+    --fluid-copy: calc(max(1030px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+    --fluid-chrome: var(--fluid);
+    --fluid-column: calc(560 * var(--fluid));
+  }
+  @media (orientation: landscape) and (height <= 500px) {
+    --fluid: calc(clamp(1000px, calc(100vw * 1000 / 780), 1200px) / 1000);
+    --fluid-z: calc(clamp(1000px, calc(100vw * 1000 / 780 * var(--fluid-zoom, 1)), 1200px) / 1000);
+    --fluid-display: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
+    --fluid-copy: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+    --fluid-chrome: var(--fluid);
+    --fluid-column: calc(560 * var(--fluid));
+  }
 
   @include fluid-up {
+    --fluid-column: none;
     --fluid: calc(min(1600px, max(580px, min(calc(100svh * 1000 / 900), calc(100vw * 1000 / 1440)))) / 1000);
     --fluid-z: calc(min(1600px, max(580px, min(calc(100svh * 1000 / 900 * var(--fluid-zoom, 1)), calc(100vw * 1000 / 1440 * var(--fluid-zoom, 1))))) / 1000);
     --fluid-display: calc(max(820px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);

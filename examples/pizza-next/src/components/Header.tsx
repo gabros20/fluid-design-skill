@@ -31,7 +31,7 @@ export function Header() {
           ref={ref}
           aria-label="Main"
           className={cn(
-            'pointer-events-auto relative mx-auto grid fluid-h-34 w-full max-w-[1680px] grid-cols-[1fr_auto_1fr] items-center fluid-px-24 sm:px-8',
+            'pointer-events-auto relative mx-auto grid fluid-h-34 w-full max-w-[1680px] grid-cols-[1fr_auto_1fr] items-center fluid-px-24',
             'lg:fluid-cap-1680 lg:fluid-px-80 lg:h-[calc(48*var(--fluid-chrome))]',
             THEME_FADE,
             dark ? 'text-text-on-dark' : 'text-text-heading'

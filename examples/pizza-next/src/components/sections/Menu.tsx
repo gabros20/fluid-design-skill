@@ -59,7 +59,7 @@ export function Menu() {
                 La carta
               </p>
             </StageItem>
-            <h2 className="fluid-mt-16 font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-heading sm:text-[52px] lg:fluid-mt-20 lg:fluid-display-80/84">
+            <h2 className="fluid-mt-16 font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-heading lg:fluid-mt-20 lg:fluid-display-80/84">
               <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px]">
                 Six pinsas,
               </StageItem>

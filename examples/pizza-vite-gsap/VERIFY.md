@@ -154,3 +154,20 @@ header and footer on `fd.fluid-chrome()`); the frame mixin's gutter is a scaled 
 - **Motion:** `verify-motion --reveal --scenes` PASS at 1440×900, 390×844, 360×780, 768×1024; the
   peel drift is still exact (120 / 192 / 93.33px).
 - Captures: `verify/mobile-arm/`.
+
+## Mobile bands, added 2026-09-24
+
+The mobile arm now runs the phone design in three bands (`fluid-scale.md` §13): phone (0.82–1.10
+off 390), portrait tablet (1.10–1.30, centred column) and landscape phone (1.00–1.20, centred
+column); landscape tablets (1024+) take the desktop design. `fluid.config.json` is just
+`"mobile": { "enabled": true }` (defaults).
+
+- **No-op at the reference:** 390×844 geometry identical to the pre-arm build.
+- **Matrix:** PASS on every desktop cell and at 320×568, 375×812, 390×844, 430×932, 844×390,
+  932×430, 820×1180 and 834×1194 (Chromium).
+- **Motion:** `verify-motion --reveal --scenes` PASS at 390×844, 844×390, 820×1180 and 1180×820.
+- **Zoom row:** every cell PASS.
+
+See it: DevTools device mode, then iPhone SE → 15 → Pro Max (same composition, slightly larger),
+rotate to landscape (a touch larger, centred), iPad Air portrait (larger still, centred column),
+iPad landscape (the desktop design).

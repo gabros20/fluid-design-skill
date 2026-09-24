@@ -5,7 +5,12 @@
   "description": "Config for the fluid-design generator. Each unit is a CSS length equal to exactly 1px at `reference`, so a Figma number is written as that number times the unit (`calc(64 * var(--fluid-display))`). See references/fluid-scale.md for the full model.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["reference", "canvas", "engageAt", "units"],
+  "required": [
+    "reference",
+    "canvas",
+    "engageAt",
+    "units"
+  ],
   "properties": {
     "$schema": {
       "type": "string",
@@ -21,7 +26,10 @@
       "type": "object",
       "description": "The viewport where every unit equals exactly 1px. This is a CONTENT budget, not the design canvas — it is deliberately narrower than `canvas.width` so the composition fits a typical desktop window rather than the full Figma frame. See fluid-scale.md \"the reference is 1440x900, and the Figma canvas is 1680 wide\".",
       "additionalProperties": false,
-      "required": ["width", "height"],
+      "required": [
+        "width",
+        "height"
+      ],
       "properties": {
         "width": {
           "type": "number",
@@ -39,7 +47,10 @@
       "type": "object",
       "description": "The drawn design-file frame. Independent of `reference` on purpose — between `reference.width` and `canvas.width` the composition does not scale at all (the height arm pins the factor at 1.0), it simply gets more room.",
       "additionalProperties": false,
-      "required": ["width", "gutter"],
+      "required": [
+        "width",
+        "gutter"
+      ],
       "properties": {
         "width": {
           "type": "number",
@@ -67,12 +78,18 @@
       "type": "object",
       "description": "Per-unit tuning. `fluid` is the one measured unit; `display` and `copy` are damped percentages of it; `chrome` is a fourth, independently-floored role for site chrome (header/footer) that never shrinks on a short-but-wide window.",
       "additionalProperties": false,
-      "required": ["fluid", "display", "copy"],
+      "required": [
+        "fluid",
+        "display",
+        "copy"
+      ],
       "properties": {
         "fluid": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["floor"],
+          "required": [
+            "floor"
+          ],
           "properties": {
             "floor": {
               "type": "number",
@@ -84,7 +101,10 @@
         "display": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["damping", "floor"],
+          "required": [
+            "damping",
+            "floor"
+          ],
           "properties": {
             "damping": {
               "type": "number",
@@ -94,8 +114,15 @@
             },
             "floor": {
               "oneOf": [
-                { "const": "auto", "description": "round2(damping * engageAt/reference.width + (1 - damping)) — the value the damped curve reaches exactly at engageAt, i.e. what the role hands over at the breakpoint where the flat-1px mobile layout takes over." },
-                { "type": "number", "exclusiveMinimum": 0, "description": "Explicit override in px-equivalent." }
+                {
+                  "const": "auto",
+                  "description": "round2(damping * engageAt/reference.width + (1 - damping)) — the value the damped curve reaches exactly at engageAt, i.e. what the role hands over at the breakpoint where the flat-1px mobile layout takes over."
+                },
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Explicit override in px-equivalent."
+                }
               ],
               "description": "Hard floor for `--fluid-display`. 'auto' derives it from `damping`; a number overrides it."
             }
@@ -104,7 +131,10 @@
         "copy": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["damping", "floor"],
+          "required": [
+            "damping",
+            "floor"
+          ],
           "properties": {
             "damping": {
               "type": "number",
@@ -114,8 +144,15 @@
             },
             "floor": {
               "oneOf": [
-                { "const": "auto", "description": "round2(damping * engageAt/reference.width + (1 - damping)) at the defaults this is 0.90." },
-                { "type": "number", "exclusiveMinimum": 0, "description": "Explicit override in px-equivalent." }
+                {
+                  "const": "auto",
+                  "description": "round2(damping * engageAt/reference.width + (1 - damping)) at the defaults this is 0.90."
+                },
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Explicit override in px-equivalent."
+                }
               ],
               "description": "Hard floor for `--fluid-copy`. 'auto' derives it from `damping`; a number overrides it."
             }
@@ -137,12 +174,95 @@
     "mobile": {
       "type": "object",
       "additionalProperties": false,
-      "description": "The mobile arm. Off (default): below engageAt every unit is a flat 1px and mobile is authored in plain px per breakpoint. On: below engageAt --fluid is clamp(min, 100vw / reference, max), width only, so an unprefixed fluid-* utility is the phone frame's drawn number (fluid-py-48 lg:fluid-py-120), scaled between small and large phones and held at max across the tablet band. The type units damp it like the desktop ones, with floors read at `min`.",
+      "description": "The mobile arm (fluid-scale.md §13). Off (default): below engageAt every unit is a flat 1px. On: the phone design scales off its own frame in three bands: phone (default, 100vw/reference), tablet (width >= tablet.from, the phone design a bit larger in a centred column) and landscape (orientation landscape, height <= maxHeight). Landscape tablets (>= engageAt) get the desktop design. Authors write the phone frame's numbers once; the bands only change the unit.",
       "properties": {
-        "enabled": { "type": "boolean", "default": false },
-        "reference": { "type": "number", "exclusiveMinimum": 0, "default": 390, "description": "The phone frame's width: where the mobile unit is exactly 1px. Must be < engageAt." },
-        "min": { "type": "number", "exclusiveMinimum": 0, "maximum": 1, "default": 0.85, "description": "Floor: the unit never shrinks below this (0.85 = 331px wide at a 390 reference)." },
-        "max": { "type": "number", "minimum": 1, "default": 1.25, "description": "Cap: the unit stops growing here (1.25 = 488px wide at a 390 reference), which holds the phone composition steady across large phones and the tablet band." }
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "reference": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 390,
+          "description": "The phone frame's width: where the mobile unit is exactly 1px. Must be < engageAt."
+        },
+        "min": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "default": 0.82,
+          "description": "Phone band floor (0.82 = 320px wide at a 390 reference)."
+        },
+        "max": {
+          "type": "number",
+          "minimum": 1,
+          "default": 1.1,
+          "description": "Phone band cap (1.10 = 430px, the largest iPhone). The tablet band starts at this value."
+        },
+        "column": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": 560,
+          "description": "On tablet and landscape, cap the frame at this many drawn px (x --fluid) through --fluid-column, so the phone composition is centred instead of stretched. null: no cap."
+        },
+        "tablet": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Portrait tablets and anything >= from wide that is not a landscape phone. Undesigned (default): the phone design, reference 700, clamped 1.10-1.30. Designed: set reference to the tablet frame and author md: values.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "reference": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "min": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "max": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "from": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 600
+            }
+          }
+        },
+        "landscape": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A phone on its side: orientation landscape and height <= maxHeight. The phone design, reference 780, clamped 1.00-1.20, so rotating never shrinks it.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "reference": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "min": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "max": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maxHeight": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 500
+            }
+          }
+        }
       }
     },
     "utilities": {
@@ -150,12 +270,36 @@
       "additionalProperties": false,
       "description": "Opt-in Tailwind v4 utility families on --fluid, beyond the core set. Other stacks spend the units through functions and need none of these.",
       "properties": {
-        "negative": { "type": "boolean", "default": true, "description": "Leading-minus variants for margins, insets and translates: -fluid-mt-8." },
-        "logical": { "type": "boolean", "default": true, "description": "fluid-ps/pe/ms/me/start/end/inset-x/inset-y (RTL-safe)." },
-        "basis": { "type": "boolean", "default": true, "description": "fluid-basis-* (flex-basis)." },
-        "scroll": { "type": "boolean", "default": true, "description": "fluid-scroll-mt/pt/mb/pb-* (anchor offsets under a scaled header)." },
-        "space": { "type": "boolean", "default": true, "description": "fluid-space-x/y-* (gaps for non-flex flow content)." },
-        "rounded": { "type": "boolean", "default": true, "description": "fluid-rounded(-t/b/l/r)-*. A radius is part of its box's shape: when padding, size and type scale and the radius does not, a 20px corner reads sharp on a 1.6x card and blunt on a 0.7x one. Off only for a square-cornered design." }
+        "negative": {
+          "type": "boolean",
+          "default": true,
+          "description": "Leading-minus variants for margins, insets and translates: -fluid-mt-8."
+        },
+        "logical": {
+          "type": "boolean",
+          "default": true,
+          "description": "fluid-ps/pe/ms/me/start/end/inset-x/inset-y (RTL-safe)."
+        },
+        "basis": {
+          "type": "boolean",
+          "default": true,
+          "description": "fluid-basis-* (flex-basis)."
+        },
+        "scroll": {
+          "type": "boolean",
+          "default": true,
+          "description": "fluid-scroll-mt/pt/mb/pb-* (anchor offsets under a scaled header)."
+        },
+        "space": {
+          "type": "boolean",
+          "default": true,
+          "description": "fluid-space-x/y-* (gaps for non-flex flow content)."
+        },
+        "rounded": {
+          "type": "boolean",
+          "default": true,
+          "description": "fluid-rounded(-t/b/l/r)-*. A radius is part of its box's shape: when padding, size and type scale and the radius does not, a 20px corner reads sharp on a 1.6x card and blunt on a 0.7x one. Off only for a square-cornered design."
+        }
       }
     },
     "zoomCompensation": {
@@ -165,14 +309,23 @@
     },
     "zoomTextRange": {
       "type": "array",
-      "items": { "type": "number", "minimum": 0 },
+      "items": {
+        "type": "number",
+        "minimum": 0
+      },
       "minItems": 2,
       "maxItems": 2,
-      "default": [24, 48],
+      "default": [
+        24,
+        48
+      ],
       "description": "With zoomCompensation on: how much of the browser zoom `fluid-text-*` takes, by drawn font size. All of it at or below the first number, none at or above the second, linear between. `fluid-text` is type inside a box that scales on --fluid, and that box does not zoom, so big type zoomed with it runs over its neighbours; reading-size text still zooms 1:1. The display and copy units always zoom fully."
     },
     "ceiling": {
-      "type": ["number", "null"],
+      "type": [
+        "number",
+        "null"
+      ],
       "default": null,
       "exclusiveMinimum": 0,
       "description": "null (default): uncapped growth — past the reference the whole composition scales as one, with no fixed frame marooned in empty space. A number N wraps `--fluid` (and therefore the type units, which read through it) in `min(Npx, ...)`, capping growth at N drawn pixels-equivalent. It also wraps `--fluid-chrome` directly in its own `min(Npx, ...)` — chrome does not read `var(--fluid)`, so without this it keeps growing past N on exactly the large displays the ceiling exists for, while the floor (`units.fluid.floor`) still does not apply to chrome."

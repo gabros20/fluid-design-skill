@@ -28,7 +28,7 @@ export function Hero() {
       {/* The half-disc: diameter 1100, centre on the baseline. */}
       <div
         aria-hidden="true"
-        className="absolute bottom-[calc(-190*var(--fluid))] left-1/2 fluid-size-380 -translate-x-1/2 rounded-full bg-surface-arc sm:bottom-[-260px] sm:size-[520px] lg:fluid-size-1100 lg:bottom-[calc(-550*var(--fluid))]"
+        className="absolute bottom-[calc(-190*var(--fluid))] left-1/2 fluid-size-380 -translate-x-1/2 rounded-full bg-surface-arc lg:fluid-size-1100 lg:bottom-[calc(-550*var(--fluid))]"
       />
 
       <Stage
@@ -48,7 +48,7 @@ export function Hero() {
               Pinsa romana · since 2019
             </p>
           </StageItem>
-          <h1 className="fluid-mt-16 font-display fluid-display-44 leading-[1.02] font-light tracking-[-0.025em] text-text-heading sm:text-[64px] lg:fluid-mt-20 lg:fluid-display-112/112">
+          <h1 className="fluid-mt-16 font-display fluid-display-44 leading-[1.02] font-light tracking-[-0.025em] text-text-heading lg:fluid-mt-20 lg:fluid-display-112/112">
             <StageItem as="span" variant="liftFade" className="block [--hero-lift:32px] lg:[--hero-lift:48px]">
               The airy bread
             </StageItem>

@@ -62,7 +62,7 @@ const BACKDROP: BackdropStop[] = [
 const EYEBROW =
   'fluid-copy-11 font-medium tracking-[0.24em] text-text-on-dark-muted uppercase lg:fluid-copy-12/16'
 const HEADING =
-  'font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-on-dark sm:text-[52px] lg:fluid-display-80/84'
+  'font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-on-dark lg:fluid-display-80/84'
 const BODY = 'fluid-copy-15 leading-[1.6] text-text-on-dark-muted lg:fluid-copy-17/28'
 
 export function DoughScene() {

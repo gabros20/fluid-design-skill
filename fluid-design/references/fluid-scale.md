@@ -409,48 +409,58 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
 
 ## 13. The mobile arm (optional)
 
-Off by default. With `mobile.enabled`, the units stop being a flat 1px below `engageAt`:
+Off by default (`mobile.enabled: false`: below `engageAt` every unit is 1px). On, the **phone design
+scales off its own frame** in three bands, and the desktop design keeps its own scale above
+`engageAt`. The usual brief is a desktop frame (1680, reference 1440×900) and a phone frame (390),
+with no tablet design; this is built for that.
 
-```css
-:root { --fluid: clamp(0.85px, calc(100vw / 390), 1.25px); }   /* mobile.min, mobile.reference, mobile.max */
-```
+| Band | Media condition | Scales off | Clamp | Covers |
+|---|---|---|---|---|
+| phone | default | `100vw / 390` | 0.82–1.10 | iPhone SE (320) to Pro Max (430) |
+| tablet | `width >= 600px` | `100vw / 700` | 1.10–1.30 | portrait tablets: iPad mini 1.10, Air 1.17, Pro 11 1.19 |
+| landscape | `(orientation: landscape) and (height <= 500px)` | `100vw / 780` | 1.00–1.20 | a phone on its side: SE 1.00, 15 1.08, Pro Max 1.20 |
+| desktop | `width >= engageAt` | 1440×900, both axes | 0.58– | laptops, and **landscape tablets** (iPad 1024–1366 wide: 0.71–0.95) |
 
-- **Width only.** Below the breakpoint sections stack and scroll, so there is nothing to fit on the
-  height axis, and a height term would make type move with the phone's toolbar.
-- **Clamped both ways.** The phone frame is drawn at `reference` (390). At 360 the unit is 0.92, at
-  430 it is 1.10. It stops shrinking at `min` (0.85, a 331px screen) and stops growing at `max` (1.25,
-  from 488px), so the tablet band (768–1023) shows the phone composition at 1.25× instead of a phone
-  layout stretched 2.6×. If the design has its own tablet frame, author it with `sm:`/`md:` values as
-  before; those stay plain px unless you write them as fluid too.
-- **The type units damp it** like the desktop ones (0.62 / 0.33), with floors read at `min`: body
-  copy drawn 16 is 15.6px on a 360 phone rather than 14.8px. Chrome uses `--fluid` directly.
-- **Browser zoom** is compensated the same way as on desktop (§12), inside the clamp.
+- **All three mobile bands run the same drawing.** Authors write the phone frame's numbers once
+  (`fluid-py-48`, `fluid-display-44/48`); the bands only change what the unit is. No orientation
+  variants, no tablet utilities. Rotating a phone swaps the unit in CSS and the page reflows.
+- **Why landscape needs its own rule.** By width alone a phone on its side (844×390) and a portrait
+  iPad (834×1194) are the same. Height separates them: under 500px tall is a phone. The landscape
+  block is emitted after the tablet block so it wins when both match (a Pro Max on its side is 932
+  wide).
+- **Continuous, then one switch.** The phone band tops out at 1.10, exactly where the tablet band
+  starts, and landscape never goes below 1.00, so rotating never shrinks the design. The only jump
+  is at `engageAt`, where the composition itself changes to the desktop one.
+- **The column cap.** On tablet and landscape the frame is capped at `mobile.column` drawn px
+  (default 560) through `--fluid-column`: the phone composition is centred at 616–728px instead of
+  stretching its lines across an 834px screen. Full-bleed section colour stays full width because
+  it is on the section, not the frame. Tailwind: `max-w-(--fluid-column)` on the frame box (below
+  `lg`); the CSS and SCSS frame helpers apply it themselves. `column: null` turns it off.
+- **Why the clamps are narrow.** A phone composition stretched past about 1.3× reads as a toy, and
+  outside a clamp the unit is plain px, so text zoom on the phone keeps working there.
+- **A designed tablet.** If the designer draws one (say 834), author its numbers with `md:` and
+  set `mobile.tablet` to that frame: `{ "from": 768, "reference": 834, "min": 0.92, "max": 1.2 }`.
+  Same primitive, a real reference instead of the held phone design.
+- **Holding a band still.** `"min": 1, "max": 1` makes a band plain px; `"enabled": false` on
+  `tablet` or `landscape` leaves those screens on the phone band (held at its 1.10 cap).
+- **Plain Tailwind still works per value.** `text-[15px]` stays 15px everywhere; the arm only moves
+  what is written through `fluid-*`. Fluid on desktop with fixed breakpoints below is simply
+  `mobile.enabled: false`.
 
-**What it changes for authoring.** The unprefixed utility becomes the phone frame's drawn number and
-`lg:` takes the desktop frame's:
+Measured on `examples/pizza-next` (hero heading drawn 44 on the phone frame): 320 → 39.2, 375 → 43.0,
+390 → 44.0, 430 → 48.4, iPad mini portrait 48.4, iPad Air portrait 51.5, iPhone 15 landscape 47.6,
+Pro Max landscape 52.6; iPad landscape takes the desktop heading at 0.82 (99.5). Geometry of all
+247 elements at 390×844 identical to the pre-arm build, and both examples pass the full matrix on
+the new device set.
 
-```html
-<section class="fluid-py-48 lg:fluid-py-120">
-<h2 class="fluid-display-40/44 lg:fluid-display-64/72">
-```
-
-Both numbers come straight from their frames. Without the arm the mobile half is `py-12` or
-`py-[48px]`, correct only at the width it was checked at.
-
-- **At the reference width nothing moves.** The unit is exactly 1 at 390, so converting an existing
-  site's mobile px to fluid utilities is visually a no-op at 390 and only changes the other widths.
-  That is the check for a conversion: element geometry at 390×844 identical before and after.
-- **Keep off it:** input font sizes (iOS zooms into a focused input under 16px, and a fluid 16 is
-  15.6 on a 360 phone; keep inputs at a fixed 16px), text measures, borders, tracking,
-  entrance offsets, icons of 24px and under.
-- **Validated on the Next example** (`examples/pizza-next`, about 100 mobile values in 8 files):
-  geometry of all 247 elements at 390×844 identical before and after the conversion; the full matrix
-  including 360×780, 430×932 and 768×1024 passes (no overflow, units match the maths); reveals and
-  the pinned scene pass at 360, 390 and 768.
-- **What the arm does for zoom:** a desktop window zoomed past the breakpoint falls into the mobile
-  CSS. With the arm, that CSS sits at `max` on such a wide CSS viewport, so mobile type there is 1.25×
-  its drawn size and the drop at the handover closes: measured on the Next example, body copy at
-  1920×1080 and 200% went from 166% (flat mobile) to 212% (mobile arm).
+- **Converting an existing site:** the phone frame's unit is exactly 1 at 390, so moving mobile px to
+  fluid utilities is a no-op there. Check it by diffing element geometry at 390×844 before and
+  after. Remove `sm:`/`md:` size overrides that were never drawn: they are what makes a tablet jump.
+- **Keep off it:** input font sizes (iOS zooms into a focused input under 16px; keep inputs at a fixed
+  16px), text measures, borders, tracking, entrance offsets, icons of 24px and under.
+- **What the arm does for zoom:** a desktop window zoomed past the breakpoint lands in these bands,
+  where mobile type is up to 1.3× its drawn size, so the drop at the handover mostly closes
+  (measured at 1920×1080 and 200%: 166% flat, 212% with the arm).
 
 ## 14. Traps
 

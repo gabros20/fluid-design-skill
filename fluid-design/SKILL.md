@@ -48,7 +48,7 @@ default. Ask the user only where the codebase does not already answer it and the
 - **Height axis**: on by default. Turn it off only for document-like sites with no one-screen sections.
 - **Growth ceiling**: none by default. Set one if assets cannot survive upscaling.
 - **Scope**: the whole site from the breakpoint up (default), or specific routes first during a brownfield migration.
-- **Mobile**: flat, authored per breakpoint (default), or the optional mobile arm: phones scale off their own 390 frame, so `fluid-py-48 lg:fluid-py-120` takes both numbers from their frames (`references/fluid-scale.md` §13).
+- **Mobile**: flat, authored per breakpoint (default), or the optional mobile arm: the phone design scales off its own 390 frame on phones, and is shown slightly larger in a centred column on portrait tablets and landscape phones, while landscape tablets get the desktop design scaled down. `fluid-py-48 lg:fluid-py-120` takes both numbers from their frames (`references/fluid-scale.md` §13).
 - **Browser zoom**: compensated (default). Ask only if the site carries a legal accessibility obligation.
 
 Installed motion libraries (Motion, GSAP, Lenis, a header script) are noted in `FLUID.md` for the

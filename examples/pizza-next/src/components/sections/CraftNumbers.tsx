@@ -37,7 +37,7 @@ export function CraftNumbers() {
           alt=""
           aria-hidden="true"
           sizes="(min-width: 1024px) 24vw, 40vw"
-          className="pointer-events-none absolute fluid-top-32 right-[calc(-40*var(--fluid))] h-auto fluid-w-180 rotate-[-8deg] sm:w-[240px] lg:fluid-top-60 lg:right-[calc(-20*var(--fluid))] lg:fluid-w-380"
+          className="pointer-events-none absolute fluid-top-32 right-[calc(-40*var(--fluid))] h-auto fluid-w-180 rotate-[-8deg] lg:fluid-top-60 lg:right-[calc(-20*var(--fluid))] lg:fluid-w-380"
         />
         <Image
           src={basil}
@@ -60,7 +60,7 @@ export function CraftNumbers() {
               The craft
             </p>
           </StageItem>
-          <h2 className="fluid-mt-16 font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-heading sm:text-[52px] lg:fluid-mt-20 lg:fluid-display-80/84">
+          <h2 className="fluid-mt-16 font-display fluid-display-40 leading-[1.05] font-light tracking-[-0.02em] text-text-heading lg:fluid-mt-20 lg:fluid-display-80/84">
             <StageItem as="span" variant="liftFade" delay={0.067} className="block [--hero-lift:32px]">
               Four numbers
             </StageItem>

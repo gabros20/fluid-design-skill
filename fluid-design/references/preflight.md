@@ -74,9 +74,12 @@ Default: **the whole site from the engage breakpoint up**, including chrome (hea
 ### 7. Mobile
 Default: **flat** (`mobile.enabled: false`). Mobile stays authored per breakpoint in plain px.
 - Offer the **mobile arm** (`fluid-scale.md` §13) when the design has a phone frame (usually 390
-  wide) and the team wants it to hold across phone sizes: unprefixed `fluid-*` utilities then take
-  the phone frame's numbers and scale 0.85–1.25×. It was validated on the Next example
-  (`examples/pizza-next`), not yet on a production site; say so.
+  wide) and the team wants it to hold across phones: unprefixed `fluid-*` utilities then take the
+  phone frame's numbers. Phones scale 0.82–1.10, portrait tablets show the phone design at
+  1.10–1.30 in a centred column, landscape phones at 1.00–1.20, and landscape tablets (1024+) get the
+  desktop design scaled down. Validated on both examples, not yet on a production site; say so.
+- Ask: **is there a tablet design?** No (the usual case): the defaults above. Yes: `mobile.tablet`
+  gets its frame as the reference and the team authors `md:` values.
 - Detect: a mobile frame in Figma, or a brief that says the phone layout must look the same on
   every phone. Brownfield: converting the mobile px is a no-op at the reference width, so it can be
   done file by file and checked by diffing geometry at 390×844.

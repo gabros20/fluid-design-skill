@@ -28,7 +28,15 @@ export const DEFAULT_CONFIG = Object.freeze({
     chrome: Object.freeze({ enabled: true })
   }),
   ceiling: null,
-  mobile: Object.freeze({ enabled: false, reference: 390, min: 0.85, max: 1.25 }),
+  mobile: Object.freeze({
+    enabled: false,
+    reference: 390,
+    min: 0.82,
+    max: 1.1,
+    column: 560,
+    landscape: Object.freeze({ enabled: true, reference: 780, min: 1, max: 1.2, maxHeight: 500 }),
+    tablet: Object.freeze({ enabled: true, from: 600, reference: 700, min: 1.1, max: 1.3 })
+  }),
   utilities: Object.freeze({ negative: true, logical: true, basis: true, scroll: true, space: true, rounded: true }),
   zoomCompensation: true,
   zoomTextRange: Object.freeze([24, 48])
@@ -86,7 +94,12 @@ export function mergeConfig(partial = {}) {
       chrome: { ...DEFAULT_CONFIG.units.chrome, ...(partial.units?.chrome ?? {}) }
     },
     ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling,
-    mobile: { ...DEFAULT_CONFIG.mobile, ...(partial.mobile ?? {}) },
+    mobile: {
+      ...DEFAULT_CONFIG.mobile,
+      ...(partial.mobile ?? {}),
+      landscape: { ...DEFAULT_CONFIG.mobile.landscape, ...(partial.mobile?.landscape ?? {}) },
+      tablet: { ...DEFAULT_CONFIG.mobile.tablet, ...(partial.mobile?.tablet ?? {}) }
+    },
     utilities: { ...DEFAULT_CONFIG.utilities, ...(partial.utilities ?? {}) },
     zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation,
     zoomTextRange: [...(partial.zoomTextRange ?? DEFAULT_CONFIG.zoomTextRange)]
@@ -130,6 +143,14 @@ export function validateConfig(cfg) {
   assert(mo.reference < cfg.engageAt, `mobile.reference (${mo.reference}) must be < engageAt (${cfg.engageAt})`)
   assert(isFiniteNumber(mo.min) && mo.min > 0 && mo.min <= 1, 'mobile.min must be in (0, 1]')
   assert(isFiniteNumber(mo.max) && mo.max >= 1, 'mobile.max must be >= 1')
+  assert(mo.column === null || (isFiniteNumber(mo.column) && mo.column > 0), 'mobile.column must be null or drawn px > 0')
+  for (const [name, b] of [['landscape', mo.landscape], ['tablet', mo.tablet]]) {
+    assert(typeof b.enabled === 'boolean', `mobile.${name}.enabled must be a boolean`)
+    assertPositiveNumber(b.reference, `mobile.${name}.reference`)
+    assert(isFiniteNumber(b.min) && isFiniteNumber(b.max) && b.min > 0 && b.min <= b.max, `mobile.${name}: need 0 < min <= max`)
+  }
+  assertPositiveNumber(mo.landscape.maxHeight, 'mobile.landscape.maxHeight')
+  assert(isFiniteNumber(mo.tablet.from) && mo.tablet.from > 0 && mo.tablet.from < cfg.engageAt, `mobile.tablet.from must be < engageAt (${cfg.engageAt})`)
 
   for (const k of Object.keys(cfg.utilities)) {
     assert(k in DEFAULT_CONFIG.utilities, `unknown utilities key "${k}"`)
@@ -224,10 +245,29 @@ export function round2(n) {
 /** The type floors below engageAt when the mobile arm is on: the damped
  * curve read at mobile.min, the same derivation as the desktop floors read
  * at engageAt (fluid-scale.md §5). */
-export function resolveMobileFloors(cfg) {
-  const m = cfg.mobile.min
-  const resolve = (unit) => round2(unit.damping * m + (1 - unit.damping))
+export function resolveBandFloors(cfg, min) {
+  const resolve = (unit) => round2(unit.damping * min + (1 - unit.damping))
   return { display: resolve(cfg.units.display), copy: resolve(cfg.units.copy) }
+}
+export function resolveMobileFloors(cfg) {
+  return resolveBandFloors(cfg, cfg.mobile.min)
+}
+
+/** Which mobile band a viewport below engageAt lands in: 'phone',
+ * 'tablet' or 'landscape' (the same precedence the generated CSS has). */
+export function mobileBand(cfg, w, h) {
+  const mo = cfg.mobile
+  if (mo.landscape.enabled && w > h && h <= mo.landscape.maxHeight) return 'landscape'
+  if (mo.tablet.enabled && w >= mo.tablet.from) return 'tablet'
+  return 'phone'
+}
+
+/** The custom properties in effect at a viewport, from cssUnits(cfg). */
+export function unitVarsAt(cfg, units, w, h) {
+  if (w >= cfg.engageAt) return units.engaged
+  const band = cfg.mobile.enabled ? mobileBand(cfg, w, h) : 'phone'
+  const hit = units.bands.find((b) => b.name === band)
+  return hit ? { ...units.root, ...hit.vars } : units.root
 }
 
 export function resolveFloors(cfg) {
@@ -273,11 +313,13 @@ export function factors(cfg, w, h, zoom = 1) {
 
   if (w < cfg.engageAt) {
     if (!cfg.mobile.enabled) return { fluid: 1, display: 1, copy: 1, chrome: 1 }
-    const { reference, min, max } = cfg.mobile
-    const clampM = (v) => Math.min(max, Math.max(min, v))
-    const fluid = clampM(w / reference)
-    const mf = resolveMobileFloors(cfg)
-    return { fluid, ...typeUnits(clampM((w * z) / reference), mf.display, mf.copy), chrome: fluid }
+    const mo = cfg.mobile
+    const band = mobileBand(cfg, w, h)
+    const b = band === 'phone' ? mo : mo[band]
+    const clampB = (v) => Math.min(b.max, Math.max(b.min, v))
+    const fluid = clampB(w / b.reference)
+    const mf = resolveBandFloors(cfg, b.min)
+    return { fluid, ...typeUnits(clampB((w * z) / b.reference), mf.display, mf.copy), chrome: fluid, band }
   }
 
   const clampD = (widthArm, heightArm) => {
@@ -375,17 +417,39 @@ export function cssUnits(cfg) {
   // the phone frame, clamped so a small phone stops shrinking and a tablet
   // stops growing (fluid-scale.md §13). Height never enters: below the
   // breakpoint sections stack and scroll, so there is nothing to fit.
+  // Below engageAt: a flat 1px, or with the mobile arm the phone design
+  // scaled off its own frame, in up to three bands (fluid-scale.md §13):
+  //   phone     (default)                               100vw / reference
+  //   tablet    (width >= tablet.from)                  the phone design, scaled up a bit
+  //   landscape (orientation: landscape, short height)  the phone design, scaled a bit
+  // All three run the SAME drawing, so authors write the phone numbers once
+  // and never see these bands; only the unit changes. Width only: below the
+  // breakpoint sections stack and scroll, so there is nothing to fit.
+  // Landscape is listed after tablet so it wins when both match (a Pro Max
+  // on its side is 932 wide but only 430 tall).
   let root
+  const bands = []
   if (cfg.mobile.enabled) {
     const mo = cfg.mobile
-    const mf = resolveMobileFloors(cfg)
-    const mobileBase = (zoomed) => `calc(clamp(${sp(mo.min)}, ${arm('100vw', mo.reference, zoomed)}, ${sp(mo.max)}) / ${S})`
-    root = {
-      '--fluid': mobileBase(false),
-      ...(zc ? { '--fluid-z': mobileBase(true) } : {}),
-      '--fluid-display': typeUnit(d, mf.display, typeBase),
-      '--fluid-copy': typeUnit(c, mf.copy, typeBase),
-      ...(cfg.units.chrome.enabled ? { '--fluid-chrome': 'var(--fluid)' } : {})
+    const bandBase = (ref, min, max, zoomed) => `calc(clamp(${sp(min)}, ${arm('100vw', ref, zoomed)}, ${sp(max)}) / ${S})`
+    const bandVars = (ref, min, max, column) => {
+      const mf = resolveBandFloors(cfg, min)
+      return {
+        '--fluid': bandBase(ref, min, max, false),
+        ...(zc ? { '--fluid-z': bandBase(ref, min, max, true) } : {}),
+        '--fluid-display': typeUnit(d, mf.display, typeBase),
+        '--fluid-copy': typeUnit(c, mf.copy, typeBase),
+        ...(cfg.units.chrome.enabled ? { '--fluid-chrome': 'var(--fluid)' } : {}),
+        '--fluid-column': column
+      }
+    }
+    const col = mo.column === null ? `${num(cfg.canvas.width)}px` : `calc(${num(mo.column)} * var(--fluid))`
+    root = bandVars(mo.reference, mo.min, mo.max, `${num(cfg.canvas.width)}px`)
+    if (mo.tablet.enabled) {
+      bands.push({ name: 'tablet', media: `(width >= ${num(mo.tablet.from)}px)`, vars: bandVars(mo.tablet.reference, mo.tablet.min, mo.tablet.max, col) })
+    }
+    if (mo.landscape.enabled) {
+      bands.push({ name: 'landscape', media: `(orientation: landscape) and (height <= ${num(mo.landscape.maxHeight)}px)`, vars: bandVars(mo.landscape.reference, mo.landscape.min, mo.landscape.max, col) })
     }
   } else {
     root = {
@@ -416,7 +480,9 @@ export function cssUnits(cfg) {
       '--browser-bar': 'calc(100lvh - 100svh)',
       '--header-h': headerRoot
     },
+    bands,
     engaged: {
+      ...(cfg.mobile.enabled ? { '--fluid-column': 'none' } : {}),
       '--fluid': fluidExpr,
       ...(zc ? { '--fluid-z': desktopBase(true) } : {}),
       '--fluid-display': displayExpr,

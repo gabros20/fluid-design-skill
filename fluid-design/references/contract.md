@@ -43,7 +43,9 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
     "chrome":  { "enabled": true }
   },
   "ceiling": null,
-  "mobile": { "enabled": false, "reference": 390, "min": 0.85, "max": 1.25 },
+  "mobile": { "enabled": false, "reference": 390, "min": 0.82, "max": 1.1, "column": 560,
+              "tablet": { "enabled": true, "from": 600, "reference": 700, "min": 1.1, "max": 1.3 },
+              "landscape": { "enabled": true, "reference": 780, "min": 1, "max": 1.2, "maxHeight": 500 } },
   "utilities": { "negative": true, "logical": true, "basis": true, "scroll": true, "space": true, "rounded": true },
   "zoomCompensation": true,
   "zoomTextRange": [24, 48]
@@ -63,7 +65,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 | `units.display.floor` / `units.copy.floor` | `"auto"` = `round2(damping * engageAt/reference.width + (1 - damping))` (0.82 and 0.90 at the shipped defaults) — or a number override |
 | `units.chrome.enabled` | emit `--fluid-chrome`, a width-fit/height-floored fourth role for site chrome. Default `true` |
 | `ceiling` | `null` (default) = uncapped growth. A number N wraps `--fluid` in `min(Npx, …)`; the type units inherit the cap through it |
-| `mobile` | `{ enabled: false, reference: 390, min: 0.85, max: 1.25 }`. On: below `engageAt`, `--fluid` is `clamp(min px, 100vw / reference, max px)`, the type units damp it with floors read at `min`, and `--fluid-chrome` is `var(--fluid)` (`fluid-scale.md` §13) |
+| `mobile` | `{ enabled: false, reference: 390, min: 0.82, max: 1.1, column: 560, tablet: { enabled, from: 600, reference: 700, min: 1.1, max: 1.3 }, landscape: { enabled, reference: 780, min: 1, max: 1.2, maxHeight: 500 } }`. On: the phone design scales in three bands below `engageAt` (`fluid-scale.md` §13); each band's `--fluid` is `clamp(min, 100vw / reference, max)` in the ×1000 form, type units damp it with floors read at the band's `min`, `--fluid-chrome` is `var(--fluid)`, and `--fluid-column` caps the frame on tablet and landscape |
 | `utilities` | opt-in Tailwind families: `{ negative, logical, basis, scroll, space, rounded: true }` (§2) |
 | `zoomCompensation` | `true` (default): the display and copy units read their base as `var(--fluid) * var(--fluid-zoom, 1)`, so text follows browser zoom once `assets/runtime/fluid-zoom.js` sets `--fluid-zoom` (`fluid-scale.md` §12, Browser zoom). Without the script the fallback is 1. `false` emits plain `var(--fluid)` |
 | `zoomTextRange` | `[full, none]` drawn px, default `[24, 48]`: how much of the zoom `fluid-text-*` takes by font size — all at or below `full`, none at or above `none`, linear between. Tailwind emits it as `clamp(0, (none − n) / (none − full), 1)` inside the utility; SCSS and StyleX resolve it at compile time |
@@ -93,8 +95,10 @@ fluid-text-N     N × a blend of var(--fluid) and var(--fluid-z) by N's share of
 inline style on `<html>` (the detected browser zoom, 1 when unzoomed or undetectable); the `, 1`
 fallback keeps every unit valid without it.
 
-With the mobile arm on, `:root` instead holds `--fluid: clamp(<min>px, calc(100vw / <mobile.reference>), <max>px)`,
-the two type units damping its zoom-compensated twin, and `--fluid-chrome: var(--fluid)`.
+With the mobile arm on, `:root` holds the phone band, followed by an `@media (width >= <tablet.from>)`
+block and an `@media (orientation: landscape) and (height <= <maxHeight>)` block that redefine the
+same properties for their bands, plus `--fluid-column` (the canvas width on the phone, `calc(<column>
+* var(--fluid))` on tablet and landscape, `none` from `engageAt`).
 
 All properties are `1px` in `:root` (or omitted, for `--fluid-chrome`, when `units.chrome.enabled`
 is `false`) and are redefined inside `@media (width >= engageAt)`.

@@ -104,10 +104,7 @@ function cmdTable(cfg, args) {
     let arm
     if (!args.raw && w < cfg.engageAt) {
       if (!cfg.mobile.enabled) arm = 'below-engage'
-      else {
-        const m = w / cfg.mobile.reference
-        arm = m <= cfg.mobile.min ? 'mobile-min' : m >= cfg.mobile.max ? 'mobile-max' : 'mobile'
-      }
+      else arm = f.band ?? 'phone'
     } else {
       const widthArm = w / cfg.reference.width
       const heightArm = cfg.heightAxis ? h / cfg.reference.height : Infinity

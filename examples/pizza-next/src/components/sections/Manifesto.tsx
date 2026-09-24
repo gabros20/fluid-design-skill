@@ -27,7 +27,7 @@ export function Manifesto() {
               The house rule
             </p>
           </StageItem>
-          <p className="fluid-mt-24 font-display fluid-display-30 leading-[1.22] font-light tracking-[-0.015em] text-text-heading sm:text-[38px] lg:fluid-mt-32 lg:fluid-display-48/64">
+          <p className="fluid-mt-24 font-display fluid-display-30 leading-[1.22] font-light tracking-[-0.015em] text-text-heading lg:fluid-mt-32 lg:fluid-display-48/64">
             {LINES.map((line, i) => (
               <StageItem
                 key={line}
