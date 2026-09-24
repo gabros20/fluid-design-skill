@@ -46,6 +46,12 @@ exception and uses `lvh` with a matching `lvh` negative margin: see the `scroll-
 tracks the toolbar animation live, which is a layout thrash on exactly the surfaces (a pinned
 render, a scaled type ramp) that can least afford one.
 
+**`svh` did not hold still on iOS Safari 16.4–17.3.** WebKit bug 261185: with the tab bar hidden,
+`svh` computed like `dvh`, so everything sized in `svh` (the fluid height arm included) resized as the
+toolbar collapsed. Fixed in Safari 17.4 (March 2024; WebKit commits 270516, 270652). The choice of
+`svh` still stands, since `dvh` moves on every version, but a report of "type resizing while I scroll"
+from an older iPhone is this bug, not the code. Check the iOS version before debugging.
+
 **A full-bleed picture is a third case, distinct from a layout container.** `100svh` on a
 picture/video hero ends exactly where the toolbar begins, so the band behind the toolbar shows
 whatever comes *next* — not the hero. The fix is not "use `lvh` and accept content hiding behind the

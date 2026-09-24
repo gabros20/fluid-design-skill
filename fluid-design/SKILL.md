@@ -136,7 +136,8 @@ How a video *plays* (scrubbing, loops, preload tiers, encoding) is the `scroll-a
   for horizontal overflow, compares the unit values against the maths, checks one-screen fit, and
   reports grid column counts (`data-verify-grid`). Keep 2560 in the matrix: frame drift and grid
   re-flow bugs only appear above the reference. Its zoom row loads the page under real browser zoom
-  and checks that text grows with it (point `--zoom-selector` at body copy).
+  and checks that text grows with it (point `--zoom-selector` at body copy). Run it once more with
+  `--browser webkit` and `--browser firefox`: an engine difference passes every Chromium check.
 - At 1440×900 the page must match the design pixel for pixel. That point is the calibration check.
 - iOS toolbar tint, `lvh` shortfall and safe-area padding can only be verified on a real device.
   Before asking for a device test, confirm the deployed build actually contains the fix.

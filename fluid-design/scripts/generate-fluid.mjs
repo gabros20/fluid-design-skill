@@ -1571,8 +1571,9 @@ function checkFixtureInvariants(cfg, files, label, mismatches) {
     if (content.includes('var(--fluid-fluid)')) {
       mismatches.push(`${label}: ${rel} emits var(--fluid-fluid) — a stack-local expression diverged from cssUnits(cfg)`)
     }
-    if (cfg.ceiling !== null && !content.includes(`min(${num(cfg.ceiling)}px`)) {
-      mismatches.push(`${label}: ${rel} has no min(${num(cfg.ceiling)}px — ceiling is set but this stack does not cap --fluid`)
+    // Units are emitted in the x1000 precision form (fluid-scale.md §3).
+    if (cfg.ceiling !== null && !content.includes(`min(${num(cfg.ceiling * 1000)}px`)) {
+      mismatches.push(`${label}: ${rel} has no min(${num(cfg.ceiling * 1000)}px — ceiling is set but this stack does not cap --fluid`)
     }
     // The engaged --fluid-display declaration (the last one; the root block
     // writes `1px` first) must read the zoom factor exactly when configured.

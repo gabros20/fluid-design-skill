@@ -153,10 +153,10 @@ $fluid-zoom-text-none: 48;
 // Every declaration below is copied verbatim from cssUnits(cfg) — see the
 // note at the top of this file's Functions section.
 @mixin fluid-units {
-  --fluid: clamp(0.85px, calc(100vw / 390), 1.25px);
-  --fluid-z: clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px);
-  --fluid-display: max(0.91px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
-  --fluid-copy: max(0.95px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
+  --fluid: calc(clamp(850px, calc(100vw * 1000 / 390), 1250px) / 1000);
+  --fluid-z: calc(clamp(850px, calc(100vw * 1000 / 390 * var(--fluid-zoom, 1)), 1250px) / 1000);
+  --fluid-display: calc(max(910px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
+  --fluid-copy: calc(max(950px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
   --fluid-chrome: var(--fluid);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -164,11 +164,11 @@ $fluid-zoom-text-none: 48;
   --header-h: calc(24 * var(--fluid) + var(--safe-top) + 34px);
 
   @include fluid-up {
-    --fluid: min(1.6px, max(0.58px, min(calc(100svh / 900), calc(100vw / 1440))));
-    --fluid-z: min(1.6px, max(0.58px, min(calc(100svh / 900 * var(--fluid-zoom, 1)), calc(100vw / 1440 * var(--fluid-zoom, 1)))));
-    --fluid-display: max(0.82px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
-    --fluid-copy: max(0.9px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
-    --fluid-chrome: min(1.6px, min(calc(100vw / 1440), max(1px, calc(100svh / 900))));
+    --fluid: calc(min(1600px, max(580px, min(calc(100svh * 1000 / 900), calc(100vw * 1000 / 1440)))) / 1000);
+    --fluid-z: calc(min(1600px, max(580px, min(calc(100svh * 1000 / 900 * var(--fluid-zoom, 1)), calc(100vw * 1000 / 1440 * var(--fluid-zoom, 1))))) / 1000);
+    --fluid-display: calc(max(820px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
+    --fluid-copy: calc(max(900px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+    --fluid-chrome: calc(min(1600px, min(calc(100vw * 1000 / 1440), max(1000px, calc(100svh * 1000 / 900)))) / 1000);
     --header-h: calc(24 * var(--fluid) + var(--safe-top) + 48 * var(--fluid-chrome));
   }
 }

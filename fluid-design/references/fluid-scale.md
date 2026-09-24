@@ -76,8 +76,17 @@ If a value must be a plain length below the breakpoint and a scaled one above it
 ## 3. The base unit and its two arms
 
 ```css
---fluid: max(0.58px, min(calc(100svh / 900), calc(100vw / 1440)));
+--fluid: max(0.58px, min(100svh / 900, 100vw / 1440));          /* the maths */
+--fluid: calc(max(580px, min(calc(100svh * 1000 / 900),
+                             calc(100vw * 1000 / 1440))) / 1000);  /* what the generator emits */
 ```
+
+**Why the ×1000.** Firefox keeps lengths in 1/60px steps and rounds the result of `min()`, `max()`
+and `clamp()` to that grid. On a unit of about 0.71px that loses up to 1/60px, 1.6%, and every
+drawn number multiplies it. Measured in Firefox 155 at 1024×640: `calc(900 * var(--fluid))` came
+out 630px in a 640px window, so a one-screen section left a 10px gap. Comparing lengths 1000 times
+larger and dividing once afterwards leaves 0.017px (639.983). Chromium and WebKit were exact either
+way. Every unit the generator emits uses this form; a hand-written unit must too.
 
 - **`min()` means fit.** It is `object-fit: contain` written as a scale factor, so the composition can
   never outgrow either axis. `max()` would be cover, and would let text overflow. Separate units per axis
@@ -429,6 +438,8 @@ Both numbers come straight from their frames. Without the arm the mobile half is
 - Overriding `--fluid` on one section: the type units resolved at `:root` do not re-derive (§10).
 - A length times a unit (`64px * var(--fluid)`): invalid, and the declaration drops silently.
 - A `ceiling` on `--fluid` expecting it to cap chrome: `--fluid-chrome` is its own formula (§6).
+- A hand-written unit that compares sub-pixel lengths in `min()`/`max()`: Firefox rounds the result to
+  1/60px, up to 1.6% off per unit (§3). Compare ×1000 lengths and divide once.
 - Shipping without `fluid-zoom.js`: vw/svh type does not grow under browser zoom, a WCAG 1.4.4
   failure on wide displays (§12, Browser zoom).
 - Multiplying anything already clamped by the zoom: the whole type unit (its px term already zooms:

@@ -32,6 +32,22 @@ the whole render cost of the scale, and it should stay that way.
   one CSS recompute with a script, a style write and the same recompute.
 - A resize still reflows type and remaps any pin. Scrolling never does (`fluid-scale.md` §12).
 
+**Spend the units through shared classes.** Measured in Chromium (1500 elements, 4 sizing
+declarations each, a 21-step window resize, main-thread time per step against a 16.6ms frame):
+
+| How the unit is spent | Width resize | Height resize |
+|---|--:|--:|
+| Literal px (no viewport awareness) | 0.56 ms | 0.14 ms |
+| **Shared utility classes (30 classes reused)** | **5.07 ms** | **4.72 ms** |
+| Per-declaration `clamp(…vw…)`, shared classes | 9.22 ms | 0.69 ms |
+| One unique `calc(N * var(--fluid))` rule per element | 16.06 ms | 14.05 ms |
+
+A small set of reused `fluid-*` classes (or SCSS/CSS rules shared across elements) costs about a
+third of a frame per resize step, less than per-declaration `clamp()`. The same unit written as a
+unique rule per element (CSS-in-JS generating one class per instance, inline styles) costs about
+nine times more style recalculation, a whole frame per step. Scrolling costs nothing either way.
+Evidence and harness: the repository's `docs/review-2026-09/`.
+
 ## 2. No `dvh` thrash
 
 `dvh` tracks the mobile toolbar's collapse animation live. Anything sized or scaled in `dvh`

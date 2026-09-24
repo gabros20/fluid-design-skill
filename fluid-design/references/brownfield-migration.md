@@ -9,7 +9,9 @@ Skip when: greenfield. Go straight to `section-recipe.md`.
 1. **Inventory, read-only.** Run `node <skill>/scripts/audit.mjs src --json > fluid-audit.json`. Record:
    - The container: max-width, horizontal padding per breakpoint. That is today's frame and gutter.
    - The breakpoint where the desktop layout starts. That is `engageAt`.
-   - Existing fluid attempts (`clamp()`, `vw` font sizes, a `--scale` var). Each is a second ladder that
+   - Existing fluid attempts (`clamp()`, `vw` font sizes, a `--scale` var, and the agency pattern of a
+     viewport-driven root font size, `html { font-size: calc(100vw / 1440 * 10) }` with everything in
+     `rem`, common in Webflow and Awwwards-style builds). Each is a second ladder that
      will fight the new scale; they are removed per section as that section migrates, never globally first.
    - The shared atoms (button, chip, eyebrow, CTA, card) and their call-site counts.
    - Motion libraries and scroll hijacks (GSAP, Lenis, locomotive, a header script). Note them in

@@ -94,6 +94,7 @@ function parseArgs(argv) {
     zoomBases: '1440x900,1920x1080,2560x1440',
     zoomSelector: 'main p, p',
     zoomStrict: false,
+    browser: 'chromium',
     help: false
   }
   for (let i = 0; i < argv.length; i++) {
@@ -110,6 +111,7 @@ function parseArgs(argv) {
     else if (a === '--zoom-bases') out.zoomBases = argv[++i]
     else if (a === '--zoom-selector') out.zoomSelector = argv[++i]
     else if (a === '--zoom-strict') out.zoomStrict = true
+    else if (a === '--browser') out.browser = argv[++i]
     else if (a.startsWith('--')) { console.error(`[verify-matrix] unknown flag ${a}`); process.exit(2) }
     else out._.push(a)
   }
@@ -140,6 +142,9 @@ Options:
   --zoom-bases <list> window sizes the zoom row runs on (default: 1440x900,1920x1080,2560x1440)
   --zoom-selector <s> the body text measured at each zoom (default: "main p, p"; first visible match)
   --zoom-strict       a zoom-row failure fails the run (default: reported as a warning)
+  --browser <name>    chromium (default), webkit or firefox. WebKit is the closest thing to Safari
+                      a script can drive: run it before asking for a device test. The zoom row
+                      needs Chromium and is skipped on the others.
   -h, --help          print this message and exit
 
 Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
@@ -706,15 +711,24 @@ async function main() {
     ceilingViewports.push({ width: w, height: h })
   }
 
-  let chromium
+  let chromium, engine
   try {
-    ;({ chromium } = await resolvePlaywrightModule())
+    const pw = await resolvePlaywrightModule()
+    chromium = pw.chromium
+    engine = pw[args.browser]
+    if (!['chromium', 'webkit', 'firefox'].includes(args.browser) || !engine) throw new Error(`[verify-matrix] --browser must be chromium, webkit or firefox (got ${JSON.stringify(args.browser)})`)
   } catch (err) {
     console.error(err.message)
     process.exit(2)
   }
 
-  const browser = await chromium.launch()
+  let browser
+  try {
+    browser = await engine.launch()
+  } catch (err) {
+    console.error(`[verify-matrix] could not launch ${args.browser}: ${err.message.split('\n')[0]}\n  Fix: npx playwright install ${args.browser}`)
+    process.exit(2)
+  }
   const viewports = []
   try {
     for (const h of heights) {
@@ -735,7 +749,9 @@ async function main() {
   }
 
   let zoom = null
-  if (args.zoom && args.zoom.trim().toLowerCase() !== 'none') {
+  if (args.browser !== 'chromium' && args.zoom && args.zoom.trim().toLowerCase() !== 'none') {
+    zoom = { skipped: `the zoom row drives Chromium's zoom preference; run it with --browser chromium (this run: ${args.browser})`, rows: [] }
+  } else if (args.zoom && args.zoom.trim().toLowerCase() !== 'none') {
     try {
       zoom = await runZoomRow(chromium, url, cfg, args)
     } catch (err) {
@@ -748,6 +764,7 @@ async function main() {
   mkdirSync(args.out, { recursive: true })
   const report = {
     url,
+    browser: args.browser,
     config: { prefix: cfg.prefix, reference: cfg.reference, engageAt: cfg.engageAt, ceiling: cfg.ceiling, zoomCompensation: cfg.zoomCompensation },
     generatedAt: new Date().toISOString(),
     viewports,

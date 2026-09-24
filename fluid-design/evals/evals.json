@@ -9,8 +9,8 @@
       "files": [],
       "assertions": [
         {
-          "text": "fluid units defined with min() of svh and vw arms and engage media query",
-          "check": "grep -rE \"--fluid: max\\(0\\.58px, min\\(calc\\(100svh / 900\\), calc\\(100vw / 1440\\)\\)\\)\" examples/pizza-next/src"
+          "text": "fluid units defined with min() of svh and vw arms (x1000 precision form) and engage media query",
+          "check": "grep -rE \"--fluid: calc\\(max\\(580px, min\\(calc\\(100svh \\* 1000 / 900\\)\" examples/pizza-next/src"
         },
         {
           "text": "sections use fluid utilities at lg (>= 40 occurrences)",

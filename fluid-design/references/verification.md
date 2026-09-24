@@ -146,7 +146,11 @@ surface:
   a `ceiling`, one extra viewport is appended automatically, sized so the natural factor clears the
   ceiling by 25%, so the ceiling is always exercised (this is what let an SCSS ceiling bug ship
   unnoticed: the shipped defaults never crossed it). The zoom row (§2) checks text growth under
-  real browser zoom (`--zoom`, `--zoom-bases`, `--zoom-selector`, `--zoom-strict`). Exit codes: 0 pass, 1 a check failed, 2 usage
+  real browser zoom (`--zoom`, `--zoom-bases`, `--zoom-selector`, `--zoom-strict`).
+  `--browser webkit|firefox` runs the same matrix in another engine (`npx playwright install webkit
+  firefox`). WebKit is the closest a script gets to Safari: run it before asking for a device test.
+  Firefox is where precision bugs show (it rounds `min()`/`max()` results to 1/60px, `fluid-scale.md`
+  §3). The zoom row needs Chromium and is skipped on the others. Exit codes: 0 pass, 1 a check failed, 2 usage
   error or Playwright not found. Reveal checking and anchor-jump checking are not here: they are
   the `scroll-animation` skill's `verify-motion` script.
 - **`scripts/probe.mjs <url>`** — a single-viewport, single-pass version of the same read-state
@@ -165,6 +169,8 @@ surface:
 ## Traps
 
 - Verifying at one window. Drift bugs are exactly zero at and below the reference; keep 2560 in the matrix.
+- Verifying in one engine. Run the matrix with `--browser webkit` and `--browser firefox` too: the
+  Firefox 1/60px rounding bug passed every Chromium check.
 - Debugging layout before ruling out a stale stylesheet (§6).
 - Asking for a device test before confirming the deployed build contains the fix (§4).
 - Trusting emulation for toolbar tint. It does not attempt Liquid Glass sampling at all.

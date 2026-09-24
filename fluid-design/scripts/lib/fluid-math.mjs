@@ -325,9 +325,18 @@ export function cssUnits(cfg) {
   const zc = cfg.zoomCompensation
   const Z = ' * var(--fluid-zoom, 1)'
 
-  const arm = (vp, n, zoomed) => `calc(${vp} / ${num(n)}${zoomed ? Z : ''})`
-  const widthArm = arm('100vw', reference.width, false)
-  const heightArm = arm('100svh', reference.height, false)
+  // PRECISION: every min()/max()/clamp() below compares lengths scaled by
+  // S = 1000, and the result is divided by S once, outside the comparison.
+  // Firefox stores lengths in 1/60px steps and rounds the result of a
+  // comparison function to that grid: on a unit of ~0.71px that is up to
+  // 1.6% off, multiplied by every drawn number (measured: a 900-drawn
+  // section rendered 630px tall in a 640px window). Comparing ~711px
+  // lengths instead leaves an error of ~0.02px. Chromium and WebKit are
+  // exact either way. The maths is unchanged: max(0.58px, min(100svh/900,
+  // 100vw/1440)) is written as calc(max(580px, min(…×1000…)) / 1000).
+  const S = 1000
+  const sp = (n) => px(Math.round(n * S * 1e6) / 1e6)
+  const arm = (vp, n, zoomed) => `calc(${vp} * ${S} / ${num(n)}${zoomed ? Z : ''})`
 
   // --fluid, and the same expression with each viewport arm multiplied by
   // the zoom BEFORE the floor/ceiling clamp. Browser zoom shrinks the CSS
@@ -339,8 +348,9 @@ export function cssUnits(cfg) {
     const w = arm('100vw', reference.width, zoomed)
     const h = arm('100svh', reference.height, zoomed)
     const raw = cfg.heightAxis ? `min(${h}, ${w})` : w
-    const floored = `max(${px(floors.fluid)}, ${raw})`
-    return cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${floored})` : floored
+    const floored = `max(${sp(floors.fluid)}, ${raw})`
+    const capped = cfg.ceiling !== null ? `min(${sp(cfg.ceiling)}, ${floored})` : floored
+    return `calc(${capped} / ${S})`
   }
   const fluidExpr = desktopBase(false)
 
@@ -348,7 +358,8 @@ export function cssUnits(cfg) {
   // resolves to the CSS px it had at 100% and renders z times larger, so text
   // zooms 1:1. Layout (`--fluid`), chrome and `fluid-text-*` (by size) stay
   // uncompensated on purpose: they keep fitting the zoomed viewport.
-  const typeUnit = (damping, floor, base) => `max(${px(floor)}, ${base}, calc(${num(damping)} * ${base} + ${px(1 - damping)}))`
+  const typeUnit = (damping, floor, base) =>
+    `calc(max(${sp(floor)}, calc(${base} * ${S}), calc(${num(damping * S)} * ${base} + ${sp(1 - damping)})) / ${S})`
   // Emitted once as --fluid-z (only with zoomCompensation), so the type
   // units and fluid-text all read the same compensated base.
   const typeBase = zc ? 'var(--fluid-z)' : 'var(--fluid)'
@@ -357,8 +368,8 @@ export function cssUnits(cfg) {
   // Chrome does not read var(--fluid), so a ceiling has to wrap IT directly
   // — otherwise chrome keeps growing past the point the rest
   // of the page's ceiling-capped units stopped.
-  const chromeExprRaw = `min(${widthArm}, max(1px, ${heightArm}))`
-  const chromeExpr = cfg.ceiling !== null ? `min(${px(cfg.ceiling)}, ${chromeExprRaw})` : chromeExprRaw
+  const chromeRaw = `min(${arm('100vw', reference.width, false)}, max(${sp(1)}, ${arm('100svh', reference.height, false)}))`
+  const chromeExpr = `calc(${cfg.ceiling !== null ? `min(${sp(cfg.ceiling)}, ${chromeRaw})` : chromeRaw} / ${S})`
 
   // Below engageAt: a flat 1px, or with the mobile arm a width-only scale off
   // the phone frame, clamped so a small phone stops shrinking and a tablet
@@ -368,7 +379,7 @@ export function cssUnits(cfg) {
   if (cfg.mobile.enabled) {
     const mo = cfg.mobile
     const mf = resolveMobileFloors(cfg)
-    const mobileBase = (zoomed) => `clamp(${px(mo.min)}, ${arm('100vw', mo.reference, zoomed)}, ${px(mo.max)})`
+    const mobileBase = (zoomed) => `calc(clamp(${sp(mo.min)}, ${arm('100vw', mo.reference, zoomed)}, ${sp(mo.max)}) / ${S})`
     root = {
       '--fluid': mobileBase(false),
       ...(zc ? { '--fluid-z': mobileBase(true) } : {}),
