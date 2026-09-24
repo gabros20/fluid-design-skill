@@ -368,13 +368,29 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   old behaviour. It can fail to compensate; it does not inflate type on an unzoomed page. Zoom-out is
   not compensated. `outerWidth` reads 0 until the first frame in Chromium, so the script retries on
   the next frames.
-- **Chromium-based browsers only** (Chrome, Edge, Arc, Brave, Opera). Tested by hand on real
-  browsers: Firefox reported 2.222 at 110% (both signals agreed on a wrong value), then 1 from
-  150%; Safari reports 1 at every level because it keeps `devicePixelRatio` fixed under zoom. A wrong
-  factor inflates type, so the script gates on `navigator.userAgentData` and every other engine
-  reads 1, which is the uncompensated behaviour. On Firefox and Safari, type on wide windows
-  therefore still ignores zoom until the layout falls through to mobile. The mobile arm helps
-  there, because it closes most of that step. Say so before promising WCAG 1.4.4 to a client.
+- **Per engine, measured on real browsers (2026-09-24):**
+
+  | Engine | Signal | Result |
+  |---|---|---|
+  | Chromium (Chrome, Edge, Arc, Brave, Opera) | `outerWidth/innerWidth` agreeing with `devicePixelRatio` | exact at 110–300% |
+  | Safari 26 (macOS) | `outerWidth/innerWidth` snapped to Safari's steps, checked against the height | exact at 115, 125, 150, 175, 200% |
+  | Firefox 146 | none reliable | not compensated (reads 1) |
+
+  **Safari** keeps `devicePixelRatio` fixed, but `innerWidth` shrinks by exactly the zoom (ratios
+  1.1507, 1.2506, 1.5000, 1.7500, 2.0000). The sidebar shrinks `innerWidth` too, but not
+  `innerHeight`, so a width ratio is accepted only when the toolbar height it implies,
+  `outerHeight − innerHeight × z`, is 0–150 points. That check is necessary: with the sidebar open at
+  125% the width ratio was 1.5060, within 0.4% of Safari's 150% step, and the implied toolbar (−126)
+  rejected it. Sidebar plus zoom therefore reads 1, which is safe but uncompensated. Measured by
+  driving real Safari zoom and the sidebar through Cua Driver, reading `assets/runtime/zoom-debug.html`.
+
+  **Firefox** reports `outerWidth` and `screen.width` in zoomed CSS px too, so zoom shows only in
+  `devicePixelRatio`, mixed with the display's own ratio: 2.0 is a Retina screen at 100% or a 1×
+  screen at 200%. A real Firefox read 2.222 at 110%. A wrong factor inflates type, so Firefox reads 1.
+  On Firefox, desktop-layout type on wide windows ignores zoom until the page falls through to
+  mobile; the mobile arm makes that step small. Say so before promising WCAG 1.4.4 to a client.
+- **Check a browser yourself:** serve `assets/runtime/zoom-debug.html` next to `fluid-zoom.js`, open it,
+  zoom, and read the live signals and the detected `--fluid-zoom` off the page.
 - **The mobile handover.** When zoom pushes the CSS viewport below `engageAt`, the page switches to
   its mobile CSS, and text becomes *mobile size × zoom*. On a window wider than the reference the
   desktop type had grown past its drawn size, so the handover is a step down. Measured: body copy

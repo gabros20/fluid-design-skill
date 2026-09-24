@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zoom debug</title>
+<style>
+  body { margin: 0; font: 28px/1.4 ui-monospace, Menlo, monospace; background: #111; color: #eee; padding: 32px; }
+  #out { white-space: pre; }
+  small { font-size: 16px; color: #999; }
+</style>
+</head>
+<body>
+<div id="out">loading…</div>
+<small>Zoom signals for fluid-zoom.js. Updates live on resize and zoom.</small>
+<script type="module">
+  import { installFluidZoom } from './fluid-zoom.js'
+  installFluidZoom()
+  const out = document.getElementById('out')
+  function render() {
+    const cs = getComputedStyle(document.documentElement)
+    out.textContent = [
+      'UA        ' + (navigator.userAgentData ? 'chromium' : navigator.userAgent.includes('Firefox') ? 'firefox' : 'safari/other'),
+      'dpr       ' + devicePixelRatio,
+      'outerW    ' + outerWidth,
+      'innerW    ' + innerWidth,
+      'ratio     ' + (outerWidth / innerWidth).toFixed(4),
+      'outerH    ' + outerHeight,
+      'innerH    ' + innerHeight,
+      'screenW   ' + screen.width,
+      'availW    ' + screen.availWidth,
+      'vvScale   ' + (window.visualViewport ? visualViewport.scale : 'n/a'),
+      'vvWidth   ' + (window.visualViewport ? visualViewport.width.toFixed(1) : 'n/a'),
+      'clientW   ' + document.documentElement.clientWidth,
+      'fluidZoom ' + (cs.getPropertyValue('--fluid-zoom').trim() || '(unset)')
+    ].join('\n')
+  }
+  render()
+  addEventListener('resize', render)
+  setInterval(render, 500)
+</script>
+</body>
+</html>

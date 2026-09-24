@@ -28,9 +28,9 @@
 // Verified with real Chromium zoom (Preferences default_zoom_level, new
 // headless) at 110–300% on 1440, 1920 and 2560 windows, on the fixture page
 // and both example builds: see scripts/verify-matrix.mjs's zoom row.
-// Chromium-based browsers only: real Firefox reported 2.222 at 110% and real
-// Safari reports 1 at every level, so both are gated off and read 1
-// (uncompensated, as before) until a reliable signal is found for them.
+// Safari has its own path (see detectSafari), verified on Safari 26 by driving
+// real zoom steps and the sidebar through Cua Driver. Firefox is gated off: it
+// reported 2.222 at 110%, and it exposes no unambiguous signal.
 //
 // Install it BEFORE first paint, or a zoomed page loads with small type and
 // then jumps:
@@ -54,15 +54,42 @@ export function installFluidZoom() {
   var NATIVE = MAC ? [1, 2, 3] : [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 3.5, 4]
   var TOLERANCE = 0.04
 
+  // Safari keeps devicePixelRatio fixed under zoom, but outerWidth stays in
+  // window points while innerWidth shrinks by the zoom, so ow/iw IS the zoom
+  // (measured on Safari 26: 1.1507, 1.2506, 1.5000, 1.7500 at its 115-175%
+  // steps). The sidebar and a right-docked inspector also shrink innerWidth,
+  // but only the width: zoom shrinks innerHeight by the same factor. So the
+  // width ratio is accepted only when the toolbar height it implies,
+  // outerHeight - innerHeight * z, is a real toolbar (0-150 points) and z is
+  // one of Safari's zoom steps. Measured: sidebar open at 100% gives a width
+  // ratio of 1.2038 and an implied toolbar of -131, rejected.
+  var SAFARI = !navigator.userAgentData && /^((?!chrome|chromium|crios|fxios|edg|android).)*safari/i.test(navigator.userAgent)
+  var SAFARI_STEPS = [1.15, 1.25, 1.5, 1.75, 2, 2.5, 3]
+
+  function detectSafari() {
+    var ow = window.outerWidth
+    var iw = window.innerWidth
+    var oh = window.outerHeight
+    var ih = window.innerHeight
+    if (!ow || !iw || !oh || !ih || window.top !== window.self) return null
+    var z = ow / iw
+    if (z < 1.05) return 1
+    var step = 1
+    for (var i = 0; i < SAFARI_STEPS.length; i++) if (Math.abs(SAFARI_STEPS[i] - z) / SAFARI_STEPS[i] < 0.01) step = SAFARI_STEPS[i]
+    if (step === 1) return 1
+    var toolbar = oh - ih * step
+    return toolbar >= 0 && toolbar <= 150 ? step : 1
+  }
+
   function detect() {
-    // Chromium only (Chrome, Edge, Arc, Brave, Opera: the engines that ship
-    // navigator.userAgentData). Measured on real browsers, 2026-09-24:
-    // Firefox reported a zoom of 2.222 at 110% (both signals agreed on a
-    // wrong value, so the agreement check could not catch it) and then 1 at
-    // 150%; Safari reports 1 at every zoom level because it keeps
-    // devicePixelRatio fixed. A wrong factor inflates type, which is worse
-    // than none, so every other engine gets 1: today's uncompensated
-    // behaviour, never a wrong one.
+    // Which engines: Chromium (navigator.userAgentData) and Safari, each on
+    // its own signal. Firefox reports even outerWidth and screen.width in
+    // zoomed CSS px, so zoom shows only in devicePixelRatio, entangled with
+    // the display's own ratio (a 2.0 is Retina at 100% or 1x at 200%); a
+    // real Firefox reported 2.222 at 110%. A wrong factor inflates type,
+    // which is worse than none, so Firefox and anything unknown read 1:
+    // uncompensated, never wrong.
+    if (SAFARI) return detectSafari()
     if (!navigator.userAgentData) return 1
     var ow = window.outerWidth
     var iw = window.innerWidth
