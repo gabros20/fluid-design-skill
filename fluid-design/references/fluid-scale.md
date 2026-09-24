@@ -367,8 +367,14 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   iframe, device emulation or a browser that keeps dpr fixed under zoom all read as 1, which is the
   old behaviour. It can fail to compensate; it does not inflate type on an unzoomed page. Zoom-out is
   not compensated. `outerWidth` reads 0 until the first frame in Chromium, so the script retries on
-  the next frames. Verified with real Chromium zoom; **Safari and Firefox are unverified**, so check
-  them on the real browser before promising compliance to a client.
+  the next frames.
+- **Chromium-based browsers only** (Chrome, Edge, Arc, Brave, Opera). Tested by hand on real
+  browsers: Firefox reported 2.222 at 110% (both signals agreed on a wrong value), then 1 from
+  150%; Safari reports 1 at every level because it keeps `devicePixelRatio` fixed under zoom. A wrong
+  factor inflates type, so the script gates on `navigator.userAgentData` and every other engine
+  reads 1, which is the uncompensated behaviour. On Firefox and Safari, type on wide windows
+  therefore still ignores zoom until the layout falls through to mobile. The mobile arm helps
+  there, because it closes most of that step. Say so before promising WCAG 1.4.4 to a client.
 - **The mobile handover.** When zoom pushes the CSS viewport below `engageAt`, the page switches to
   its mobile CSS, and text becomes *mobile size × zoom*. On a window wider than the reference the
   desktop type had grown past its drawn size, so the handover is a step down. Measured: body copy

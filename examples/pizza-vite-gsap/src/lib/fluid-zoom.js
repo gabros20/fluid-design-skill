@@ -28,8 +28,9 @@
 // Verified with real Chromium zoom (Preferences default_zoom_level, new
 // headless) at 110–300% on 1440, 1920 and 2560 windows, on the fixture page
 // and both example builds: see scripts/verify-matrix.mjs's zoom row.
-// Safari and Firefox are expected to work if they expose zoom in dpr; if not,
-// they fall back to 1. Check on the real browser before promising compliance.
+// Chromium-based browsers only: real Firefox reported 2.222 at 110% and real
+// Safari reports 1 at every level, so both are gated off and read 1
+// (uncompensated, as before) until a reliable signal is found for them.
 //
 // Install it BEFORE first paint, or a zoomed page loads with small type and
 // then jumps:
@@ -54,6 +55,15 @@ export function installFluidZoom() {
   var TOLERANCE = 0.04
 
   function detect() {
+    // Chromium only (Chrome, Edge, Arc, Brave, Opera: the engines that ship
+    // navigator.userAgentData). Measured on real browsers, 2026-09-24:
+    // Firefox reported a zoom of 2.222 at 110% (both signals agreed on a
+    // wrong value, so the agreement check could not catch it) and then 1 at
+    // 150%; Safari reports 1 at every zoom level because it keeps
+    // devicePixelRatio fixed. A wrong factor inflates type, which is worse
+    // than none, so every other engine gets 1: today's uncompensated
+    // behaviour, never a wrong one.
+    if (!navigator.userAgentData) return 1
     var ow = window.outerWidth
     var iw = window.innerWidth
     var dpr = window.devicePixelRatio || 1
