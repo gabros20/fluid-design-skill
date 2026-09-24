@@ -19,7 +19,11 @@ import { extendTailwindMerge, mergeConfigs } from 'tailwind-merge'
 //   const twMerge = extendTailwindMerge({ extend: … }, withFluid)   // if you already extend it
 //
 // No cn yet? Use the one exported below.
-const isFluidValue = (value: string) => /^(\d+(\.\d+)?(\/\d+(\.\d+)?)?|\[\d+\])$/.test(value)
+// Exactly what compiles: a bare number in Tailwind's 0.25 steps, or any
+// number in brackets, and the same after a / for the line box. A class that
+// compiles to nothing must not evict one that works.
+const FLUID_VALUE = /^(?:\d+(?:\.(?:25|5|75))?|\[\d+(?:\.\d+)?\])(?:\/(?:\d+(?:\.(?:25|5|75))?|\[\d+(?:\.\d+)?\]))?$/
+const isFluidValue = (value: string) => FLUID_VALUE.test(value)
 const fluid = (name: string) => ({ [name]: [isFluidValue] })
 
 type AnyConfig = Parameters<typeof mergeConfigs>[0]

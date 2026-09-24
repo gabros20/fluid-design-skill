@@ -22,8 +22,9 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
-import { normaliseStructure, structureDefaults, jsonSchema, settingsSpec, STRUCTURE, STACKS, BAND_NAMES, bandBlurb, SKILL_VERSION } from './lib/spec.mjs'
+import { normaliseStructure, structureDefaults, jsonSchema, settingsSpec, STRUCTURE, STACKS, BAND_NAMES, bandBlurb, SKILL_VERSION, RESERVED_ROLE_NAMES } from './lib/spec.mjs'
 import { buildOutput } from './lib/emit/project.mjs'
+import { CORE, UI_FAMILY, EXTRA_FAMILIES } from './lib/emit/tailwind.mjs'
 import { num } from './lib/emit/engine.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -191,6 +192,11 @@ function main() {
     const abs = join(SKILL, rel)
     if (!existsSync(abs)) problems.push(`missing: ${rel}`)
     else if (readFileSync(abs, 'utf8') !== content) problems.push(`stale: ${rel}`)
+  }
+  // Every utility family's first word is a reserved role name, so a custom
+  // role can never collide with one (fluid-<role>-* vs fluid-min-w-*).
+  for (const [name] of [...CORE, ...UI_FAMILY, ...Object.values(EXTRA_FAMILIES).flat()]) {
+    if (!RESERVED_ROLE_NAMES.has(name.split('-')[0])) problems.push(`utility family ${name}: "${name.split('-')[0]}" is not in RESERVED_ROLE_NAMES (spec.mjs)`)
   }
   const pkg = JSON.parse(readFileSync(join(SKILL, 'package.json'), 'utf8'))
   if (pkg.version !== SKILL_VERSION) problems.push(`package.json version ${pkg.version} is not SKILL_VERSION ${SKILL_VERSION} (spec.mjs): npm, the binaries and the lock stamp must agree`)

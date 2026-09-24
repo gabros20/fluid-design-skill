@@ -68,7 +68,7 @@ ${order.map((b) => `@custom-variant ${p}-${b} {\n  @media ${m[b].query} {\n    @
 
 // ── utilities ───────────────────────────────────────────────────────────
 
-const CORE = [
+export const CORE = [
   // [name, property | [properties]]
   ['p', 'padding'], ['px', 'padding-inline'], ['py', 'padding-block'], ['pt', 'padding-top'], ['pb', 'padding-bottom'], ['pl', 'padding-left'], ['pr', 'padding-right'],
   ['m', 'margin'], ['mx', 'margin-inline'], ['my', 'margin-block'], ['mt', 'margin-top'], ['mb', 'margin-bottom'], ['ml', 'margin-left'], ['mr', 'margin-right'],
@@ -86,7 +86,7 @@ const NEGATABLE = ['m', 'mx', 'my', 'mt', 'mb', 'ml', 'mr', 'inset', 'top', 'rig
 const NEGATABLE_LOGICAL = ['ms', 'me', 'start', 'end', 'inset-x', 'inset-y']
 // The ui unit gets a small family of its own: the header, nav and footer
 // are a handful of boxes and their type.
-const UI_FAMILY = [['p', 'padding'], ['px', 'padding-inline'], ['py', 'padding-block'], ['gap', 'gap'], ['w', 'width'], ['h', 'height'], ['size', ['width', 'height']]]
+export const UI_FAMILY = [['p', 'padding'], ['px', 'padding-inline'], ['py', 'padding-block'], ['gap', 'gap'], ['w', 'width'], ['h', 'height'], ['size', ['width', 'height']]]
 
 export function extraFamilies(u) {
   return [...(u.logical ? EXTRA_FAMILIES.logical : []), ...(u.basis ? EXTRA_FAMILIES.basis : []), ...(u.scroll ? EXTRA_FAMILIES.scroll : []), ...(u.rounded ? EXTRA_FAMILIES.rounded : [])]
@@ -95,12 +95,14 @@ export function extraFamilies(u) {
 // Values resolve through a SUGGESTION scale first, then any number: the
 // scale (a `@theme inline reference` namespace, so it emits no CSS and the
 // value is inlined) is what editor autocomplete lists — without it Tailwind
-// IntelliSense can offer none of these utilities. Any other drawn number
-// (fluid-p-37.5) still works through `number`.
+// IntelliSense can offer none of these utilities. Other drawn numbers work
+// bare in Tailwind's 0.25 steps (fluid-p-37, fluid-p-8.5, fluid-p-8.25) and
+// anything else in brackets (fluid-p-[8.3]): Tailwind emits nothing for a
+// bare fluid-p-8.3, so cn.ts's validator accepts exactly these forms.
 export const STEPS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 112, 120, 128, 144, 160, 180, 200, 240]
 export const LIMIT_WIDTHS = [375, 390, 430, 768, 1024, 1280, 1366, 1440, 1536, 1680, 1920, 2560]
-const V = '--value(--fluid-step-*, number)'
-const M = '--modifier(--fluid-step-*, number)'
+const V = '--value(--fluid-step-*, number, [number])'
+const M = '--modifier(--fluid-step-*, number, [number])'
 const W = '--value(--fluid-width-*, integer, [integer])'
 // One line per utility: the vocabulary reads as a table.
 const util = (name, props, expr) => `@utility ${name} { ${(Array.isArray(props) ? props : [props]).map((pr) => `${pr}: ${expr};`).join(' ')} }`
@@ -219,7 +221,11 @@ import { extendTailwindMerge, mergeConfigs } from 'tailwind-merge'
 //   const twMerge = extendTailwindMerge({ extend: … }, withFluid)   // if you already extend it
 //
 // No cn yet? Use the one exported below.
-const isFluidValue = (value: string) => /^(\\d+(\\.\\d+)?(\\/\\d+(\\.\\d+)?)?|\\[\\d+\\])$/.test(value)
+// Exactly what compiles: a bare number in Tailwind's 0.25 steps, or any
+// number in brackets, and the same after a / for the line box. A class that
+// compiles to nothing must not evict one that works.
+const FLUID_VALUE = /^(?:\\d+(?:\\.(?:25|5|75))?|\\[\\d+(?:\\.\\d+)?\\])(?:\\/(?:\\d+(?:\\.(?:25|5|75))?|\\[\\d+(?:\\.\\d+)?\\]))?$/
+const isFluidValue = (value: string) => FLUID_VALUE.test(value)
 const fluid = (name: string) => ({ [name]: [isFluidValue] })
 
 type AnyConfig = Parameters<typeof mergeConfigs>[0]

@@ -276,41 +276,41 @@
 
 /* Utilities: the drawn number, scaled. fluid-py-120 = 120 design px of block padding.
    Not scaled, on purpose: border widths, tracking (use em), text measures. */
-@utility fluid-p-* { padding: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-px-* { padding-inline: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-py-* { padding-block: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-pt-* { padding-top: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-pb-* { padding-bottom: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-pl-* { padding-left: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-pr-* { padding-right: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-m-* { margin: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-mx-* { margin-inline: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-my-* { margin-block: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-mt-* { margin-top: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-mb-* { margin-bottom: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-ml-* { margin-left: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-mr-* { margin-right: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-gap-* { gap: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-gap-x-* { column-gap: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-gap-y-* { row-gap: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-w-* { width: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-h-* { height: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-size-* { width: calc(--value(--fluid-step-*, number) * var(--fluid)); height: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-min-w-* { min-width: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-min-h-* { min-height: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-max-h-* { max-height: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-inset-* { inset: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-top-* { top: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-right-* { right: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-bottom-* { bottom: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-left-* { left: calc(--value(--fluid-step-*, number) * var(--fluid)); }
+@utility fluid-p-* { padding: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-px-* { padding-inline: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-py-* { padding-block: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-pt-* { padding-top: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-pb-* { padding-bottom: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-pl-* { padding-left: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-pr-* { padding-right: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-m-* { margin: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-mx-* { margin-inline: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-my-* { margin-block: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-mt-* { margin-top: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-mb-* { margin-bottom: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-ml-* { margin-left: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-mr-* { margin-right: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-gap-* { gap: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-gap-x-* { column-gap: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-gap-y-* { row-gap: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-w-* { width: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-h-* { height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-size-* { width: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-min-w-* { min-width: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-min-h-* { min-height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-max-h-* { max-height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-inset-* { inset: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-top-* { top: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-right-* { right: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-bottom-* { bottom: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-left-* { left: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
 
 /* A max-width that only grows: the drawn number in CSS px below the artboard, scaled above it. */
-@utility fluid-cap-* { max-width: max(calc(--value(--fluid-step-*, number) * 1px), calc(--value(--fluid-step-*, number) * var(--fluid))); }
+@utility fluid-cap-* { max-width: max(calc(--value(--fluid-step-*, number, [number]) * 1px), calc(--value(--fluid-step-*, number, [number]) * var(--fluid))); }
 
 /* translate, not transform, so it composes with a transform a motion library writes. */
-@utility fluid-translate-x-* { --tw-translate-x: calc(--value(--fluid-step-*, number) * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
-@utility fluid-translate-y-* { --tw-translate-y: calc(--value(--fluid-step-*, number) * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
+@utility fluid-translate-x-* { --tw-translate-x: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
+@utility fluid-translate-y-* { --tw-translate-y: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
 
 /* The page container: centred, max width and side padding from the active band
    (--fluid-<band>-container-width / -padding). Apply once per section, to its inner wrapper. */
@@ -324,72 +324,72 @@
 /* Type. fluid-<role>-64/72 = 64px on a 72px line box, both on the role's damped unit.
    fluid-text-* is on the base unit, for type inside a box that scales with it.
    Under browser zoom it takes a share of the zoom by size (--fluid-zoom-text-full / -none). */
-@utility fluid-display-* { font-size: calc(--value(--fluid-step-*, number) * var(--fluid-display)); line-height: calc(--modifier(--fluid-step-*, number) * var(--fluid-display)); }
-@utility fluid-copy-* { font-size: calc(--value(--fluid-step-*, number) * var(--fluid-copy)); line-height: calc(--modifier(--fluid-step-*, number) * var(--fluid-copy)); }
+@utility fluid-display-* { font-size: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-display)); line-height: calc(--modifier(--fluid-step-*, number, [number]) * var(--fluid-display)); }
+@utility fluid-copy-* { font-size: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-copy)); line-height: calc(--modifier(--fluid-step-*, number, [number]) * var(--fluid-copy)); }
 @utility fluid-text-* {
-  font-size: calc(--value(--fluid-step-*, number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * max(0, min(1, (var(--fluid-zoom-text-none, 48) - --value(--fluid-step-*, number)) / (var(--fluid-zoom-text-none, 48) - var(--fluid-zoom-text-full, 24))))));
-  line-height: calc(--modifier(--fluid-step-*, number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * max(0, min(1, (var(--fluid-zoom-text-none, 48) - --value(--fluid-step-*, number)) / (var(--fluid-zoom-text-none, 48) - var(--fluid-zoom-text-full, 24))))));
+  font-size: calc(--value(--fluid-step-*, number, [number]) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * max(0, min(1, (var(--fluid-zoom-text-none, 48) - --value(--fluid-step-*, number, [number])) / (var(--fluid-zoom-text-none, 48) - var(--fluid-zoom-text-full, 24))))));
+  line-height: calc(--modifier(--fluid-step-*, number, [number]) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * max(0, min(1, (var(--fluid-zoom-text-none, 48) - --value(--fluid-step-*, number, [number])) / (var(--fluid-zoom-text-none, 48) - var(--fluid-zoom-text-full, 24))))));
 }
 
 /* The ui unit (header, nav, footer): follows the width, never shrinks for a short window. */
-@utility fluid-ui-p-* { padding: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-px-* { padding-inline: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-py-* { padding-block: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-gap-* { gap: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-w-* { width: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-h-* { height: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-size-* { width: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); height: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); }
-@utility fluid-ui-text-* { font-size: calc(--value(--fluid-step-*, number) * var(--fluid-ui)); line-height: calc(--modifier(--fluid-step-*, number) * var(--fluid-ui)); }
+@utility fluid-ui-p-* { padding: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-px-* { padding-inline: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-py-* { padding-block: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-gap-* { gap: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-w-* { width: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-h-* { height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-size-* { width: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); height: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
+@utility fluid-ui-text-* { font-size: calc(--value(--fluid-step-*, number, [number]) * var(--fluid-ui)); line-height: calc(--modifier(--fluid-step-*, number, [number]) * var(--fluid-ui)); }
 
 /* Optional families (tailwind.utilities). */
-@utility fluid-ps-* { padding-inline-start: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-pe-* { padding-inline-end: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-ms-* { margin-inline-start: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-me-* { margin-inline-end: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-start-* { inset-inline-start: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-end-* { inset-inline-end: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-inset-x-* { inset-inline: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-inset-y-* { inset-block: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-basis-* { flex-basis: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-scroll-mt-* { scroll-margin-top: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-scroll-pt-* { scroll-padding-top: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-scroll-mb-* { scroll-margin-bottom: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-scroll-pb-* { scroll-padding-bottom: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-rounded-* { border-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-rounded-t-* { border-top-left-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); border-top-right-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-rounded-b-* { border-bottom-left-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); border-bottom-right-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-rounded-l-* { border-top-left-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); border-bottom-left-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); }
-@utility fluid-rounded-r-* { border-top-right-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); border-bottom-right-radius: calc(--value(--fluid-step-*, number) * var(--fluid)); }
+@utility fluid-ps-* { padding-inline-start: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-pe-* { padding-inline-end: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-ms-* { margin-inline-start: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-me-* { margin-inline-end: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-start-* { inset-inline-start: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-end-* { inset-inline-end: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-inset-x-* { inset-inline: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-inset-y-* { inset-block: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-basis-* { flex-basis: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-scroll-mt-* { scroll-margin-top: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-scroll-pt-* { scroll-padding-top: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-scroll-mb-* { scroll-margin-bottom: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-scroll-pb-* { scroll-padding-bottom: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-rounded-* { border-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-rounded-t-* { border-top-left-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); border-top-right-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-rounded-b-* { border-bottom-left-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); border-bottom-right-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-rounded-l-* { border-top-left-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); border-bottom-left-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
+@utility fluid-rounded-r-* { border-top-right-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); border-bottom-right-radius: calc(--value(--fluid-step-*, number, [number]) * var(--fluid)); }
 
 @utility fluid-space-x-* {
   :where(& > :not(:last-child)) {
-    margin-inline-end: calc(--value(--fluid-step-*, number) * var(--fluid));
+    margin-inline-end: calc(--value(--fluid-step-*, number, [number]) * var(--fluid));
   }
 }
 @utility fluid-space-y-* {
   :where(& > :not(:last-child)) {
-    margin-block-end: calc(--value(--fluid-step-*, number) * var(--fluid));
+    margin-block-end: calc(--value(--fluid-step-*, number, [number]) * var(--fluid));
   }
 }
 
 /* Negatives: -fluid-mt-8. */
-@utility -fluid-m-* { margin: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-mx-* { margin-inline: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-my-* { margin-block: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-mt-* { margin-top: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-mb-* { margin-bottom: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-ml-* { margin-left: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-mr-* { margin-right: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-inset-* { inset: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-top-* { top: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-right-* { right: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-bottom-* { bottom: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-left-* { left: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-ms-* { margin-inline-start: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-me-* { margin-inline-end: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-start-* { inset-inline-start: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-end-* { inset-inline-end: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-inset-x-* { inset-inline: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-inset-y-* { inset-block: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); }
-@utility -fluid-translate-x-* { --tw-translate-x: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
-@utility -fluid-translate-y-* { --tw-translate-y: calc(--value(--fluid-step-*, number) * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
+@utility -fluid-m-* { margin: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-mx-* { margin-inline: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-my-* { margin-block: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-mt-* { margin-top: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-mb-* { margin-bottom: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-ml-* { margin-left: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-mr-* { margin-right: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-inset-* { inset: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-top-* { top: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-right-* { right: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-bottom-* { bottom: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-left-* { left: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-ms-* { margin-inline-start: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-me-* { margin-inline-end: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-start-* { inset-inline-start: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-end-* { inset-inline-end: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-inset-x-* { inset-inline: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-inset-y-* { inset-block: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); }
+@utility -fluid-translate-x-* { --tw-translate-x: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
+@utility -fluid-translate-y-* { --tw-translate-y: calc(--value(--fluid-step-*, number, [number]) * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }

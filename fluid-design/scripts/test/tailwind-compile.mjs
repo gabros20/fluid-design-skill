@@ -46,7 +46,7 @@ try {
     'fluid-phone:fluid-p-11', 'fluid-tablet:fluid-p-12', 'fluid-landscape:fluid-p-13', 'lg:fluid-p-14', 'fluid-desktop:fluid-p-99', 'fluid-translate-y-24',
     'fluid-caption-12/16', 'fluid-display-64/72', 'fluid-text-18', 'fluid-ui-h-48', 'fluid-ui-text-11', 'fluid-container',
     '-fluid-mt-8', 'fluid-rounded-12', 'fluid-space-y-4', 'fluid-cap-1680', 'lg:fluid-py-120', 'fluid-ps-10',
-    'fluid-grow-until-1680', 'fluid-grow-until-1920', 'lg:fluid-grow-until-1680', 'fluid-shrink-until-1280', 'fluid-off', 'fluid-ui-grow-until-[1600]', 'fluid-p-37.5', 'fluid-p-24'
+    'fluid-grow-until-1680', 'fluid-grow-until-1920', 'lg:fluid-grow-until-1680', 'fluid-shrink-until-1280', 'fluid-off', 'fluid-ui-grow-until-[1600]', 'fluid-p-37.5', 'fluid-p-24', 'fluid-p-[8.3]', 'fluid-m-8.25', 'fluid-copy-18/[26.5]'
   ]
   const input = `@import 'tailwindcss';\n@import './fluid/fluid.css';\n@source inline("${classes.join(' ')}");\n`
   writeFileSync(join(dir, 'in.css'), input)
@@ -55,6 +55,7 @@ try {
   const has = (re) => re.test(css)
   expect(has(/@media \(width < 600px\) and \(not \(\(orientation: landscape\) and \(height <= 500px\)\)\)[\s\S]*?\.fluid-phone\\:fluid-p-11/), 'fluid-phone: compiles to its exclusive media query')
   expect(has(/\.fluid-tablet\\:fluid-p-12/) && has(/\.fluid-landscape\\:fluid-p-13/) && !has(/fluid-desktop\\:fluid-p-99/), 'fluid-tablet: and fluid-landscape: compile; there is no fluid-desktop: (it is lg:)')
+  expect(css.includes('calc(8.3 * var(--fluid))') && css.includes('.fluid-m-8\\.25') && css.includes('calc(26.5 * var(--fluid-copy))'), 'bracket values and modifiers compile (fluid-p-[8.3], fluid-copy-18/[26.5]); 0.25 steps bare (fluid-m-8.25)')
   expect(has(/\.fluid-caption-12\\\/16\s*\{[^}]*font-size: calc\(12 \* var\(--fluid-caption\)\)[^}]*line-height: calc\(16 \* var\(--fluid-caption\)\)/), 'custom role utility fluid-caption-12/16')
   expect(has(/\.fluid-ui-h-48\s*\{\s*height: calc\(48 \* var\(--fluid-ui\)\)/), 'fluid-ui-h-48')
   expect(has(/\.fluid-container\s*\{[^}]*max-width: var\(--fluid-container-width\)/), 'fluid-container')
@@ -93,7 +94,10 @@ export function cn(...inputs) { return twMerge(clsx(inputs)) }`))
       [['fluid-text-14', 'fluid-display-64/72'], 'fluid-display-64/72'],
       [['fluid-ui-h-48', 'fluid-h-40'], 'fluid-h-40'],
       [['fluid-grow-until-1680', 'fluid-grow-until-[1920]'], 'fluid-grow-until-[1920]'],
-      [['max-w-xl', 'fluid-cap-1680'], 'fluid-cap-1680']
+      [['max-w-xl', 'fluid-cap-1680'], 'fluid-cap-1680'],
+      // A class Tailwind compiles to nothing (bare 8.3) must not evict one that works.
+      [['fluid-p-24', 'fluid-p-8.3'], 'fluid-p-24 fluid-p-8.3'],
+      [['fluid-p-24', 'fluid-p-[8.3]'], 'fluid-p-[8.3]']
     ]
     for (const [name, cn] of [['generated cn', gen.cn], ['shadcn cn + withFluid', own.cn]]) {
       const bad = cases.filter(([a, e]) => cn(...a) !== e).map(([a, e]) => `${a.join(' ')} -> ${cn(...a)} (expected ${e})`)

@@ -228,7 +228,9 @@ function walk(node, value, path, problems) {
       const seen = new Set()
       for (const r of value) {
         if (typeof r !== 'string' || !/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(r)) problems.push(`${at}: role ${JSON.stringify(r)} must be lowercase kebab-case`)
-        else if (RESERVED_ROLE_NAMES.has(r)) problems.push(`${at}: "${r}" is reserved (it is already a unit, utility or setting word); pick another name`)
+        // The first segment too: min-w, gap-x, ui-text, grow-until would
+        // collide with a utility family (fluid-min-w-*) or a unit.
+        else if (RESERVED_ROLE_NAMES.has(r) || RESERVED_ROLE_NAMES.has(r.split('-')[0])) problems.push(`${at}: "${r}" is reserved (${RESERVED_ROLE_NAMES.has(r) ? 'it is' : `"${r.split('-')[0]}" is`} already a unit, utility or setting word); pick another name`)
         else if (seen.has(r)) problems.push(`${at}: "${r}" is listed twice`)
         seen.add(r)
       }
