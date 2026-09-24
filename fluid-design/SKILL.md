@@ -32,7 +32,7 @@ This skill contains no animation. For entrances, scroll scenes and video playbac
 
 | Piece | Where |
 |---|---|
-| The CLI: `init`, `generate`, `check`, `settings`, `explain`, `migrate`, `calc`, `probe`, `verify`, `audit` | `bin/fluid` (run it as `node <skill>/bin/fluid …` or put `bin/` on PATH) |
+| The CLI: `init`, `generate`, `check`, `settings`, `explain`, `migrate`, `calc`, `probe`, `verify`, `audit` | `bin/fluid` (run it as `node <skill>/bin/fluid …` or put `bin/` on PATH). The same CLI ships as `npx fluid-design-cli@2` and as a standalone binary for people without an agent (`README.md` in this folder); a project may already use one of those, so don't install a second |
 | Everything a project needs, generated into ONE folder (`output.dir`, default `src/styles/fluid/`) | `fluid.css` (the one import), `base.css`, `settings.reference.css`, `fluid.ts`, `cn.ts` / `_index.scss` / `fluid.stylex.ts`, `runtime/`, `integrations/`, `README.md` |
 | Reference output per stack, at the defaults | `assets/styles/{tailwind-v4,css,scss,stylex}/` |
 | The method, rules and the reasons behind them | `references/*.md` (read on demand, see the map below) |
@@ -71,6 +71,13 @@ node <skill>/bin/fluid init            # greenfield: writes fluid.config.json, g
 node <skill>/bin/fluid init --brownfield   # existing site: base layer off, prints the import instead of editing
 node <skill>/bin/fluid migrate --write     # a v1 fluid-design project (see references/brownfield-migration.md)
 ```
+
+Pass the preflight answers as flags rather than editing files after: `--desktop 1600x1000`
+(the design frame), `--desktop-at 1200`, `--phone 375`, `--no-mobile` (flat below desktop),
+`--max-width 1920`, and any setting as `--set --fluid-desktop-scale-max=1.4` (repeatable,
+validated). Setting answers land as real declarations in the project's `:root`; structure answers
+in `fluid.config.json`. Your shell is not a terminal, so init never prompts you; a human running it
+by hand gets the same decisions as questions.
 
 The result, for Tailwind:
 
@@ -141,7 +148,10 @@ headings shrink on desktop (`--fluid-desktop-display-damping`), where growth sto
 (`--fluid-desktop-scale-max`, or in window px `--fluid-grow-until: 1920`), the container
 (`--fluid-desktop-container-width`). Settings, utilities and variants all autocomplete: Tailwind
 IntelliSense lists every `fluid-*` class, and `fluid.css-data.json` completes settings in CSS files. `fluid explain
-390x844` prints the band, every unit, and which default or `file:line` each value came from. An
+390x844` prints the band, every unit, and which default or `file:line` each value came from;
+`--set --fluid-grow-until=1680` answers a what-if without editing; `--url <dev server>` reads the
+live page and lists every limited subtree with what inside follows the scale (a limit with nothing
+fluid inside is flagged), and `--at 'header'` explains one element. An
 invalid value falls back to its default; `fluid check` flags typos with a suggestion.
 
 ### 5. Tokens, media

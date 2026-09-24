@@ -62,6 +62,11 @@
   color: var(--color-brand-white);
 }
 
-/* fluid settings: this site keeps every default. To tune one, set it here, e.g.
-     :root { --fluid-phone-scale-min: 0.8; }
-   Every setting is listed in ../styles/fluid/settings.reference.css. */
+/* fluid settings: every one is listed in ../styles/fluid/settings.reference.css.
+   The header, nav and footer (the ui unit) stop growing past a 1680 window:
+   on a 2560 screen the page keeps scaling, the chrome keeps its 1680 size.
+   On :root rather than on <header>, so --header-h (anchor offsets, hero
+   padding) holds with it. */
+:root {
+  --fluid-ui-grow-until: 1680;
+}

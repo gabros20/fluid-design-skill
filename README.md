@@ -26,19 +26,27 @@ records the bug it prevents and the measurement behind it.
 
 ## v2 quick start
 
-```bash
-# Claude Code (user-level)
-cp -r fluid-design ~/.claude/skills/fluid-design
-# or project-level
-cp -r fluid-design .claude/skills/fluid-design
-```
+Three ways to run the same `fluid` CLI:
+
+| You are | Install | Then |
+|---|---|---|
+| **An agent** (Claude Code, Codex, Cursor…) | `cp -r fluid-design ~/.claude/skills/` (or `.claude/skills/` in a project), or `npx skills add gabros20/fluid-design-skill` | ask for what you want: the skill runs `node <skill>/bin/fluid …` itself |
+| **A developer, Node project** | nothing | `npx fluid-design-cli@2 init` |
+| **A developer, no Node** (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | `curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.sh \| sh` (Windows: `install.ps1`) | `fluid init` |
+
+By hand, `fluid init` asks the design questions on the terminal (stack, framework, stylesheet,
+desktop frame, breakpoints, mobile bands, max width). Each has a detected default, and each is also
+a flag for scripts: `fluid init --yes --desktop 1600x1000 --set --fluid-desktop-scale-max=1.4`. The
+full by-hand guide, covering tuning, `generate --watch`, CI, explain and verify, is
+[`fluid-design/README.md`](fluid-design/README.md), which is also the npm page. How it ships, and
+why: [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
 
 In a project:
 
 ```bash
 fluid init          # detects your stack/framework, writes fluid.config.json,
-                     # runs `fluid generate`, and adds the one import + a
-                     # commented settings starter into your existing :root
+                     # runs `fluid generate`, and adds the one import + your
+                     # settings into your existing :root
 ```
 
 That's the whole install: **one import**.
@@ -114,7 +122,8 @@ fluid-design/                      the skill: copy this folder into your skills 
                                    stylex): fluid.css, base.css, settings.reference.css, fluid.ts, …
     runtime/fluid-zoom.js (+ .d.ts) makes fluid type follow browser zoom (fluid generate copies + stamps it)
     runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
-  bin/fluid                        the `fluid` CLI (node scripts/cli.mjs)
+  README.md                        the by-hand guide (no agent), also the npm page
+  bin/fluid                        the `fluid` CLI (node scripts/cli.mjs); scripts/bin-entry.mjs for the binary
   scripts/
     cli.mjs                        fluid init/generate/check/settings/explain/migrate, + calc/probe/verify/audit passthrough
     calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
@@ -180,9 +189,15 @@ From `fluid-design/`:
 npm test              # generate-fluid.mjs --check (regeneration + invariants + v1 parity)
                        #   && test/cli.mjs (the fluid CLI, no browser)
                        #   && audit.mjs --selftest
-npm run test:browsers  # test/engine-matrix.mjs + test/tailwind-compile.mjs — needs playwright/tailwind,
-                       #   run from a project that has them, e.g. `cd ../examples/pizza-next && …`
+npm run test:browsers  # engine-matrix + tailwind-compile + explain-live (from examples/pizza-next)
+                       #   && scss-browser (from examples/pizza-vite-gsap): 3 browsers, needs the
+                       #   examples' node_modules installed
+npm run build:bin      # the standalone binaries → dist/, smoke-tested on this machine (needs bun)
 ```
+
+Releases: push a tag `v2.x.y` matching `fluid-design/package.json`. `.github/workflows/release.yml`
+tests, builds the five binaries with `SHA256SUMS` into a GitHub Release, and publishes
+`fluid-design-cli` to npm if the `NPM_TOKEN` repo secret is set.
 
 `generate-fluid.mjs --check` is also what proves nothing in `assets/styles/**` or
 `references/config.md` has drifted from `scripts/lib/spec.mjs`, the one place every name and default

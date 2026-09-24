@@ -20,26 +20,41 @@ state, a real anchor click through smooth scrolling) lives in the
 ## bin/fluid — the CLI (cli.mjs)
 
 ```
-fluid init [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integration next|vite|none] [--out dir] [--css globals.css] [--force]
-fluid generate [--dry] [--force]
+fluid init [--yes] [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integration next|vite|none]
+           [--out dir] [--css globals.css] [--desktop 1440x900] [--desktop-at 1024] [--no-mobile]
+           [--phone 390] [--max-width 1680] [--set --fluid-<setting>=<n> …] [--force] [--interactive]
+fluid generate [--dry] [--force] [--watch]
 fluid check
 fluid settings [--json]
-fluid explain <W>x<H> [--zoom z] [--url http://…]
+fluid explain <W>x<H> [--zoom z] [--set --fluid-<setting>=<n> …] [--url http://… [--at <selector>]]
 fluid migrate [--write]
 fluid calc | probe | verify | audit …   (the tools below)
 ```
 
-- **`init`** — detects the stack and framework from `package.json`, writes a
-  minimal `fluid.config.json` + `fluid.config.schema.json`, runs `generate`,
-  and adds the one `@import` plus a commented settings starter into the
-  project's existing `:root` (found by walking common `globals.css`
-  locations, or `--css`). `--brownfield` turns `output.base` off and only
-  prints the import instead of editing the file. Refuses to run twice without
-  `--force`.
+- **`init`** — detects the stack and framework from `package.json` (or, with
+  none, from the stylesheet: Rails, Phoenix, Hugo and plain-HTML paths are
+  searched), writes a minimal `fluid.config.json` + `fluid.config.schema.json`,
+  runs `generate`, and adds the one `@import` plus the settings into the
+  project's existing `:root` (or `--css`). On a terminal it asks the preflight
+  questions (stack, framework, stylesheet, brownfield, desktop frame, desktop
+  breakpoint, mobile bands, phone frame, max width, output folder), each with
+  the detected default; `--yes` or a non-terminal (an agent, CI) skips them,
+  and every answer is also a flag. `--interactive` forces the questions and
+  reads the answers line by line from stdin (the test does this). Answers
+  that are settings are written as declarations, only when they differ from
+  the default; `--set` adds any setting, validated against the spec with a
+  did-you-mean. `--brownfield` (or a stylesheet that already styles
+  `html`/`body`) turns `output.base` off and only prints the import. A
+  `.scss` stylesheet is never edited: init prints the `@use` and the
+  engine import. With no framework integration it also generates
+  `runtime/zoom.classic.js`, the zoom runtime as a classic `<script src>`.
+  Refuses to run twice without `--force`.
 - **`generate`** — writes `output.dir` from the current `fluid.config.json`.
   Compares against `.fluid.lock.json` first: a file that was hand-edited
   since the last generate is left alone (and the whole run fails) unless
-  `--force`. `--dry` prints what would change without writing.
+  `--force`. `--dry` prints what would change without writing. `--watch`
+  regenerates on every save of `fluid.config.json` (it watches the folder,
+  since editors often replace the file).
 - **`check`** — the CI gate, zero browser: (1) the generated output matches
   what the config would produce right now — missing / stale / hand-edited /
   orphaned; (2) every `--fluid-*` declaration in the project's own CSS is
@@ -47,7 +62,10 @@ fluid calc | probe | verify | audit …   (the tools below)
   value, `scale-min` above `scale-max`, a setting declared outside
   `:root`/`.fluid-scope`, one shadowing another); (3) on
   `tailwind.breakpoints: "none"`, any hand-maintained `--breakpoint-lg` still
-  agrees with `bands.desktop.minWidth`. Non-zero exit on any problem.
+  agrees with `bands.desktop.minWidth`. It also names a generator version
+  mismatch (the lock records the CLI version that generated the folder), so
+  a teammate's binary and CI's `npx` can't silently disagree. Non-zero exit
+  on any problem.
 - **`settings [--json]`** — prints `settings.reference.css` (every setting,
   commented, with its default), or with `--json` the same as structured data.
 - **`explain <W>x<H> [--zoom z] [--url http://…]`** — the band a viewport
@@ -55,7 +73,10 @@ fluid calc | probe | verify | audit …   (the tools below)
   (default, or `file:line` in the project's CSS). With `--url` it loads the
   live page in a headless browser instead, reads its own computed settings,
   and compares the page's resolved units and build stamp against what the
-  config generates now (`verification.md` §6).
+  config generates now (`verification.md` §6), then lists every scope on the
+  page with its settings, units and how many elements inside follow the
+  scale (a limit with nothing fluid inside is flagged). `--at <selector>`
+  explains one element; `--set` changes the prediction without editing.
 - **`migrate [--write]`** — converts a v1 `fluid.config.json` to v2: prints
   what moved, the new config, and a `:root` snippet of every v1 number that
   differed from its v2 default (nothing to carry over prints instead).
@@ -64,9 +85,29 @@ fluid calc | probe | verify | audit …   (the tools below)
   brownfield migration keeps emitting the v1 custom-property/class names
   (`--fluid-chrome`, `--fluid-column`, `.fluid-frame`) alongside the v2 ones
   until callers are moved over.
-- **`calc | probe | verify | audit`** — thin passthroughs to `calc.mjs`,
-  `probe.mjs`, `verify-matrix.mjs`, `audit.mjs` (below), run as a child
-  process with the remaining args forwarded verbatim.
+- **`calc | probe | verify | audit`** — `calc.mjs`, `probe.mjs`,
+  `verify-matrix.mjs`, `audit.mjs` (below), imported in process with the
+  remaining args forwarded verbatim (a compiled binary has no node to spawn).
+
+## Distribution: npm, binaries, the skill folder
+
+One source, three ways to run it (`docs/DISTRIBUTION.md` has the reasoning):
+
+- **The skill folder:** `node <skill>/bin/fluid`, what agents run.
+- **npm:** `package.json` publishes this folder as `fluid-design-cli` (bin
+  `fluid`); tests, the v1 parity fixtures and `build-bin.mjs` are left out.
+  `generate-fluid.mjs --check` fails when its version isn't `SKILL_VERSION`.
+- **`build-bin.mjs`:** standalone binaries (`bun build --compile` of
+  `bin-entry.mjs`) for darwin-arm64/x64, linux-x64/arm64 and windows-x64,
+  plus `SHA256SUMS`, into `dist/`. `--target host` builds one, and `--smoke`
+  runs the host binary through init, check, calc, explain and audit in a
+  project without Node. The runtime files are embedded through
+  `lib/emit/runtime-assets.mjs` (generated from `assets/runtime/`), so the
+  binary reads nothing from the skill. `verify`, `probe` and `explain --url`
+  need Playwright, so the binary refuses them and prints the `npx` command.
+  The repo's `.github/workflows/release.yml` runs it on a `v*` tag and
+  attaches the output to the GitHub Release, which `install.sh` and
+  `install.ps1` at the repo root download from after checking the sha256.
 
 ## calc.mjs — the math, with no browser and no live project
 
@@ -334,7 +375,12 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   `init --brownfield` (prints instead of editing, base off), and `migrate
   --write` on a v1 fixture (detects the stack/integration, turns `aliases`
   on, keeps the v1 file, then `generate` writes the SCSS module and the Vite
-  plugin). `node scripts/test/cli.mjs`.
+  plugin). It also covers a flag-driven `init` (bands, artboard, `--set`
+  as declarations, defaults left out, typos and bad values rejected),
+  `init --interactive` with scripted answers, a Rails-style project with no
+  `package.json` (css stack, output beside the stylesheet, the classic zoom
+  script), `explain --set`, a version-mismatched lock, and
+  `generate --watch`. `node scripts/test/cli.mjs`.
 - **`test/engine-matrix.mjs`** — the generated engine CSS against
   `model.evaluate()`, in real browsers. For each of a set of structures
   (defaults, flat below desktop, zoom off, ui off, a custom role, no
@@ -354,6 +400,15 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   `tailwindcss`, `@tailwindcss/postcss`, `postcss` and `playwright` in the
   current project — same caveat as `engine-matrix.mjs`, run it from
   `examples/pizza-next`.
+- **`test/scss-browser.mjs`** — the SCSS module (`_index.scss`) compiled with
+  `sass` and measured in Chromium, WebKit and Firefox against
+  `model.evaluate()`: the unit functions, every band mixin, `fluid-scope`,
+  `fluid-container`, `fluid-type`, and every limit mixin
+  (`fluid-grow-until`, `fluid-shrink-until`, `fluid-ui-grow-until`,
+  `fluid-off`). Run it from `examples/pizza-vite-gsap` (sass + playwright).
+- **`test/explain-live.mjs`** — `fluid explain --url` against a served page:
+  the scopes report (a limit with nothing fluid inside must warn), `--at`,
+  and `--at` with no match. Needs playwright.
 
 ## fixtures/
 

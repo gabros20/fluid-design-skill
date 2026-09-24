@@ -13,7 +13,10 @@ import { useHeaderTheme } from '@/motion/hooks/useHeaderTheme'
  * (`data-header-theme`). Chrome spends `--fluid-ui`, never `--fluid`, so it
  * does not shrink on a short-but-wide window. Its geometry is the `--header-h`
  * contract from fluid.css: a `24 × --fluid` resting inset + safe area, then a
- * 34px row (mobile) or a `48 × --fluid-ui` row (from lg).
+ * 34px row (mobile) or a `48 × --fluid-ui` row (from lg). --fluid-ui stops
+ * growing past a 1680 window (globals.css). On a landscape phone the row is
+ * all the height there is, so the wordmark drops its subline
+ * (fluid-landscape:, the band variant).
  */
 export function Header() {
   const ref = useRef<HTMLElement>(null)
@@ -63,7 +66,7 @@ export function Header() {
             </span>
             <span
               className={cn(
-                'fluid-mt-3 hidden fluid-copy-9 tracking-[0.24em] uppercase sm:block lg:mt-[calc(5*var(--fluid-ui))] lg:fluid-ui-text-10',
+                'fluid-mt-3 hidden fluid-copy-9 tracking-[0.24em] uppercase sm:block fluid-landscape:hidden lg:mt-[calc(5*var(--fluid-ui))] lg:fluid-ui-text-10',
                 THEME_FADE,
                 dark ? 'text-text-on-dark-muted' : 'text-text-muted'
               )}

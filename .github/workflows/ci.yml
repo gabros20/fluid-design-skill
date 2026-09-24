@@ -1,0 +1,22 @@
+name: ci
+on:
+  push:
+    branches: [main, v2-api]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fluid-design
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # generated files current, invariants, v1 parity, the CLI end to end, audit selftest
+      - run: npm test
+      - uses: oven-sh/setup-bun@v2
+      # the standalone binary for this runner, through init / check / calc / explain / audit
+      - run: node scripts/build-bin.mjs --target host --smoke

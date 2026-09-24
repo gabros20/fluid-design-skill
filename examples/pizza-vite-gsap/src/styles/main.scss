@@ -654,8 +654,13 @@ em {
   }
 }
 
-// ── 6. Footer (site chrome, --fluid-chrome) ───────────────────────────
+// ── 6. Footer (site chrome, --fluid-ui) ───────────────────────────────
+// The footer's ui stops growing past a 1920 window (the page keeps scaling
+// to its 1.6 ceiling): the mixin makes .footer a scope, so fd.fluid-ui()
+// inside it reads the limited unit. A subtree limit, not :root, because
+// only the footer should hold.
 .footer {
+  @include fd.fluid-ui-grow-until(1920);
   background: var(--surface-dark);
   color: var(--text-inverse);
   border-top: 1px solid var(--border-inverse);

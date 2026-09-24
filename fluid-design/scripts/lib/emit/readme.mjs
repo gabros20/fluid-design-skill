@@ -46,8 +46,10 @@ import { fluidPlugin } from './src/styles/fluid/integrations/vite'
 export default defineConfig({ plugins: [fluidPlugin()] })
 ${'```'}` : `
 ${'```html'}
-<script>/* the string FLUID_ZOOM_INLINE from runtime/zoom.js */</script>
+<!-- first thing in <head>; a classic script, not type="module" -->
+<script src="/…/runtime/zoom.classic.js"></script>
 ${'```'}
+(or paste runtime/zoom.classic.js inline in that <script>.)
 (\`output.integration\` can generate this for Next or Vite.)`}
 ` : ''}
 ## Tuning: settings are CSS variables

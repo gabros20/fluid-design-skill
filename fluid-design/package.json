@@ -1,18 +1,52 @@
 {
-  "name": "fluid-design",
+  "name": "fluid-design-cli",
   "version": "2.0.0",
-  "description": "Viewport-fluid design scale: one config, CSS-variable settings, generated for Tailwind v4, CSS, SCSS and StyleX.",
+  "description": "Viewport-fluid design scale for any site: one small JSON for structure, every tuning number a CSS variable. Generates for Tailwind v4, CSS, SCSS and StyleX. The `fluid` CLI of the fluid-design agent skill.",
+  "keywords": [
+    "fluid",
+    "responsive",
+    "viewport",
+    "design-system",
+    "tailwindcss",
+    "css",
+    "scss",
+    "stylex",
+    "typography",
+    "agent-skill"
+  ],
+  "homepage": "https://github.com/gabros20/fluid-design-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabros20/fluid-design-skill.git",
+    "directory": "fluid-design"
+  },
+  "bugs": "https://github.com/gabros20/fluid-design-skill/issues",
+  "license": "MIT",
+  "author": "Tamás Gábor",
   "type": "module",
-  "private": true,
   "bin": {
     "fluid": "bin/fluid"
   },
+  "files": [
+    "bin",
+    "scripts",
+    "!scripts/test",
+    "!scripts/build-bin.mjs",
+    "!scripts/fixtures/configs",
+    "!scripts/fixtures/v1-configs",
+    "!scripts/lib/v1-math.mjs",
+    "assets",
+    "references",
+    "SKILL.md",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node scripts/generate-fluid.mjs --check && node scripts/test/cli.mjs && node scripts/audit.mjs --selftest",
-    "test:browsers": "node scripts/test/engine-matrix.mjs && node scripts/test/tailwind-compile.mjs",
-    "generate": "node scripts/generate-fluid.mjs"
+    "test:browsers": "cd ../examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs && node ../../fluid-design/scripts/test/tailwind-compile.mjs && node ../../fluid-design/scripts/test/explain-live.mjs && cd ../pizza-vite-gsap && node ../../fluid-design/scripts/test/scss-browser.mjs",
+    "generate": "node scripts/generate-fluid.mjs",
+    "build:bin": "node scripts/build-bin.mjs --smoke"
   }
 }

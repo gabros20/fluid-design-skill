@@ -742,7 +742,7 @@ async function main() {
   process.exit(hasError ? 1 : 0)
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
+const isMain = (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) || globalThis.__fluidTool === 'audit'
 if (isMain) {
   main().catch((err) => {
     console.error(err)

@@ -178,7 +178,13 @@ list — check each script's own `--help` for the current surface:
   falls in, and where each setting in play came from (default, or `file:line` in your CSS). With
   `--url` it loads the live page instead: reads its *own* computed settings (so a page that overrides
   a setting is checked against that override, not flagged for it), compares resolved units against
-  what the model computes from them, and compares build stamps (§6).
+  what the model computes from them, and compares build stamps (§6). It also lists every scope on
+  the page (limit utilities, `.fluid-scope`, `[data-fluid-scope]`, and any element where a setting
+  changes, which is how an SCSS/StyleX mixin scope shows up) with its own settings, its units next
+  to the page's, and how many elements inside follow the scale; a scope with none is flagged, since
+  its limit does nothing there. `--at <selector>` explains one element instead, and says so when it
+  sets fluid settings without being a scope. `--set --fluid-<setting>=<n>` (repeatable) changes the
+  prediction without touching any file, offline or with `--url`.
 - **`fluid verify <url> --screens --fit-selector '[data-fit=screen]'`** (`scripts/verify-matrix.mjs`)
   — drives the viewport matrix (§5) against a running server. It checks horizontal overflow, checks
   units the same way `fluid explain --url` does — resolved against the page's own settings, with the

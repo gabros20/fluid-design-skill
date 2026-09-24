@@ -7,7 +7,7 @@
 import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync, appendFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
-import { spawnSync } from 'node:child_process'
+import { spawnSync, spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../../bin/fluid')
@@ -18,6 +18,10 @@ const expect = (ok, what, extra = '') => {
 }
 const run = (cwd, ...args) => {
   const r = spawnSync(process.execPath, [FLUID, ...args], { cwd, encoding: 'utf8' })
+  return { code: r.status, out: r.stdout + r.stderr }
+}
+const runWithInput = (cwd, input, ...args) => {
+  const r = spawnSync(process.execPath, [FLUID, ...args], { cwd, encoding: 'utf8', input })
   return { code: r.status, out: r.stdout + r.stderr }
 }
 
@@ -81,6 +85,71 @@ try {
   expect(existsSync(join(m, 'fluid.config.v1.json')), 'migrate keeps the v1 file')
   r = run(m, 'generate')
   expect(r.code === 0 && existsSync(join(m, 'styles/fluid/_index.scss')) && existsSync(join(m, 'styles/fluid/integrations/vite.ts')), 'generate after migrate writes the SCSS module and the Vite plugin', r.out)
+
+  // init by flags (automation): artboard, no mobile, max width, --set; settings land as declarations
+  const f = join(root, 'flags')
+  mkdirSync(join(f, 'src/app'), { recursive: true })
+  writeFileSync(join(f, 'package.json'), JSON.stringify({ dependencies: { next: '16', tailwindcss: '4' } }))
+  writeFileSync(join(f, 'src/app/globals.css'), `@import 'tailwindcss';\n`)
+  r = run(f, 'init', '--yes', '--desktop', '1600x1000', '--desktop-at', '1200', '--no-mobile', '--max-width', '1920', '--set', '--fluid-desktop-scale-max=1.4', '--set', 'desktop-display-damping=0.7')
+  const fcfg = JSON.parse(readFileSync(join(f, 'fluid.config.json'), 'utf8'))
+  const fcss = readFileSync(join(f, 'src/app/globals.css'), 'utf8')
+  expect(r.code === 0 && fcfg.bands.phone === false && fcfg.bands.tablet === false && fcfg.bands.desktop.minWidth === 1200, 'init --no-mobile --desktop-at writes the bands', r.out + JSON.stringify(fcfg))
+  expect(['--fluid-desktop-base-width: 1600;', '--fluid-desktop-base-height: 1000;', '--fluid-desktop-container-width: 1920;', '--fluid-desktop-scale-max: 1.4;', '--fluid-desktop-display-damping: 0.7;'].every((l) => fcss.includes(l)) && !fcss.includes('--fluid-phone-base-width'), 'init writes answers and --set as real declarations, defaults left out', fcss)
+  r = run(f, 'check')
+  expect(r.code === 0, 'check passes after a flag-driven init', r.out)
+  r = run(f, 'explain', '1920x1080', '--set', '--fluid-grow-until=1600')
+  expect(r.code === 0 && /--fluid-grow-until\s+1600\s+← --set/.test(r.out) && /--fluid\s+1\.0000/.test(r.out), 'explain --set: grow-until at the artboard width holds the unit at 1', r.out)
+  const bad = join(root, 'bad')
+  mkdirSync(bad)
+  r = run(bad, 'init', '--yes', '--set', '--fluid-desktop-scle-max=1.4')
+  expect(r.code === 2 && r.out.includes('did you mean --fluid-desktop-scale-max'), 'init --set with a typo exits 2 with a suggestion', r.out)
+  r = run(bad, 'init', '--yes', '--set', '--fluid-desktop-fit-height=0.5')
+  expect(r.code === 2 && r.out.includes('whole number'), 'init --set validates the value against the spec', r.out)
+
+  // init by answers (a human at a terminal; --interactive reads them from stdin)
+  const q = join(root, 'asked')
+  mkdirSync(join(q, 'src'), { recursive: true })
+  writeFileSync(join(q, 'package.json'), JSON.stringify({ devDependencies: { vite: '8' } }))
+  writeFileSync(join(q, 'src/style.css'), `html { color: black; }\n`)
+  //                stack  framework  css  brownfield  desktop     at   mobile  phone  max   out
+  const answers = ['css', '', '', 'n', '1280x800', '', 'y', '375', '', ''].join('\n') + '\n'
+  r = runWithInput(q, answers, 'init', '--interactive')
+  const qcfg = JSON.parse(readFileSync(join(q, 'fluid.config.json'), 'utf8'))
+  const qcss = readFileSync(join(q, 'src/style.css'), 'utf8')
+  expect(r.code === 0 && qcfg.output.stack === 'css' && qcfg.output.integration === 'vite' && qcfg.output.base !== false, 'interactive init: typed answers win, Enter keeps the detected default', r.out + JSON.stringify(qcfg))
+  expect(qcss.startsWith("@import './fluid/fluid.css';") && qcss.includes('--fluid-desktop-base-width: 1280;') && qcss.includes('--fluid-phone-base-width: 375;'), 'interactive init writes the import and the answered settings', qcss)
+  expect(r.out.includes('site already style html and body'), 'the brownfield question is asked (default detected from the html rule)', r.out)
+
+  // a project without Node (Rails-style): css stack, no integration, the classic zoom script
+  const n = join(root, 'rails')
+  mkdirSync(join(n, 'app/assets/stylesheets'), { recursive: true })
+  writeFileSync(join(n, 'app/assets/stylesheets/application.css'), `:root {\n  --brand: red;\n}\n`)
+  r = run(n, 'init', '--yes')
+  const ncfg = JSON.parse(readFileSync(join(n, 'fluid.config.json'), 'utf8'))
+  expect(r.code === 0 && ncfg.output.stack === 'css' && ncfg.output.dir === 'app/assets/stylesheets/fluid' && (ncfg.output.integration ?? 'none') === 'none', 'no package.json: css stack, output next to the stylesheet', r.out + JSON.stringify(ncfg))
+  const classic = join(n, 'app/assets/stylesheets/fluid/runtime/zoom.classic.js')
+  expect(existsSync(classic) && !readFileSync(classic, 'utf8').includes('export ') && r.out.includes('zoom.classic.js'), 'no integration: a classic zoom script, and init says how to load it')
+  expect(readFileSync(join(n, 'app/assets/stylesheets/application.css'), 'utf8').startsWith("@import './fluid/fluid.css';"), 'the import goes at the top of a plain stylesheet')
+
+  // version pinning: a lock from another CLI version is named, not just "stale"
+  const lockPath = join(g, 'src/styles/fluid/.fluid.lock.json')
+  const lock = JSON.parse(readFileSync(lockPath, 'utf8'))
+  writeFileSync(lockPath, JSON.stringify({ ...lock, generator: 'fluid-design 1.9.0' }))
+  r = run(g, 'check')
+  expect(r.out.includes('was generated by fluid-design 1.9.0'), 'check names a generator version mismatch', r.out)
+  run(g, 'generate', '--force')
+
+  // generate --watch regenerates on a config save
+  const child = spawn(process.execPath, [FLUID, 'generate', '--watch'], { cwd: f })
+  let log = ''
+  child.stdout.on('data', (d) => (log += d))
+  await new Promise((res) => setTimeout(res, 600))
+  const cfgPath = join(f, 'fluid.config.json')
+  writeFileSync(cfgPath, JSON.stringify({ ...JSON.parse(readFileSync(cfgPath, 'utf8')), roles: ['display', 'copy', 'caption'] }, null, 2))
+  for (let i = 0; i < 40 && !readFileSync(join(f, 'src/styles/fluid/fluid.css'), 'utf8').includes('--fluid-caption:'); i++) await new Promise((res) => setTimeout(res, 100))
+  child.kill()
+  expect(readFileSync(join(f, 'src/styles/fluid/fluid.css'), 'utf8').includes('--fluid-caption:'), 'generate --watch regenerates when fluid.config.json changes', log)
 } finally {
   rmSync(root, { recursive: true, force: true })
 }

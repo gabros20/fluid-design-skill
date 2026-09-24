@@ -1,0 +1,42 @@
+# A tag v2.x.y (matching fluid-design/package.json) builds the standalone
+# binaries, attaches them with SHA256SUMS to a GitHub Release (install.sh
+# downloads from there), and publishes fluid-design-cli to npm when the
+# NPM_TOKEN secret is set.
+name: release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    defaults:
+      run:
+        working-directory: fluid-design
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: oven-sh/setup-bun@v2
+      - name: tag matches the package version
+        run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
+      - run: npm test
+      - name: binaries (every target) + host smoke test
+        run: node scripts/build-bin.mjs --smoke
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "fluid $GITHUB_REF_NAME" --generate-notes
+      - name: npm
+        if: env.NPM_TOKEN != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

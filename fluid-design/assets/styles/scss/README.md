@@ -21,8 +21,10 @@ That one import brings the units, the settings and the base layer.
 Browser zoom needs one script in `<head>`, before first paint:
 
 ```html
-<script>/* the string FLUID_ZOOM_INLINE from runtime/zoom.js */</script>
+<!-- first thing in <head>; a classic script, not type="module" -->
+<script src="/…/runtime/zoom.classic.js"></script>
 ```
+(or paste runtime/zoom.classic.js inline in that <script>.)
 (`output.integration` can generate this for Next or Vite.)
 
 ## Tuning: settings are CSS variables
@@ -96,3 +98,4 @@ Scripts read the same units as numbers: `fluidPx(600)`, `fluidPx(24, 'copy')` (f
 - `runtime/units.d.ts`
 - `runtime/zoom.js`
 - `runtime/zoom.d.ts`
+- `runtime/zoom.classic.js`
