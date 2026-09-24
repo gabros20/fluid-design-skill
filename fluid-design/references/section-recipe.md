@@ -143,6 +143,10 @@ Copy sections inside a pinned scene have extra rules (no background, no `overflo
 - [ ] Mobile floors in `svh`; fixed header subtracted via `--header-h`.
 - [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (the `scroll-animation`
       skill explains why; `audit.mjs` no longer checks it here).
+- [ ] A part that must stop scaling has a limit on its wrapper (`fluid-grow-until-*`,
+      `fluid-shrink-until-*`, `fluid-off`), not fixed px on its children; the site header uses
+      `:root { --fluid-ui-grow-until: … }` instead.
+- [ ] Components taking `className` merge through a `cn` built with `withFluid`.
 
 ## A part that should stop scaling
 

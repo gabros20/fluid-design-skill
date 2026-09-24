@@ -120,6 +120,56 @@
           "check": "response contains fluid verify (or verify-matrix) and --zoom"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "shadcn-cn-with-fluid",
+      "prompt": "We just added fluid-design v2 to our Next + shadcn/ui app (fluid init ran, src/styles/fluid exists). Our Button takes className and uses cn from src/lib/utils.ts. Passing className=\"lg:fluid-px-24\" to a Button that already has lg:fluid-px-40 ships both classes. Fix it properly.",
+      "expected_output": "Keeps the project's cn in src/lib/utils.ts and its callers; changes only how it builds twMerge: extendTailwindMerge(withFluid) with withFluid imported from the generated styles/fluid/cn (or as the next argument if it already extends tailwind-merge). Does not create a second cn or copy class groups by hand, and does not edit the generated cn.ts. Runs fluid check, which no longer warns about the cn.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "edits src/lib/utils.ts to use extendTailwindMerge(withFluid)",
+          "check": "utils.ts imports withFluid from the generated cn and builds twMerge with it"
+        },
+        {
+          "text": "keeps a single cn: no second cn function, callers unchanged",
+          "check": "no new cn export elsewhere; Button import unchanged"
+        },
+        {
+          "text": "does not hand-write fluid class groups or edit the generated cn.ts",
+          "check": "no classGroups literal for fluid-* outside the generated folder; generated files untouched"
+        },
+        {
+          "text": "verifies with fluid check (no tailwind-merge warning)",
+          "check": "mentions or runs fluid check"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "header-stops-scaling",
+      "prompt": "On our fluid site the header and nav keep growing on 2560 and 5K screens and look huge. The design says the header should stay at its 1680 size above that, while the page content keeps scaling. How do we do that?",
+      "expected_output": "Uses a limit in window px, not fixed px on the header's children: sets :root { --fluid-ui-grow-until: 1680; } because the header spends --fluid-ui and --header-h is built from it, so the header and the page's --header-h (anchor offsets, hero padding) stay in step; explains that a fluid-grow-until-1680 class on <header> would limit the bar but not --header-h, and that fluid check warns on it; notes the page content keeps scaling; mentions fluid-grow-until-* on a wrapper for any other component, and fluid explain 2560x1440 to confirm (--fluid-ui 1.167).",
+      "files": [],
+      "assertions": [
+        {
+          "text": "sets --fluid-ui-grow-until: 1680 on :root",
+          "check": "response contains --fluid-ui-grow-until: 1680 in a :root rule"
+        },
+        {
+          "text": "explains why not a limit class on <header> (--header-h would not follow)",
+          "check": "mentions --header-h drifting / not following"
+        },
+        {
+          "text": "does not replace fluid utilities on the header's children with fixed px or max() caps",
+          "check": "no lg:h-[56px]-style fixed values or hand-written min()/max() caps"
+        },
+        {
+          "text": "names the per-component tool for other parts (fluid-grow-until-* on a wrapper)",
+          "check": "mentions fluid-grow-until-<W> utility"
+        }
+      ]
     }
   ]
 }

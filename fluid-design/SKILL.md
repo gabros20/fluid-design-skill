@@ -90,11 +90,17 @@ The result, for Tailwind:
   `plugins: [fluidPlugin()]` from `integrations/vite`; otherwise inline `FLUID_ZOOM_INLINE` from
   `runtime/zoom.js` first in `<head>`. Viewport-derived type does not grow under browser zoom on its
   own (`references/fluid-scale.md` §12).
-- **Tailwind**: every component that takes `className` needs a `cn` that knows the fluid classes, or
-  two fluid classes for one property both ship and stylesheet order picks the winner. Already have a
-  `cn` (shadcn's `lib/utils.ts`)? Keep it: `extendTailwindMerge(withFluid)` from the generated
-  `cn.ts`. No `cn` yet? Use the generated one. `fluid init` and `fluid check` point at an existing
-  `cn` that lacks the plugin.
+- **Tailwind `cn`**: every component that takes `className` needs a `cn` that knows the fluid
+  classes, or two fluid classes for one property both ship and stylesheet order picks the winner.
+  **If the project already has one** (shadcn's `src/lib/utils.ts`, any file importing
+  `tailwind-merge`), keep it and its callers, and change only how it builds `twMerge`:
+  ```ts
+  import { extendTailwindMerge } from 'tailwind-merge'
+  import { withFluid } from '@/styles/fluid/cn'
+  const twMerge = extendTailwindMerge(withFluid)   // was: import { twMerge } from 'tailwind-merge'
+  ```
+  (Already extending it? `extendTailwindMerge({ extend: … }, withFluid)`.) Never add a second `cn`.
+  No `cn` at all: import the generated one. `fluid init` prints the lines for the file it finds.
 - **Script**: import `DESKTOP_QUERY`, `MEDIA`, `fluidPx` from the generated `fluid.ts`; never
   hand-type the breakpoint.
 - **SCSS**: import `fluid/fluid.css` once from the entry; `@use 'fluid' as fd;` for the functions
@@ -148,7 +154,8 @@ video *plays* is the `scroll-animation` skill.
 
 ### 6. Verify: at a matrix of viewports, never one
 
-- `fluid check` — config, generated files, settings lint. Put it in CI.
+- `fluid check` — config, generated files, settings lint, a `cn` without `withFluid`, a limit class on
+  `<header>`. Resolve every error **and every warning** before calling the work done; put it in CI.
 - `fluid audit src` — a static scan for the silent failure modes. Fix every error.
 - `fluid verify <url> --screens --fit-selector '[data-fit=screen]'` — widths 1024–2560 × heights
   640–1440 plus the phone/tablet/landscape set: horizontal overflow, every unit against the maths

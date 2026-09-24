@@ -36,6 +36,8 @@ which has its own preflight.
 | `<video>` count, sticky/pinned sections | the media rendering work (`media.md`); any scene or playback work is for the `scroll-animation` skill |
 | Figma links or exported frames in the repo | the artboard's width and height |
 | a phone frame in Figma | whether the mobile bands should stay on at their default 390 width, or be re-tuned |
+| a `cn` / `twMerge` of the project's own (shadcn's `src/lib/utils.ts`, `lib/cn.ts`: any file importing `tailwind-merge`) | keep it; after install, add `withFluid` to it (§13). Never generate a second `cn` beside it or rewrite it |
+| a header, nav or sidebar with a fixed max width, or a design note like "the header stays 1680 wide on big screens" | a limit (§5) |
 
 ## The decisions
 
@@ -85,6 +87,13 @@ Default: **unset** (no ceiling). Above the artboard the whole composition grows 
 - The real limit is asset resolution: a 1920-wide render upscales about 1.3× on a 27" 5K. Either
   re-export the assets at about 3000 wide, or set `--fluid-desktop-scale-max` (for example 1.5).
 - Ask when: the hero art or video is raster and below about 2400px wide.
+- **Limits** are the finer tool: one part of the page stops scaling at a window width while the rest
+  keeps growing. Site header or nav held at its 1680 size: `:root { --fluid-ui-grow-until: 1680; }`
+  (keeps `--header-h` in step; never a limit class on `<header>`). Any other part: a utility on its
+  wrapper (`fluid-grow-until-1680`, `fluid-shrink-until-1280`, `fluid-off`). Whole site stops at a
+  width: `:root { --fluid-grow-until: 1920; }`. `fluid-scale.md` §10.
+- Ask when: the design shows a component staying the same size on large screens, or the client asks
+  for the header or nav not to grow.
 
 ### 6. Scope
 Default: **the whole site from the desktop breakpoint up**, ui included (header and footer on `--fluid-ui`, §9).
@@ -156,6 +165,20 @@ else `"none"`).
   (`FLUID_ZOOM_INLINE` from `runtime/zoom.js`) to add to `<head>` by hand.
 - Ask when: the framework is neither Next nor Vite and `zoom` is on — the team needs to wire the
   inline script into their own head themselves.
+
+### 13. Class merging (Tailwind): an existing `cn`
+Default: **reuse the project's `cn`** when one exists; the generated `cn` only when none does.
+- Edit the file that builds `twMerge` (shadcn: `src/lib/utils.ts`):
+  ```ts
+  import { extendTailwindMerge } from 'tailwind-merge'
+  import { withFluid } from '@/styles/fluid/cn'      // the generated cn.ts in output.dir
+  const twMerge = extendTailwindMerge(withFluid)       // replaces: import { twMerge } from 'tailwind-merge'
+  ```
+  If it already calls `extendTailwindMerge({ extend: … })`, pass `withFluid` as the next argument.
+  Leave its `cn` signature and every caller unchanged.
+- No `cn` anywhere: import `cn` from the generated `cn.ts`.
+- Not a question to ask: `fluid init` prints the exact lines for the file it finds, and `fluid check`
+  warns until it is done.
 
 ## Writing the result
 
