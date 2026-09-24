@@ -53,7 +53,7 @@ function parseArgs(argv) {
     out: 'verify-matrix-out',
     widths: '1024,1280,1440,1680,2560',
     heights: '640,700,800,900,1440',
-    mobile: null, // default: 390x844,375x667; with the mobile arm on, 360x780,390x844,430x932,768x1024
+    mobile: null, // default: see --mobile in the usage text (depends on bands.phone)
     fitSelector: '[data-fit=screen]',
     screens: false,
     zoom: '1.25,1.5,2',
@@ -99,8 +99,9 @@ Options:
   --out <dir>         output directory for report.json / screenshots (default: verify-matrix-out)
   --widths <list>     comma-separated desktop widths (default: 1024,1280,1440,1680,2560)
   --heights <list>    comma-separated desktop heights (default: 640,700,800,900,1440)
-  --mobile <list>     comma-separated WxH pairs (default: 390x844,375x667; with the mobile arm on,
-                      360x780,390x844,430x932,768x1024), or "none" to disable
+  --mobile <list>     comma-separated WxH pairs, or "none" to disable (default with the mobile
+                      bands on: 320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194;
+                      with bands.phone false: 390x844,375x667)
   --fit-selector <s>  selector checked against "height <= viewport" (default: [data-fit=screen])
   --screens           write a full-page screenshot per viewport + a contact sheet, and a
                       viewport screenshot per zoom-row cell (zoom-WxH-PCT.jpg)
@@ -152,47 +153,10 @@ function parseWxHList(s) {
   })
 }
 
-// Resolution order matches probe.mjs: the target project's own node_modules
-// first (resolved from process.cwd(), where a consumer runs this from), then
-// a bare specifier from the skill's own location. Kept duplicated rather
-// than shared through scripts/lib, which is the config generator's tree.
+// One Playwright resolver for every tool: the project first, then beside the skill.
 async function resolvePlaywrightModule() {
-  const { createRequire } = await import('node:module')
-  const { pathToFileURL } = await import('node:url')
-
-  const attempts = []
-  try {
-    const cwdRequire = createRequire(pathToFileURL(join(process.cwd(), 'package.json')))
-    const resolved = cwdRequire.resolve('playwright')
-    attempts.push(`cwd (${process.cwd()}): ${resolved}`)
-    const mod = await import(pathToFileURL(resolved).href)
-    return mod.chromium ? mod : mod.default
-  } catch (err) {
-    attempts.push(`cwd (${process.cwd()}): not found (${err.code ?? err.message})`)
-  }
-  try {
-    const here = createRequire(import.meta.url)
-    const resolved = here.resolve('playwright')
-    attempts.push(`skill-local: ${resolved}`)
-    const mod = await import(pathToFileURL(resolved).href)
-    return mod.chromium ? mod : mod.default
-  } catch (err) {
-    attempts.push(`skill-local: not found (${err.code ?? err.message})`)
-  }
-
-  throw new Error(
-    [
-      '[fluid-design] could not resolve "playwright" from either the current project or the skill itself.',
-      '',
-      'Tried:',
-      ...attempts.map((a) => `  - ${a}`),
-      '',
-      'Fix: run this from the target project directory after installing playwright there',
-      '  (npm i -D playwright && npx playwright install chromium)',
-      'or install it globally for the skill to fall back on',
-      '  (npm i -g playwright && playwright install chromium).'
-    ].join('\n')
-  )
+  const { loadPlaywright } = await import('./lib/live.mjs')
+  return loadPlaywright()
 }
 
 // ── per-viewport checks, run inside the page ──────────────────────────────
@@ -303,9 +267,11 @@ async function runViewport(browser, url, ctx, opts, viewport, isMobile) {
   // (a) overflow
   result.checks.overflow = await checkOverflow(page)
 
-  // (b) units: the page's own settings through the model, against what it renders.
+  // (b) units: the page's own settings through the model, against what it
+  //     renders. A v1 config's page has no v2 settings: its migrated
+  //     numbers are the expectation.
   const live = await readUnits(page, structure)
-  const values = valuesOf(resolveSettings(structure, live.settings))
+  const values = ctx.migration ? valuesOf(ctx.resolved) : valuesOf(resolveSettings(structure, live.settings))
   const e = evaluate(structure, values, viewport.width, viewport.height, live.zoom)
   const expected = { fluid: e.fluid, ...e.roles, ...(structure.ui ? { ui: e.ui } : {}) }
   const overridden = Object.keys(live.settings).filter((k) => values[k] !== undefined && settingsSpec(structure).find((x) => x.name === k)?.default !== live.settings[k])
@@ -644,9 +610,10 @@ async function main() {
   try {
     widths = parseNumberList(args.widths)
     heights = parseNumberList(args.heights)
-    // With the mobile arm on, the phone matrix spans the clamp: a small phone
-    // (below the reference), the reference, a large phone, and a tablet on
-    // the cap, so every arm of clamp(min, 100vw/ref, max) is checked.
+    // With the mobile bands on, the phone matrix spans every arm: a small
+    // phone (on scale-min), the artboard, a large phone, both landscape
+    // phones and two tablets (on scale-max), so each band's min, width arm
+    // and max is checked.
     const defaultMobile = structure.bands.phone.enabled ? '320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194' : '390x844,375x667'
     mobiles = parseWxHList(args.mobile ?? defaultMobile)
   } catch (err) {

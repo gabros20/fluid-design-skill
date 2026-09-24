@@ -26,7 +26,8 @@ const html = `<!doctype html><html><head><style>${css}</style></head><body>
 
 const dir = mkdtempSync(join(process.cwd(), '.fluid-explain-'))
 writeFileSync(join(dir, 'fluid.config.json'), JSON.stringify({ version: 2, output: { stack: 'css', dir: 'fluid' } }))
-const server = createServer((_, res) => res.end(html)).listen(0, '127.0.0.1')
+const stale = html.replace(/--fluid-build: "[^"]+"/, '--fluid-build: "2.0.0+deadbeef"')
+const server = createServer((req, res) => res.end(req.url === '/stale' ? stale : req.url === '/blank' ? '<!doctype html><p>no fluid here</p>' : html)).listen(0, '127.0.0.1')
 await new Promise((r) => server.once('listening', r))
 const url = `http://127.0.0.1:${server.address().port}/`
 const run = (...args) =>
@@ -55,6 +56,16 @@ try {
   expect(r.code === 0 && /--fluid-grow-until\s+1680\s+← the page, at #used/.test(r.out) && r.out.includes("element's units match"), '--at reads and checks one element', r.out)
   r = await run('explain', '2560x1440', '--url', url, '--at', '#nope')
   expect(r.code === 2 && r.out.includes('matches nothing'), '--at with no match exits 2', r.out)
+  // probe (= explain --url --brief): verdicts and exit codes
+  r = await run('probe', url)
+  expect(r.code === 0 && r.out.includes('OK:'), 'probe: a fresh page is OK, exit 0', r.out)
+  r = await run('probe', url + 'stale')
+  expect(r.code === 1 && r.out.includes('STALE:'), 'probe: another build stamp is STALE, exit 1', r.out)
+  r = await run('probe', url + 'blank')
+  expect(r.code === 2 && r.out.includes('MISSING:'), 'probe: no fluid stylesheet is MISSING, exit 2', r.out)
+  // --zoom is emulated on the page too: no false drift
+  r = await run('explain', '1440x900', '--url', url, '--zoom', '1.5', '--brief')
+  expect(r.code === 0 && r.out.includes('OK:'), 'explain --url --zoom 1.5 emulates the zoom on the page (no false drift)', r.out)
 } finally {
   server.close()
   rmSync(dir, { recursive: true, force: true })

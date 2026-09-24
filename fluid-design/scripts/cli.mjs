@@ -7,7 +7,8 @@
 //   fluid settings [--json]
 //   fluid explain <W>x<H> [--zoom z] [--url http://…]
 //   fluid migrate [--write]
-//   fluid calc | probe | verify | audit …   (the tools under scripts/)
+//   fluid probe <url>                       (= explain 1440x900 --url <url> --brief)
+//   fluid calc | verify | audit …           (the tools under scripts/)
 //
 // Every command finds fluid.config.json by walking up from the current
 // directory, or takes --config <file>.
@@ -15,12 +16,12 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, readdirSync, statSync, watch } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createRequire } from 'node:module'
 import { createInterface } from 'node:readline'
 import { normaliseStructure, settingsSpec, jsonSchema, structureDefaults, ConfigError, SKILL_VERSION, CONFIG_VERSION, bandBlurb, didYouMean, STACKS, INTEGRATIONS } from './lib/spec.mjs'
 import { loadProject, readJson, isV1, migrateV1, resolveSettings, evaluate, valuesOf, bandAt, bandMedia } from './lib/model.mjs'
 import { buildOutput, fileHash, settingsReferenceCss } from './lib/emit/project.mjs'
 import { scanProject, projectStyleFiles, scanDeclarations } from './lib/settings.mjs'
+import { findImportInsertion, findRootBlock, hasBaseRules } from './lib/css-scan.mjs'
 import { num, scopeSelector } from './lib/emit/engine.mjs'
 
 const LOCK = '.fluid.lock.json'
@@ -64,9 +65,18 @@ const c = {
   bold: (s) => (process.stdout.isTTY ? `\x1b[1m${s}\x1b[0m` : s)
 }
 
+/** A message for the user and an exit code. Thrown, never exited on the
+ * spot: only run() turns it into an exit, so the watcher and init can catch
+ * it and carry on (or roll back). */
+export class CliError extends Error {
+  constructor(message, code = 1) {
+    super(message)
+    this.code = code
+  }
+}
+
 function fail(message, code = 1) {
-  console.error(message)
-  process.exit(code)
+  throw new CliError(message, code)
 }
 
 function findConfig(flags) {
@@ -109,7 +119,18 @@ function readLock(outDir) {
   }
 }
 
-/** Compare the generated files with what is on disk. */
+// CRLF from a Windows checkout (core.autocrlf) is not an edit.
+const lf = (t) => t.replace(/\r\n/g, '\n')
+// Equal once whitespace and quotes go: a formatter (Prettier, Biome) did it.
+const squash = (t) => t.replace(/\s+/g, '').replace(/["'`]/g, '')
+// Equal once the version stamps go: a plain upgrade.
+const unstamp = (t) => lf(t).replace(/fluid-design \d+\.\d+\.\d+/g, 'fluid-design V').replace(/\d+\.\d+\.\d+\+[0-9a-f]{8}/g, 'BUILD').replace(/sha256-[A-Za-z0-9+/=]+/g, 'SHA')
+
+/** Compare the generated files with what is on disk. States:
+ *  ok · missing · stale (generated before, config or version changed) ·
+ *  reformatted (a formatter's whitespace/quotes: safe to overwrite) ·
+ *  hand-edited (differs from what the lock says was written) ·
+ *  unowned (no lock to tell: refuse unless --force) · orphan (no longer generated). */
 function diffOutput(outDir, files) {
   const lock = readLock(outDir)
   const rows = []
@@ -119,13 +140,17 @@ function diffOutput(outDir, files) {
       rows.push({ rel, state: 'missing' })
       continue
     }
-    const disk = readFileSync(abs, 'utf8')
+    const disk = lf(readFileSync(abs, 'utf8'))
     if (disk === content) rows.push({ rel, state: 'ok' })
-    else if (lock?.files?.[rel] && lock.files[rel] !== fileHash(disk)) rows.push({ rel, state: 'hand-edited' })
-    else rows.push({ rel, state: 'stale' })
+    else if (lock?.files?.[rel] ? lock.files[rel] === fileHash(disk) : unstamp(disk) === unstamp(content)) rows.push({ rel, state: 'stale' })
+    else if (squash(unstamp(disk)) === squash(unstamp(content))) rows.push({ rel, state: 'reformatted' })
+    else rows.push({ rel, state: lock?.files?.[rel] ? 'hand-edited' : 'unowned' })
   }
   for (const rel of Object.keys(lock?.files ?? {})) {
-    if (!(rel in files) && existsSync(join(outDir, rel))) rows.push({ rel, state: 'orphan' })
+    const abs = join(outDir, rel)
+    if (rel in files || !existsSync(abs)) continue
+    // Only delete what we wrote and nobody changed since.
+    rows.push({ rel, state: lock.files[rel] === fileHash(lf(readFileSync(abs, 'utf8'))) ? 'orphan' : 'orphan-edited' })
   }
   return { rows, lock }
 }
@@ -134,11 +159,12 @@ function cmdGenerate(flags) {
   const p = project(flags)
   const { files, buildId } = buildOutput(p.structure)
   const { rows } = diffOutput(p.outDir, files)
-  const edited = rows.filter((r) => r.state === 'hand-edited')
+  const edited = rows.filter((r) => r.state === 'hand-edited' || r.state === 'unowned')
   if (edited.length && !flags.force) {
-    fail(`${c.red('Refusing to overwrite hand-edited files')} in ${relative(process.cwd(), p.outDir)}:\n${edited.map((r) => `  ${r.rel}`).join('\n')}\nThese are generated. Move your change into fluid.config.json or a setting, then run ${c.bold('fluid generate --force')}.`)
+    const why = (r) => (r.state === 'unowned' ? `${r.rel} (no ${LOCK} to tell whether it was edited)` : r.rel)
+    fail(`${c.red('Refusing to overwrite hand-edited files')} in ${relative(process.cwd(), p.outDir) || '.'}:\n${edited.map((r) => `  ${why(r)}`).join('\n')}\nThese are generated. Move your change into fluid.config.json or a setting, then run ${c.bold('fluid generate --force')}.`)
   }
-  const changed = rows.filter((r) => r.state !== 'ok')
+  const changed = rows.filter((r) => r.state !== 'ok' && r.state !== 'orphan-edited')
   if (flags.dry) {
     for (const r of changed) console.log(`${r.state.padEnd(12)} ${r.rel}`)
     console.log(changed.length ? `${changed.length} file(s) would change` : 'up to date')
@@ -151,15 +177,58 @@ function cmdGenerate(flags) {
     writeFileSync(abs, content)
   }
   for (const r of rows.filter((r) => r.state === 'orphan')) rmSync(join(p.outDir, r.rel), { force: true })
+  for (const r of rows.filter((r) => r.state === 'orphan-edited')) console.log(c.yellow(`! kept ${r.rel}: no longer generated, but edited since — delete it yourself if it's unused`))
+  const reformatted = rows.filter((r) => r.state === 'reformatted')
+  if (reformatted.length) console.log(c.yellow(`! ${reformatted.length} file(s) had been reformatted by a formatter; regenerated. ${formatterHint(p)}`))
   const lock = { generator: `fluid-design ${SKILL_VERSION}`, build: buildId, stack: p.structure.output.stack, files: Object.fromEntries(Object.entries(files).map(([k, v]) => [k, fileHash(v)])) }
   writeFileSync(join(p.outDir, LOCK), JSON.stringify(lock, null, 2) + '\n')
   const out = relative(process.cwd(), p.outDir) || '.'
   console.log(`${c.green('✓')} ${out}: ${Object.keys(files).length} files (${changed.length} changed) · build ${buildId}`)
 }
 
+// ── formatters ──────────────────────────────────────────────────────────
+
+/** Which formatter the project runs, if any: Prettier or Biome would
+ * rewrite the generated files on save or commit. */
+function detectFormatter(root) {
+  let deps = {}
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+    deps = { ...pkg.dependencies, ...pkg.devDependencies }
+  } catch {}
+  const any = (names) => names.some((n) => existsSync(join(root, n)))
+  if (deps['@biomejs/biome'] || any(['biome.json', 'biome.jsonc'])) return 'biome'
+  if (deps.prettier || any(['.prettierrc', '.prettierrc.json', '.prettierrc.js', '.prettierrc.cjs', '.prettierrc.mjs', '.prettierrc.yaml', '.prettierrc.yml', 'prettier.config.js', 'prettier.config.mjs', 'prettier.config.cjs'])) return 'prettier'
+  return null
+}
+
+function formatterHint(p) {
+  const rel = relative(p.dir, p.outDir).split(sep).join('/')
+  const f = detectFormatter(p.dir)
+  if (f === 'biome') return `exclude ${rel}/ in biome.json (files.ignore)`
+  return `add ${rel}/ to .prettierignore (or your formatter's ignore list)`
+}
+
+/** init: keep a formatter off the generated folder. Prettier's ignore file
+ * is plain text, so it is edited; biome.json may carry comments, so it is
+ * only named. Returns a line to print, or null. */
+function ignoreForFormatter(root, outDir) {
+  const f = detectFormatter(root)
+  const rel = relative(root, outDir).split(sep).join('/')
+  if (f === 'prettier') {
+    const file = join(root, '.prettierignore')
+    const cur = existsSync(file) ? readFileSync(file, 'utf8') : ''
+    if (cur.split(/\r?\n/).some((l) => l.trim().replace(/^\/|\/$/g, '') === rel)) return null
+    writeFileSync(file, `${cur}${cur && !cur.endsWith('\n') ? '\n' : ''}# generated by fluid-design: \`fluid generate\` owns these files\n${rel}/\n`)
+    return `${c.green('✓')} .prettierignore: ${rel}/ (generated files stay byte-exact, so fluid check can tell a hand edit)`
+  }
+  if (f === 'biome') return `${c.yellow('!')} Biome: add "${rel}/**" to files.ignore in biome.json, so it doesn't reformat the generated files`
+  return null
+}
+
 // ── check ───────────────────────────────────────────────────────────────
 
-function cmdCheck(flags) {
+async function cmdCheck(flags) {
   const path = findConfig(flags)
   if (!path) fail(`No fluid.config.json found here or above. Start with ${c.bold('fluid init')}.`, 2)
   const json = readJson(path)
@@ -171,6 +240,8 @@ function cmdCheck(flags) {
   // 1. generated files
   const { files } = buildOutput(p.structure)
   const { rows, lock } = diffOutput(p.outDir, files)
+  // A formatter's rewrite and a kept orphan are warnings; the rest fail.
+  const soft = new Set(['reformatted', 'orphan-edited'])
   const bad = rows.filter((r) => r.state !== 'ok')
   // Two versions of the CLI (a teammate's binary, CI's npx) generate
   // different stamps: name it, instead of a list of "stale" files.
@@ -179,44 +250,53 @@ function cmdCheck(flags) {
     warns++
   }
   if (bad.length) {
-    errors += bad.length
+    errors += bad.filter((r) => !soft.has(r.state)).length
+    warns += bad.filter((r) => soft.has(r.state)).length
     console.log(`${c.red('✗')} generated files are out of date (${relative(process.cwd(), p.outDir)}):`)
     for (const r of bad) {
-      const why = { missing: 'missing', stale: 'config changed since the last generate', 'hand-edited': 'edited by hand (it will be overwritten)', orphan: 'no longer generated' }[r.state]
+      const why = { missing: 'missing', stale: 'config or CLI version changed since the last generate', reformatted: `reformatted by a formatter (${formatterHint(p)})`, 'hand-edited': 'edited by hand (it will be overwritten)', unowned: `differs, and there is no ${LOCK} to tell whether by hand`, orphan: 'no longer generated', 'orphan-edited': 'no longer generated, and edited since (generate keeps it)' }[r.state]
       console.log(`    ${r.rel} — ${why}`)
     }
     console.log(`  run ${c.bold('fluid generate')}${bad.some((r) => r.state === 'hand-edited') ? ' (after moving hand edits into a setting)' : ''}`)
   } else console.log(`${c.green('✓')} generated files match fluid.config.json`)
 
-  // 2. settings
+  // 2. settings (info notes, like "your own --fluid-space-s token", only with --verbose)
   const { findings } = scanProject(p.structure, p.dir, p.outDir)
+  let infos = 0
   for (const f of findings) {
+    if (f.level === 'info') infos++
+    if (f.level === 'info' && !flags.verbose) continue
     const tag = f.level === 'error' ? c.red('✗') : f.level === 'warn' ? c.yellow('!') : c.dim('i')
     console.log(`${tag} ${f.file}:${f.line} ${f.message}`)
     if (f.level === 'error') errors++
     if (f.level === 'warn') warns++
   }
-  if (!findings.length) console.log(`${c.green('✓')} settings: nothing to flag`)
+  if (findings.length === infos) console.log(`${c.green('✓')} settings: nothing to flag${infos ? c.dim(` (${infos} note(s): fluid check --verbose)`) : ''}`)
 
-  // 3. A limit class on the site header limits the header but not the page's
-  //    --header-h (anchor offsets, hero padding read it on :root). The root
-  //    ui limit keeps both in step.
-  const p2 = p.structure.prefix
-  const headerLimit = new RegExp(`<header\\b[^>]*class(?:Name)?=[^>]*\\b(?:[\\w-]+:)*${p2}-(?:ui-)?grow-until-(\\[?\\d+\\]?)`, 'g')
-  for (const f of sourceFiles(p.dir, p.outDir)) {
-    const text = readFileSync(f, 'utf8')
-    for (const m of text.matchAll(headerLimit)) {
-      warns++
-      const line = text.slice(0, m.index).split('\n').length
-      console.log(`${c.yellow('!')} ${relative(p.dir, f)}:${line} a grow-until limit on <header> limits the header but not the page's --header-h (anchor offsets and hero padding read it on :root). For the site header, set :root { --fluid-ui-grow-until: ${m[1].replace(/[[\]]/g, '')}; } instead: it holds the header's ui units and --header-h together.`)
-    }
+  // 3. Source rules (the audit's, self-tested): a limit on <header>, a
+  //    tailwind-merge without withFluid, band variants mixed with
+  //    breakpoints, the removed fluid-desktop:, limits on children,
+  //    line-height modifiers that read as ratios.
+  const { runAudit, CHECK_RULES } = await import('./audit.mjs')
+  const audit = runAudit({ root: p.dir, prefix: p.structure.prefix, desktopVariant: 'lg', roles: p.structure.roles, stack: p.structure.output.stack, outDir: p.outDir, rules: CHECK_RULES })
+  for (const f of audit) {
+    if (f.severity === 'info' && !flags.verbose) continue
+    const tag = f.severity === 'error' ? c.red('✗') : f.severity === 'warn' ? c.yellow('!') : c.dim('i')
+    console.log(`${tag} ${f.rel}:${f.line} ${f.why} ${c.dim(f.fix)}`)
+    if (f.severity === 'error') errors++
+    if (f.severity === 'warn') warns++
   }
 
-  // 4. A cn/twMerge of the project's own that does not know the fluid utilities.
-  if (p.structure.output.stack === 'tailwind-v4') {
-    for (const f of mergeWithoutFluid(p.dir, p.outDir)) {
-      warns++
-      console.log(`${c.yellow('!')} ${relative(p.dir, f)} builds a tailwind-merge without withFluid: cn('lg:fluid-p-40', 'lg:fluid-p-24') keeps both there. Add the plugin: extendTailwindMerge(withFluid) (import { withFluid } from the generated cn.ts), or use the generated cn.`)
+  // 4. The px breakpoint ladder replaces @theme's; a rung you declare too
+  //    (a rem md: sorts after the px 2xl:) reorders the variants.
+  if (p.structure.output.stack === 'tailwind-v4' && p.structure.tailwind.breakpoints === 'ladder') {
+    for (const f of projectStyleFiles(p.dir, p.outDir)) {
+      const text = readFileSync(f, 'utf8')
+      for (const m of text.matchAll(/--breakpoint-([\w-]+)\s*:\s*([^;]+);/g)) {
+        errors++
+        const line = text.slice(0, m.index).split('\n').length
+        console.log(`${c.red('✗')} ${relative(p.dir, f)}:${line} --breakpoint-${m[1]}: ${m[2].trim()} competes with the fluid px ladder (fluid.css sets sm-2xl, lg = the desktop band). Remove it, or set "tailwind": { "breakpoints": "none" } in fluid.config.json and keep your own (lg must then be ${p.structure.bands.desktop.minWidth}px).`)
+      }
     }
   }
 
@@ -231,34 +311,7 @@ function cmdCheck(flags) {
     }
   }
   console.log(errors ? c.red(`${errors} problem(s)`) : c.green('OK') + (warns ? c.yellow(` (${warns} warning(s))`) : ''))
-  process.exit(errors ? 1 : 0)
-}
-
-/** Files that build their own tailwind-merge (a shadcn lib/utils.ts, a local cn)
- * without the fluid plugin: fluid classes would not merge there. */
-function mergeWithoutFluid(root, skip) {
-  const out = []
-  for (const f of sourceFiles(root, skip, /\.(ts|tsx|js|jsx|mjs)$/)) {
-    const t = readFileSync(f, 'utf8')
-    if (/from\s+['"]tailwind-merge['"]/.test(t) && !/\bwithFluid\b/.test(t)) out.push(f)
-  }
-  return out
-}
-
-const SOURCE_EXT = /\.(tsx|jsx|html|vue|svelte|astro|mdx)$/
-function sourceFiles(root, skip, ext = SOURCE_EXT) {
-  const out = []
-  const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      if (['node_modules', '.git', '.next', 'dist', 'build', 'out', '.turbo', '.vercel'].includes(name)) continue
-      const abs = join(dir, name)
-      if (abs === skip) continue
-      if (statSync(abs).isDirectory()) walk(abs)
-      else if (ext.test(name)) out.push(abs)
-    }
-  }
-  walk(root)
-  return out
+  process.exitCode = errors ? 1 : 0
 }
 
 // ── settings ────────────────────────────────────────────────────────────
@@ -304,37 +357,99 @@ function printExplain(structure, resolved, w, h, zoom, label) {
   }
 }
 
+function parseZoom(v) {
+  if (v === undefined) return 1
+  const z = Number(v)
+  if (!Number.isFinite(z) || z < 0.25 || z > 5) fail(`--zoom wants a factor between 0.25 and 5 (1.5 = 150%), got ${JSON.stringify(v)}`, 2)
+  return z
+}
+
 async function cmdExplain(flags, args) {
-  const p = project(flags)
   const [w, h] = parseWxH(args[0])
-  const zoom = flags.zoom ? Number(flags.zoom) : 1
-  const extra = Object.fromEntries(Object.entries(settingsFromFlags(p.structure, flags)).map(([k, v]) => [k, { value: v, source: '--set' }]))
+  const zoom = parseZoom(flags.zoom)
   if (flags.at && !flags.url) fail('--at reads an element on a live page: add --url http://localhost:3000 (offline, --set --fluid-grow-until=1680 asks the same what-if)', 2)
-  if (flags.url) {
-    if (IS_BINARY) needsNode('fluid explain --url')
-    const at = typeof flags.at === 'string' ? flags.at : null
-    const live = await readLiveSettings(flags.url, w, h, p.structure, at)
-    // Registered settings always compute to a value; only a non-default one was set by the page.
-    const defaults = Object.fromEntries(settingsSpec(p.structure).map((x) => [x.name, x.default]))
-    for (const [k, o] of Object.entries(live.overrides)) if (o.value === defaults[k]) delete live.overrides[k]
-    const resolved = resolveSettings(p.structure, { ...live.overrides, ...extra })
-    printExplain(p.structure, resolved, w, h, zoom, at ? `settings read at ${at} on ${flags.url}` : `settings read from ${flags.url}`)
-    const e = evaluate(p.structure, valuesOf(resolved), w, h, zoom)
-    const got = live.units
-    console.log('')
-    const rows = [['--fluid', e.fluid, got.fluid], ...p.structure.roles.map((r) => [`--fluid-${r}`, e.roles[r], got[r]]), ...(p.structure.ui ? [['--fluid-ui', e.ui, got.ui]] : [])]
-    let worst = 0
-    for (const [, exp, g] of rows) worst = Math.max(worst, Math.abs(exp - g))
-    if (Object.keys(extra).length) console.log(c.dim('  (--set changes the prediction only; the page is measured as it is)'))
-    else if (worst < 0.002) console.log(c.green(`  ✓ the ${at ? 'element' : "page"}'s units match (worst drift ${worst.toExponential(1)})`))
-    else if (at && !live.isScope) console.log(c.red(`  ✗ ${at} sets fluid settings but is not a scope, so its units are its nearest scope's. Add a limit utility, class="${p.structure.prefix}-scope" or data-fluid-scope to it.`))
-    else console.log(c.red(`  ✗ the ${at ? 'element' : 'page'}'s units drift by up to ${worst.toFixed(4)} — a stale stylesheet (close the tab, reopen) or a hand-edited fluid.css`))
-    if (live.build && live.build !== buildOutput(p.structure).buildId) console.log(c.yellow(`  ! the page was built from ${live.build}; this config generates ${buildOutput(p.structure).buildId} — run fluid generate, restart, reopen the tab`))
-    if (!at) printScopes(p.structure, live)
-    return
-  }
-  const { overrides } = scanProject(p.structure, p.dir, p.outDir)
+  if (flags.url) return explainLive(flags, w, h, zoom)
+  const p = project(flags)
+  const extra = Object.fromEntries(Object.entries(settingsFromFlags(p.structure, flags)).map(([k, v]) => [k, { value: v, source: '--set' }]))
+  const { overrides, variants = [] } = scanProject(p.structure, p.dir, p.outDir)
   printExplain(p.structure, resolveSettings(p.structure, { ...overrides, ...extra }), w, h, zoom, Object.keys(extra).length ? 'settings from your CSS, top-level :root, plus --set' : 'settings from your CSS, top-level :root')
+  if (variants.length) {
+    console.log('')
+    console.log(c.dim('  also set under a condition (not applied above):'))
+    for (const v of variants) console.log(c.dim(`    ${v.name}: ${num(v.value)}  on ${v.selector}  ← ${v.source}`))
+  }
+}
+
+/** explain --url (and probe): the live page against the model. Verdicts and
+ * exit codes: OK 0 · STALE / MISMATCH / V1 1 · MISSING 2. A v1 config works
+ * too: its migrated numbers are the expectation (a v1 page has no v2
+ * settings to read). */
+async function explainLive(flags, w, h, zoom) {
+  if (IS_BINARY) needsNode('fluid explain --url')
+  const { readLive, LiveError } = await import('./lib/live.mjs')
+  const { loadContext } = await import('./lib/context.mjs')
+  let ctx
+  try {
+    ctx = loadContext(flags.config)
+  } catch (err) {
+    fail(err.message, 2)
+  }
+  const structure = ctx.structure
+  const at = typeof flags.at === 'string' ? flags.at : null
+  const extra = Object.fromEntries(Object.entries(settingsFromFlags(structure, flags)).map(([k, v]) => [k, { value: v, source: '--set' }]))
+  let live
+  try {
+    live = await readLive(flags.url, { w, h, structure, at, zoom: flags.zoom === undefined ? null : zoom })
+  } catch (err) {
+    if (err instanceof LiveError) fail(err.message, 2)
+    throw err
+  }
+  let resolved
+  if (ctx.migration) resolved = ctx.resolved
+  else {
+    // Registered settings always compute to a value; only a non-default one was set by the page.
+    const defaults = Object.fromEntries(settingsSpec(structure).map((x) => [x.name, x.default]))
+    for (const [k, o] of Object.entries(live.overrides)) if (o.value === defaults[k]) delete live.overrides[k]
+    resolved = resolveSettings(structure, { ...live.overrides, ...extra })
+  }
+  const label = `${ctx.migration ? 'v1 config (migrated in memory); ' : ''}settings read ${at ? `at ${at} on` : 'from'} ${flags.url}${flags.zoom !== undefined ? `, emulated zoom ${zoom} (the runtime's variable, not browser zoom: fluid verify covers that)` : ''}`
+  if (!flags.brief) printExplain(structure, resolved, w, h, zoom, label)
+  const e = evaluate(structure, valuesOf(resolved), w, h, zoom)
+  const got = live.units
+  const rows = [['--fluid', e.fluid, got.fluid], ...structure.roles.map((r) => [`--fluid-${r}`, e.roles[r], got[r]]), ...(structure.ui ? [['--fluid-ui', e.ui, got.ui]] : [])]
+  let worst = 0
+  for (const [, exp, g] of rows) worst = Math.max(worst, Math.abs(exp - g))
+  const expectedBuild = ctx.migration ? null : buildOutput(structure).buildId
+  console.log('')
+  if (flags.brief) {
+    console.log(`  ${flags.url} @ ${w}x${h} (${e.band})`)
+    for (const [n, exp, g] of rows) console.log(`  ${n.padEnd(18)} page ${Number.isFinite(g) ? g.toFixed(4) : 'NaN'}   expected ${exp.toFixed(4)}`)
+    console.log('')
+  }
+  let verdict
+  if (!(got.fluid > 0)) verdict = 'MISSING'
+  else if (!ctx.migration && !live.build) verdict = 'V1'
+  else if (expectedBuild && live.build !== expectedBuild) verdict = 'STALE'
+  else if (worst >= 0.002 && !Object.keys(extra).length) verdict = at && !live.isScope ? 'NOT-A-SCOPE' : 'MISMATCH'
+  else verdict = 'OK'
+  const say = {
+    OK: c.green(`  ✓ OK: the ${at ? 'element' : 'page'}'s units match (worst drift ${worst.toExponential(1)})${Object.keys(extra).length ? c.dim(' — --set changes the prediction only; the page is measured as it is') : ''}`),
+    MISSING: c.red('  ✗ MISSING: no fluid unit resolves here — this page does not load the fluid stylesheet (wrong URL or build, or not wired up)'),
+    V1: c.yellow('  ! V1: the page runs a stylesheet with no --fluid-build stamp (v1, or hand-written); this config is v2: fluid generate, then load the new fluid.css'),
+    STALE: c.red(`  ✗ STALE: the page was built from ${live.build}; this config generates ${expectedBuild}. Run fluid generate, then close the tab and open a fresh one; if it persists, clear the build cache (rm -rf .next) and restart the dev server`),
+    MISMATCH: c.red(`  ✗ MISMATCH: current build, but the units drift by up to ${worst.toFixed(4)} — a hand-edited fluid.css, or a setting redeclared where fluid check doesn't look`),
+    'NOT-A-SCOPE': c.red(`  ✗ ${at} sets fluid settings but is not a scope, so its units are its nearest scope's. Add a limit utility, class="${structure.prefix}-scope" or data-fluid-scope to it.`)
+  }[verdict]
+  console.log(say)
+  if (!at && !flags.brief) printScopes(structure, live)
+  process.exitCode = verdict === 'OK' ? 0 : verdict === 'MISSING' ? 2 : 1
+}
+
+/** fluid probe <url> [--width 1440] [--height 900]: the one-shot freshness
+ * check, now explain --url --brief. */
+async function cmdProbe(flags, args) {
+  if (!args[0]) fail('fluid probe <url> [--width 1440] [--height 900]  (the same as: fluid explain 1440x900 --url <url> --brief)', 2)
+  return explainLive({ ...flags, url: args[0], brief: true }, Number(flags.width ?? 1440), Number(flags.height ?? 900), 1)
 }
 
 /** Every scope on the page (limit utilities, fluid-scope, data-fluid-scope):
@@ -356,102 +471,6 @@ function printScopes(structure, live) {
   }
 }
 
-async function readLiveSettings(url, w, h, structure, at = null) {
-  const pw = loadPlaywright()
-  const browser = await pw.chromium.launch()
-  try {
-    const page = await browser.newPage({ viewport: { width: w, height: h } })
-    await page.goto(url, { waitUntil: 'networkidle' })
-    const names = settingsSpec(structure).map((s) => s.name)
-    const units = ['fluid', ...structure.roles, ...(structure.ui ? ['ui'] : [])]
-    const scopeSel = scopeSelector(structure.prefix).replace(/:root,\n/, '')
-    const res = await page.evaluate(({ names, units, at, scopeSel, prefix }) => {
-      const read = (el) => {
-        const cs = getComputedStyle(el)
-        const out = {}
-        for (const n of names) {
-          const v = cs.getPropertyValue(n).trim()
-          if (v !== '' && Number.isFinite(Number(v))) out[n] = Number(v)
-        }
-        return out
-      }
-      const measure = (host) => {
-        const probe = document.createElement('div')
-        probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;height:0;padding:0;border:0'
-        host.appendChild(probe)
-        const got = {}
-        for (const u of units) {
-          probe.style.width = `calc(1000 * var(--fluid${u === 'fluid' ? '' : '-' + u}))`
-          got[u] = probe.getBoundingClientRect().width / 1000
-        }
-        probe.remove()
-        return got
-      }
-      const root = document.documentElement
-      const target = at ? document.querySelector(at) : root
-      if (!target) return { missing: true }
-      const settings = read(target)
-      const overrides = Object.fromEntries(Object.entries(settings).map(([k, v]) => [k, { value: v, source: at ? `the page, at ${at}` : 'the page' }]))
-      const result = { overrides, units: measure(at ? target : document.body), isScope: target === root || target.matches(scopeSel), build: getComputedStyle(root).getPropertyValue('--fluid-build').trim().replace(/^"|"$/g, '') }
-      if (at) return result
-      // Scopes: what each one sets beyond the page, and what inside follows the scale.
-      const rootSettings = read(root)
-      // By class/attribute, and anywhere a setting changes from the parent:
-      // an SCSS/StyleX scope (a mixin, no class) is only visible that way.
-      const all = [...document.querySelectorAll(scopeSel)]
-      const seen = new Set(all)
-      const memo = new Map([[root, JSON.stringify(rootSettings)]])
-      const key = (el) => {
-        if (!memo.has(el)) memo.set(el, JSON.stringify(read(el)))
-        return memo.get(el)
-      }
-      for (const el of [...document.body.querySelectorAll('*')].slice(0, 5000)) {
-        if (!seen.has(el) && el.parentElement && key(el) !== key(el.parentElement)) {
-          all.push(el)
-          seen.add(el)
-        }
-      }
-      const limitRe = new RegExp(`(^|:)${prefix}-(grow-until|ui-grow-until|shrink-until)-|(^|:)${prefix}-off$`)
-      const props = ['width', 'height', 'fontSize', 'paddingTop', 'paddingLeft', 'marginTop', 'gap', 'top', 'left']
-      result.scopes = all.slice(0, 20).map((el) => {
-        const own = read(el)
-        const settings = Object.fromEntries(Object.entries(own).filter(([k, v]) => rootSettings[k] !== v))
-        const cls = [...el.classList]
-        const label = `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${cls.length ? '.' + cls.slice(0, 4).join('.') : ''}${cls.length > 4 ? '…' : ''}`
-        const u = measure(el)
-        // Toggle the scale off (or back on) on this scope and count what moves.
-        let following = null
-        if (Math.abs(u.fluid - 1) > 0.02 || settings['--fluid-off'] === 1) {
-          const kids = [...el.querySelectorAll('*')].slice(0, 600)
-          const snap = () => kids.map((k) => { const cs = getComputedStyle(k); return props.map((p) => cs[p]).join('|') })
-          const before = snap()
-          const prev = el.style.getPropertyValue('--fluid-off')
-          el.style.setProperty('--fluid-off', own['--fluid-off'] === 1 ? '0' : '1')
-          const after = snap()
-          if (prev) el.style.setProperty('--fluid-off', prev)
-          else el.style.removeProperty('--fluid-off')
-          following = before.filter((b, i) => b !== after[i]).length
-        }
-        return { label, settings, units: u, following, limit: cls.some((c) => limitRe.test(c)) }
-      })
-      result.scopesTruncated = all.length > 20
-      return result
-    }, { names, units, at, scopeSel, prefix: structure.prefix })
-    if (res.missing) fail(`--at ${JSON.stringify(at)} matches nothing on ${url} at ${w}×${h}`, 2)
-    return res
-  } finally {
-    await browser.close()
-  }
-}
-
-export function loadPlaywright() {
-  for (const base of [join(process.cwd(), 'package.json'), import.meta.url]) {
-    try {
-      return createRequire(base)('playwright')
-    } catch {}
-  }
-  fail('playwright is not installed here: npm i -D playwright && npx playwright install chromium', 2)
-}
 
 // ── config files ────────────────────────────────────────────────────────
 
@@ -545,7 +564,8 @@ function cmdMigrate(flags) {
 
 const GLOBALS_CANDIDATES = [
   // Node frameworks
-  'src/app/globals.css', 'app/globals.css', 'src/styles/globals.css', 'styles/globals.css', 'src/index.css', 'src/main.css', 'src/styles/main.css', 'src/style.css', 'src/styles/main.scss', 'src/main.scss', 'styles/main.scss',
+  'src/app/globals.css', 'app/globals.css', 'src/styles/globals.css', 'styles/globals.css', 'src/index.css', 'src/main.css', 'src/styles/main.css', 'src/style.css',
+  'src/app/globals.scss', 'app/globals.scss', 'styles/globals.scss', 'src/styles/main.scss', 'src/main.scss', 'styles/main.scss',
   // no Node: Rails, Phoenix, Hugo, Django, plain HTML
   'app/assets/stylesheets/application.css', 'app/assets/stylesheets/application.scss', 'app/assets/tailwind/application.css', 'assets/css/app.css', 'assets/css/main.css', 'assets/scss/main.scss', 'static/css/main.css', 'static/css/style.css', 'css/style.css', 'style.css', 'styles.css'
 ]
@@ -559,11 +579,17 @@ function detectProject(root) {
   const integration = deps.next ? 'next' : deps.vite ? 'vite' : 'none'
   const globals = GLOBALS_CANDIDATES.find((f) => existsSync(join(root, f))) ?? null
   const globalsText = globals ? readFileSync(join(root, globals), 'utf8') : ''
-  const stack = deps.tailwindcss || /@import\s+['"]tailwindcss['"]/.test(globalsText) ? 'tailwind-v4' : deps.sass || deps['sass-embedded'] || /\.s[ac]ss$/.test(globals ?? '') ? 'scss' : deps['@stylexjs/stylex'] ? 'stylex' : 'css'
+  // Tailwind 3 has no @utility/@custom-variant: the css stack, spent through arbitrary values.
+  const twVersion = String(deps.tailwindcss ?? '').replace(/^[^\d]*/, '')
+  const tailwind3 = /^[0-3](\.|$)/.test(twVersion) || /@tailwind\s+(base|utilities)/.test(globalsText)
+  const tailwind4 = !tailwind3 && (!!deps.tailwindcss || /@import\s+['"]tailwindcss['"]/.test(globalsText))
+  const stack = tailwind4 ? 'tailwind-v4' : deps.sass || deps['sass-embedded'] || /\.s[ac]ss$/.test(globals ?? '') ? 'scss' : deps['@stylexjs/stylex'] ? 'stylex' : 'css'
   const srcStyles = existsSync(join(root, 'src')) ? 'src/styles/fluid' : 'styles/fluid'
   // An existing site styles html/body itself: leave the base layer out.
-  const brownfield = /(^|[}\s,])(html|body)\s*[,{]/m.test(globalsText.replace(/\/\*[\s\S]*?\*\//g, ''))
-  return { integration, stack, globals, brownfield, node: !!pkg.name || Object.keys(deps).length > 0, outDir: globals && !['src/app', 'app', '.'].includes(dirname(globals)) ? `${dirname(globals)}/fluid` : srcStyles }
+  const brownfield = hasBaseRules(globalsText)
+  // Breakpoints the site declares itself: keep them, leave the ladder out.
+  const ownBreakpoints = [...globalsText.matchAll(/--breakpoint-([\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()])
+  return { integration, stack, tailwind3, ownBreakpoints, globals, brownfield, node: !!pkg.name || Object.keys(deps).length > 0, outDir: globals && !['src/app', 'app', '.'].includes(dirname(globals)) ? `${dirname(globals)}/fluid` : srcStyles }
 }
 
 /** --set name=value (repeatable) and --fluid-*=value → { '--fluid-…': number },
@@ -633,8 +659,10 @@ const wxh = (v) => {
 async function cmdInit(flags) {
   const root = process.cwd()
   const configPath = join(root, 'fluid.config.json')
-  if (existsSync(configPath) && !flags.force) fail(`fluid.config.json already exists. ${isV1(readJson(configPath)) ? `It is v1: run ${c.bold('fluid migrate --write')}.` : `Run ${c.bold('fluid generate')}, or init --force to start over.`}`, 2)
+  const existingV1 = existsSync(configPath) && isV1(readJson(configPath))
+  if (existsSync(configPath) && !flags.force) fail(`fluid.config.json already exists. ${existingV1 ? `It is v1: run ${c.bold('fluid migrate --write')}.` : `Run ${c.bold('fluid generate')}, or init --force to start over.`}`, 2)
   const det = detectProject(root)
+  if (det.tailwind3) console.log(c.yellow(`! Tailwind 3 found: the fluid utilities need Tailwind 4 (@utility). Using the css stack: spend the units in arbitrary values, e.g. p-[calc(24*var(--fluid))].`))
   const defaults = Object.fromEntries(settingsSpec(normaliseStructure({})).map((x) => [x.name, x.default]))
   const flagWxH = (k) => (flags[k] === undefined ? undefined : wxh(String(flags[k])) ?? fail(`--${k} wants WIDTHxHEIGHT, e.g. 1440x900`, 2))
   const flagInt = (k) => (flags[k] === undefined ? undefined : posInt(String(flags[k])) ?? fail(`--${k} wants a whole number of px`, 2))
@@ -681,7 +709,9 @@ async function cmdInit(flags) {
       stack: a.stack,
       base: !brownfield,
       integration: a.integration
-    }
+    },
+    // The site's own --breakpoint-* stay; the px ladder would compete with them.
+    ...(a.stack === 'tailwind-v4' && det.ownBreakpoints.length ? { tailwind: { breakpoints: 'none' } } : {})
   }
   let normalised
   try {
@@ -702,11 +732,27 @@ async function cmdInit(flags) {
   const settings = Object.entries(chosen).filter(([k, v]) => byName.has(k) && v !== byName.get(k).default)
   for (const [k, v] of settings) checkSettingValue(byName.get(k), v)
 
+  // Everything is decided and validated before anything is written: the
+  // hand-edit guard runs on the target folder first, so a refusal leaves
+  // the project exactly as it was.
+  const outDir = resolvePath(root, normalised.output.dir)
+  const pre = diffOutput(outDir, buildOutput(normalised).files).rows.filter((r) => r.state === 'hand-edited' || r.state === 'unowned')
+  if (pre.length && !flags.force) fail(`${c.red('Refusing to overwrite hand-edited files')} in ${relative(root, outDir)}:\n${pre.map((r) => `  ${r.rel}`).join('\n')}\nNothing was written. Run init --force to replace them.`, 2)
+  if (existingV1) {
+    copyFileSync(configPath, configPath.replace(/\.json$/, '.v1.json'))
+    console.log(`${c.yellow('!')} the v1 config is kept as fluid.config.v1.json (fluid migrate would have carried its numbers over; see its notes there)`)
+  }
   const { $schema, ...rest } = structure
   writeFileSync(configPath, prettyJson({ $schema, ...minimalStructure(rest) }) + '\n')
   writeFileSync(join(root, 'fluid.config.schema.json'), JSON.stringify(jsonSchema(), null, 2) + '\n')
-  console.log(`${c.green('✓')} fluid.config.json (${structure.output.stack}, ${structure.output.integration === 'none' ? 'no framework integration' : structure.output.integration}${brownfield ? ', brownfield: base off' : ''}${a.mobile ? '' : ', flat below desktop'})`)
-  cmdGenerate({ config: configPath })
+  console.log(`${c.green('✓')} fluid.config.json (${structure.output.stack}, ${structure.output.integration === 'none' ? 'no framework integration' : structure.output.integration}${brownfield ? ', brownfield: base off' : ''}${a.mobile ? '' : ', flat below desktop'}${structure.tailwind ? ', your own breakpoints kept' : ''})`)
+  if (structure.tailwind) {
+    const lg = det.ownBreakpoints.find(([k]) => k === 'lg')
+    console.log(c.dim(`  your @theme declares --breakpoint-${det.ownBreakpoints.map(([k]) => k).join('/-')}: the px ladder is off ("breakpoints": "none").${lg && lg[1] !== `${normalised.bands.desktop.minWidth}px` ? ` Set --breakpoint-lg: ${normalised.bands.desktop.minWidth}px so lg: and the desktop band switch together (now ${lg[1]}); fluid check enforces it.` : ''}`))
+  }
+  cmdGenerate({ config: configPath, force: flags.force })
+  const fmt = ignoreForFormatter(root, outDir)
+  if (fmt) console.log(fmt)
 
   const p = project({ config: configPath })
   const tw = p.structure.output.stack === 'tailwind-v4'
@@ -724,19 +770,19 @@ async function cmdInit(flags) {
   if (editable) {
     let css = readFileSync(globalsPath, 'utf8')
     if (!css.includes(importPath)) {
+      // Right after @import 'tailwindcss' when there is one, else after any
+      // @charset / @import / @layer header (never above @charset).
       const tailwindImport = /@import\s+['"]tailwindcss['"][^;]*;\n?/.exec(css)
-      css = tailwindImport ? css.replace(tailwindImport[0], `${tailwindImport[0].trimEnd()}\n${importLine}\n`) : `${importLine}\n${css}`
+      if (tailwindImport) css = css.replace(tailwindImport[0], `${tailwindImport[0].trimEnd()}\n${importLine}\n`)
+      else {
+        const at = findImportInsertion(css)
+        css = `${css.slice(0, at)}${at && !css.slice(0, at).endsWith('\n') ? '\n' : ''}${importLine}\n${css.slice(at)}`
+      }
       // Settings sit with your tokens: inside your first top-level :root, or a new one.
-      const rootRule = /^:root\s*\{/m.exec(css)
-      if (rootRule) {
-        let depth = 0
-        let i = rootRule.index + rootRule[0].length - 1
-        for (; i < css.length; i++) {
-          if (css[i] === '{') depth++
-          else if (css[i] === '}' && --depth === 0) break
-        }
-        const before = css.slice(0, i).replace(/\s*$/, '')
-        css = `${before}\n\n${starterLines.join('\n')}\n${css.slice(i)}`
+      const block = findRootBlock(css)
+      if (block) {
+        const before = css.slice(0, block.closeIndex).replace(/\s*$/, '')
+        css = `${before}\n\n${starterLines.join('\n')}\n${css.slice(block.closeIndex)}`
       } else css = `${css.trimEnd()}\n\n:root {\n${starterLines.join('\n')}\n}\n`
       writeFileSync(globalsPath, css)
       console.log(`${c.green('✓')} ${relative(root, globalsPath)}: added ${importLine}, and ${settingLines.length ? `${settingLines.length} setting(s)` : 'a commented settings starter'} in your :root`)
@@ -758,7 +804,8 @@ async function cmdInit(flags) {
   }
   // An existing cn (shadcn's lib/utils.ts, …): keep it, add the plugin.
   if (tw) {
-    const existing = mergeWithoutFluid(root, p.outDir)
+    const { runAudit } = await import('./audit.mjs')
+    const existing = [...new Set(runAudit({ root, prefix: p.structure.prefix, stack: p.structure.output.stack, outDir: p.outDir, rules: ['cn-without-withfluid'] }).map((f) => f.file))]
     if (existing.length) {
       const cnImport = toImport(relative(dirname(existing[0]), join(p.outDir, 'cn'))).replace(/\.ts$/, '')
       console.log('')
@@ -807,11 +854,10 @@ function toImport(rel) {
 // and runs on import.
 const TOOLS = {
   calc: () => import('./calc.mjs'),
-  probe: () => import('./probe.mjs'),
   verify: () => import('./verify-matrix.mjs'),
   audit: () => import('./audit.mjs')
 }
-const BROWSER_TOOLS = new Set(['probe', 'verify'])
+const BROWSER_TOOLS = new Set(['verify'])
 
 /** A standalone binary (bun build --compile) rather than node running the skill. */
 export const IS_BINARY = typeof process.versions.bun === 'string' && import.meta.url.includes('$bunfs')
@@ -832,11 +878,13 @@ async function runTool(name, args) {
 function cmdWatch(flags) {
   const path = findConfig(flags)
   if (!path) fail(`No fluid.config.json found here or above. Start with ${c.bold('fluid init')}.`, 2)
+  // An invalid save (a typo'd key, JSON half-written) prints its error and
+  // keeps watching: the next save retries.
   const once = () => {
     try {
       cmdGenerate({ ...flags, config: path, watch: undefined })
     } catch (err) {
-      console.error(c.red(err.message))
+      console.error(err instanceof CliError || err instanceof ConfigError ? err.message : c.red(err.stack ?? String(err)))
     }
   }
   once()
@@ -861,14 +909,17 @@ const HELP = `fluid ${SKILL_VERSION} — fluid-design
       terminal (Enter keeps each default); --yes, or no terminal, takes the defaults and flags.
   fluid generate [--dry] [--force] [--watch]
                                         write output.dir from fluid.config.json (--watch: on every save)
-  fluid check                           config, generated files, settings lint — non-zero on problems (CI)
+  fluid check [--verbose]               config, generated files, settings lint, source rules — non-zero on problems (CI)
   fluid settings [--json]               every setting with its default
   fluid explain <W>x<H> [--zoom 1.5] [--set --fluid-grow-until=1680]
-                [--url http://localhost:3000 [--at 'header']]
+                [--url http://localhost:3000 [--at 'header'] [--brief]]
                                         the band, every unit, and where each value came from; --url
-                                        reads the live page (and every limited scope on it), --at one element
+                                        reads the live page (and every limited scope on it), --at one
+                                        element; ends with a verdict: OK 0 · STALE/MISMATCH/V1 1 · MISSING 2
   fluid migrate [--write]               convert a v1 config
-  fluid calc | probe | verify | audit   the tools (calc.mjs, probe.mjs, verify-matrix.mjs, audit.mjs)
+  fluid probe <url> [--width 1440] [--height 900]
+                                        one-shot freshness verdict (explain --url --brief)
+  fluid calc | verify | audit           the tools (calc.mjs, verify-matrix.mjs, audit.mjs)
 
   --config <file>   use this config instead of the nearest fluid.config.json`
 
@@ -887,6 +938,8 @@ export async function main(argv = process.argv.slice(2)) {
       return cmdSettings(flags)
     case 'explain':
       return cmdExplain(flags, _)
+    case 'probe':
+      return cmdProbe(flags, _)
     case 'migrate':
       return cmdMigrate(flags)
     case undefined:
@@ -906,7 +959,18 @@ export async function main(argv = process.argv.slice(2)) {
 
 /** main() with the CLI's error handling: config errors are messages, not stacks. */
 export function run(argv) {
-  return main(argv).catch((err) => fail(err instanceof ConfigError ? err.message : err.stack ?? String(err), 2))
+  return main(argv).catch((err) => {
+    if (err instanceof CliError) {
+      console.error(err.message)
+      process.exitCode = err.code
+    } else if (err instanceof ConfigError) {
+      console.error(err.message)
+      process.exitCode = 2
+    } else {
+      console.error(err.stack ?? String(err))
+      process.exitCode = 2
+    }
+  })
 }
 
 const isMain = process.argv[1] && pathToFileURL(resolvePath(process.argv[1])).href === import.meta.url

@@ -35,6 +35,7 @@
     "!scripts/fixtures/configs",
     "!scripts/fixtures/v1-configs",
     "!scripts/lib/v1-math.mjs",
+    "!scripts/README.md",
     "assets",
     "references",
     "SKILL.md",
