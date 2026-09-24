@@ -385,8 +385,12 @@ layout is still active, at 1440, 1920 and 2560, with no horizontal overflow.
   driving real Safari zoom and the sidebar through Cua Driver, reading `assets/runtime/zoom-debug.html`.
 
   **Firefox** reports `outerWidth` and `screen.width` in zoomed CSS px too, so zoom shows only in
-  `devicePixelRatio`, mixed with the display's own ratio: 2.0 is a Retina screen at 100% or a 1×
-  screen at 200%. A real Firefox read 2.222 at 110%. A wrong factor inflates type, so Firefox reads 1.
+  `devicePixelRatio`, mixed with the display's own ratio. Measured on real Firefox 146 (Retina,
+  Cmd + driven through Cua Driver): `devicePixelRatio` 2, 2.222, 2.4, 2.609, 3, 3.333, 4 at 100, 110,
+  120, 133, 150, 170, 200%, while `outerWidth/innerWidth` stayed at 1.01–1.05 throughout (the rest is
+  Firefox's own sidebar). Firefox's steps overlap: 3 is Retina at 150% or 1× at 300%, 2.4 is Retina
+  at 120% or 1× at 240%. The screen size cannot break the tie, because a Retina Mac in "Larger Text"
+  mode reports what a 1× screen zoomed in does. A wrong factor inflates type, so Firefox reads 1.
   On Firefox, desktop-layout type on wide windows ignores zoom until the page falls through to
   mobile; the mobile arm makes that step small. Say so before promising WCAG 1.4.4 to a client.
 - **Check a browser yourself:** serve `assets/runtime/zoom-debug.html` next to `fluid-zoom.js`, open it,
