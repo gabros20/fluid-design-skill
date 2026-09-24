@@ -1,0 +1,147 @@
+/* fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+   fluid.css — import this once, globally:
+     @import './fluid/fluid.css';
+   Then set any setting you want to change in your own :root (settings.reference.css). */
+
+@import './base.css' layer(base);
+
+/* Settings: every tuning number, registered with its default. Override any of
+   them in your own :root (see settings.reference.css) — no regenerate. */
+@property --fluid-phone-base-width { syntax: '<number>'; inherits: true; initial-value: 390; }
+@property --fluid-phone-scale-min { syntax: '<number>'; inherits: true; initial-value: 0.82; }
+@property --fluid-phone-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.1; }
+@property --fluid-phone-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.85; }
+@property --fluid-phone-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --fluid-phone-container-width { syntax: '<number>'; inherits: true; initial-value: 560; }
+@property --fluid-phone-container-padding { syntax: '<number>'; inherits: true; initial-value: 24; }
+@property --fluid-phone-header-height { syntax: '<number>'; inherits: true; initial-value: 34; }
+@property --fluid-tablet-base-width { syntax: '<number>'; inherits: true; initial-value: 700; }
+@property --fluid-tablet-scale-min { syntax: '<number>'; inherits: true; initial-value: 1.1; }
+@property --fluid-tablet-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.3; }
+@property --fluid-tablet-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.85; }
+@property --fluid-tablet-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --fluid-tablet-container-width { syntax: '<number>'; inherits: true; initial-value: 560; }
+@property --fluid-tablet-container-padding { syntax: '<number>'; inherits: true; initial-value: 24; }
+@property --fluid-tablet-header-height { syntax: '<number>'; inherits: true; initial-value: 34; }
+@property --fluid-landscape-base-width { syntax: '<number>'; inherits: true; initial-value: 780; }
+@property --fluid-landscape-scale-min { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --fluid-landscape-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.2; }
+@property --fluid-landscape-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.85; }
+@property --fluid-landscape-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --fluid-landscape-container-width { syntax: '<number>'; inherits: true; initial-value: 560; }
+@property --fluid-landscape-container-padding { syntax: '<number>'; inherits: true; initial-value: 24; }
+@property --fluid-landscape-header-height { syntax: '<number>'; inherits: true; initial-value: 34; }
+@property --fluid-desktop-base-width { syntax: '<number>'; inherits: true; initial-value: 1440; }
+@property --fluid-desktop-base-height { syntax: '<number>'; inherits: true; initial-value: 900; }
+@property --fluid-desktop-fit-height { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --fluid-desktop-scale-min { syntax: '<number>'; inherits: true; initial-value: 0.58; }
+@property --fluid-desktop-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.62; }
+@property --fluid-desktop-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.33; }
+@property --fluid-desktop-container-width { syntax: '<number>'; inherits: true; initial-value: 1680; }
+@property --fluid-desktop-container-padding { syntax: '<number>'; inherits: true; initial-value: 80; }
+@property --fluid-desktop-header-height { syntax: '<number>'; inherits: true; initial-value: 48; }
+@property --fluid-header-inset { syntax: '<number>'; inherits: true; initial-value: 24; }
+@property --fluid-zoom-text-full { syntax: '<number>'; inherits: true; initial-value: 24; }
+@property --fluid-zoom-text-none { syntax: '<number>'; inherits: true; initial-value: 48; }
+
+/* phone — portrait phones, the 390 artboard (the default band) */
+:root, .fluid-scope {
+  --fluid-build: "2.0.0+8e3835eb";
+  --_fluid-base-w: var(--fluid-phone-base-width, 390);
+  --_fluid-base-h: var(--_fluid-base-w);
+  --_fluid-fit-h: 0;
+  --_fluid-min: var(--fluid-phone-scale-min, 0.82);
+  --_fluid-max: var(--fluid-phone-scale-max, 1.1);
+  --_fluid-knee: var(--_fluid-min);
+  --_fluid-ui-min: var(--_fluid-min);
+  --_fluid-display-d: var(--fluid-phone-display-damping, 0.85);
+  --_fluid-display-floor: var(--fluid-phone-display-floor, 0);
+  --_fluid-copy-d: var(--fluid-phone-copy-damping, 0.6);
+  --_fluid-copy-floor: var(--fluid-phone-copy-floor, 0);
+  --_fluid-cw: var(--fluid-phone-container-width, 560);
+  --_fluid-cw-grow: 0;
+  --_fluid-pad: var(--fluid-phone-container-padding, 24);
+  --_fluid-header-row: calc(var(--fluid-phone-header-height, 34) * 1px);
+}
+
+/* the formulas, written once — every band only changes the parameters above */
+:root, .fluid-scope {
+  --_fluid-w: calc(100vw * 1000 / var(--_fluid-base-w));
+  --_fluid-h: calc(100svh * 1000 / var(--_fluid-base-h) + (1 - var(--_fluid-fit-h)) * 1e9px);
+  --fluid: calc(max(calc(var(--_fluid-min) * 1000px), min(var(--_fluid-h), var(--_fluid-w), calc(var(--_fluid-max) * 1000px))) / 1000);
+  --fluid-z: calc(max(calc(var(--_fluid-min) * 1000px), min(calc(var(--_fluid-h) * var(--fluid-zoom, 1)), calc(var(--_fluid-w) * var(--fluid-zoom, 1)), calc(var(--_fluid-max) * 1000px))) / 1000);
+  --fluid-display: calc(max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-display-d) * max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-knee) * 1000px)) + (1 - var(--_fluid-display-d)) * 1000px), calc(var(--_fluid-display-floor) * 1000px)) / 1000);
+  --fluid-copy: calc(max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-copy-d) * max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-knee) * 1000px)) + (1 - var(--_fluid-copy-d)) * 1000px), calc(var(--_fluid-copy-floor) * 1000px)) / 1000);
+  --fluid-ui: calc(max(calc(var(--_fluid-ui-min) * 1000px), min(var(--_fluid-w), max(1000px, var(--_fluid-h)), calc(var(--_fluid-max) * 1000px))) / 1000);
+  --fluid-container-width: max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)));
+  --fluid-container-padding: calc(var(--_fluid-pad) * var(--fluid));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --browser-bar: calc(100lvh - 100svh);
+  --header-h: calc(var(--fluid-header-inset, 24) * var(--fluid) + var(--safe-top) + var(--_fluid-header-row));
+}
+
+/* tablet — 600px and wider: the phone design, scaled up */
+@media (width >= 600px) {
+  :root, .fluid-scope {
+    --_fluid-base-w: var(--fluid-tablet-base-width, 700);
+    --_fluid-min: var(--fluid-tablet-scale-min, 1.1);
+    --_fluid-max: var(--fluid-tablet-scale-max, 1.3);
+    --_fluid-display-d: var(--fluid-tablet-display-damping, 0.85);
+    --_fluid-display-floor: var(--fluid-tablet-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-tablet-copy-damping, 0.6);
+    --_fluid-copy-floor: var(--fluid-tablet-copy-floor, 0);
+    --_fluid-cw: var(--fluid-tablet-container-width, 560);
+    --_fluid-pad: var(--fluid-tablet-container-padding, 24);
+    --_fluid-header-row: calc(var(--fluid-tablet-header-height, 34) * 1px);
+  }
+}
+
+/* landscape — a phone on its side (500px tall or less): the phone design, scaled a bit */
+@media (orientation: landscape) and (height <= 500px) {
+  :root, .fluid-scope {
+    --_fluid-base-w: var(--fluid-landscape-base-width, 780);
+    --_fluid-min: var(--fluid-landscape-scale-min, 1);
+    --_fluid-max: var(--fluid-landscape-scale-max, 1.2);
+    --_fluid-display-d: var(--fluid-landscape-display-damping, 0.85);
+    --_fluid-display-floor: var(--fluid-landscape-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-landscape-copy-damping, 0.6);
+    --_fluid-copy-floor: var(--fluid-landscape-copy-floor, 0);
+    --_fluid-cw: var(--fluid-landscape-container-width, 560);
+    --_fluid-pad: var(--fluid-landscape-container-padding, 24);
+    --_fluid-header-row: calc(var(--fluid-landscape-header-height, 34) * 1px);
+  }
+}
+
+/* desktop — 1024px and wider: the 1440×900 artboard */
+@media (width >= 1024px) {
+  :root, .fluid-scope {
+    --_fluid-base-w: var(--fluid-desktop-base-width, 1440);
+    --_fluid-base-h: var(--fluid-desktop-base-height, 900);
+    --_fluid-fit-h: var(--fluid-desktop-fit-height, 1);
+    --_fluid-min: var(--fluid-desktop-scale-min, 0.58);
+    --_fluid-max: var(--fluid-desktop-scale-max, 1000000);
+    --_fluid-knee: calc(1024 / var(--_fluid-base-w));
+    --_fluid-ui-min: 0;
+    --_fluid-display-d: var(--fluid-desktop-display-damping, 0.62);
+    --_fluid-display-floor: var(--fluid-desktop-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-desktop-copy-damping, 0.33);
+    --_fluid-copy-floor: var(--fluid-desktop-copy-floor, 0);
+    --_fluid-cw: var(--fluid-desktop-container-width, 1680);
+    --_fluid-cw-grow: 1;
+    --_fluid-pad: var(--fluid-desktop-container-padding, 80);
+    --_fluid-header-row: calc(var(--fluid-desktop-header-height, 48) * var(--fluid-ui));
+  }
+}
+
+/* Settings apply to a subtree too: put class="fluid-scope" on an
+   element and set any --fluid-* setting on it. */
+
+/* The page container: centred, max width and side padding from the active band.
+   Apply once per section, to that section's own inner wrapper. */
+.fluid-container {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--fluid-container-width);
+  padding-inline: var(--fluid-container-padding);
+}

@@ -23,60 +23,26 @@
 import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { loadConfig, factors, cssUnits, unitVarsAt } from './lib/fluid-math.mjs'
+import { loadContext } from './lib/context.mjs'
+import { evaluate, resolveSettings, valuesOf } from './lib/model.mjs'
+import { settingsSpec, ConfigError } from './lib/spec.mjs'
+import { buildOutput } from './lib/emit/project.mjs'
 
 const UNIT_TOLERANCE = 0.002
 
-// Structural signatures of expression shapes THIS generator (current
-// version) can never produce — so a raw computed value matching one of
-// these is necessarily left over from an older/different build, not from a
-// generator bug in the CURRENT config. Anything that differs from the
-// expected expression WITHOUT matching one of these is reported as a plain
-// mismatch instead of "stale," because a fresh, correctly-timestamped build
-// can still disagree with the config it was supposedly built from (see
-// generate-fluid.mjs's SCSS-emitter bugs #1/#2 — a bug that was misdiagnosed
-// as a stale stylesheet in exactly this spot before this fix).
-const KNOWN_STALE_SIGNATURES = [
-  /clamp\(/, // a pre-rewrite desktop clamp()-based formula. Desktop rows only: the mobile arm's clamp(min, 100vw/N, max) below engageAt is current
-  /100vh\b/, // dvh/vh-based older formula; current generator always divides svh, never bare vh
-  /--fluid-fluid\b/ // the SCSS chrome-disabled string-concat bug's own literal (fixed in generate-fluid.mjs)
-]
+// How a unit row is checked: the page's OWN settings (the computed value of
+// every registered --fluid-* setting, so any override in the project's CSS
+// is included) go through model.evaluate(), and the result is compared with
+// the unit the page actually renders (a probe sized calc(1000 * var(--unit))).
+// That checks the generated formulas under whatever the project tuned.
+// Staleness is read off --fluid-build: the page says which build it came
+// from, and fluid.config.json says which build it should be.
 
-/** The exact expression cssUnits(cfg) would emit for `key` ('fluid'|'display'|'copy'|'chrome')
- * at `width` CSS px, or null if this property isn't emitted at all for this config
- * (e.g. --fluid-chrome when units.chrome.enabled is false). */
-function expectedRawExpr(cfg, units, key, width, height) {
-  const prop = key === 'fluid' ? '--fluid' : `--fluid-${key}`
-  const bucket = unitVarsAt(cfg, units, width, height)
-  return prop in bucket ? bucket[prop] : null
-}
-
-/** Collapses whitespace and strips a redundant leading zero before a decimal
- * point (`0.9px` -> `.9px`) so two computed-vs-expected expressions that are
- * the SAME value serialised two different ways never register as a
- * mismatch. Measured: the browser's `getComputedStyle` drops the leading
- * zero (and reformats `var()` internals) even when the raw text otherwise
- * matches the generator's own output character-for-character, which made
- * every passing unit row on `display`/`copy` (values built from `--fluid`
- * inside a further `calc()`) come back diagnosed "mismatch" despite
- * `pass: true` and `drift: 0`. */
-function normalizeExpr(s) {
-  if (typeof s !== 'string') return s
-  return s
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/(?<!\d)0+(\.\d)/g, '$1')
-}
-
-/** Distinguishes a genuinely stale build from any other kind of drift, so a
- * generator/config bug is never reported with "close the tab" advice that
- * cannot fix it. */
-function diagnoseUnitMismatch(raw, expected, engaged = true) {
-  if (raw === '') return 'missing'
-  if (expected === null) return raw === '' ? 'missing' : 'unexpected' // property shouldn't exist for this config at all
-  if (normalizeExpr(raw) === normalizeExpr(expected)) return 'match'
-  const signatures = engaged ? KNOWN_STALE_SIGNATURES : KNOWN_STALE_SIGNATURES.filter((re) => re.source !== 'clamp\\(')
-  if (signatures.some((re) => re.test(raw))) return 'stale'
+/** Why a failing unit row failed. */
+function diagnoseUnitMismatch(row, page, expectedBuild) {
+  if (!page.build && !page.hasFluid) return 'missing'
+  if (!page.build) return 'v1'
+  if (page.build !== expectedBuild) return 'stale'
   return 'mismatch'
 }
 
@@ -259,33 +225,36 @@ async function checkOverflow(page) {
   })
 }
 
-// The four custom properties are FIXED NAMES (`--fluid`, `--fluid-display`,
-// `--fluid-copy`, `--fluid-chrome`) regardless of `fluid.config.json`'s
-// `prefix` — only utility/class/function names move with `prefix`
-// (references/contract.md §1). `readUnits` therefore never takes a
-// prefix argument; reading `--${cfg.prefix}...` here would silently read
-// nothing at all on any project with a non-default prefix.
-async function readUnits(page) {
-  return page.evaluate(() => {
-    const names = ['', '-display', '-copy', '-chrome']
+// Custom-property names are fixed (--fluid, --fluid-<role>, --fluid-ui)
+// whatever `prefix` is; only utility/class names move with it.
+async function readUnits(page, structure) {
+  const names = settingsSpec(structure).map((x) => x.name)
+  const units = ['fluid', ...structure.roles, ...(structure.ui ? ['ui'] : [])]
+  return page.evaluate(({ names, units }) => {
     const cs = getComputedStyle(document.documentElement)
-    const raw = {}
-    for (const n of names) raw[n ? n.slice(1) : 'fluid'] = cs.getPropertyValue(`--fluid${n}`).trim()
-
+    const settings = {}
+    for (const n of names) {
+      const v = cs.getPropertyValue(n).trim()
+      if (v !== '' && Number.isFinite(Number(v))) settings[n] = Number(v)
+    }
     const probe = document.createElement('div')
     probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;top:-9999px;left:-9999px;height:0;'
     document.body.appendChild(probe)
-
     const resolved = {}
-    for (const n of names) {
-      const key = n ? n.slice(1) : 'fluid'
-      probe.style.width = `calc(1000 * var(--fluid${n}))`
+    for (const u of units) {
+      probe.style.width = `calc(1000 * var(--fluid${u === 'fluid' ? '' : '-' + u}))`
       const w = probe.getBoundingClientRect().width
-      resolved[key] = Number.isFinite(w) && w > 0 ? w / 1000 : NaN
+      resolved[u] = Number.isFinite(w) && w > 0 ? w / 1000 : NaN
     }
     probe.remove()
-    return { raw, resolved }
-  })
+    return {
+      settings,
+      resolved,
+      build: cs.getPropertyValue('--fluid-build').trim().replace(/^["']|["']$/g, ''),
+      hasFluid: cs.getPropertyValue('--fluid').trim() !== '',
+      zoom: Number(cs.getPropertyValue('--fluid-zoom').trim() || 1)
+    }
+  }, { names, units })
 }
 
 // [data-verify-grid] elements: the number of tracks the browser actually laid
@@ -322,7 +291,8 @@ async function checkFit(page, selector, innerHeight) {
 
 // ── one viewport ────────────────────────────────────────────────────────
 
-async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
+async function runViewport(browser, url, ctx, opts, viewport, isMobile) {
+  const { structure, expectedBuild } = ctx
   const context = await browser.newContext({ viewport })
   const page = await context.newPage()
   await page.goto(url, { waitUntil: 'networkidle' })
@@ -333,41 +303,24 @@ async function runViewport(browser, url, cfg, opts, viewport, isMobile) {
   // (a) overflow
   result.checks.overflow = await checkOverflow(page)
 
-  // (b) units — raw is the computed, UNEVALUATED expression text (what the
-  // stylesheet actually says); resolved is the probe-measured number.
-  // Printing raw next to expected is what makes a generator/config
-  // disagreement diagnosable on the spot instead of guessed at (§9).
-  const { raw, resolved } = await readUnits(page)
-  const expected = factors(cfg, viewport.width, viewport.height)
-  const expectedUnits = cssUnits(cfg)
-  const unitRows = ['fluid', 'display', 'copy', 'chrome'].map((key) => {
-    const r = resolved[key]
+  // (b) units: the page's own settings through the model, against what it renders.
+  const live = await readUnits(page, structure)
+  const values = valuesOf(resolveSettings(structure, live.settings))
+  const e = evaluate(structure, values, viewport.width, viewport.height, live.zoom)
+  const expected = { fluid: e.fluid, ...e.roles, ...(structure.ui ? { ui: e.ui } : {}) }
+  const overridden = Object.keys(live.settings).filter((k) => values[k] !== undefined && settingsSpec(structure).find((x) => x.name === k)?.default !== live.settings[k])
+  const unitRows = Object.keys(expected).map((key) => {
+    const r = live.resolved[key]
     const drift = Number.isFinite(r) ? Math.abs(r - expected[key]) : Infinity
-    const expectedExpr = expectedRawExpr(cfg, expectedUnits, key, viewport.width, viewport.height)
     const pass = drift <= UNIT_TOLERANCE
-    return {
-      unit: key,
-      raw: raw[key],
-      rawExpr: raw[key], // the exact computed expression text, alongside `expected` below
-      resolved: r,
-      expected: expected[key],
-      expectedExpr,
-      // Only computed for a failing row -- diagnoseUnitMismatch's job is to
-      // explain a FAILURE, and even after normalizeExpr a passing row can
-      // still carry harmless string drift (e.g. resolved var() internals)
-      // that would otherwise print "mismatch" in report.json next to
-      // pass: true, drift: 0 and mislead anyone reading the JSON directly
-      // (the console table already only prints diagnosis for failing rows).
-      diagnosis: pass ? undefined : diagnoseUnitMismatch(raw[key], expectedExpr, viewport.width >= cfg.engageAt),
-      drift,
-      pass
-    }
+    return { unit: key, resolved: r, expected: expected[key], drift, pass, diagnosis: pass ? undefined : diagnoseUnitMismatch(key, live, expectedBuild) }
   })
-  const unitsPass = unitRows.every((u) => u.pass)
-  result.checks.units = { pass: unitsPass, rows: unitRows }
+  result.band = e.band
+  result.build = live.build
+  result.checks.units = { pass: unitRows.every((u) => u.pass), rows: unitRows, overridden }
 
   // (c) fit-selector, only meaningful at/above engageAt
-  if (viewport.width >= cfg.engageAt) {
+  if (viewport.width >= structure.bands.desktop.minWidth) {
     const fitResults = await checkFit(page, opts.fitSelector, viewport.height)
     result.checks.fit = { pass: fitResults.every((f) => f.pass), elements: fitResults }
   } else {
@@ -444,9 +397,10 @@ async function measureAtZoom(chromium, url, base, z, selector, shotPath = null) 
   }
 }
 
-async function runZoomRow(chromium, url, cfg, opts) {
+async function runZoomRow(chromium, url, ctx, opts) {
+  const desktopMin = ctx.structure.bands.desktop.minWidth
   const zooms = parseNumberList(opts.zoom)
-  const bases = parseWxHList(opts.zoomBases).filter((b) => b.width >= cfg.engageAt)
+  const bases = parseWxHList(opts.zoomBases).filter((b) => b.width >= desktopMin)
   const rows = []
   for (const base of bases) {
     const shot = (z) => (opts.screens ? join(opts.out, `zoom-${base.width}x${base.height}-${Math.round(z * 100)}.jpg`) : null)
@@ -478,7 +432,7 @@ async function runZoomRow(chromium, url, cfg, opts) {
         ...m,
         physical,
         ratio,
-        engaged: m.innerWidth >= cfg.engageAt,
+        engaged: m.innerWidth >= desktopMin,
         textPass,
         pass: textPass && m.overflow.pass
       })
@@ -521,14 +475,14 @@ function printZoomRow(zoom, strict) {
     const engagedTextFails = failed.filter((r) => r.engaged && !r.textPass)
     const mobileTextFails = failed.filter((r) => !r.engaged && !r.textPass)
     if (engagedTextFails.some((r) => r.fluidZoom === '')) {
-      console.log('  -> --fluid-zoom is unset: assets/runtime/fluid-zoom.js is not installed on this page. Inline')
-      console.log('     FLUID_ZOOM_INLINE in <head> (fluid-scale.md §12).')
+      console.log('  -> --fluid-zoom is unset: the zoom runtime is not installed on this page. Render <FluidHead/> (Next),')
+      console.log('     add fluidPlugin() (Vite), or inline FLUID_ZOOM_INLINE from runtime/zoom.js in <head> (fluid-scale.md §12).')
     } else if (engagedTextFails.some((r) => r.fluidZoom === '1')) {
       console.log('  -> fluid-zoom.js is installed but detected no zoom. Check it runs in the top window and that')
-      console.log('     the config has zoomCompensation: true (the type units must read var(--fluid-zoom, 1)).')
+      console.log('     fluid.config.json has zoom: true (the type units must read var(--fluid-zoom, 1)).')
     } else if (engagedTextFails.length > 0) {
-      console.log('  -> --fluid-zoom is set but type did not grow: the stylesheet predates zoomCompensation (regenerate')
-      console.log('     it), or this text is on --fluid / fluid-text-*, which are never compensated.')
+      console.log('  -> --fluid-zoom is set but type did not grow: the stylesheet was generated with zoom: false, or this')
+      console.log('     text is on --fluid (layout), which is never compensated.')
     }
     if (mobileTextFails.length > 0) {
       console.log('  -> mobile handover: at these zoom levels the CSS viewport dropped below engageAt and the page uses')
@@ -601,21 +555,19 @@ function printSummary(viewports) {
     if (!v.checks.units.pass) {
       for (const u of v.checks.units.rows.filter((r) => !r.pass)) {
         const name = u.unit === 'fluid' ? '--fluid' : `--fluid-${u.unit}`
-        console.log(`  unit ${name}: resolved ${u.resolved} vs expected ${u.expected.toFixed(4)} (drift ${Number.isFinite(u.drift) ? u.drift.toFixed(4) : 'n/a'})`)
-        console.log(`    raw (stylesheet):  ${u.rawExpr || '(empty)'}`)
-        console.log(`    expected (config): ${u.expectedExpr ?? '(not emitted for this config)'}`)
+        console.log(`  unit ${name} (${v.band}): resolved ${u.resolved} vs expected ${u.expected.toFixed(4)} (drift ${Number.isFinite(u.drift) ? u.drift.toFixed(4) : 'n/a'})`)
         switch (u.diagnosis) {
           case 'missing':
-            console.log('    -> missing: the stylesheet does not define this property on this page (missing build, wrong route, or genuinely not wired up)')
+            console.log('    -> missing: this page does not load the fluid stylesheet (wrong URL, a build without it, or not wired up)')
+            break
+          case 'v1':
+            console.log('    -> the page runs a v1 fluid stylesheet (no --fluid-build): regenerate with `fluid generate` and replace the old imports')
             break
           case 'stale':
-            console.log('    -> classic stale stylesheet (raw matches a known OLDER generated form): close the tab and open a fresh one, or rm -rf the build cache and restart the dev server')
+            console.log(`    -> stale stylesheet: the page was built from ${v.build}, fluid.config.json generates a different build. Run fluid generate, restart, and open a fresh tab`)
             break
           case 'mismatch':
-            console.log('    -> expression mismatch: config vs stylesheet — this is a fresh build that disagrees with fluid.config.json (a generator bug or a hand-edited stylesheet), not staleness; compare the two lines above')
-            break
-          case 'unexpected':
-            console.log('    -> this property should not be emitted for this config at all, but the stylesheet defines it anyway')
+            console.log('    -> current build, wrong number: fluid.css was edited by hand, or a unit is redeclared somewhere (fluid check lints that)')
             break
         }
       }
@@ -677,13 +629,16 @@ async function main() {
     process.exit(2)
   }
 
-  let cfg
+  let ctx
   try {
-    cfg = loadConfig(args.config)
+    ctx = loadContext(args.config)
   } catch (err) {
-    console.error(err.message)
+    console.error(err instanceof ConfigError ? err.message : String(err))
     process.exit(2)
   }
+  const { structure } = ctx
+  ctx.expectedBuild = ctx.migration ? null : buildOutput(structure).buildId
+  const desktopMax = ctx.resolved['--fluid-desktop-scale-max']?.value ?? null
 
   let widths, heights, mobiles
   try {
@@ -692,7 +647,7 @@ async function main() {
     // With the mobile arm on, the phone matrix spans the clamp: a small phone
     // (below the reference), the reference, a large phone, and a tablet on
     // the cap, so every arm of clamp(min, 100vw/ref, max) is checked.
-    const defaultMobile = cfg.mobile.enabled ? '320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194' : '390x844,375x667'
+    const defaultMobile = structure.bands.phone.enabled ? '320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194' : '390x844,375x667'
     mobiles = parseWxHList(args.mobile ?? defaultMobile)
   } catch (err) {
     console.error(`[verify-matrix] ${err.message}`)
@@ -705,9 +660,9 @@ async function main() {
   // emitter's ceiling bug in generate-fluid.mjs shipped unnoticed: every
   // default-matrix viewport at or below the reference never crosses it).
   const ceilingViewports = []
-  if (cfg.ceiling !== null) {
-    const w = Math.ceil(cfg.ceiling * 1.25 * cfg.reference.width)
-    const h = Math.ceil(cfg.ceiling * 1.25 * cfg.reference.height)
+  if (desktopMax !== null) {
+    const w = Math.ceil(desktopMax * 1.25 * ctx.resolved['--fluid-desktop-base-width'].value)
+    const h = Math.ceil(desktopMax * 1.25 * ctx.resolved['--fluid-desktop-base-height'].value)
     ceilingViewports.push({ width: w, height: h })
   }
 
@@ -733,16 +688,16 @@ async function main() {
   try {
     for (const h of heights) {
       for (const w of widths) {
-        viewports.push(await runViewport(browser, url, cfg, args, { width: w, height: h }, false))
+        viewports.push(await runViewport(browser, url, ctx, args, { width: w, height: h }, false))
       }
     }
     for (const cv of ceilingViewports) {
-      const r = await runViewport(browser, url, cfg, args, cv, false)
+      const r = await runViewport(browser, url, ctx, args, cv, false)
       r.ceilingCheck = true
       viewports.push(r)
     }
     for (const m of mobiles) {
-      viewports.push(await runViewport(browser, url, cfg, args, m, true))
+      viewports.push(await runViewport(browser, url, ctx, args, m, true))
     }
   } finally {
     await browser.close()
@@ -753,7 +708,7 @@ async function main() {
     zoom = { skipped: `the zoom row drives Chromium's zoom preference; run it with --browser chromium (this run: ${args.browser})`, rows: [] }
   } else if (args.zoom && args.zoom.trim().toLowerCase() !== 'none') {
     try {
-      zoom = await runZoomRow(chromium, url, cfg, args)
+      zoom = await runZoomRow(chromium, url, ctx, args)
     } catch (err) {
       zoom = { skipped: `could not launch Chromium with a zoom profile (${err.message.split('\n')[0]}); run npx playwright install chromium`, rows: [] }
     }
@@ -765,7 +720,7 @@ async function main() {
   const report = {
     url,
     browser: args.browser,
-    config: { prefix: cfg.prefix, reference: cfg.reference, engageAt: cfg.engageAt, ceiling: cfg.ceiling, zoomCompensation: cfg.zoomCompensation },
+    config: { structure, expectedBuild: ctx.expectedBuild, settings: Object.fromEntries(Object.entries(ctx.resolved).filter(([, r]) => r.source !== 'default').map(([k, r]) => [k, { value: r.value, source: r.source }])) },
     generatedAt: new Date().toISOString(),
     viewports,
     gridCols: gridColsReport,
@@ -775,6 +730,13 @@ async function main() {
   if (args.screens) writeContactSheet(args.out, viewports)
 
   printSummary(viewports)
+  const builds = [...new Set(viewports.map((v) => v.build).filter(Boolean))]
+  if (ctx.expectedBuild && builds.length && !builds.includes(ctx.expectedBuild)) {
+    console.log(`note: the page was built from ${builds.join(', ')}, fluid.config.json generates ${ctx.expectedBuild}. Run fluid generate and reload before trusting a PASS.`)
+    console.log('')
+  }
+  const tuned = [...new Set(viewports.flatMap((v) => v.checks.units.overridden ?? []))]
+  if (tuned.length) console.log(`settings the page overrides (checked with its own values): ${tuned.join(', ')}\n`)
   printGridColsReport(gridColsReport)
   printZoomRow(zoom, args.zoomStrict)
 

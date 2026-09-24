@@ -2,11 +2,11 @@
 // DISTANCE: a GSAP tween's x, a ScrollTrigger end, a canvas font size, a
 // Motion transform. CSS spends the units through calc(); script cannot,
 // because --fluid is an unregistered custom property and getPropertyValue
-// returns its formula text ("max(0.58px, min(…))"), not a number.
+// returns its formula text, not a number.
 //
 //   fluidPx(600)             600 drawn px on --fluid, in CSS px right now
-//   fluidPx(24, 'copy')      on --fluid-copy (display, copy, chrome too)
-//   fluidUnits()             { fluid, display, copy, chrome } px per drawn px
+//   fluidPx(24, 'copy')      on --fluid-copy (any role, or 'ui')
+//   fluidUnits()             { fluid, display, copy, ui, … } px per drawn px
 //   onFluidChange(cb)        cb(units) whenever any unit changes; returns unsubscribe
 //
 // How it reads them: one hidden, fixed-position probe per unit, sized
@@ -19,7 +19,10 @@
 //
 // Without the fluid-design stylesheet every unit reads 1 (`var(--fluid, 1px)`
 // fallbacks), and on the server (no document) too, so distances stay plain
-// reference px rather than NaN.
+// reference px rather than NaN. Changing a setting (--fluid-phone-scale-min,
+// …) resizes the probes, so onFluidChange fires for that too.
+//
+// `fluid generate` writes this file with UNITS set to the project's roles.
 //
 // With GSAP, pass FUNCTIONS so ScrollTrigger re-reads them on refresh
 // (which it already does on resize):
@@ -28,14 +31,15 @@
 // With Motion, the scroll-animation skill's useFluidUnit() wraps this in a
 // MotionValue. Both skills' references/fluid-interop.md have the recipes.
 
-var UNITS = ['fluid', 'display', 'copy', 'chrome']
-var VARS = {
-  fluid: 'var(--fluid, 1px)',
-  display: 'var(--fluid-display, var(--fluid, 1px))',
-  copy: 'var(--fluid-copy, var(--fluid, 1px))',
-  chrome: 'var(--fluid-chrome, var(--fluid, 1px))'
+var UNITS = ['fluid', 'display', 'copy', 'ui'] // @fluid-units
+var VARS = {}
+var ONE = {}
+for (var u = 0; u < UNITS.length; u++) {
+  VARS[UNITS[u]] = UNITS[u] === 'fluid' ? 'var(--fluid, 1px)' : 'var(--fluid-' + UNITS[u] + ', var(--fluid, 1px))'
+  ONE[UNITS[u]] = 1
 }
-var ONE = { fluid: 1, display: 1, copy: 1, chrome: 1 }
+// v1 name for the ui unit.
+var ALIASES = { chrome: 'ui' }
 
 var probes = null
 var cache = null
@@ -100,7 +104,7 @@ function notify() {
   })
 }
 
-/** Every unit in CSS px per drawn px: { fluid, display, copy, chrome }. */
+/** Every unit in CSS px per drawn px: { fluid, display, copy, ui, … }. */
 export function fluidUnits() {
   if (typeof document === 'undefined') return ONE
   ensureProbes()
@@ -110,7 +114,10 @@ export function fluidUnits() {
 /** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport. */
 export function fluidPx(n, unit) {
   if (n === undefined) n = 1
-  return n * fluidUnits()[unit || 'fluid']
+  var key = ALIASES[unit] || unit || 'fluid'
+  var f = fluidUnits()[key]
+  if (f === undefined) throw new Error('fluid-units: unknown unit "' + unit + '" (known: ' + UNITS.join(', ') + ')')
+  return n * f
 }
 
 /** Call `cb(units)` whenever any unit changes. Returns an unsubscribe function. */

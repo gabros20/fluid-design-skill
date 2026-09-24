@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+// fluid — the fluid-design CLI. `fluid help` for commands.
+import '../scripts/cli.mjs'

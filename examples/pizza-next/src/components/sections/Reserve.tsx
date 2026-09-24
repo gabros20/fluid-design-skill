@@ -1,5 +1,4 @@
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { Stage, StageItem } from '@/motion/components/Stage'
 import { PAGE_END_TRIGGER } from '@/motion/lib/triggers'
 
@@ -12,9 +11,9 @@ const HOURS = [
 /**
  * The reservation CTA and the footer, one dark band (`data-header-theme`).
  *
- * The CTA is ordinary page content on `--fluid`. The footer row is CHROME and
- * spends `--fluid-chrome` (width-always, never shrunk by a short window), via
- * arbitrary values: there is deliberately no `fluid-chrome-*` utility family.
+ * The CTA is ordinary page content on `--fluid`. The footer row is site UI and
+ * spends `--fluid-ui` (width-always, never shrunk by a short window) through
+ * the `fluid-ui-*` utilities.
  *
  * The last stage on the page uses PAGE_END_TRIGGER: a negative bottom margin
  * draws the trigger line inside the viewport, and the terminal screenful never
@@ -23,7 +22,7 @@ const HOURS = [
 export function Reserve() {
   return (
     <section id="reserve" data-header-theme="dark" className="w-full bg-surface-dark text-text-on-dark">
-      <div className={cn(FRAME, 'fluid-pt-112 fluid-pb-64 lg:fluid-pt-200 lg:fluid-pb-120')}>
+      <div className={cn('fluid-container', 'fluid-pt-112 fluid-pb-64 lg:fluid-pt-200 lg:fluid-pb-120')}>
         <Stage trigger="view" className="grid grid-cols-1 fluid-gap-48 lg:grid-cols-[minmax(0,800fr)_minmax(0,400fr)] lg:fluid-gap-80">
           <div>
             <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
@@ -70,9 +69,9 @@ export function Reserve() {
           trigger="view"
           margin={PAGE_END_TRIGGER}
           className={cn(
-            FRAME,
+            'fluid-container',
             'flex flex-col fluid-gap-12 fluid-py-32 fluid-copy-12 text-text-on-dark-muted sm:flex-row sm:items-center sm:justify-between',
-            'lg:py-[calc(32*var(--fluid-chrome))] lg:text-[calc(13*var(--fluid-chrome))]'
+            'lg:fluid-ui-py-32 lg:fluid-ui-text-13'
           )}
         >
           <StageItem variant="liftFade" className="[--hero-lift:12px]">

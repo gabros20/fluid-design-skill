@@ -1,0 +1,18 @@
+{
+  "name": "fluid-design",
+  "version": "2.0.0",
+  "description": "Viewport-fluid design scale: one config, CSS-variable settings, generated for Tailwind v4, CSS, SCSS and StyleX.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "fluid": "bin/fluid"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node scripts/generate-fluid.mjs --check",
+    "test:browsers": "node scripts/test/engine-matrix.mjs && node scripts/test/tailwind-compile.mjs",
+    "generate": "node scripts/generate-fluid.mjs"
+  }
+}

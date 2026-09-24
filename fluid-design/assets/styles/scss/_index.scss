@@ -1,0 +1,106 @@
+// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// _index.scss — functions and band mixins: @use 'fluid' as fd;
+
+// The units, settings and base styles are in fluid.css — import it once,
+// globally (from your JS entry, or @import in plain CSS). This module adds
+// the authoring side: functions that spend the units and band mixins.
+//
+//   @use 'fluid' as fd;   (with the folder that holds fluid/ on Sass loadPaths)
+//   .hero { @include fd.fluid-desktop { padding-block: fd.fluid(120); @include fd.fluid-type(64, 72); } }
+@use 'sass:math';
+
+// Every function takes the DRAWN number, unitless. `fluid(64px)` would be
+// calc(64px * var(--fluid)), length × length, which the browser drops
+// silently; the @error turns that into a build failure.
+@function _fluid-unitless($n, $fn) {
+  @if math.is-unitless($n) == false {
+    @error "fluid-design: #{$fn}() expects a unitless drawn number, got `#{$n}`.";
+  }
+  @return $n;
+}
+
+@function fluid($n) {
+  @return calc(#{_fluid-unitless($n, 'fluid')} * var(--fluid));
+}
+
+@function fluid-display($n) {
+  @return calc(#{_fluid-unitless($n, 'fluid-display')} * var(--fluid-display));
+}
+
+@function fluid-copy($n) {
+  @return calc(#{_fluid-unitless($n, 'fluid-copy')} * var(--fluid-copy));
+}
+
+@function fluid-ui($n) {
+  @return calc(#{_fluid-unitless($n, 'fluid-ui')} * var(--fluid-ui));
+}
+
+// Type on the base unit, for type in a box that scales with it. $size is
+// the FONT size its share of browser zoom is read from; pass it for a
+// line-height so the line box zooms with its text (fluid-type does).
+@function fluid-text($n, $size: $n) {
+  $n: _fluid-unitless($n, 'fluid-text');
+  @return calc(#{$n} * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * max(0, min(1, (var(--fluid-zoom-text-none, 48) - #{$size}) / (var(--fluid-zoom-text-none, 48) - var(--fluid-zoom-text-full, 24))))));
+}
+
+// A max-width that only grows.
+@function fluid-cap($n) {
+  $n: _fluid-unitless($n, 'fluid-cap');
+  @return max(#{$n}px, calc(#{$n} * var(--fluid)));
+}
+
+// Band mixins: exactly one matches at any viewport.
+@mixin fluid-phone {
+  @media (width < 600px) and (not ((orientation: landscape) and (height <= 500px))) {
+    @content;
+  }
+}
+@mixin fluid-tablet {
+  @media (600px <= width < 1024px) and (not ((orientation: landscape) and (height <= 500px))) {
+    @content;
+  }
+}
+@mixin fluid-landscape {
+  @media (width < 1024px) and (orientation: landscape) and (height <= 500px) {
+    @content;
+  }
+}
+@mixin fluid-desktop {
+  @media (width >= 1024px) {
+    @content;
+  }
+}
+
+// v1 name for the desktop band.
+@mixin fluid-up {
+  @include fluid-desktop {
+    @content;
+  }
+}
+
+// font-size + line-height together. $unit: display, copy, text, ui.
+@mixin fluid-type($size, $lh, $unit: display) {
+  @if $unit == display {
+    font-size: fluid-display($size);
+    line-height: fluid-display($lh);
+  } @else if $unit == copy {
+    font-size: fluid-copy($size);
+    line-height: fluid-copy($lh);
+  } @else if $unit == text {
+    font-size: fluid-text($size);
+    line-height: fluid-text($lh, $size);
+  } @else if $unit == ui {
+    font-size: fluid-ui($size);
+    line-height: fluid-ui($lh);
+  } @else {
+    @error "fluid-design: fluid-type() unit must be one of display, copy, text, ui, got `#{$unit}`.";
+  }
+}
+
+// The page container: once per section, on its inner wrapper.
+@mixin fluid-container {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--fluid-container-width);
+  padding-inline: var(--fluid-container-padding);
+}

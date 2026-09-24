@@ -1,7 +1,6 @@
 import Image from 'next/image'
 
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
 import { HeroPeelDrift } from './HeroPeelDrift'
@@ -34,7 +33,7 @@ export function Hero() {
       <Stage
         trigger="mount"
         className={cn(
-          FRAME,
+          'fluid-container',
           'relative flex min-h-[max(640px,100svh)] flex-col pt-[calc(var(--header-h)+40*var(--fluid))] fluid-pb-32',
           'lg:fluid-pb-40 lg:h-full lg:min-h-0 lg:pt-[calc(var(--header-h)+70*var(--fluid))]'
         )}

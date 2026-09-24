@@ -1,0 +1,59 @@
+/* fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+   base.css — imported by fluid.css as layer(base) when output.base is true. */
+
+/* The render half of a base layer: box-sizing, the overflow guard, iOS
+   quirks, focus. Nothing here is a tuning number. */
+
+/* Tailwind's Preflight sets this already; other stacks usually have no reset
+   that does, and without it the container's max-width caps the CONTENT box:
+   the page renders at max-width + 2 × padding, wider than drawn. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* No rubber-band past the page edge (nothing is painted back there). */
+  overscroll-behavior: none;
+  /* The horizontal-overflow guard lives HERE and only here: on body, or any
+     ancestor of a position: sticky element, it makes that element a scroll
+     container with a scroll range of 0 and sticky silently stops working.
+     Clip a single element with `overflow-x: clip` instead. */
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+  /* NO background-color here, on purpose: iOS 26 Safari tints its toolbar
+     from the page's edge backgrounds, falling back to body's. Let every
+     section carry its own surface. */
+  min-height: -webkit-fill-available;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+summary {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* --focus-ring is a token: define it with your colours. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring, #2563eb);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}

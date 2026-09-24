@@ -1,11 +1,67 @@
 @import 'tailwindcss';
-/* The skill's generated Tailwind v4 layer: :root units + the @utility set. */
-@import '../styles/fluid.css';
-@import '../styles/tokens.css';
-/* The stack-agnostic base layer. Imported INTO the base layer: unlayered it
-   would out-rank every Tailwind utility (unlayered beats layered), so its
-   `:focus-visible` outline would beat `outline-none` and friends. */
-@import '../styles/base.css' layer(base);
-/* The motion half of the old base.css (scroll-behavior, reduced-motion collapse, --fill,
-   noscript): the scroll-animation skill's motion-base.css since the skill split. */
+/* fluid-design: units, settings, base layer, breakpoints and every fluid-* utility.
+   Generated from fluid.config.json by `fluid generate`. */
+@import '../styles/fluid/fluid.css';
+/* The motion half of a base layer (scroll-behavior, reduced-motion collapse, --fill,
+   noscript): the scroll-animation skill's motion-base.css. */
 @import '../styles/motion-base.css' layer(base);
+
+/* Forno Aurelia tokens: a brand ramp, then semantic roles. Components use the ROLES only. */
+@theme {
+  /* No --breakpoint-* here: fluid.css ships the full px ladder, lg = the
+     desktop band. Redeclaring a rung mixes units and breaks variant order. */
+
+  /* ── Brand ramp ─────────────────────────────────────────────────────── */
+  --color-brand-white: #ffffff;
+  --color-brand-cream: #faf6ef;
+  --color-brand-sand-100: #f3e9da;
+  --color-brand-sand-300: #e6d3b6;
+  --color-brand-sand-500: #c9ad86;
+  --color-brand-ink-950: #12100e;
+  --color-brand-ink-900: #1b1815;
+  --color-brand-ink-700: #3a342e;
+  --color-brand-ink-500: #6b6259;
+  --color-brand-ink-300: #a39a90;
+  --color-brand-tomato-500: #c8412b;
+  --color-brand-tomato-700: #9e2f1d;
+
+  /* ── Semantic roles ─────────────────────────────────────────────────── */
+  --color-surface-page: var(--color-brand-white);
+  --color-surface-cream: var(--color-brand-cream);
+  --color-surface-sand: var(--color-brand-sand-100);
+  --color-surface-arc: var(--color-brand-sand-300);
+  --color-surface-dark: var(--color-brand-ink-950);
+  --color-surface-dark-raised: var(--color-brand-ink-900);
+  --color-surface-action: var(--color-brand-ink-950);
+  --color-surface-action-inverse: var(--color-brand-white);
+
+  --color-text-heading: var(--color-brand-ink-950);
+  --color-text-body: var(--color-brand-ink-700);
+  --color-text-muted: var(--color-brand-ink-500);
+  --color-text-on-dark: var(--color-brand-cream);
+  --color-text-on-dark-muted: var(--color-brand-ink-300);
+  --color-text-on-action: var(--color-brand-white);
+  --color-text-on-action-inverse: var(--color-brand-ink-950);
+  /* Tomato as TEXT on a light ground: the 700 step clears AA (6.9:1 on white). */
+  --color-text-accent-ink: var(--color-brand-tomato-700);
+
+  --color-border-primary: var(--color-brand-sand-300);
+  --color-border-strong: var(--color-brand-ink-950);
+  --color-border-on-dark: var(--color-brand-ink-700);
+
+  --color-accent: var(--color-brand-tomato-500);
+  --focus-ring: var(--color-brand-ink-950);
+
+  /* Faces, loaded by next/font in layout.tsx. */
+  --font-display: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-brand-white);
+}
+
+/* fluid settings: this site keeps every default. To tune one, set it here, e.g.
+     :root { --fluid-phone-scale-min: 0.8; }
+   Every setting is listed in ../styles/fluid/settings.reference.css. */

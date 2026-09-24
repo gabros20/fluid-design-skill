@@ -1,33 +1,11 @@
 {
   "$schema": "./fluid.config.schema.json",
-  "prefix": "fluid",
-  "reference": {
-    "width": 1440,
-    "height": 900
+  "version": 2,
+  "bands": {
+    "phone": true,
+    "tablet": { "minWidth": 600 },
+    "landscape": { "maxHeight": 500 },
+    "desktop": { "minWidth": 1024 }
   },
-  "canvas": {
-    "width": 1680,
-    "gutter": 80
-  },
-  "engageAt": 1024,
-  "heightAxis": true,
-  "units": {
-    "fluid": { "floor": 0.58 },
-    "display": {
-      "damping": 0.62,
-      "floor": "auto"
-    },
-    "copy": {
-      "damping": 0.33,
-      "floor": "auto"
-    },
-    "chrome": {
-      "enabled": true
-    }
-  },
-  "ceiling": null,
-  "mobile": { "enabled": true },
-  "utilities": { "negative": true, "logical": true, "basis": true, "scroll": true, "space": true, "rounded": true },
-  "zoomCompensation": true,
-  "zoomTextRange": [24, 48]
+  "output": { "integration": "next" }
 }

@@ -1,7 +1,6 @@
 import Image, { type StaticImageData } from 'next/image'
 
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
 import crudo from '../../../public/images/pinsa-crudo.png'
@@ -48,7 +47,7 @@ const PINSAS: Pinsa[] = [
 export function Menu() {
   return (
     <section id="menu" className="w-full bg-surface-page">
-      <div className={cn(FRAME, 'fluid-py-96 lg:fluid-py-160')}>
+      <div className={cn('fluid-container', 'fluid-py-96 lg:fluid-py-160')}>
         <Stage
           trigger="view"
           className="flex flex-col items-start justify-between fluid-gap-24 lg:flex-row lg:items-end lg:fluid-gap-40"

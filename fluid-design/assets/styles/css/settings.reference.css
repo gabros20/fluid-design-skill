@@ -1,0 +1,63 @@
+/* fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+   settings.reference.css — every setting, with its default. NOT imported. */
+
+/* To change one, copy its line into the :root in your own CSS (globals.css,
+   next to your tokens), uncomment it and set the number. Order does not
+   matter: the defaults are registered with @property, so your value wins.
+   Numbers only, no units. An invalid value falls back to the default.
+   `fluid check` lints them; `fluid explain 390x844` shows what each
+   resolves to. Changes apply live: no regenerate. */
+:root {
+  /* ── phone — portrait phones, the 390 artboard ───────────────────────────────── */
+  /* --fluid-phone-base-width: 390;            viewport width where 1 drawn px = 1 CSS px (the artboard width) */
+  /* --fluid-phone-scale-min: 0.82;            the unit never goes below this (smallest phones stop shrinking) */
+  /* --fluid-phone-scale-max: 1.1;             the unit never goes above this */
+  /* --fluid-phone-display-damping: 0.85;      display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-phone-display-floor: unset;       optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-phone-copy-damping: 0.6;          copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-phone-copy-floor: unset;          optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-phone-container-width: 560;       page container max width, drawn px (holds the phone design to a column on wide screens) */
+  /* --fluid-phone-container-padding: 24;      page container side padding, drawn px */
+  /* --fluid-phone-header-height: 34;          header row height, CSS px (not scaled on mobile) */
+
+  /* ── tablet — 600px and wider: the phone design, scaled up ───────────────────── */
+  /* --fluid-tablet-base-width: 700;           viewport width where the phone design is drawn 1:1 in this band */
+  /* --fluid-tablet-scale-min: 1.1;            the unit never goes below this (smallest phones stop shrinking) */
+  /* --fluid-tablet-scale-max: 1.3;            the unit never goes above this */
+  /* --fluid-tablet-display-damping: 0.85;     display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-tablet-display-floor: unset;      optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-tablet-copy-damping: 0.6;         copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-tablet-copy-floor: unset;         optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-tablet-container-width: 560;      page container max width, drawn px (holds the phone design to a column on wide screens) */
+  /* --fluid-tablet-container-padding: 24;     page container side padding, drawn px */
+  /* --fluid-tablet-header-height: 34;         header row height, CSS px (not scaled on mobile) */
+
+  /* ── landscape — a phone on its side (500px tall or less): the phone design, scaled a bit ─── */
+  /* --fluid-landscape-base-width: 780;        viewport width where the phone design is drawn 1:1 in this band */
+  /* --fluid-landscape-scale-min: 1;           the unit never goes below this (smallest phones stop shrinking) */
+  /* --fluid-landscape-scale-max: 1.2;         the unit never goes above this */
+  /* --fluid-landscape-display-damping: 0.85;  display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-landscape-display-floor: unset;   optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-landscape-copy-damping: 0.6;      copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-landscape-copy-floor: unset;      optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-landscape-container-width: 560;   page container max width, drawn px (holds the phone design to a column on wide screens) */
+  /* --fluid-landscape-container-padding: 24;  page container side padding, drawn px */
+  /* --fluid-landscape-header-height: 34;      header row height, CSS px (not scaled on mobile) */
+
+  /* ── desktop — 1024px and wider: the 1440×900 artboard ───────────────────────── */
+  /* --fluid-desktop-base-width: 1440;         viewport width where 1 drawn px = 1 CSS px (the artboard width) */
+  /* --fluid-desktop-base-height: 900;         artboard height: at this window height a 1:1 section fits exactly */
+  /* --fluid-desktop-fit-height: 1;            1 = a section drawn as tall as the artboard always fits the window; 0 = scale by width only */
+  /* --fluid-desktop-scale-min: 0.58;          the unit never goes below this (small, short windows stop shrinking) */
+  /* --fluid-desktop-scale-max: unset;         optional ceiling: stop growing on huge screens (unset = no ceiling) */
+  /* --fluid-desktop-display-damping: 0.62;    display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-desktop-display-floor: unset;     optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-desktop-copy-damping: 0.33;       copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size */
+  /* --fluid-desktop-copy-floor: unset;        optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) */
+  /* --fluid-desktop-container-width: 1680;    page container max width, drawn px (grows with the unit, never narrows below this in CSS px) */
+  /* --fluid-desktop-container-padding: 80;    page container side padding, drawn px */
+  /* --fluid-desktop-header-height: 48;        header row height, drawn px (scaled by --fluid-ui) */
+
+  /* ── everywhere ──────────────────────────────────────────────────────────────── */
+  /* --fluid-header-inset: 24;                 space above the header row, drawn px (plus the safe-area inset) */
+}

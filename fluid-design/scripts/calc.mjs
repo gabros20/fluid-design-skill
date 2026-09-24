@@ -1,43 +1,20 @@
 #!/usr/bin/env node
-// calc.mjs — a standalone calculator over fluid-math.mjs. No browser, no
-// project needed: given a config (or the shipped defaults) it prints the
-// resolved factors, a single rendered px value, or checks whether a drawn
-// row of widths fits the content budget at the reference viewport.
+// calc.mjs — the maths, with no browser. Reads the nearest fluid.config.json
+// and the settings your CSS sets (top-level :root), or --config.
 //
-// Usage:
-//   node calc.mjs [--config f] table [--w 1024,1280,1440,1680,2560] [--h 640,700,800,900,1440] [--raw]
-//   node calc.mjs [--config f] px <N> --unit display|copy|chrome|fluid --at WxH
-//   node calc.mjs [--config f] budget --widths 429,77,157,48,115,32,115,104,440
+//   node calc.mjs table [--w 320,390,820,1024,1440,2560] [--h 568,844,1180,640,900,1440] [--zoom 1] [--raw]
+//   node calc.mjs px <N> [--unit fluid|<role>|ui] --at WxH [--zoom 1]
+//   node calc.mjs budget --widths 429,77,157,48,115,32,115,104,440
 //
-// Exit codes: 0 = ok, 1 = budget OVER, 2 = usage/invocation error.
+// Exit codes: 0 ok, 1 budget OVER, 2 usage error.
 
-import { loadConfig, factors, resolveFloors, num } from './lib/fluid-math.mjs'
-
-// factors() from the lib returns a flat {1,1,1,1} below engageAt — the real
-// generated-CSS behaviour. --raw mode instead continues the same formula
-// past that cutoff, which is what fluid-scale.md §3's "Resolved factors"
-// table shows (it is exposition, not a claim about what ships below `lg`).
-// This mirrors factors()'s body exactly, minus its top engageAt gate, and
-// still sources floors from the lib's resolveFloors() rather than
-// re-deriving them.
-function rawFactors(cfg, w, h) {
-  const widthArm = w / cfg.reference.width
-  const heightArm = h / cfg.reference.height
-  const fluidRaw = cfg.heightAxis ? Math.min(widthArm, heightArm) : widthArm
-  let fluid = Math.max(cfg.units.fluid.floor, fluidRaw)
-  if (cfg.ceiling !== null) fluid = Math.min(cfg.ceiling, fluid)
-
-  const floors = resolveFloors(cfg)
-  const display = Math.max(floors.display, fluid, cfg.units.display.damping * fluid + (1 - cfg.units.display.damping))
-  const copy = Math.max(floors.copy, fluid, cfg.units.copy.damping * fluid + (1 - cfg.units.copy.damping))
-  let chrome = cfg.units.chrome.enabled ? Math.min(widthArm, Math.max(1, heightArm)) : fluid
-  if (cfg.ceiling !== null) chrome = Math.min(cfg.ceiling, chrome) // chrome does not read --fluid, so the ceiling wraps it separately — see fluid-math.mjs's factors()
-
-  return { fluid, display, copy, chrome }
-}
+import { loadContext } from './lib/context.mjs'
+import { evaluate, valuesOf } from './lib/model.mjs'
+import { ConfigError } from './lib/spec.mjs'
+import { num } from './lib/emit/engine.mjs'
 
 function parseArgs(argv) {
-  const out = { _: [], config: undefined, w: undefined, h: undefined, widths: undefined, unit: 'fluid', at: undefined, raw: false }
+  const out = { _: [], config: undefined, w: undefined, h: undefined, widths: undefined, unit: 'fluid', at: undefined, zoom: 1, raw: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--config') out.config = argv[++i]
@@ -46,186 +23,127 @@ function parseArgs(argv) {
     else if (a === '--widths') out.widths = argv[++i]
     else if (a === '--unit') out.unit = argv[++i]
     else if (a === '--at') out.at = argv[++i]
+    else if (a === '--zoom') out.zoom = Number(argv[++i])
     else if (a === '--raw') out.raw = true
-    else if (a.startsWith('--')) { console.error(`[calc] unknown flag ${a}`); process.exit(2) }
+    else if (a === '-h' || a === '--help') out.help = true
+    else if (a.startsWith('--')) usage(`unknown flag ${a}`)
     else out._.push(a)
   }
   return out
 }
 
-function parseNumberList(s, fallback) {
-  if (!s) return fallback
-  return s.split(',').map((x) => Number(x.trim()))
+const USAGE = `calc.mjs — the fluid maths, no browser.
+
+  table   [--w list] [--h list] [--zoom z] [--raw]   every unit at a set of viewports (zipped if the lists match)
+  px <N>  [--unit fluid|<role>|ui] --at WxH          one drawn number through one unit
+  budget  --widths N,N,…                             does a drawn desktop row fit the container at the artboard?
+
+  --config <file>   instead of the nearest fluid.config.json
+  --raw             run the desktop formula below the desktop band too (to see the curve's shape)`
+
+function usage(msg) {
+  if (msg) console.error(`[calc] ${msg}`)
+  console.error(USAGE)
+  process.exit(2)
 }
+
+const list = (s, d) => (s ? s.split(',').map((x) => Number(x.trim())) : d)
+const f3 = (n) => n.toFixed(3)
 
 function parseAt(s) {
   const m = /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/.exec(String(s ?? ''))
-  if (!m) {
-    console.error(`[calc] --at must look like WxH, e.g. 1280x800 (got ${JSON.stringify(s)})`)
-    process.exit(2)
-  }
-  return { w: Number(m[1]), h: Number(m[2]) }
+  if (!m) usage(`--at must look like 1280x800 (got ${JSON.stringify(s)})`)
+  return [Number(m[1]), Number(m[2])]
 }
 
-function fmt(n) {
-  return n.toFixed(3)
+/** Which arm of the unit binds: min, max, width, height. */
+function binding(structure, v, band, w, h, fluid) {
+  if (band === 'phone' && !structure.bands.phone.enabled) return 'flat'
+  const g = (k) => v[`--fluid-${band}-${k}`]
+  const min = g('scale-min')
+  const max = g('scale-max') ?? Infinity
+  if (fluid <= min + 1e-12 && w / g('base-width') < min) return 'min'
+  if (fluid >= max - 1e-12) return 'max'
+  if (band === 'desktop' && g('fit-height') && h / g('base-height') < w / g('base-width')) return 'height'
+  return 'width'
 }
 
-// ── table ───────────────────────────────────────────────────────────────
-//
-// Zips --w and --h index-wise (one row per pair) when the lists are the same
-// length — this is what reproduces fluid-scale.md §3's "Resolved factors"
-// table, whose rows are (height, width) pairs chosen to land on the SAME
-// --fluid value from either axis. If the lists differ in length, falls back
-// to a full width x height cross product (the "verify the matrix" shape from
-// fluid-scale.md §9.12).
-//
-// --raw ignores the engageAt cutoff (computes the formula as a continuous
-// function of viewport size, the way fluid-scale.md §3's table does) instead
-// of the real generated-CSS behaviour of flattening to 1 below engageAt.
-function cmdTable(cfg, args) {
-  const widths = parseNumberList(args.w, [1024, 1280, 1440, 1680, 2560])
-  const heights = parseNumberList(args.h, [640, 700, 800, 900, 1440])
-
-  const rows = []
-  if (widths.length === heights.length) {
-    for (let i = 0; i < widths.length; i++) rows.push([widths[i], heights[i]])
-  } else {
-    for (const h of heights) for (const w of widths) rows.push([w, h])
-  }
-
-  const floors = resolveFloors(cfg)
-  console.log(`config: reference ${cfg.reference.width}x${cfg.reference.height}, engageAt ${cfg.engageAt}${args.raw ? ' (ignored: --raw)' : ''}, floors fluid=${floors.fluid} display=${floors.display} copy=${floors.copy}`)
-  console.log('')
-  const header = ['width', 'height', 'arm', 'fluid', 'display', 'copy', 'chrome']
-  console.log(header.map((h, i) => h.padEnd(i === 2 ? 14 : 9)).join(''))
+function cmdTable(ctx, args) {
+  const s = ctx.structure
+  const v = valuesOf(ctx.resolved)
+  const widths = list(args.w, [320, 390, 430, 820, 844, 1024, 1280, 1440, 1440, 1920, 2560])
+  const heights = list(args.h, [568, 844, 932, 1180, 390, 640, 800, 900, 700, 1080, 1440])
+  const rows = widths.length === heights.length ? widths.map((w, i) => [w, heights[i]]) : heights.flatMap((h) => widths.map((w) => [w, h]))
+  const cols = ['width', 'height', 'band', 'binds', 'fluid', ...s.roles, ...(s.ui ? ['ui'] : []), 'container']
+  console.log(cols.map((c) => c.padEnd(10)).join(''))
   for (const [w, h] of rows) {
-    const f = args.raw ? rawFactors(cfg, w, h) : factors(cfg, w, h)
-    let arm
-    if (!args.raw && w < cfg.engageAt) {
-      if (!cfg.mobile.enabled) arm = 'below-engage'
-      else arm = f.band ?? 'phone'
-    } else {
-      const widthArm = w / cfg.reference.width
-      const heightArm = cfg.heightAxis ? h / cfg.reference.height : Infinity
-      const raw = cfg.heightAxis ? Math.min(widthArm, heightArm) : widthArm
-      const floored = Math.max(cfg.units.fluid.floor, raw)
-      if (cfg.ceiling !== null && floored >= cfg.ceiling) {
-        arm = 'ceiling'
-      } else {
-        arm = raw < cfg.units.fluid.floor ? 'floor' : (widthArm <= heightArm ? 'width' : 'height')
-      }
-    }
-    console.log([String(w), String(h), arm, fmt(f.fluid), fmt(f.display), fmt(f.copy), fmt(f.chrome)].map((c, i) => c.padEnd(i === 2 ? 14 : 9)).join(''))
+    const e = evaluate(s, v, w, h, args.zoom, args.raw ? 'desktop' : undefined)
+    console.log(
+      [String(w), String(h), e.band, binding(s, v, e.band, w, h, e.fluid), f3(e.fluid), ...s.roles.map((r) => f3(e.roles[r])), ...(s.ui ? [f3(e.ui)] : []), `${Math.round(e.containerWidth)}px`]
+        .map((c) => c.padEnd(10))
+        .join('')
+    )
   }
+  const set = Object.entries(ctx.resolved).filter(([, r]) => r.source !== 'default')
+  if (set.length) console.log(`\nsettings from your CSS: ${set.map(([k, r]) => `${k}=${num(r.value)}`).join(', ')}`)
 }
 
-// ── px ──────────────────────────────────────────────────────────────────
-
-function cmdPx(cfg, args) {
+function cmdPx(ctx, args) {
   const n = Number(args._[1])
-  if (!Number.isFinite(n)) {
-    console.error('[calc] px requires a number, e.g. node calc.mjs px 64 --unit display --at 1280x800')
-    process.exit(2)
-  }
-  if (!['fluid', 'display', 'copy', 'chrome'].includes(args.unit)) {
-    console.error(`[calc] --unit must be one of fluid|display|copy|chrome (got ${JSON.stringify(args.unit)})`)
-    process.exit(2)
-  }
-  const { w, h } = parseAt(args.at ?? `${cfg.reference.width}x${cfg.reference.height}`)
-  const f = factors(cfg, w, h)
-  const rendered = n * f[args.unit]
-  console.log(`${n} * var(--${cfg.prefix}${args.unit === 'fluid' ? '' : '-' + args.unit}) at ${w}x${h}  ->  ${num(rendered)}px  (factor ${fmt(f[args.unit])})`)
+  if (!Number.isFinite(n)) usage('px needs a number: calc.mjs px 64 --unit display --at 1280x800')
+  const s = ctx.structure
+  const units = ['fluid', ...s.roles, ...(s.ui ? ['ui'] : [])]
+  if (!units.includes(args.unit)) usage(`--unit must be one of ${units.join('|')}`)
+  const [w, h] = parseAt(args.at ?? '1440x900')
+  const e = evaluate(s, valuesOf(ctx.resolved), w, h, args.zoom)
+  const f = args.unit === 'fluid' ? e.fluid : args.unit === 'ui' ? e.ui : e.roles[args.unit]
+  console.log(`${n} * var(--fluid${args.unit === 'fluid' ? '' : '-' + args.unit}) at ${w}x${h} (${e.band})  ->  ${num(n * f)}px  (unit ${f3(f)})`)
 }
 
-// ── budget ──────────────────────────────────────────────────────────────
-//
-// fluid-scale.md §2: the drawn frame is wider than the reference, so a row
-// must be checked against the CONTENT budget at the reference (reference.width
-// - 2*gutter), not against canvas.width. When it overflows, §4.1's cqw escape
-// expresses each width as a fraction of the canvas content box
-// (canvas.width - 2*gutter) instead — exact at the frame width, and
-// incapable of overflowing because nothing is stated in absolute px anymore.
-function cmdBudget(cfg, args) {
-  const widths = parseNumberList(args.widths, undefined)
-  if (!widths || widths.length === 0) {
-    console.error('[calc] budget requires --widths, e.g. --widths 429,77,157,48,115,32,115,104,440')
-    process.exit(2)
-  }
+// A drawn desktop row must fit the container's content box AT THE ARTBOARD
+// (base-width − 2 × padding). When it does not, express each width as a
+// fraction of the container's content box instead (cqw): exact at the
+// container width, and unable to overflow.
+function cmdBudget(ctx, args) {
+  const widths = list(args.widths)
+  if (!widths?.length) usage('budget needs --widths, e.g. --widths 429,77,157,48,115,32,115,104,440')
+  const v = valuesOf(ctx.resolved)
+  const base = v['--fluid-desktop-base-width']
+  const pad = v['--fluid-desktop-container-padding']
+  const cw = v['--fluid-desktop-container-width']
   const sum = widths.reduce((a, b) => a + b, 0)
-  const referenceBudget = cfg.reference.width - 2 * cfg.canvas.gutter
-  const diff = sum - referenceBudget
-
+  const budget = Math.min(base, cw) - 2 * pad
   console.log(`row: ${widths.join(' + ')} = ${sum}`)
-  console.log(`content budget at reference (${cfg.reference.width} - 2*${cfg.canvas.gutter}) = ${referenceBudget}`)
-
-  if (diff <= 0) {
-    console.log(`PASS — ${-diff}px of margin at the reference.`)
+  console.log(`budget at the artboard: min(base-width ${base}, container-width ${cw}) − 2 × padding ${pad} = ${budget}`)
+  if (sum <= budget) {
+    console.log(`PASS — ${budget - sum}px to spare.`)
     return
   }
-
-  console.log(`OVER by ${diff}`)
-  const canvasBudget = cfg.canvas.width - 2 * cfg.canvas.gutter
-  console.log('')
-  console.log(`Suggested cqw fractions (N / (canvas.width - 2*gutter) = N / ${canvasBudget}), fluid-scale.md §4.1:`)
-  for (const wdt of widths) {
-    const cqw = (wdt / canvasBudget) * 100
-    console.log(`  ${wdt}  ->  ${cqw.toFixed(3)}cqw`)
-  }
+  console.log(`OVER by ${sum - budget}`)
+  const box = cw - 2 * pad
+  console.log(`\nAs fractions of the container's content box (N / ${box}), in cqw:`)
+  for (const w of widths) console.log(`  ${w}  ->  ${((w / box) * 100).toFixed(3)}cqw`)
   process.exitCode = 1
 }
 
-// ── help ────────────────────────────────────────────────────────────────
-
-const USAGE = `calc.mjs — a standalone calculator over fluid-math.mjs.
-
-Usage:
-  node calc.mjs [--config f] table [--w 1024,1280,1440,1680,2560] [--h 640,700,800,900,1440] [--raw]
-  node calc.mjs [--config f] px <N> --unit display|copy|chrome|fluid --at WxH
-  node calc.mjs [--config f] budget --widths 429,77,157,48,115,32,115,104,440
-
-Commands:
-  table   print the resolved factors (fluid/display/copy/chrome) at a matrix of viewports
-  px      render one drawn number through a unit at one viewport
-  budget  check whether a drawn row of widths fits the content budget at the reference viewport
-
-Options:
-  --config <file>   config file to load instead of the shipped defaults
-  -h, --help        print this message and exit
-
-Exit codes: 0 = ok, 1 = budget OVER, 2 = usage/invocation error.`
-
-// ── main ────────────────────────────────────────────────────────────────
-
 function main() {
-  const argv = process.argv.slice(2)
-  if (argv.includes('--help') || argv.includes('-h')) {
+  const args = parseArgs(process.argv.slice(2))
+  if (args.help) {
     console.log(USAGE)
-    process.exit(0)
+    return
   }
-
-  const args = parseArgs(argv)
-  const cmd = args._[0]
-  if (!cmd) {
-    console.error('usage: node calc.mjs [--config f] table|px|budget ...')
-    process.exit(2)
-  }
-
-  let cfg
+  let ctx
   try {
-    cfg = loadConfig(args.config)
+    ctx = loadContext(args.config)
   } catch (err) {
-    console.error(err.message)
+    console.error(err instanceof ConfigError ? err.message : String(err))
     process.exit(2)
   }
-
-  if (cmd === 'table') cmdTable(cfg, args)
-  else if (cmd === 'px') cmdPx(cfg, args)
-  else if (cmd === 'budget') cmdBudget(cfg, args)
-  else {
-    console.error(`[calc] unknown command ${JSON.stringify(cmd)} (expected table|px|budget)`)
-    process.exit(2)
-  }
+  const cmd = args._[0]
+  if (cmd === 'table') cmdTable(ctx, args)
+  else if (cmd === 'px') cmdPx(ctx, args)
+  else if (cmd === 'budget') cmdBudget(ctx, args)
+  else usage(cmd ? `unknown command ${cmd}` : '')
 }
 
 main()

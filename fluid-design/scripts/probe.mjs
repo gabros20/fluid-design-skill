@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// probe.mjs — a one-shot: load a URL in a real browser, read the four fluid
-// custom properties at the current viewport, compare them to what
-// fluid-math.mjs expects, and print a verdict.
+// probe.mjs — a one-shot: load a URL in a real browser, read the fluid units
+// and settings at one viewport, compare the units with what the model
+// computes from those settings, check the build stamp, and print a verdict.
 //
 // Usage:
 //   node probe.mjs <url> [--config f] [--width 1440] [--height 900]
@@ -24,14 +24,17 @@
 //
 // Exit codes: 0 = FRESH, 1 = STALE, 2 = MISSING or usage/invocation error.
 
-import { loadConfig, factors } from './lib/fluid-math.mjs'
+import { loadContext } from './lib/context.mjs'
+import { evaluate, resolveSettings, valuesOf } from './lib/model.mjs'
+import { settingsSpec, ConfigError } from './lib/spec.mjs'
+import { buildOutput } from './lib/emit/project.mjs'
 
 const HELP = `
 probe.mjs <url> [--config f] [--width 1440] [--height 900]
 
 Loads <url> in a real (headless) browser at the given viewport (default
 1440x900, the reference), reads the four fluid custom properties, and prints
-what they resolve to against what fluid-math.mjs expects for that viewport.
+what they resolve to against what the model computes from the page's own settings.
 
 Why "STALE" is a real verdict, not just "wrong":
   Next dev pushes CSS over the HMR socket. Restarting the dev server kills
@@ -60,30 +63,32 @@ function parseArgs(argv) {
   return out
 }
 
-// Same technique verify-matrix.mjs uses: getPropertyValue() on a custom
-// property returns its unevaluated expression string, not a number, so we
-// resolve each unit by measuring a probe element sized with it.
-async function resolveUnits(page, prefix) {
-  return page.evaluate((prefix) => {
-    const names = ['', '-display', '-copy', '-chrome']
+// A custom property's getPropertyValue() is its formula text, not a number,
+// so each unit is measured with a probe sized calc(1000 * var(--unit)). The
+// page's settings are read too (registered, so they compute to numbers), and
+// the expected units are computed from THEM: any override is accounted for.
+async function readPage(page, structure) {
+  const names = settingsSpec(structure).map((x) => x.name)
+  const units = ['fluid', ...structure.roles, ...(structure.ui ? ['ui'] : [])]
+  return page.evaluate(({ names, units }) => {
     const cs = getComputedStyle(document.documentElement)
-    const raw = {}
-    for (const n of names) raw[n ? n.slice(1) : 'fluid'] = cs.getPropertyValue(`--${prefix}${n}`).trim()
-
+    const settings = {}
+    for (const n of names) {
+      const v = cs.getPropertyValue(n).trim()
+      if (v !== '' && Number.isFinite(Number(v))) settings[n] = Number(v)
+    }
     const probe = document.createElement('div')
     probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;top:-9999px;left:-9999px;height:0;'
     document.body.appendChild(probe)
-
     const resolved = {}
-    for (const n of names) {
-      const key = n ? n.slice(1) : 'fluid'
-      probe.style.width = `calc(1000 * var(--${prefix}${n}))`
+    for (const u of units) {
+      probe.style.width = `calc(1000 * var(--fluid${u === 'fluid' ? '' : '-' + u}))`
       const w = probe.getBoundingClientRect().width
-      resolved[key] = Number.isFinite(w) && w > 0 ? w / 1000 : NaN
+      resolved[u] = Number.isFinite(w) && w > 0 ? w / 1000 : NaN
     }
     probe.remove()
-    return { raw, resolved }
-  }, prefix)
+    return { settings, resolved, build: cs.getPropertyValue('--fluid-build').trim().replace(/^["']|["']$/g, ''), zoom: Number(cs.getPropertyValue('--fluid-zoom').trim() || 1) }
+  }, { names, units })
 }
 
 async function main() {
@@ -94,13 +99,15 @@ async function main() {
   }
 
   const url = args._[0]
-  let cfg
+  let ctx
   try {
-    cfg = loadConfig(args.config)
+    ctx = loadContext(args.config)
   } catch (err) {
-    console.error(err.message)
+    console.error(err instanceof ConfigError ? err.message : String(err))
     process.exit(2)
   }
+  const { structure } = ctx
+  const expectedBuild = ctx.migration ? null : buildOutput(structure).buildId
 
   let chromium
   try {
@@ -114,60 +121,36 @@ async function main() {
   try {
     const page = await browser.newPage({ viewport: { width: args.width, height: args.height } })
     await page.goto(url, { waitUntil: 'networkidle' })
+    const live = await readPage(page, structure)
+    const e = evaluate(structure, valuesOf(resolveSettings(structure, live.settings)), args.width, args.height, live.zoom)
+    const expected = { fluid: e.fluid, ...e.roles, ...(structure.ui ? { ui: e.ui } : {}) }
 
-    const { raw, resolved } = await resolveUnits(page, cfg.prefix)
-    const expected = factors(cfg, args.width, args.height)
-
-    const allEmpty = Object.values(raw).every((v) => v === '')
-    const allNaN = Object.values(resolved).every((v) => Number.isNaN(v))
-
-    console.log(`probe: ${url}  @ ${args.width}x${args.height}`)
+    console.log(`probe: ${url}  @ ${args.width}x${args.height} (${e.band})`)
+    console.log(`build: page ${live.build || '(none: not a v2 stylesheet)'}${expectedBuild ? `, config ${expectedBuild}` : ''}`)
     console.log('')
-    console.log('unit         raw expression                                        resolved   expected   drift')
-    const rows = [
-      ['fluid', 'fluid'],
-      ['display', 'display'],
-      ['copy', 'copy'],
-      ['chrome', 'chrome']
-    ]
+    console.log('unit                 resolved   expected   drift')
     let maxDrift = 0
-    for (const [label, key] of rows) {
-      const r = resolved[key]
-      const e = expected[key]
-      const drift = Number.isFinite(r) ? Math.abs(r - e) : Infinity
+    let allNaN = true
+    for (const [key, exp] of Object.entries(expected)) {
+      const r = live.resolved[key]
+      if (Number.isFinite(r)) allNaN = false
+      const drift = Number.isFinite(r) ? Math.abs(r - exp) : Infinity
       maxDrift = Math.max(maxDrift, Number.isFinite(drift) ? drift : 0)
-      console.log(
-        `--${cfg.prefix}${key === 'fluid' ? '' : '-' + key}`.padEnd(16) +
-        (raw[key] || '(empty)').slice(0, 58).padEnd(59) +
-        (Number.isFinite(r) ? r.toFixed(4) : 'NaN').padEnd(11) +
-        e.toFixed(4).padEnd(11) +
-        (Number.isFinite(r) ? drift.toFixed(4) : '-')
-      )
+      console.log(`--fluid${key === 'fluid' ? '' : '-' + key}`.padEnd(21) + (Number.isFinite(r) ? r.toFixed(4) : 'NaN').padEnd(11) + exp.toFixed(4).padEnd(11) + (Number.isFinite(r) ? drift.toFixed(4) : '-'))
     }
     console.log('')
-
     let verdict
-    if (allEmpty && allNaN) {
-      verdict = 'MISSING'
-    } else if (maxDrift > 0.002) {
-      verdict = 'STALE'
-    } else {
-      verdict = 'FRESH'
-    }
-
+    if (allNaN) verdict = 'MISSING'
+    else if (maxDrift > 0.002 || (expectedBuild && live.build !== expectedBuild)) verdict = 'STALE'
+    else verdict = 'FRESH'
     console.log(`verdict: ${verdict}`)
     if (verdict === 'STALE') {
-      console.log('  The units are defined but do not match what this config expects at this')
-      console.log('  viewport -- almost always a stale stylesheet, not a code bug. Close the')
-      console.log('  tab and open a fresh one; if that persists, rm -rf .next (or the')
-      console.log('  equivalent build cache) and restart the dev server. Run with --help for')
-      console.log('  the full explanation.')
+      console.log('  The page is not running what fluid.config.json generates now — almost always a stale')
+      console.log('  stylesheet, not a code bug. Run fluid generate, then close the tab and open a fresh one;')
+      console.log('  if that persists, clear the build cache (rm -rf .next) and restart the dev server.')
     } else if (verdict === 'MISSING') {
-      console.log('  None of the four custom properties resolve to a number here -- this page')
-      console.log('  does not appear to define the fluid scale at all (wrong URL, a build that')
-      console.log('  predates it, or it genuinely is not wired up on this route).')
+      console.log('  No fluid unit resolves here: this page does not load the fluid stylesheet.')
     }
-
     process.exit(verdict === 'FRESH' ? 0 : verdict === 'STALE' ? 1 : 2)
   } finally {
     await browser.close()
