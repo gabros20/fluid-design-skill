@@ -224,10 +224,10 @@ try {
   let wlog = ''
   wchild.stdout.on('data', (d) => (wlog += d))
   wchild.stderr.on('data', (d) => (wlog += d))
-  await new Promise((res) => setTimeout(res, 500))
+  await new Promise((res) => setTimeout(res, 800))
   const rcfg2 = readFileSync(join(R, 'fluid.config.json'), 'utf8')
   writeFileSync(join(R, 'fluid.config.json'), '{"version": 2, "bandz": {}}')
-  await new Promise((res) => setTimeout(res, 500))
+  for (let i = 0; i < 40 && !wlog.includes('did you mean "bands"'); i++) await new Promise((res) => setTimeout(res, 100))
   const alive = wchild.exitCode === null
   writeFileSync(join(R, 'fluid.config.json'), rcfg2)
   await new Promise((res) => setTimeout(res, 500))

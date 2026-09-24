@@ -13,7 +13,7 @@
 // Every command finds fluid.config.json by walking up from the current
 // directory, or takes --config <file>.
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, readdirSync, statSync, watch } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, readdirSync, statSync, watchFile } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createInterface } from 'node:readline'
@@ -889,12 +889,11 @@ function cmdWatch(flags) {
   }
   once()
   console.log(c.dim(`watching ${relative(process.cwd(), path)} — Ctrl+C to stop`))
-  let timer
-  // Watch the directory: editors often replace the file instead of writing it.
-  watch(dirname(path), (event, name) => {
-    if (name !== 'fluid.config.json') return
-    clearTimeout(timer)
-    timer = setTimeout(once, 80)
+  // Polling one file's stat, not fs.watch: it sees an editor that replaces
+  // the file as well as one that writes it, and fs.watch on Windows missed
+  // saves and could crash libuv on a short (8.3) temp path (fs-event.c).
+  watchFile(path, { interval: 250 }, (cur, prev) => {
+    if (cur.mtimeMs !== prev.mtimeMs || cur.size !== prev.size) once()
   })
 }
 
