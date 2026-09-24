@@ -138,3 +138,19 @@ entrance tweens `.hero__pizza`. A plain % survives (the `-40%` centring), but a 
 The drift now lives on the `<img>` inside, which GSAP never tweens. Both skills' docs are corrected
 (`motion-architecture.md` §7, `fluid-interop.md` §3, `fluid-scale.md` §11), and the
 scroll-animation smoke test carries a canary that fails if GSAP ever stops folding.
+
+## Mobile arm, added 2026-09-24
+
+`fluid.config.json`: `mobile: { enabled: true, reference: 390, min: 0.85, max: 1.25 }`. Every
+base-level (mobile) length in `src/styles/main.scss` now goes through the unit functions with the
+390 frame's numbers (`padding-block: fd.fluid(96)`, `@include fd.fluid-type(56, 56, display)`,
+header and footer on `fd.fluid-chrome()`); the frame mixin's gutter is a scaled 24 instead of
+24 → 32px at 640. `(width >= 640px)` tablet steps stay px. The menu tile radius scales with the tile
+(`border-radius: fd.fluid(20)`, `utilities.rounded` on by default).
+
+- **No-op at the reference:** geometry of all 194 elements at 390×844, before vs after: 0 changed.
+- **Matrix:** PASS on every desktop cell and at 360×780, 390×844, 430×932, 768×1024.
+- **Zoom row:** every cell PASS; 1920×1080 at 200% went from 170% (flat mobile) to 212%.
+- **Motion:** `verify-motion --reveal --scenes` PASS at 1440×900, 390×844, 360×780, 768×1024; the
+  peel drift is still exact (120 / 192 / 93.33px).
+- Captures: `verify/mobile-arm/`.

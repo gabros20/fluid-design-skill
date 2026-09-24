@@ -406,7 +406,7 @@ Both numbers come straight from their frames. Without the arm the mobile half is
   site's mobile px to fluid utilities is visually a no-op at 390 and only changes the other widths.
   That is the check for a conversion: element geometry at 390×844 identical before and after.
 - **Keep off it:** input font sizes (iOS zooms into a focused input under 16px, and a fluid 16 is
-  15.6 on a 360 phone; keep inputs at a fixed 16px), text measures, borders, radii, tracking,
+  15.6 on a 360 phone; keep inputs at a fixed 16px), text measures, borders, tracking,
   entrance offsets, icons of 24px and under.
 - **Validated on the Next example** (`examples/pizza-next`, about 100 mobile values in 8 files):
   geometry of all 247 elements at 390×844 identical before and after the conversion; the full matrix

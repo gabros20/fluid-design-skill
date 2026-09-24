@@ -77,7 +77,6 @@ function engagedBlock(units, indent = '  ') {
 
 const NOT_SCALED_NOTE = `NOT SCALED, deliberately:
   - border and stroke WIDTHS — a scaled 1px hairline is a blurry 1.5px one.
-  - corner radii — there is nothing to scale on a square design.
   - tracking-*, letter-spacing — write it in \`em\`; that already follows
     font-size for free, so it never needs a fluid unit of its own.
   - standalone line-height outside the type utilities' own /lh modifier.
@@ -94,9 +93,9 @@ unitless number times a length (--fluid is 1px at the reference) resolves to
 a length. This is the single most common way to lose one of these utilities
 by hand-editing generated output — another reason not to.`
 
-const NEGATIVES_NOTE = `NEGATIVES have no separate utility. Put the sign inside an arbitrary
-value instead of doubling this file with a \`-<prefix>-top-*\` family that
-only a handful of call sites would ever use:
+const NEGATIVES_NOTE = `NEGATIVES: with utilities.negative on (default), margins, insets and
+translates take Tailwind's leading minus: -<prefix>-mt-8, lg:-<prefix>-top-24.
+With it off, put the sign inside an arbitrary value:
   lg:top-[calc(-8*var(--fluid))]`
 
 const ONE_SCALE_NOTE = `ONE SCALE, NO PER-SECTION RE-ANCHORING. A section drawn taller than the
@@ -408,7 +407,86 @@ ${NOT_SCALED_NOTE.split('\n').map((l) => '   ' + l).join('\n')}
   font-size: calc(--value(number) * ${textUnitExprRuntime(cfg, '--value(number)')});
   line-height: calc(--modifier(number) * ${textUnitExprRuntime(cfg, '--value(number)')});
 }
-`
+${buildExtraUtilities(p, cfg)}`
+}
+
+// The opt-in families (fluid.config.json \`utilities\`). Each is one @utility
+// per property on --fluid, the same shape as the core set above.
+const EXTRA_FAMILIES = {
+  logical: [
+    ['ps', 'padding-inline-start'], ['pe', 'padding-inline-end'],
+    ['ms', 'margin-inline-start'], ['me', 'margin-inline-end'],
+    ['start', 'inset-inline-start'], ['end', 'inset-inline-end'],
+    ['inset-x', 'inset-inline'], ['inset-y', 'inset-block']
+  ],
+  basis: [['basis', 'flex-basis']],
+  scroll: [['scroll-mt', 'scroll-margin-top'], ['scroll-pt', 'scroll-padding-top'], ['scroll-mb', 'scroll-margin-bottom'], ['scroll-pb', 'scroll-padding-bottom']],
+  rounded: [
+    ['rounded', 'border-radius'],
+    ['rounded-t', ['border-top-left-radius', 'border-top-right-radius']],
+    ['rounded-b', ['border-bottom-left-radius', 'border-bottom-right-radius']],
+    ['rounded-l', ['border-top-left-radius', 'border-bottom-left-radius']],
+    ['rounded-r', ['border-top-right-radius', 'border-bottom-right-radius']]
+  ]
+}
+// Properties that take a leading minus when utilities.negative is on.
+const NEGATABLE = [
+  ['m', 'margin'], ['mx', 'margin-inline'], ['my', 'margin-block'], ['mt', 'margin-top'], ['mb', 'margin-bottom'],
+  ['ml', 'margin-left'], ['mr', 'margin-right'], ['inset', 'inset'], ['top', 'top'], ['right', 'right'],
+  ['bottom', 'bottom'], ['left', 'left'], ['translate-x', null], ['translate-y', null]
+]
+const NEGATABLE_LOGICAL = [['ms', 'margin-inline-start'], ['me', 'margin-inline-end'], ['start', 'inset-inline-start'], ['end', 'inset-inline-end'], ['inset-x', 'inset-inline'], ['inset-y', 'inset-block']]
+
+function extraFamilies(u) {
+  return [
+    ...(u.logical ? EXTRA_FAMILIES.logical : []),
+    ...(u.basis ? EXTRA_FAMILIES.basis : []),
+    ...(u.scroll ? EXTRA_FAMILIES.scroll : []),
+    ...(u.rounded ? EXTRA_FAMILIES.rounded : [])
+  ]
+}
+
+function buildExtraUtilities(p, cfg) {
+  const u = cfg.utilities
+  const decl = (props, expr) => (Array.isArray(props) ? props : [props]).map((pr) => `  ${pr}: ${expr};`).join('\n')
+  const out = []
+  const fams = extraFamilies(u)
+  if (fams.length) {
+    out.push(`\n/* Opt-in families (utilities in fluid.config.json): ${Object.entries(u).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}.
+   Same shape as the core set: the drawn number, on --fluid.${u.rounded ? `
+   Radii scale (utilities.rounded): a corner is part of its box's shape,
+   so a fixed radius on a scaling box reads sharp on a big screen and blunt
+   on a small one. Border widths stay fixed regardless.` : ''} */`)
+    for (const [name, props] of fams) out.push(`@utility ${p}-${name}-* {\n${decl(props, 'calc(--value(number) * var(--fluid))')}\n}`)
+  }
+  if (u.space) {
+    out.push(`\n/* space-x/y: a gap for flow content that is not flex/grid (Tailwind's own
+   space-* shape: margin on every child but the last). */
+@utility ${p}-space-x-* {
+  :where(& > :not(:last-child)) {
+    margin-inline-end: calc(--value(number) * var(--fluid));
+  }
+}
+@utility ${p}-space-y-* {
+  :where(& > :not(:last-child)) {
+    margin-block-end: calc(--value(number) * var(--fluid));
+  }
+}`)
+  }
+  if (u.negative) {
+    out.push(`\n/* Negatives: Tailwind's leading minus, -${p}-mt-8. Margins, insets, translates. */`)
+    const list = [...NEGATABLE, ...(u.logical ? NEGATABLE_LOGICAL : [])]
+    for (const [name, prop] of list) {
+      if (name === 'translate-x') {
+        out.push(`@utility -${p}-translate-x-* {\n  --tw-translate-x: calc(--value(number) * -1 * var(--fluid));\n  translate: var(--tw-translate-x) var(--tw-translate-y);\n}`)
+      } else if (name === 'translate-y') {
+        out.push(`@utility -${p}-translate-y-* {\n  --tw-translate-y: calc(--value(number) * -1 * var(--fluid));\n  translate: var(--tw-translate-x) var(--tw-translate-y);\n}`)
+      } else {
+        out.push(`@utility -${p}-${name}-* {\n  ${prop}: calc(--value(number) * -1 * var(--fluid));\n}`)
+      }
+    }
+  }
+  return out.length ? out.join('\n') + '\n' : ''
 }
 
 const BREAKPOINT_TRAP_NOTE = `TAILWIND v4's BREAKPOINT-ORDERING TRAP: there is no tailwind.config to read a
@@ -518,6 +596,19 @@ function buildTokensExampleCss(cfg) {
   )
 }
 
+// tailwind-merge groups for the opt-in families. A negative class (-fluid-mt-8)
+// is parsed by tailwind-merge as the negative of fluid-mt-8, so it lands in
+// the same group with no extra registration.
+function cnExtraGroups(cfg) {
+  const p = cfg.prefix
+  const groups = { ps: 'ps', pe: 'pe', ms: 'ms', me: 'me', start: 'start', end: 'end', 'inset-x': 'inset-x', 'inset-y': 'inset-y', basis: 'basis', 'scroll-mt': 'scroll-mt', 'scroll-pt': 'scroll-pt', 'scroll-mb': 'scroll-mb', 'scroll-pb': 'scroll-pb', rounded: 'rounded', 'rounded-t': 'rounded-t', 'rounded-b': 'rounded-b', 'rounded-l': 'rounded-l', 'rounded-r': 'rounded-r' }
+  const names = extraFamilies(cfg.utilities).map(([n]) => n)
+  if (cfg.utilities.space) names.push('space-x', 'space-y')
+  if (!names.length) return ''
+  const key = (g) => (/^[a-z]+$/.test(g) ? g : `'${g}'`)
+  return ',\n\n      // Opt-in families (fluid.config.json utilities)\n' + names.map((n) => `      ${key(groups[n] ?? n)}: [fluid('${p}-${n}')]`).join(',\n')
+}
+
 function buildCnTs(cfg) {
   const p = cfg.prefix
   const groupsSpacing = [
@@ -590,7 +681,7 @@ ${spacingLines}
       left: [fluid('${p}-left')],
 
       'translate-x': [fluid('${p}-translate-x')],
-      'translate-y': [fluid('${p}-translate-y')]
+      'translate-y': [fluid('${p}-translate-y')]${cnExtraGroups(cfg)}
     }
   }
 })
@@ -690,13 +781,15 @@ function buildVanillaCss(cfg) {
   width: 100%;
   margin-inline: auto;
   max-width: ${num(cfg.canvas.width)}px;
-  padding-inline: 24px;
+${cfg.mobile.enabled ? `  /* Mobile arm: the phone frame's 24px gutter, scaled (30px at the 1.25 cap). */
+  padding-inline: calc(24 * var(--fluid));
+}` : `  padding-inline: 24px;
 }
 @media (width >= 640px) {
   .${p}-frame {
     padding-inline: 32px;
   }
-}
+}`}
 @media (width >= ${cfg.engageAt}px) {
   .${p}-frame {
     margin-inline: auto;
@@ -930,12 +1023,14 @@ $fluid-zoom-text-none: ${num(cfg.zoomTextRange[1])};
   width: 100%;
   margin-inline: auto;
   max-width: #{$fluid-canvas-width}px;
-  padding-inline: 24px;
+${cfg.mobile.enabled ? `  // Mobile arm: the phone frame's 24px gutter, scaled (30px at the 1.25 cap).
+  padding-inline: ${p}(24);
+` : `  padding-inline: 24px;
 
   @media (width >= 640px) {
     padding-inline: 32px;
   }
-
+`}
   @include ${p}-up {
     max-width: ${p}-cap($fluid-canvas-width);
     padding-inline: ${p}($fluid-canvas-gutter);
@@ -1495,6 +1590,22 @@ function checkFixtureInvariants(cfg, files, label, mismatches) {
       continue
     }
     exprs.set(rel, expr)
+  }
+  // Opt-in Tailwind families appear exactly when configured.
+  const tw = files['tailwind-v4/fluid.css']
+  if (tw) {
+    const u = cfg.utilities
+    const checks = [
+      ['negative', /@utility -/],
+      ['logical', /@utility [\w-]+-ps-\*/],
+      ['basis', /@utility [\w-]+-basis-\*/],
+      ['scroll', /@utility [\w-]+-scroll-mt-\*/],
+      ['space', /@utility [\w-]+-space-x-\*/],
+      ['rounded', /@utility [\w-]+-rounded-\*/]
+    ]
+    for (const [key, re] of checks) {
+      if (u[key] !== re.test(tw)) mismatches.push(`${label}: tailwind-v4/fluid.css ${u[key] ? 'lacks' : 'emits'} the ${key} family but utilities.${key} is ${u[key]}`)
+    }
   }
   const distinct = new Set(exprs.values())
   if (distinct.size > 1) {

@@ -3,8 +3,9 @@
 // Every drawn desktop number goes through a unit function inside
 // `fd.fluid-up`: fluid() for layout, fluid-text() for type whose box scales,
 // fluid-display()/fluid-copy() for type in a fixed measure, fluid-chrome()
-// for the header and footer. Mobile (< engageAt) is authored plainly above
-// each fluid-up block. Off the scale on purpose: borders, radii, em
+// for the header and footer. Mobile (< engageAt) spends the same unit
+// functions, drawn at the 390px phone frame's numbers (the mobile arm,
+// fluid-scale.md §13). Off the scale on purpose: borders, radii, em
 // tracking, fixed text measures, entrance distances.
 
 @use 'fluid/scss/fluid' as fd;
@@ -53,8 +54,7 @@ em {
 }
 
 .eyebrow {
-  font-size: 12px;
-  line-height: 16px;
+  @include fd.fluid-type(12, 16, copy);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -83,7 +83,7 @@ em {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
-  padding-top: calc(24px + var(--safe-top));
+  padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
   color: var(--header-ink, var(--text-heading));
   transition: color 0.3s linear;
   pointer-events: none;
@@ -101,7 +101,7 @@ em {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 34px;
+  height: fd.fluid-chrome(34);
   pointer-events: auto;
 
   @include fd.fluid-up {
@@ -111,7 +111,7 @@ em {
 }
 
 .wordmark {
-  font-size: 20px;
+  font-size: fd.fluid-chrome(20);
   line-height: 1;
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -139,9 +139,9 @@ em {
 }
 
 .site-header__cta {
-  font-size: 14px;
-  line-height: 18px;
-  padding: 7px 16px;
+  font-size: fd.fluid-chrome(14);
+  line-height: fd.fluid-chrome(18);
+  padding: fd.fluid-chrome(7) fd.fluid-chrome(16);
   border: 1px solid currentColor;
   border-radius: 999px;
   text-decoration: none;
@@ -176,10 +176,10 @@ em {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: fd.fluid(24);
   min-height: max(640px, 100svh);
-  padding-top: calc(var(--header-h) + 40px);
-  padding-bottom: 48px;
+  padding-top: calc(var(--header-h) + #{fd.fluid(40)});
+  padding-bottom: fd.fluid(48);
 
   @include fd.fluid-up {
     display: block;
@@ -213,8 +213,7 @@ em {
 .hero__title {
   position: relative;
   z-index: 1;
-  font-size: 56px;
-  line-height: 56px;
+  @include fd.fluid-type(56, 56, display);
   font-weight: 300;
   letter-spacing: -0.045em;
   text-align: center;
@@ -276,8 +275,7 @@ em {
   position: relative;
   z-index: 2;
   max-width: 340px;
-  font-size: 15px;
-  line-height: 22px;
+  @include fd.fluid-type(15, 22, copy);
   text-align: center;
   color: var(--text-body);
 
@@ -304,12 +302,11 @@ em {
   position: relative;
   z-index: 3;
   display: inline-block;
-  padding: 12px 28px;
+  padding: fd.fluid-copy(12) fd.fluid-copy(28);
   border-radius: 999px;
   background: var(--surface-dark);
   color: var(--text-inverse);
-  font-size: 14px;
-  line-height: 18px;
+  @include fd.fluid-type(14, 18, copy);
   font-weight: 500;
   letter-spacing: 0.04em;
   text-decoration: none;
@@ -329,7 +326,7 @@ em {
 // ── 2. Manifesto ──────────────────────────────────────────────────────
 .manifesto {
   background: var(--surface-light);
-  padding-block: 96px;
+  padding-block: fd.fluid(96);
 
   @include fd.fluid-up {
     padding-block: fd.fluid(160) fd.fluid(180);
@@ -341,7 +338,7 @@ em {
 .manifesto__measure {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: fd.fluid(20);
   max-width: 1100px;
 
   @include fd.fluid-up {
@@ -351,8 +348,7 @@ em {
 }
 
 .manifesto__text {
-  font-size: 28px;
-  line-height: 34px;
+  @include fd.fluid-type(28, 34, display);
   font-weight: 300;
   letter-spacing: -0.03em;
   color: var(--text-heading);
@@ -369,7 +365,7 @@ em {
 // ── 3. Menu ───────────────────────────────────────────────────────────
 .menu {
   background: var(--surface-flour);
-  padding-block: 80px;
+  padding-block: fd.fluid(80);
 
   @include fd.fluid-up {
     padding-block: fd.fluid(140);
@@ -379,8 +375,8 @@ em {
 .menu__head {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 40px;
+  gap: fd.fluid(16);
+  margin-bottom: fd.fluid(40);
 
   @include fd.fluid-up {
     gap: fd.fluid(20);
@@ -389,8 +385,7 @@ em {
 }
 
 .menu__title {
-  font-size: 40px;
-  line-height: 44px;
+  @include fd.fluid-type(40, 44, display);
   font-weight: 300;
   letter-spacing: -0.03em;
   color: var(--text-heading);
@@ -409,7 +404,7 @@ em {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
-  gap: 28px 14px;
+  gap: fd.fluid(28) fd.fluid(14);
 
   // The comparison box has to scale too. fluid-cap is GROW-ONLY, so on a
   // height-bound wide window (1680x700, --fluid 0.78) the frame stays
@@ -429,7 +424,7 @@ em {
 .card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: fd.fluid(10);
 
   @include fd.fluid-up {
     gap: fd.fluid(12);
@@ -440,9 +435,10 @@ em {
   display: grid;
   place-items: center;
   aspect-ratio: 4 / 3;
-  border-radius: 20px;
+  // The corner is part of the tile's shape, so it scales with the tile.
+  border-radius: fd.fluid(20);
   background: var(--plate, var(--surface-sand));
-  margin-bottom: 6px;
+  margin-bottom: fd.fluid(6);
 
   svg {
     width: 72%;
@@ -459,7 +455,7 @@ em {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  gap: fd.fluid(12);
 
   @include fd.fluid-up {
     gap: fd.fluid(12);
@@ -467,8 +463,7 @@ em {
 }
 
 .card__name {
-  font-size: 20px;
-  line-height: 26px;
+  @include fd.fluid-type(20, 26, copy);
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text-heading);
@@ -479,8 +474,7 @@ em {
 }
 
 .card__price {
-  font-size: 16px;
-  line-height: 26px;
+  @include fd.fluid-type(16, 26, copy);
   color: var(--text-accent);
   font-variant-numeric: tabular-nums;
 
@@ -490,8 +484,7 @@ em {
 }
 
 .card__desc {
-  font-size: 15px;
-  line-height: 22px;
+  @include fd.fluid-type(15, 22, copy);
   color: var(--text-muted);
 
   @include fd.fluid-up {
@@ -503,7 +496,7 @@ em {
 .numbers {
   background: var(--surface-dark);
   color: var(--text-inverse);
-  padding-block: 96px;
+  padding-block: fd.fluid(96);
 
   @include fd.fluid-up {
     padding-block: fd.fluid(160);
@@ -523,8 +516,8 @@ em {
 .stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 40px 20px;
-  margin-top: 40px;
+  gap: fd.fluid(40) fd.fluid(20);
+  margin-top: fd.fluid(40);
 
   @include fd.fluid-up {
     width: fd.fluid(1312);
@@ -538,8 +531,8 @@ em {
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 16px;
+  gap: fd.fluid(10);
+  padding-top: fd.fluid(16);
   border-top: 1px solid var(--border-inverse);
 
   @include fd.fluid-up {
@@ -551,9 +544,8 @@ em {
 .stat__value {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  font-size: 56px;
-  line-height: 56px;
+  gap: fd.fluid(6);
+  @include fd.fluid-type(56, 56, display);
   font-weight: 300;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
@@ -565,7 +557,7 @@ em {
 }
 
 .stat__unit {
-  font-size: 18px;
+  font-size: fd.fluid-copy(18);
   line-height: 1;
   letter-spacing: 0;
   color: var(--text-accent-inverse);
@@ -576,8 +568,7 @@ em {
 }
 
 .stat__label {
-  font-size: 14px;
-  line-height: 20px;
+  @include fd.fluid-type(14, 20, copy);
   color: var(--text-muted-inverse);
 
   @include fd.fluid-up {
@@ -618,7 +609,7 @@ em {
 }
 
 .act__frame {
-  padding-block: 96px;
+  padding-block: fd.fluid(96);
 
   @include fd.fluid-up {
     padding-block: fd.fluid(120);
@@ -628,7 +619,7 @@ em {
 .act__copy {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: fd.fluid(16);
   max-width: 560px;
 
   @include fd.fluid-up {
@@ -638,8 +629,7 @@ em {
 }
 
 .act__title {
-  font-size: 40px;
-  line-height: 44px;
+  @include fd.fluid-type(40, 44, display);
   font-weight: 300;
   letter-spacing: -0.03em;
 
@@ -649,8 +639,7 @@ em {
 }
 
 .act__body {
-  font-size: 16px;
-  line-height: 24px;
+  @include fd.fluid-type(16, 24, copy);
   color: var(--text-muted-inverse);
   max-width: 440px;
 
@@ -670,8 +659,8 @@ em {
 .footer__frame {
   display: flex;
   flex-direction: column;
-  gap: 48px;
-  padding-block: 72px 32px;
+  gap: fd.fluid-chrome(48);
+  padding-block: fd.fluid-chrome(72) fd.fluid-chrome(32);
 
   @include fd.fluid-up {
     gap: fd.fluid-chrome(80);
@@ -682,7 +671,7 @@ em {
 .footer__cols {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 32px;
+  gap: fd.fluid-chrome(32);
 
   @include fd.fluid-up {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -693,9 +682,9 @@ em {
 .footer__col {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  font-size: 15px;
-  line-height: 22px;
+  gap: fd.fluid-chrome(10);
+  font-size: fd.fluid-chrome(15);
+  line-height: fd.fluid-chrome(22);
   color: var(--text-muted-inverse);
 
   a {
@@ -710,8 +699,8 @@ em {
 }
 
 .footer__heading {
-  font-size: 12px;
-  line-height: 16px;
+  font-size: fd.fluid-chrome(12);
+  line-height: fd.fluid-chrome(16);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -724,7 +713,7 @@ em {
 }
 
 .footer__mark {
-  font-size: 64px;
+  font-size: fd.fluid-chrome(64);
   line-height: 1;
   font-weight: 300;
   letter-spacing: -0.05em;
@@ -736,8 +725,8 @@ em {
 }
 
 .footer__small {
-  font-size: 12px;
-  line-height: 16px;
+  font-size: fd.fluid-chrome(12);
+  line-height: fd.fluid-chrome(16);
   color: var(--text-muted-inverse);
 
   @include fd.fluid-up {

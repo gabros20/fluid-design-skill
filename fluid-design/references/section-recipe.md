@@ -22,8 +22,8 @@ animation (the `scroll-animation` skill).
    on ONE box (`frame-and-gutter.md`).
 5. **Swap every `lg:` number for its fluid twin, keeping the drawn number.** `lg:py-[120px]` becomes
    `lg:fluid-py-120`; `lg:gap-12` (48) becomes `lg:fluid-gap-48`; `lg:w-[512px]` becomes `lg:fluid-w-512`;
-   an absolutely positioned decoration at `top: 40px` becomes `lg:fluid-top-40`. Negatives go inside
-   the value: `lg:top-[calc(-8*var(--fluid))]`.
+   an absolutely positioned decoration at `top: 40px` becomes `lg:fluid-top-40`. Negatives take the
+   leading minus: `lg:-fluid-top-8` (`utilities.negative`, on by default).
 6. **Do not stop at the vertical values.** Scaling the whitespace while leaving the contents fixed is
    worse than scaling nothing: it changes the drawing's proportions rather than its size. A hero once
    shipped with its gaps on the scale, its title capped at 120px and its card frozen at 560. On a 5K it
@@ -40,8 +40,9 @@ animation (the `scroll-animation` skill).
     the scaling box (`frame-and-gutter.md` §3).
 11. **Grep the finished file** for a fixed px value that has no fluid twin at the breakpoint. Anything drawn
     in the frame that still reads as a constant is either a deliberate exclusion or a miss. What stays fixed on
-    purpose: border and stroke widths (a scaled 1px hairline is a blurry 1.5px one), radii, `em`
-    tracking, and text measures. `scripts/audit.mjs` does this grep for you.
+    purpose: border and stroke widths (a scaled 1px hairline is a blurry 1.5px one), `em`
+    tracking, and text measures. A px radius on a scaling box scales too (`fluid-rounded-*`), or the
+    corner reads sharp on a big screen and blunt on a small one. `scripts/audit.mjs` does this grep for you.
 12. **Verify the matrix, not one window:** 1024/1280/1440/1680/2560 wide × 640/700/800/900/1440 tall.
     Nothing overflows, no heading changes line count, and 1440×900 is pixel-identical to the frame.
 

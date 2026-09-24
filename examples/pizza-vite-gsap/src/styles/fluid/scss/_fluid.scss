@@ -139,11 +139,8 @@ $fluid-zoom-text-none: 48;
   width: 100%;
   margin-inline: auto;
   max-width: #{$fluid-canvas-width}px;
-  padding-inline: 24px;
-
-  @media (width >= 640px) {
-    padding-inline: 32px;
-  }
+  // Mobile arm: the phone frame's 24px gutter, scaled (30px at the 1.25 cap).
+  padding-inline: fluid(24);
 
   @include fluid-up {
     max-width: fluid-cap($fluid-canvas-width);
@@ -156,11 +153,11 @@ $fluid-zoom-text-none: 48;
 // Every declaration below is copied verbatim from cssUnits(cfg) — see the
 // note at the top of this file's Functions section.
 @mixin fluid-units {
-  --fluid: 1px;
-  --fluid-z: 1px;
-  --fluid-display: 1px;
-  --fluid-copy: 1px;
-  --fluid-chrome: 1px;
+  --fluid: clamp(0.85px, calc(100vw / 390), 1.25px);
+  --fluid-z: clamp(0.85px, calc(100vw / 390 * var(--fluid-zoom, 1)), 1.25px);
+  --fluid-display: max(0.91px, var(--fluid-z), calc(0.62 * var(--fluid-z) + 0.38px));
+  --fluid-copy: max(0.95px, var(--fluid-z), calc(0.33 * var(--fluid-z) + 0.67px));
+  --fluid-chrome: var(--fluid);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --browser-bar: calc(100lvh - 100svh);

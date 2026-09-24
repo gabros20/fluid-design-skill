@@ -259,13 +259,25 @@ const rules = [
           fix: `Write the drawn number through the fluid utility: ${engage}:${opts.prefix}-${m[1]}-${m[2]} (or the matching --fluid-display/--fluid-copy twin if this is type inside a fixed-width box).`
         })
       }
-      // Deliberate exclusions (info, not error): border/stroke widths, radii,
+      // A px radius on a scaling box: warn. The corner is part of the box's
+      // shape, so it scales with it (fluid-rounded-*); a hairline radius
+      // (<= 2px) is a deliberate crispness choice like a border width.
+      const radius = new RegExp(`\\b${engage}:(rounded(?:-[tblr])?)-\\[(\\d+(?:\\.\\d+)?)px\\]`, 'g')
+      while ((m = radius.exec(content))) {
+        if (Number(m[2]) <= 2) continue
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
+          why: 'A fixed px radius on a box that scales: the corner is part of the box\'s shape, so it reads sharp on a large screen and blunt on a small one (section-recipe.md step 11).',
+          fix: `Use ${engage}:${opts.prefix}-${m[1]}-${m[2]} (utilities.rounded, on by default). Leave it fixed only for a deliberately constant corner.`
+        })
+      }
+      // Deliberate exclusions (info, not error): border/stroke widths,
       // tracking, and max-w-* text measures are off the scale on purpose.
-      const allow = new RegExp(`\\b${engage}:(border(-[tlbrxy])?|stroke|rounded(-\\w+)?|tracking|max-w)-\\[(-?\\d+(?:\\.\\d+)?)(px|em)?\\]`, 'g')
+      const allow = new RegExp(`\\b${engage}:(border(-[tlbrxy])?|stroke|tracking|max-w)-\\[(-?\\d+(?:\\.\\d+)?)(px|em)?\\]`, 'g')
       while ((m = allow.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
-          why: 'Deliberately off the fluid scale: border/stroke widths, radii, tracking and max-w-* text measures are excluded per fluid-scale.md §4.',
+          why: 'Deliberately off the fluid scale: border/stroke widths, tracking and max-w-* text measures are excluded per fluid-scale.md §4.',
           fix: 'No action needed unless this value was meant to scale — if so it belongs on a different property family.'
         })
       }
@@ -328,6 +340,16 @@ const rules = [
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
           why: `A fixed px value on "${m[1]}" inside an engaged block (an @include *-up mixin, or an @media width>=/min-width engage query) does not answer to the viewport -- the SCSS/CSS-stack form of the bug fixed-px-at-engage catches for Tailwind (fluid-scale.md §1).`,
           fix: `Route the drawn number through the fluid function: ${m[1]}: fluid(${m[2]}) (or fluid-display()/fluid-copy() for font-size/line-height).`
+        })
+      }
+      // A px radius inside an engaged block: warn (see fixed-px-at-engage).
+      const radiusRe = /\bborder(?:-(?:top|bottom)-(?:left|right))?-radius\s*:\s*(\d+(?:\.\d+)?)px\s*;/g
+      while ((m = radiusRe.exec(content))) {
+        if (!inRange(m.index) || Number(m[1]) <= 2) continue
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
+          why: 'A fixed px radius on a box that scales reads sharp on a large screen and blunt on a small one: the corner is part of the box\'s shape.',
+          fix: `border-radius: fluid(${m[1]}). Leave it fixed only for a deliberately constant corner.`
         })
       }
     }

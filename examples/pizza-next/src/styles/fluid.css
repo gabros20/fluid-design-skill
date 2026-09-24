@@ -148,14 +148,13 @@
    `fluid-cap-*` is the one exception, and earns it by behaving differently:
    it is a max-width that only ever GROWS, never an ordinary max-width.
 
-   NEGATIVES have no separate utility. Put the sign inside an arbitrary
-   value instead of doubling this file with a `-<prefix>-top-*` family that
-   only a handful of call sites would ever use:
+   NEGATIVES: with utilities.negative on (default), margins, insets and
+   translates take Tailwind's leading minus: -<prefix>-mt-8, lg:-<prefix>-top-24.
+   With it off, put the sign inside an arbitrary value:
      lg:top-[calc(-8*var(--fluid))]
 
    NOT SCALED, deliberately:
      - border and stroke WIDTHS — a scaled 1px hairline is a blurry 1.5px one.
-     - corner radii — there is nothing to scale on a square design.
      - tracking-*, letter-spacing — write it in `em`; that already follows
        font-size for free, so it never needs a fluid unit of its own.
      - standalone line-height outside the type utilities' own /lh modifier.
@@ -312,4 +311,145 @@
 @utility fluid-text-* {
   font-size: calc(--value(number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * clamp(0, (48 - --value(number)) / 24, 1)));
   line-height: calc(--modifier(number) * (var(--fluid) + (var(--fluid-z) - var(--fluid)) * clamp(0, (48 - --value(number)) / 24, 1)));
+}
+
+/* Opt-in families (utilities in fluid.config.json): negative, logical, basis, scroll, space, rounded.
+   Same shape as the core set: the drawn number, on --fluid.
+   Radii scale (utilities.rounded): a corner is part of its box's shape,
+   so a fixed radius on a scaling box reads sharp on a big screen and blunt
+   on a small one. Border widths stay fixed regardless. */
+@utility fluid-ps-* {
+  padding-inline-start: calc(--value(number) * var(--fluid));
+}
+@utility fluid-pe-* {
+  padding-inline-end: calc(--value(number) * var(--fluid));
+}
+@utility fluid-ms-* {
+  margin-inline-start: calc(--value(number) * var(--fluid));
+}
+@utility fluid-me-* {
+  margin-inline-end: calc(--value(number) * var(--fluid));
+}
+@utility fluid-start-* {
+  inset-inline-start: calc(--value(number) * var(--fluid));
+}
+@utility fluid-end-* {
+  inset-inline-end: calc(--value(number) * var(--fluid));
+}
+@utility fluid-inset-x-* {
+  inset-inline: calc(--value(number) * var(--fluid));
+}
+@utility fluid-inset-y-* {
+  inset-block: calc(--value(number) * var(--fluid));
+}
+@utility fluid-basis-* {
+  flex-basis: calc(--value(number) * var(--fluid));
+}
+@utility fluid-scroll-mt-* {
+  scroll-margin-top: calc(--value(number) * var(--fluid));
+}
+@utility fluid-scroll-pt-* {
+  scroll-padding-top: calc(--value(number) * var(--fluid));
+}
+@utility fluid-scroll-mb-* {
+  scroll-margin-bottom: calc(--value(number) * var(--fluid));
+}
+@utility fluid-scroll-pb-* {
+  scroll-padding-bottom: calc(--value(number) * var(--fluid));
+}
+@utility fluid-rounded-* {
+  border-radius: calc(--value(number) * var(--fluid));
+}
+@utility fluid-rounded-t-* {
+  border-top-left-radius: calc(--value(number) * var(--fluid));
+  border-top-right-radius: calc(--value(number) * var(--fluid));
+}
+@utility fluid-rounded-b-* {
+  border-bottom-left-radius: calc(--value(number) * var(--fluid));
+  border-bottom-right-radius: calc(--value(number) * var(--fluid));
+}
+@utility fluid-rounded-l-* {
+  border-top-left-radius: calc(--value(number) * var(--fluid));
+  border-bottom-left-radius: calc(--value(number) * var(--fluid));
+}
+@utility fluid-rounded-r-* {
+  border-top-right-radius: calc(--value(number) * var(--fluid));
+  border-bottom-right-radius: calc(--value(number) * var(--fluid));
+}
+
+/* space-x/y: a gap for flow content that is not flex/grid (Tailwind's own
+   space-* shape: margin on every child but the last). */
+@utility fluid-space-x-* {
+  :where(& > :not(:last-child)) {
+    margin-inline-end: calc(--value(number) * var(--fluid));
+  }
+}
+@utility fluid-space-y-* {
+  :where(& > :not(:last-child)) {
+    margin-block-end: calc(--value(number) * var(--fluid));
+  }
+}
+
+/* Negatives: Tailwind's leading minus, -fluid-mt-8. Margins, insets, translates. */
+@utility -fluid-m-* {
+  margin: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-mx-* {
+  margin-inline: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-my-* {
+  margin-block: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-mt-* {
+  margin-top: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-mb-* {
+  margin-bottom: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-ml-* {
+  margin-left: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-mr-* {
+  margin-right: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-inset-* {
+  inset: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-top-* {
+  top: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-right-* {
+  right: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-bottom-* {
+  bottom: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-left-* {
+  left: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-translate-x-* {
+  --tw-translate-x: calc(--value(number) * -1 * var(--fluid));
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+@utility -fluid-translate-y-* {
+  --tw-translate-y: calc(--value(number) * -1 * var(--fluid));
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+@utility -fluid-ms-* {
+  margin-inline-start: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-me-* {
+  margin-inline-end: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-start-* {
+  inset-inline-start: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-end-* {
+  inset-inline-end: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-inset-x-* {
+  inset-inline: calc(--value(number) * -1 * var(--fluid));
+}
+@utility -fluid-inset-y-* {
+  inset-block: calc(--value(number) * -1 * var(--fluid));
 }

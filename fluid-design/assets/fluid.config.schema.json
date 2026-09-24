@@ -145,6 +145,19 @@
         "max": { "type": "number", "minimum": 1, "default": 1.25, "description": "Cap: the unit stops growing here (1.25 = 488px wide at a 390 reference), which holds the phone composition steady across large phones and the tablet band." }
       }
     },
+    "utilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Opt-in Tailwind v4 utility families on --fluid, beyond the core set. Other stacks spend the units through functions and need none of these.",
+      "properties": {
+        "negative": { "type": "boolean", "default": true, "description": "Leading-minus variants for margins, insets and translates: -fluid-mt-8." },
+        "logical": { "type": "boolean", "default": true, "description": "fluid-ps/pe/ms/me/start/end/inset-x/inset-y (RTL-safe)." },
+        "basis": { "type": "boolean", "default": true, "description": "fluid-basis-* (flex-basis)." },
+        "scroll": { "type": "boolean", "default": true, "description": "fluid-scroll-mt/pt/mb/pb-* (anchor offsets under a scaled header)." },
+        "space": { "type": "boolean", "default": true, "description": "fluid-space-x/y-* (gaps for non-flex flow content)." },
+        "rounded": { "type": "boolean", "default": true, "description": "fluid-rounded(-t/b/l/r)-*. A radius is part of its box's shape: when padding, size and type scale and the radius does not, a 20px corner reads sharp on a 1.6x card and blunt on a 0.7x one. Off only for a square-cornered design." }
+      }
+    },
     "zoomCompensation": {
       "type": "boolean",
       "default": true,

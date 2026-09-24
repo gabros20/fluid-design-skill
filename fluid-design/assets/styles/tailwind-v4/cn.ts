@@ -92,7 +92,29 @@ export const twMerge = extendTailwindMerge({
       left: [fluid('fluid-left')],
 
       'translate-x': [fluid('fluid-translate-x')],
-      'translate-y': [fluid('fluid-translate-y')]
+      'translate-y': [fluid('fluid-translate-y')],
+
+      // Opt-in families (fluid.config.json utilities)
+      ps: [fluid('fluid-ps')],
+      pe: [fluid('fluid-pe')],
+      ms: [fluid('fluid-ms')],
+      me: [fluid('fluid-me')],
+      start: [fluid('fluid-start')],
+      end: [fluid('fluid-end')],
+      'inset-x': [fluid('fluid-inset-x')],
+      'inset-y': [fluid('fluid-inset-y')],
+      basis: [fluid('fluid-basis')],
+      'scroll-mt': [fluid('fluid-scroll-mt')],
+      'scroll-pt': [fluid('fluid-scroll-pt')],
+      'scroll-mb': [fluid('fluid-scroll-mb')],
+      'scroll-pb': [fluid('fluid-scroll-pb')],
+      rounded: [fluid('fluid-rounded')],
+      'rounded-t': [fluid('fluid-rounded-t')],
+      'rounded-b': [fluid('fluid-rounded-b')],
+      'rounded-l': [fluid('fluid-rounded-l')],
+      'rounded-r': [fluid('fluid-rounded-r')],
+      'space-x': [fluid('fluid-space-x')],
+      'space-y': [fluid('fluid-space-y')]
     }
   }
 })

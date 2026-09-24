@@ -103,7 +103,8 @@ core of it:
 - A section drawn at the reference height fits exactly one screen with `lg:fluid-h-900`. A section
   drawn taller takes `lg:fluid-min-h-<drawn>`. There is one scale for the whole page; no section
   re-anchors it.
-- Leave these off the scale: border widths, radii, `em` tracking, text measures.
+- Leave these off the scale: border and stroke widths, `em` tracking, text measures. Radii scale with
+  their box (`fluid-rounded-*`); `rounded-full` and % radii already do.
 
 ### 4. Tokens and theming
 

@@ -1,0 +1,4 @@
+{
+  "$schema": "../../../assets/fluid.config.schema.json",
+  "utilities": { "negative": false, "logical": false, "basis": false, "scroll": false, "space": false, "rounded": false }
+}

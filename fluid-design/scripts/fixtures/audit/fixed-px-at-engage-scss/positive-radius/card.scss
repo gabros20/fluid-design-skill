@@ -1,0 +1,8 @@
+@use 'fluid' as fd;
+.card {
+  border-radius: 12px;
+  @include fd.fluid-up {
+    padding: fd.fluid(24);
+    border-radius: 20px;
+  }
+}

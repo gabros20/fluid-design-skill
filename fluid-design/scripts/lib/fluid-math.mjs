@@ -29,6 +29,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   }),
   ceiling: null,
   mobile: Object.freeze({ enabled: false, reference: 390, min: 0.85, max: 1.25 }),
+  utilities: Object.freeze({ negative: true, logical: true, basis: true, scroll: true, space: true, rounded: true }),
   zoomCompensation: true,
   zoomTextRange: Object.freeze([24, 48])
 })
@@ -67,7 +68,7 @@ function assertFloor(v, path) {
  * ignored.
  */
 export function mergeConfig(partial = {}) {
-  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'mobile', 'zoomCompensation', 'zoomTextRange'])
+  const known = new Set(['$schema', 'prefix', 'reference', 'canvas', 'engageAt', 'heightAxis', 'units', 'ceiling', 'mobile', 'utilities', 'zoomCompensation', 'zoomTextRange'])
   for (const key of Object.keys(partial)) {
     assert(known.has(key), `unknown top-level key "${key}"`)
   }
@@ -86,6 +87,7 @@ export function mergeConfig(partial = {}) {
     },
     ceiling: partial.ceiling === undefined ? DEFAULT_CONFIG.ceiling : partial.ceiling,
     mobile: { ...DEFAULT_CONFIG.mobile, ...(partial.mobile ?? {}) },
+    utilities: { ...DEFAULT_CONFIG.utilities, ...(partial.utilities ?? {}) },
     zoomCompensation: partial.zoomCompensation ?? DEFAULT_CONFIG.zoomCompensation,
     zoomTextRange: [...(partial.zoomTextRange ?? DEFAULT_CONFIG.zoomTextRange)]
   }
@@ -128,6 +130,11 @@ export function validateConfig(cfg) {
   assert(mo.reference < cfg.engageAt, `mobile.reference (${mo.reference}) must be < engageAt (${cfg.engageAt})`)
   assert(isFiniteNumber(mo.min) && mo.min > 0 && mo.min <= 1, 'mobile.min must be in (0, 1]')
   assert(isFiniteNumber(mo.max) && mo.max >= 1, 'mobile.max must be >= 1')
+
+  for (const k of Object.keys(cfg.utilities)) {
+    assert(k in DEFAULT_CONFIG.utilities, `unknown utilities key "${k}"`)
+    assert(typeof cfg.utilities[k] === 'boolean', `utilities.${k} must be a boolean`)
+  }
 
   assert(typeof cfg.zoomCompensation === 'boolean', 'zoomCompensation must be a boolean')
   const r = cfg.zoomTextRange

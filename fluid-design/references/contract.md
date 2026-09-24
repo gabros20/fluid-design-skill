@@ -44,6 +44,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
   },
   "ceiling": null,
   "mobile": { "enabled": false, "reference": 390, "min": 0.85, "max": 1.25 },
+  "utilities": { "negative": true, "logical": true, "basis": true, "scroll": true, "space": true, "rounded": true },
   "zoomCompensation": true,
   "zoomTextRange": [24, 48]
 }
@@ -63,6 +64,7 @@ Schema: `assets/fluid.config.schema.json`. Defaults: `assets/fluid.config.json`.
 | `units.chrome.enabled` | emit `--fluid-chrome`, a width-fit/height-floored fourth role for site chrome. Default `true` |
 | `ceiling` | `null` (default) = uncapped growth. A number N wraps `--fluid` in `min(Npx, …)`; the type units inherit the cap through it |
 | `mobile` | `{ enabled: false, reference: 390, min: 0.85, max: 1.25 }`. On: below `engageAt`, `--fluid` is `clamp(min px, 100vw / reference, max px)`, the type units damp it with floors read at `min`, and `--fluid-chrome` is `var(--fluid)` (`fluid-scale.md` §13) |
+| `utilities` | opt-in Tailwind families: `{ negative, logical, basis, scroll, space, rounded: true }` (§2) |
 | `zoomCompensation` | `true` (default): the display and copy units read their base as `var(--fluid) * var(--fluid-zoom, 1)`, so text follows browser zoom once `assets/runtime/fluid-zoom.js` sets `--fluid-zoom` (`fluid-scale.md` §12, Browser zoom). Without the script the fallback is 1. `false` emits plain `var(--fluid)` |
 | `zoomTextRange` | `[full, none]` drawn px, default `[24, 48]`: how much of the zoom `fluid-text-*` takes by font size — all at or below `full`, none at or above `none`, linear between. Tailwind emits it as `clamp(0, (none − n) / (none − full), 1)` inside the utility; SCSS and StyleX resolve it at compile time |
 
@@ -120,8 +122,22 @@ The exact `@utility` set in `assets/styles/tailwind-v4/fluid.css`. Layout utilit
 Type utilities: `fluid-display-*` spends `--fluid-display`; `fluid-copy-*` spends `--fluid-copy`.
 Both take the `/lh` modifier.
 
-Values are always the unitless drawn number. Negatives go inside an arbitrary value:
-`lg:top-[calc(-8*var(--fluid))]`.
+Values are always the unitless drawn number.
+
+**Opt-in families** (`utilities` in `fluid.config.json`; Tailwind v4 only, the other stacks spend
+the units through functions):
+
+| Key | Default | Utilities |
+|---|---|---|
+| `negative` | on | `-fluid-{m,mx,my,mt,mb,ml,mr,inset,top,right,bottom,left,translate-x,translate-y}-*`, plus the logical ones when `logical` is on: `-fluid-mt-8`, `lg:-fluid-top-24` |
+| `logical` | on | `fluid-{ps,pe,ms,me,start,end,inset-x,inset-y}-*` (writing-mode and RTL safe) |
+| `basis` | on | `fluid-basis-*` |
+| `scroll` | on | `fluid-scroll-{mt,pt,mb,pb}-*` (anchor offsets under a scaled header) |
+| `space` | on | `fluid-space-x/y-*` (margin on every child but the last) |
+| `rounded` | on | `fluid-rounded(-t/-b/-l/-r)-*`. A radius is part of its box's shape, so it scales with the box; `rounded-full` and % radii need nothing. Turn it off for a square-cornered design |
+
+All are registered with tailwind-merge in the generated `cn.ts` (a negative lands in its positive's
+group). With `negative` off, negatives go inside an arbitrary value: `lg:top-[calc(-8*var(--fluid))]`.
 
 Other stacks (`references/stacks.md`): vanilla CSS and CSS Modules spend the same four custom
 properties directly in `calc()`, with no per-value helper classes. SCSS exposes `fluid(120)`,

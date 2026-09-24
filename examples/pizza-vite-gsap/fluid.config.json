@@ -12,6 +12,8 @@
     "chrome": { "enabled": true }
   },
   "ceiling": 1.6,
+  "mobile": { "enabled": true, "reference": 390, "min": 0.85, "max": 1.25 },
+  "utilities": { "negative": true, "logical": true, "basis": true, "scroll": true, "space": true, "rounded": true },
   "zoomCompensation": true,
   "zoomTextRange": [24, 48]
 }
