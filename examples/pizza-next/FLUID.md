@@ -16,7 +16,7 @@ so no questions were asked.
 | Scope | the whole page from `lg` up, chrome included | Header and footer spend `--fluid-chrome`. |
 | Scroll scene | ONE: the dough act (`src/components/sections/DoughScene.tsx`) | `ScrubStage`, N = 4 viewports (1 + 2 + 1), head/tail loops, camera with two tiers. Everything else is a triggered `Stage`. |
 | Header | fixed, transparent, ink from `data-header-theme` | Every dark band is marked: the three dough acts and the reservation/footer band. |
-| Mobile | mobile arm: `clamp(0.85px, 100vw/390, 1.25px)` below 1024 | Converted 2026-09-23: unprefixed `fluid-*` take the 390 frame's numbers; `sm:` tablet overrides stay px. |
+| Mobile | mobile arm, three bands (defaults): phone 0.82–1.10 off 390, portrait tablet 1.10–1.30 and landscape phone 1.00–1.20 in a centred column; landscape tablets take the desktop design | Unprefixed `fluid-*` take the 390 frame's numbers. The undrawn `sm:` size overrides were removed (there is no tablet design); layout switches (`sm:block`, `sm:flex-row`) stay. |
 
 ## Files taken from the skill (copied, not rewritten)
 

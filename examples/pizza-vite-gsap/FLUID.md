@@ -17,7 +17,7 @@ The numbers live in `fluid.config.json`. This file holds the reasons.
 | Scope | the whole page from 1024 up, header and footer on `--fluid-chrome` | Default. |
 | Scroll-driven scene | **one**: `#forno`, a pinned all-intra clip with head loop, scrub band and tail loop | Brief. It is the page's only scroll-driven scene. Everything else is a triggered `[data-stage]`. |
 | Header | fixed and transparent, ink from `data-header-theme` (`headerTheme.ts`) | Default. |
-| Mobile | flat, authored plainly above each `fd.fluid-up` block | Default. |
+| Mobile | mobile arm, three bands (defaults): phone 0.82–1.10 off 390, portrait tablet 1.10–1.30 and landscape phone 1.00–1.20 in a centred column; landscape tablets take the desktop design | Base-level declarations go through the unit functions with the 390 frame's numbers; the frame mixin applies the column cap. |
 
 ## Local deviations from the prepared artifacts
 

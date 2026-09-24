@@ -92,7 +92,12 @@ in your project.
 below it. Display type uses `max(0.82px, --fluid, 0.62·--fluid + 0.38px)` and copy uses
 `max(0.90px, --fluid, 0.33·--fluid + 0.67px)`, so type shrinks more gently than the layout, while
 above the reference everything grows as one. The type units read `--fluid × --fluid-zoom` so text
-still follows browser zoom. Site chrome uses a width-led unit that height never
+still follows browser zoom.
+
+Below 1024 the optional **mobile arm** scales the phone design (drawn at 390) the same way: phones
+0.82–1.10, portrait tablets and landscape phones slightly larger in a centred column, landscape
+tablets on the desktop design. One set of phone numbers, no orientation variants
+(`fluid-design/references/fluid-scale.md` §13). Site chrome uses a width-led unit that height never
 shrinks. Each section has one frame box: `fluid-cap-<canvas>` (grow-only) plus a scaled gutter.
 Rows that exceed the `1440 − 2·gutter` content budget move to `cqw`, and any constant compared
 against a scaling box (an auto-fill minimum, a wrap basis) is scaled too. Read

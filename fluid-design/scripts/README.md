@@ -108,7 +108,7 @@ Exit codes: `0` FRESH, `1` STALE, `2` MISSING or usage/invocation error.
 ```
 node verify-matrix.mjs <url> [--config f] [--out dir]
   [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
-  [--mobile 390x844,375x667] [--fit-selector '[data-fit=screen]']
+  [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']   (mobile arm on: 320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194)
   [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
   [--zoom-selector 'main p, p'] [--zoom-strict]
 ```

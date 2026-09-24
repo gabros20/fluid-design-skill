@@ -109,7 +109,7 @@ or below the design reference width and only appear once a viewport exceeds it. 
   2560 row specifically exists because several drift bugs (a frozen gutter, a frozen grid-column
   minimum) are exactly zero at and below the reference width and only accumulate past it.
 - **Heights:** 640 / 700 / 800 / 900 / 1440, crossed against the widths above.
-- **Phones:** 390×844 and 375×667 by default.
+- **Phones:** 390×844 and 375×667 by default. With the mobile arm on, the default set spans every band: 320×568, 375×812, 390×844, 430×932 (phone), 844×390, 932×430 (landscape phone), 820×1180, 834×1194 (portrait tablet). Landscape tablets (1024+) are covered by the desktop widths.
 
 At each cell, check: nothing overflows, no heading's line count changes unexpectedly, and the design
 reference cell (1440×900, or whatever a project's `fluid.config.json` reference is) renders
