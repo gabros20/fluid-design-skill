@@ -9,8 +9,9 @@ export type FluidUnits = Readonly<Record<FluidUnit, number>>
 /** Every unit in CSS px per drawn px. All 1 on the server or without the stylesheet. */
 export declare function fluidUnits(): FluidUnits
 
-/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport. 'chrome' is accepted as the v1 name of 'ui'. */
-export declare function fluidPx(n?: number, unit?: FluidUnit | 'chrome'): number
+/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport. 'chrome' is accepted as the v1 name of 'ui'.
+ * Pass `el` to read the unit at that element (inside a limit or scope it differs from the page's). */
+export declare function fluidPx(n?: number, unit?: FluidUnit | 'chrome', el?: Element): number
 
 /** Call `cb(units)` whenever any unit changes (resize, zoom, a setting). Returns an unsubscribe function. */
 export declare function onFluidChange(cb: (units: FluidUnits) => void): () => void

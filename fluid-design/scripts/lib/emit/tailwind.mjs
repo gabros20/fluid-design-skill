@@ -86,7 +86,16 @@ export function extraFamilies(u) {
   return [...(u.logical ? EXTRA_FAMILIES.logical : []), ...(u.basis ? EXTRA_FAMILIES.basis : []), ...(u.scroll ? EXTRA_FAMILIES.scroll : []), ...(u.rounded ? EXTRA_FAMILIES.rounded : [])]
 }
 
-const V = '--value(number)'
+// Values resolve through a SUGGESTION scale first, then any number: the
+// scale (a `@theme inline reference` namespace, so it emits no CSS and the
+// value is inlined) is what editor autocomplete lists — without it Tailwind
+// IntelliSense can offer none of these utilities. Any other drawn number
+// (fluid-p-37.5) still works through `number`.
+export const STEPS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 112, 120, 128, 144, 160, 180, 200, 240]
+export const LIMIT_WIDTHS = [375, 390, 430, 768, 1024, 1280, 1366, 1440, 1536, 1680, 1920, 2560]
+const V = '--value(--fluid-step-*, number)'
+const M = '--modifier(--fluid-step-*, number)'
+const W = '--value(--fluid-width-*, integer, [integer])'
 // One line per utility: the vocabulary reads as a table.
 const util = (name, props, expr) => `@utility ${name} { ${(Array.isArray(props) ? props : [props]).map((pr) => `${pr}: ${expr};`).join(' ')} }`
 
@@ -94,6 +103,20 @@ export function utilitiesCss(structure) {
   const p = structure.prefix
   const u = structure.tailwind.utilities
   const out = []
+  out.push(`/* Autocomplete scale (not emitted: reference + inline). */
+@theme inline reference {
+  ${STEPS.map((n) => `--fluid-step-${n}: ${n};`).join(' ')}
+  ${LIMIT_WIDTHS.map((n) => `--fluid-width-${n}: ${n};`).join(' ')}
+}`)
+  out.push(`/* Limits: this element and everything inside it stop scaling at a window
+   width. ${p}-grow-until-1680 keeps the size it had at a 1680 window; ${p}-shrink-until-1280
+   the size at 1280 as a minimum; ${p}-ui-grow-until-* limits only --fluid-ui; ${p}-off
+   turns scaling off inside (drawn px = CSS px). Each makes the element a scope. A
+   width applies in the band that contains it. */
+@utility ${p}-grow-until-* { --fluid-grow-until: ${W}; }
+@utility ${p}-shrink-until-* { --fluid-shrink-until: ${W}; }
+${structure.ui ? `@utility ${p}-ui-grow-until-* { --fluid-ui-grow-until: ${W}; }
+` : ''}@utility ${p}-off { --fluid-off: 1; }`)
   out.push(`/* Utilities: the drawn number, scaled. ${p}-py-120 = 120 design px of block padding.
    Not scaled, on purpose: border widths, tracking (use em), text measures. */
 ${CORE.map(([name, props]) => util(`${p}-${name}-*`, props, `calc(${V} * var(--fluid))`)).join('\n')}`)
@@ -115,15 +138,15 @@ ${CORE.map(([name, props]) => util(`${p}-${name}-*`, props, `calc(${V} * var(--f
   out.push(`/* Type. ${p}-<role>-64/72 = 64px on a 72px line box, both on the role's damped unit.
    ${p}-text-* is on the base unit, for type inside a box that scales with it.${structure.zoom ? `
    Under browser zoom it takes a share of the zoom by size (--fluid-zoom-text-full / -none).` : ''} */
-${structure.roles.map((r) => `@utility ${p}-${r}-* { font-size: calc(${V} * var(--fluid-${r})); line-height: calc(--modifier(number) * var(--fluid-${r})); }`).join('\n')}
+${structure.roles.map((r) => `@utility ${p}-${r}-* { font-size: calc(${V} * var(--fluid-${r})); line-height: calc(${M} * var(--fluid-${r})); }`).join('\n')}
 @utility ${p}-text-* {
   font-size: calc(${V} * ${text});
-  line-height: calc(--modifier(number) * ${text});
+  line-height: calc(${M} * ${text});
 }`)
   if (structure.ui) {
     out.push(`/* The ui unit (header, nav, footer): follows the width, never shrinks for a short window. */
 ${UI_FAMILY.map(([n, props]) => util(`${p}-ui-${n}-*`, props, `calc(${V} * var(--fluid-ui))`)).join('\n')}
-@utility ${p}-ui-text-* { font-size: calc(${V} * var(--fluid-ui)); line-height: calc(--modifier(number) * var(--fluid-ui)); }`)
+@utility ${p}-ui-text-* { font-size: calc(${V} * var(--fluid-ui)); line-height: calc(${M} * var(--fluid-ui)); }`)
   }
   const fams = extraFamilies(u)
   if (fams.length) out.push(`/* Optional families (tailwind.utilities). */\n${fams.map(([n, props]) => util(`${p}-${n}-*`, props, `calc(${V} * var(--fluid))`)).join('\n')}`)
@@ -168,6 +191,12 @@ export function cnTs(structure, header) {
     add('space-x', 'space-x')
     add('space-y', 'space-y')
   }
+  // Groups tailwind-merge does not ship: declared in the type parameter below.
+  const own = [`${p}-grow-until`, `${p}-shrink-until`, ...(structure.ui ? [`${p}-ui-grow-until`] : []), `${p}-off`]
+  add(`${p}-grow-until`, 'grow-until')
+  add(`${p}-shrink-until`, 'shrink-until')
+  if (structure.ui) add(`${p}-ui-grow-until`, 'ui-grow-until')
+  groups.push(`      '${p}-off': ['${p}-off']`)
   return `${header}import { type ClassValue, clsx } from 'clsx'
 import { extendTailwindMerge } from 'tailwind-merge'
 
@@ -176,10 +205,10 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // family joins the Tailwind group its property already belongs to (${p}-p joins
 // p, every font-size family joins font-size), so the last class wins, as a
 // caller passing className expects.
-const isFluidValue = (value: string) => /^\\d+(\\.\\d+)?(\\/\\d+(\\.\\d+)?)?$/.test(value)
+const isFluidValue = (value: string) => /^(\\d+(\\.\\d+)?(\\/\\d+(\\.\\d+)?)?|\\[\\d+\\])$/.test(value)
 const fluid = (name: string) => ({ [name]: [isFluidValue] })
 
-export const twMerge = extendTailwindMerge({
+export const twMerge = extendTailwindMerge<${own.map((g) => `'${g}'`).join(' | ')}>({
   extend: {
     classGroups: {
 ${groups.join(',\n')}

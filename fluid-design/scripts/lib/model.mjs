@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve as resolvePath } from 'node:path'
 import { normaliseStructure, settingsSpec, structureDefaults, ConfigError, CONFIG_VERSION } from './spec.mjs'
+import { bandEdges } from './emit/engine.mjs'
 
 // ── loading ─────────────────────────────────────────────────────────────
 
@@ -207,8 +208,15 @@ export function evaluate(structure, values, w, h, zoom = 1, band = bandAt(struct
   const baseW = g('base-width')
   const baseH = desktop ? g('base-height') : baseW
   const fitH = desktop ? g('fit-height') : 0
-  const min = g('scale-min')
-  const max = g('scale-max') ?? Infinity
+  // Limits (window px) apply in the band whose range contains them; off pulls min and max to 1.
+  const [lo, hi] = bandEdges(structure)[band]
+  const inBand = (W) => W != null && W >= lo && W < hi
+  const lim = (k) => v[`--fluid-${k}`]
+  const st = v['--fluid-off'] ?? 0
+  const mix = (x) => x + (1 - x) * st
+  const min = mix(inBand(lim('shrink-until')) ? Math.max(g('scale-min'), lim('shrink-until') / baseW) : g('scale-min'))
+  const maxL = Math.min(g('scale-max') ?? 1e6, inBand(lim('grow-until')) ? lim('grow-until') / baseW : 1e6)
+  const max = mix(maxL)
   const arms = (zz) => {
     const wa = (w * zz) / baseW
     const ha = fitH ? (h * zz) / baseH : Infinity
@@ -225,7 +233,9 @@ export function evaluate(structure, values, w, h, zoom = 1, band = bandAt(struct
     const floor = g(`${r}-floor`) ?? 0
     roles[r] = Math.max(fluidZ, d * Math.max(fluidZ, knee) + (1 - d), floor)
   }
-  const ui = structure.ui ? Math.max(desktop ? 0 : min, Math.min(a1.wa, Math.max(1, a1.ha), max)) : fluid
+  const uiMax = Math.min(max, inBand(lim('ui-grow-until')) ? lim('ui-grow-until') / baseW : 1e6)
+  const uiMinL = Math.max(desktop ? 0 : min, inBand(lim('shrink-until')) ? lim('shrink-until') / baseW : 0)
+  const ui = structure.ui ? Math.max(mix(uiMinL), Math.min(a1.wa, Math.max(1, a1.ha), uiMax)) : fluid
   const cw = g('container-width')
   return {
     band,

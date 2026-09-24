@@ -97,6 +97,122 @@
   }
 }
 
+// A scope on any selector you write: the engine's formulas run again here,
+// so every setting set on this element applies to everything inside it.
+// (Tailwind and plain HTML get this from a class or data-fluid-scope.)
+@mixin fluid-scope {
+  --_fluid-lo: 0;
+  --_fluid-hi: 600;
+  --_fluid-base-w: var(--fluid-phone-base-width, 390);
+  --_fluid-base-h: var(--_fluid-base-w);
+  --_fluid-fit-h: 0;
+  --_fluid-min: var(--fluid-phone-scale-min, 0.82);
+  --_fluid-max: var(--fluid-phone-scale-max, 1.1);
+  --_fluid-knee: var(--_fluid-min-x);
+  --_fluid-ui-min: var(--_fluid-min-x);
+  --_fluid-display-d: var(--fluid-phone-display-damping, 0.85);
+  --_fluid-display-floor: var(--fluid-phone-display-floor, 0);
+  --_fluid-copy-d: var(--fluid-phone-copy-damping, 0.6);
+  --_fluid-copy-floor: var(--fluid-phone-copy-floor, 0);
+  --_fluid-cw: var(--fluid-phone-container-width, 560);
+  --_fluid-cw-grow: 0;
+  --_fluid-pad: var(--fluid-phone-container-padding, 24);
+  --_fluid-header-row: calc(var(--fluid-phone-header-height, 34) * 1px);
+  --_fluid-in-grow: calc(min(1, max(0, var(--fluid-grow-until, -1) - var(--_fluid-lo) + 1)) * min(1, max(0, var(--_fluid-hi) - var(--fluid-grow-until, -1))));
+  --_fluid-in-shrink: calc(min(1, max(0, var(--fluid-shrink-until, -1) - var(--_fluid-lo) + 1)) * min(1, max(0, var(--_fluid-hi) - var(--fluid-shrink-until, -1))));
+  --_fluid-max-l: min(var(--_fluid-max), calc(var(--fluid-grow-until, -1) / var(--_fluid-base-w) + (1 - var(--_fluid-in-grow)) * 1000000));
+  --_fluid-min-l: max(var(--_fluid-min), calc(var(--fluid-shrink-until, -1) / var(--_fluid-base-w) * var(--_fluid-in-shrink)));
+  --_fluid-max-x: calc(var(--_fluid-max-l) + (1 - var(--_fluid-max-l)) * var(--fluid-off, 0));
+  --_fluid-min-x: calc(var(--_fluid-min-l) + (1 - var(--_fluid-min-l)) * var(--fluid-off, 0));
+  --_fluid-w: calc(100vw * 1000 / var(--_fluid-base-w));
+  --_fluid-h: calc(100svh * 1000 / var(--_fluid-base-h) + (1 - var(--_fluid-fit-h)) * 1e9px);
+  --fluid: calc(max(calc(var(--_fluid-min-x) * 1000px), min(var(--_fluid-h), var(--_fluid-w), calc(var(--_fluid-max-x) * 1000px))) / 1000);
+  --fluid-z: calc(max(calc(var(--_fluid-min-x) * 1000px), min(calc(var(--_fluid-h) * var(--fluid-zoom, 1)), calc(var(--_fluid-w) * var(--fluid-zoom, 1)), calc(var(--_fluid-max-x) * 1000px))) / 1000);
+  --fluid-display: calc(max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-display-d) * max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-knee) * 1000px)) + (1 - var(--_fluid-display-d)) * 1000px), calc(var(--_fluid-display-floor) * 1000px)) / 1000);
+  --fluid-copy: calc(max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-copy-d) * max(calc(var(--fluid-z) * 1000), calc(var(--_fluid-knee) * 1000px)) + (1 - var(--_fluid-copy-d)) * 1000px), calc(var(--_fluid-copy-floor) * 1000px)) / 1000);
+  --_fluid-in-ui: calc(min(1, max(0, var(--fluid-ui-grow-until, -1) - var(--_fluid-lo) + 1)) * min(1, max(0, var(--_fluid-hi) - var(--fluid-ui-grow-until, -1))));
+  --_fluid-ui-max: min(var(--_fluid-max-x), calc(var(--fluid-ui-grow-until, -1) / var(--_fluid-base-w) + (1 - var(--_fluid-in-ui)) * 1000000));
+  --_fluid-ui-min-l: max(var(--_fluid-ui-min), calc(var(--fluid-shrink-until, -1) / var(--_fluid-base-w) * var(--_fluid-in-shrink)));
+  --_fluid-ui-min-x: calc(var(--_fluid-ui-min-l) + (1 - var(--_fluid-ui-min-l)) * var(--fluid-off, 0));
+  --fluid-ui: calc(max(calc(var(--_fluid-ui-min-x) * 1000px), min(var(--_fluid-w), max(1000px, var(--_fluid-h)), calc(var(--_fluid-ui-max) * 1000px))) / 1000);
+  --fluid-container-width: max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)));
+  --fluid-container-padding: calc(var(--_fluid-pad) * var(--fluid));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --browser-bar: calc(100lvh - 100svh);
+  --header-h: calc(var(--fluid-header-inset, 24) * var(--fluid) + var(--safe-top) + var(--_fluid-header-row));
+  --_fluid-m-fluid: calc(var(--fluid) * 1000);
+  --_fluid-m-display: calc(var(--fluid-display) * 1000);
+  --_fluid-m-copy: calc(var(--fluid-copy) * 1000);
+  --_fluid-m-ui: calc(var(--fluid-ui) * 1000);
+  @media (width >= 600px) {
+    --_fluid-lo: 600;
+    --_fluid-hi: 1024;
+    --_fluid-base-w: var(--fluid-tablet-base-width, 700);
+    --_fluid-min: var(--fluid-tablet-scale-min, 1.1);
+    --_fluid-max: var(--fluid-tablet-scale-max, 1.3);
+    --_fluid-display-d: var(--fluid-tablet-display-damping, 0.85);
+    --_fluid-display-floor: var(--fluid-tablet-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-tablet-copy-damping, 0.6);
+    --_fluid-copy-floor: var(--fluid-tablet-copy-floor, 0);
+    --_fluid-cw: var(--fluid-tablet-container-width, 560);
+    --_fluid-pad: var(--fluid-tablet-container-padding, 24);
+    --_fluid-header-row: calc(var(--fluid-tablet-header-height, 34) * 1px);
+  }
+  @media (orientation: landscape) and (height <= 500px) {
+    --_fluid-lo: 0;
+    --_fluid-hi: 1024;
+    --_fluid-base-w: var(--fluid-landscape-base-width, 780);
+    --_fluid-min: var(--fluid-landscape-scale-min, 1);
+    --_fluid-max: var(--fluid-landscape-scale-max, 1.2);
+    --_fluid-display-d: var(--fluid-landscape-display-damping, 0.85);
+    --_fluid-display-floor: var(--fluid-landscape-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-landscape-copy-damping, 0.6);
+    --_fluid-copy-floor: var(--fluid-landscape-copy-floor, 0);
+    --_fluid-cw: var(--fluid-landscape-container-width, 560);
+    --_fluid-pad: var(--fluid-landscape-container-padding, 24);
+    --_fluid-header-row: calc(var(--fluid-landscape-header-height, 34) * 1px);
+  }
+  @media (width >= 1024px) {
+    --_fluid-lo: 1024;
+    --_fluid-hi: 1000000;
+    --_fluid-base-w: var(--fluid-desktop-base-width, 1440);
+    --_fluid-base-h: var(--fluid-desktop-base-height, 900);
+    --_fluid-fit-h: var(--fluid-desktop-fit-height, 1);
+    --_fluid-min: var(--fluid-desktop-scale-min, 0.58);
+    --_fluid-max: var(--fluid-desktop-scale-max, 1000000);
+    --_fluid-knee: calc(1024 / var(--_fluid-base-w));
+    --_fluid-ui-min: 0;
+    --_fluid-display-d: var(--fluid-desktop-display-damping, 0.62);
+    --_fluid-display-floor: var(--fluid-desktop-display-floor, 0);
+    --_fluid-copy-d: var(--fluid-desktop-copy-damping, 0.33);
+    --_fluid-copy-floor: var(--fluid-desktop-copy-floor, 0);
+    --_fluid-cw: var(--fluid-desktop-container-width, 1680);
+    --_fluid-cw-grow: 1;
+    --_fluid-pad: var(--fluid-desktop-container-padding, 80);
+    --_fluid-header-row: calc(var(--fluid-desktop-header-height, 48) * var(--fluid-ui));
+  }
+}
+
+// Limits, in window px: this element and everything inside stop scaling.
+//   .site-header { @include fd.fluid-grow-until(1680); }
+@mixin fluid-grow-until($w) {
+  @include fluid-scope;
+  --fluid-grow-until: #{$w};
+}
+@mixin fluid-shrink-until($w) {
+  @include fluid-scope;
+  --fluid-shrink-until: #{$w};
+}
+@mixin fluid-ui-grow-until($w) {
+  @include fluid-scope;
+  --fluid-ui-grow-until: #{$w};
+}
+@mixin fluid-off {
+  @include fluid-scope;
+  --fluid-off: 1;
+}
+
 // The page container: once per section, on its inner wrapper.
 @mixin fluid-container {
   width: 100%;

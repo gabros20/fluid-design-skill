@@ -5,7 +5,7 @@ Skip when: you are on Tailwind v4 and `fluid.css` is already imported.
 
 Every stack spends the same custom properties (`--fluid`, `--fluid-<role>` per entry in `roles`,
 `--fluid-ui` with `ui: true`, `--fluid-container-width`/`-padding`, `--header-h`), defined once on
-`:root, .<prefix>-scope` and redefined inside each band's media query. Only the authoring surface
+`:root` and every scope (`.<prefix>-scope`, `[data-fluid-scope]`, limit utilities) and redefined inside each band's media query. Only the authoring surface
 differs. `output.stack` in `fluid.config.json` picks it; `fluid generate` writes **one `fluid.css`
 per stack** into `output.dir` — there is no separate "install the layer for stack X" step, and no
 `--stack` flag to hand-pick a different one at generate time. The files under `assets/styles/<name>/`
@@ -128,3 +128,13 @@ global CSS (`fluid.css`, imported once) and StyleX only gets typed `calc()`-stri
 - Hand-editing anything in `output.dir`: it is generated. `fluid generate` refuses to overwrite a
   hand-edited file without `--force`; move the change into `fluid.config.json` (structure) or a
   setting (a number) instead.
+
+## Scopes and limits per stack
+
+- **Tailwind:** `fluid-grow-until-1680`, `fluid-shrink-until-1280`, `fluid-ui-grow-until-1680`,
+  `fluid-off` on the element (they make it a scope), or `fluid-scope` plus any setting.
+- **SCSS:** `@include fd.fluid-grow-until(1680)` (also `fluid-shrink-until`, `fluid-ui-grow-until`,
+  `fluid-off`) on any selector; `@include fd.fluid-scope` alone to scope other settings. The mixin
+  writes the engine's formulas on that selector (about 60 lines of CSS per use).
+- **CSS, CSS Modules, StyleX:** add `data-fluid-scope` to the element and set the setting on it
+  (`style="--fluid-grow-until: 1680"` or a rule in your own CSS).

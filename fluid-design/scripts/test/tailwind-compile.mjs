@@ -30,9 +30,9 @@ const pw = req('playwright')
 // Inside the project, so @import 'tailwindcss' resolves from its node_modules.
 const dir = mkdtempSync(join(process.cwd(), '.fluid-tw-test-'))
 let failures = 0
-const expect = (ok, what) => {
+const expect = (ok, what, extra = '') => {
   if (!ok) failures++
-  console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`)
+  console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}${!ok && extra ? `\n${extra}` : ''}`)
 }
 
 try {
@@ -45,7 +45,8 @@ try {
   const classes = [
     'fluid-phone:fluid-p-11', 'fluid-tablet:fluid-p-12', 'fluid-landscape:fluid-p-13', 'fluid-desktop:fluid-p-14',
     'fluid-caption-12/16', 'fluid-display-64/72', 'fluid-text-18', 'fluid-ui-h-48', 'fluid-ui-text-11', 'fluid-container',
-    '-fluid-mt-8', 'fluid-rounded-12', 'fluid-space-y-4', 'fluid-cap-1680', 'lg:fluid-py-120', 'fluid-ps-10'
+    '-fluid-mt-8', 'fluid-rounded-12', 'fluid-space-y-4', 'fluid-cap-1680', 'lg:fluid-py-120', 'fluid-ps-10',
+    'fluid-grow-until-1680', 'fluid-grow-until-1920', 'lg:fluid-grow-until-1680', 'fluid-shrink-until-1280', 'fluid-off', 'fluid-ui-grow-until-[1600]', 'fluid-p-37.5', 'fluid-p-24'
   ]
   const input = `@import 'tailwindcss';\n@import './fluid/fluid.css';\n@source inline("${classes.join(' ')}");\n`
   writeFileSync(join(dir, 'in.css'), input)
@@ -61,6 +62,30 @@ try {
   expect(has(/@property --fluid-phone-caption-damping/), 'custom role settings are registered')
   expect(has(/\.fluid-scope/), 'the fluid-scope selector survives the build')
   expect(!has(/\bclamp\(|\bround\(/), 'no clamp() / round() in the compiled engine')
+  expect(!has(/--fluid-step-|--fluid-width-/), 'the autocomplete scale emits no CSS')
+  expect(has(/\.fluid-grow-until-1680\s*\{\s*--fluid-grow-until: 1680;/) && has(/\.fluid-ui-grow-until-\\\[1600\\\]\s*\{\s*--fluid-ui-grow-until: 1600;/) && has(/\.fluid-off\s*\{\s*--fluid-off: 1;/), 'limit utilities compile (bare and arbitrary values)')
+  expect(has(/\.fluid-p-37\\\.5\s*\{\s*padding: calc\(37\.5 \* var\(--fluid\)\)/), 'a number off the scale still works (fluid-p-37.5)')
+
+  // The generated TypeScript typechecks strictly (cn.ts against the project's tailwind-merge).
+  {
+    const { spawnSync } = await import('node:child_process')
+    const tsc = createRequire(join(process.cwd(), 'package.json')).resolve('typescript/bin/tsc')
+    const r = spawnSync(process.execPath, [tsc, '--noEmit', '--strict', '--skipLibCheck', '--target', 'es2022', '--module', 'esnext', '--moduleResolution', 'bundler', '--lib', 'es2022,dom', join(dir, 'fluid/cn.ts'), join(dir, 'fluid/fluid.ts')], { encoding: 'utf8', cwd: process.cwd() })
+    expect(r.status === 0, 'generated cn.ts and fluid.ts pass tsc --strict', r.stdout + r.stderr)
+  }
+
+  // Editor autocomplete: Tailwind IntelliSense lists what the design system's getClassList returns.
+  const node = createRequire(req.resolve('@tailwindcss/postcss'))('@tailwindcss/node')
+  const ds = await node.__unstable__loadDesignSystem(input, { base: dir })
+  const listed = new Map(ds.getClassList())
+  for (const c of ['fluid-p-24', 'fluid-display-64', 'fluid-caption-12', 'fluid-ui-h-48', 'fluid-grow-until-1680', 'fluid-shrink-until-1280', 'fluid-off', 'fluid-container', '-fluid-mt-8']) expect(listed.has(c), `autocomplete lists ${c}`)
+  expect((listed.get('fluid-display-64')?.modifiers ?? []).includes('72'), 'autocomplete lists the /72 line-height modifier for fluid-display-64')
+  expect(ds.getVariants().some((v) => v.name === 'fluid-tablet'), 'autocomplete lists the fluid-tablet: variant')
+
+  // A Tailwind prefix: classes become tw:fluid-…; the scope selector must still match.
+  const pin = `@import 'tailwindcss' prefix(tw);\n@import './fluid/fluid.css';\n@source inline("tw:fluid-grow-until-1680 tw:fluid-p-24");\n`
+  const pcss = (await postcss([tailwind({ base: dir })]).process(pin, { from: join(dir, 'in.css') })).css
+  expect(/\.tw\\:fluid-grow-until-1680\s*\{\s*--fluid-grow-until: 1680;/.test(pcss) && /\[class\*="fluid-grow-until-"\]/.test(pcss), 'with prefix(tw): tw:fluid-grow-until-1680 compiles and the scope selector matches it')
   const lg = css.indexOf('lg\\:fluid-py-120')
   const sm = css.indexOf('fluid-phone\\:fluid-p-11')
   expect(lg > 0 && sm > 0, 'lg: and band variants both present')
@@ -70,17 +95,51 @@ try {
 <div id="v" class="fluid-phone:fluid-p-11 fluid-tablet:fluid-p-12 fluid-landscape:fluid-p-13 fluid-desktop:fluid-p-14"></div>
 <section id="scoped" class="fluid-scope" style="--fluid-desktop-display-damping: 1; --fluid-phone-display-damping: 1"><p id="in" style="width: calc(1000 * var(--fluid-display))"></p></section>
 <p id="out" style="width: calc(1000 * var(--fluid-display))"></p>
+<header id="capped" class="fluid-grow-until-1680"><div id="cap-ui" class="fluid-ui-h-48"></div><div id="cap-p" class="fluid-p-24"></div>
+  <div id="nested-off" class="fluid-off"><div id="ns-p" class="fluid-p-24"></div></div>
+  <div id="nested-wider" class="fluid-grow-until-1920"><div id="nw-p" class="fluid-p-24"></div></div></header>
+<header id="gated" class="lg:fluid-grow-until-1680"><div id="g-p" class="fluid-p-24"></div></header>
+<div id="free-p" class="fluid-p-24"></div>
 </body></html>`
   writeFileSync(join(dir, 'page.html'), html)
   const browser = await pw.chromium.launch()
-  for (const [w, h, band, n] of [[375, 812, 'phone', 11], [820, 1180, 'tablet', 12], [844, 390, 'landscape', 13], [1280, 700, 'desktop', 14]]) {
+  for (const [w, h, band, n] of [[375, 812, 'phone', 11], [820, 1180, 'tablet', 12], [844, 390, 'landscape', 13], [1280, 700, 'desktop', 14], [2560, 1440, 'desktop', 14]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } })
     await page.goto(pathToFileURL(join(dir, 'page.html')).href)
     const r = await page.evaluate(() => ({ pad: parseFloat(getComputedStyle(document.getElementById('v')).paddingTop), fluid: document.getElementById('v').getBoundingClientRect().width, inW: document.getElementById('in').getBoundingClientRect().width, outW: document.getElementById('out').getBoundingClientRect().width }))
     const e = evaluateDefaults(s, w, h)
     expect(Math.abs(r.pad - n * e.fluid) < 0.05, `${w}x${h}: only fluid-${band}: applies (padding ${r.pad.toFixed(2)} = ${n} × ${e.fluid.toFixed(4)})`)
+    // The generated runtime, inlined (file:// pages cannot import modules).
+    await page.addScriptTag({ type: 'module', content: `${files['runtime/units.js']}\nwindow.__fluidPx = fluidPx` })
+    await page.waitForFunction(() => typeof window.__fluidPx === 'function')
+    const lim = await page.evaluate(async () => {
+      const q = (id, prop = 'paddingTop') => parseFloat(getComputedStyle(document.getElementById(id))[prop])
+      const fluidPx = window.__fluidPx
+      return { capUi: q('cap-ui', 'height'), capP: q('cap-p'), ns: q('ns-p'), nw: q('nw-p'), g: q('g-p'), free: q('free-p'), pxIn: fluidPx(24, 'fluid', document.getElementById('cap-p')), pxOut: fluidPx(24) }
+    })
+    const cap = evaluateDefaults(s, w, h, 1, { '--fluid-grow-until': 1680 })
+    const wider = evaluateDefaults(s, w, h, 1, { '--fluid-grow-until': 1920 })
+    expect(Math.abs(lim.capP - 24 * cap.fluid) < 0.05 && Math.abs(lim.capUi - 48 * cap.ui) < 0.05 && Math.abs(lim.free - 24 * e.fluid) < 0.05, `${w}x${h}: fluid-grow-until-1680 limits its children (${lim.capP.toFixed(2)}), the page does not (${lim.free.toFixed(2)})`)
+    expect(Math.abs(lim.ns - 24) < 0.05 && Math.abs(lim.nw - 24 * wider.fluid) < 0.05, `${w}x${h}: nested fluid-off -> 24px, nested grow-until-1920 -> ${lim.nw.toFixed(2)} (innermost wins)`)
+    expect(Math.abs(lim.g - (w >= 1024 ? 24 * cap.fluid : 24 * e.fluid)) < 0.05, `${w}x${h}: lg:fluid-grow-until-1680 applies only from lg`)
+    expect(Math.abs(lim.pxIn - 24 * cap.fluid) < 0.05 && Math.abs(lim.pxOut - 24 * e.fluid) < 0.05, `${w}x${h}: fluidPx(24, 'fluid', el) reads the limited unit (${lim.pxIn.toFixed(2)}), fluidPx(24) the page's (${lim.pxOut.toFixed(2)})`)
     const scoped = evaluateDefaults(s, w, h, 1, { [`--fluid-${e.band}-display-damping`]: 1 }).roles.display * 1000
     expect(Math.abs(r.inW - scoped) < 0.1 && Math.abs(r.outW - e.roles.display * 1000) < 0.1, `${w}x${h}: fluid-scope re-scopes display damping (inside ${r.inW.toFixed(1)}, outside ${r.outW.toFixed(1)})`)
+    await page.close()
+  }
+  // A limit on :root for the ui unit keeps --header-h in step with a limited header.
+  {
+    const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } })
+    await page.goto(pathToFileURL(join(dir, 'page.html')).href)
+    const hh = await page.evaluate(() => {
+      document.documentElement.style.setProperty('--fluid-ui-grow-until', '1680')
+      const d = document.createElement('div')
+      d.style.height = 'var(--header-h)'
+      document.body.appendChild(d)
+      return d.getBoundingClientRect().height
+    })
+    const e = evaluateDefaults(s, 2560, 1440, 1, { '--fluid-ui-grow-until': 1680 })
+    expect(Math.abs(hh - e.headerHeight) < 0.05 && Math.abs(e.ui - 1680 / 1440) < 1e-9, `2560x1440: :root --fluid-ui-grow-until: 1680 holds ui at ${e.ui.toFixed(3)} and --header-h follows (${hh.toFixed(1)})`)
     await page.close()
   }
   await browser.close()

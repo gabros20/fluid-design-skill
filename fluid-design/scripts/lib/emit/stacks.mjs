@@ -4,7 +4,7 @@
 
 import { exclusiveMedia, bandMedia } from '../model.mjs'
 import { settingsSpec, SKILL_VERSION } from '../spec.mjs'
-import { num } from './engine.mjs'
+import { num, engineParts } from './engine.mjs'
 
 // ── vanilla CSS ─────────────────────────────────────────────────────────
 
@@ -96,6 +96,32 @@ ${[...structure.roles.map((r) => [r, `${p}-${r}($size)`, `${p}-${r}($lh)`]), ['t
   }
 }
 
+// A scope on any selector you write: the engine's formulas run again here,
+// so every setting set on this element applies to everything inside it.
+// (Tailwind and plain HTML get this from a class or data-fluid-scope.)
+@mixin ${p}-scope {
+${scopeBody(structure)}
+}
+
+// Limits, in window px: this element and everything inside stop scaling.
+//   .site-header { @include fd.${p}-grow-until(1680); }
+@mixin ${p}-grow-until($w) {
+  @include ${p}-scope;
+  --fluid-grow-until: #{$w};
+}
+@mixin ${p}-shrink-until($w) {
+  @include ${p}-scope;
+  --fluid-shrink-until: #{$w};
+}
+${structure.ui ? `@mixin ${p}-ui-grow-until($w) {
+  @include ${p}-scope;
+  --fluid-ui-grow-until: #{$w};
+}
+` : ''}@mixin ${p}-off {
+  @include ${p}-scope;
+  --fluid-off: 1;
+}
+
 // The page container: once per section, on its inner wrapper.
 @mixin ${p}-container {
   width: 100%;
@@ -112,6 +138,12 @@ ${structure.ui ? `@function ${p}-chrome($n) {
   @return ${p}-ui($n);
 }
 ` : ''}` : ''}`
+}
+
+function scopeBody(structure) {
+  const { rules } = engineParts(structure)
+  const d = (pairs, ind) => pairs.filter(([k]) => k !== '--fluid-build').map(([k, v]) => `${ind}${k}: ${v};`).join('\n')
+  return rules.map((r) => (r.media ? `  @media ${r.media} {\n${d(r.pairs, '    ')}\n  }` : d(r.pairs, '  '))).join('\n')
 }
 
 // ── StyleX ──────────────────────────────────────────────────────────────

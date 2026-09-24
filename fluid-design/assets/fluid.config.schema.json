@@ -173,7 +173,13 @@
             "basis",
             "scroll",
             "space",
-            "rounded"
+            "rounded",
+            "grow",
+            "shrink",
+            "off",
+            "step",
+            "width",
+            "until"
           ]
         }
       },

@@ -4,6 +4,7 @@
 //                            Tailwind the theme + utilities too
 //   base.css                 box-sizing, overflow guard, focus ring (output.base)
 //   settings.reference.css   every setting, commented, with its default (never imported)
+//   fluid.css-data.json      editor autocomplete for the settings (VS Code css.customData)
 //   fluid.ts                 typed structure + SETTINGS + fluidPx re-export
 //   cn.ts                    tailwind-merge groups (tailwind-v4)
 //   _index.scss              functions + band mixins (scss): @use 'fluid' as fd
@@ -60,6 +61,21 @@ export function settingsReferenceCss(structure) {
 :root {${lines.join('\n')}
 }
 `
+}
+
+// ── editor autocomplete for settings ──────────────────────────────────
+//
+// VS Code's CSS language service (and editors built on it) reads "custom
+// data": every setting then completes in any CSS/SCSS declaration, with its
+// default and what it does on hover. `fluid init` wires it into
+// .vscode/settings.json ("css.customData").
+export function cssCustomData(structure) {
+  const specs = settingsSpec(structure)
+  const properties = specs.map((s) => ({
+    name: s.name,
+    description: `${s.doc}. Default: ${s.default === null ? 'unset' : num(s.default)}${s.band ? ` (${s.band} band)` : ''}. fluid-design setting: set it in your :root, number only.`
+  }))
+  return JSON.stringify({ version: 1.1, properties }, null, 2) + '\n'
 }
 
 // ── base.css ────────────────────────────────────────────────────────────
@@ -220,6 +236,7 @@ export function buildOutput(structure) {
   files['fluid.css'] = fluidCss(structure, buildId)
   if (structure.output.base) files['base.css'] = baseCss(structure)
   files['settings.reference.css'] = settingsReferenceCss(structure)
+  files['fluid.css-data.json'] = cssCustomData(structure)
   files['fluid.ts'] = fluidTs(structure, tsHeader(structure, 'fluid.ts — the structure as typed constants.'))
   if (stack === 'tailwind-v4') files['cn.ts'] = cnTs(structure, tsHeader(structure, 'cn.ts — class merging that knows the fluid utilities.'))
   if (stack === 'scss') files['_index.scss'] = scss(structure, `// ${stamp(structure)}\n// _index.scss — functions and band mixins: @use 'fluid' as fd;\n\n`)

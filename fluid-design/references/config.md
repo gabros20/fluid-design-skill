@@ -130,6 +130,10 @@ desktop — 1024px and wider: the 1440×900 artboard.
 | Setting | Default | What it does |
 |---|---|---|
 | `--fluid-header-inset` | `24` | space above the header row, drawn px (plus the safe-area inset) |
+| `--fluid-grow-until` | unset | window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit) |
+| `--fluid-shrink-until` | unset | window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window |
+| `--fluid-ui-grow-until` | unset | window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width |
+| `--fluid-off` | unset | 1 = nothing scales here: every drawn px is one CSS px (browser zoom still works) |
 | `--fluid-zoom-text-full` | `24` | fluid-text at or below this drawn size zooms fully with browser zoom |
 | `--fluid-zoom-text-none` | `48` | fluid-text at or above this drawn size keeps fitting its box instead |
 

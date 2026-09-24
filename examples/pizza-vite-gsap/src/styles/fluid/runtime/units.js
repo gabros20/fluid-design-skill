@@ -113,13 +113,21 @@ export function fluidUnits() {
   return dirty || !cache ? measure() : cache
 }
 
-/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport. */
-export function fluidPx(n, unit) {
+/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport.
+ * Pass `el` to read the unit as it applies AT that element: inside a limit or
+ * a scope (fluid-grow-until-1680, fluid-off, fluid-scope) the units differ
+ * from the page's. That read is a getComputedStyle of a registered length the
+ * engine mirrors on every scope; it costs a style read per call, so cache it
+ * per frame, not per tween tick. */
+export function fluidPx(n, unit, el) {
   if (n === undefined) n = 1
   var key = ALIASES[unit] || unit || 'fluid'
-  var f = fluidUnits()[key]
-  if (f === undefined) throw new Error('fluid-units: unknown unit "' + unit + '" (known: ' + UNITS.join(', ') + ')')
-  return n * f
+  if (UNITS.indexOf(key) < 0) throw new Error('fluid-units: unknown unit "' + unit + '" (known: ' + UNITS.join(', ') + ')')
+  if (el && typeof getComputedStyle !== 'undefined') {
+    var v = parseFloat(getComputedStyle(el).getPropertyValue('--_fluid-m-' + key))
+    if (v > 0 && isFinite(v)) return (n * v) / 1000
+  }
+  return n * fluidUnits()[key]
 }
 
 /** Call `cb(units)` whenever any unit changes. Returns an unsubscribe function. */

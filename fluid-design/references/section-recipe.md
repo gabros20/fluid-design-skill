@@ -143,3 +143,10 @@ Copy sections inside a pinned scene have extra rules (no background, no `overflo
 - [ ] Mobile floors in `svh`; fixed header subtracted via `--header-h`.
 - [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (the `scroll-animation`
       skill explains why; `audit.mjs` no longer checks it here).
+
+## A part that should stop scaling
+
+Put a limit on its wrapper, in window px: `fluid-grow-until-1680`, `fluid-shrink-until-1280`,
+`fluid-off`. Everything inside follows; nothing outside changes. The site header is the exception:
+limit it with `:root { --fluid-ui-grow-until: 1680; }` so `--header-h` (anchor offsets, hero padding)
+follows it (`fluid-scale.md` §10).

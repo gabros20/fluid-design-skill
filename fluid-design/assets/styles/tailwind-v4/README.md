@@ -87,6 +87,7 @@ Scripts read the same units as numbers: `fluidPx(600)`, `fluidPx(24, 'copy')` (f
 - `fluid.css`
 - `base.css`
 - `settings.reference.css`
+- `fluid.css-data.json`
 - `fluid.ts`
 - `cn.ts`
 - `runtime/units.js`

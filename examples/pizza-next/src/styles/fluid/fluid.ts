@@ -78,6 +78,10 @@ export const SETTINGS = {
   '--fluid-desktop-container-padding': { band: 'desktop', default: 80, doc: "page container side padding, drawn px" },
   '--fluid-desktop-header-height': { band: 'desktop', default: 48, doc: "header row height, drawn px (scaled by --fluid-ui)" },
   '--fluid-header-inset': { band: null, default: 24, doc: "space above the header row, drawn px (plus the safe-area inset)" },
+  '--fluid-grow-until': { band: null, default: null, doc: "window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit)" },
+  '--fluid-shrink-until': { band: null, default: null, doc: "window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window" },
+  '--fluid-ui-grow-until': { band: null, default: null, doc: "window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width" },
+  '--fluid-off': { band: null, default: null, doc: "1 = nothing scales here: every drawn px is one CSS px (browser zoom still works)" },
   '--fluid-zoom-text-full': { band: null, default: 24, doc: "fluid-text at or below this drawn size zooms fully with browser zoom" },
   '--fluid-zoom-text-none': { band: null, default: 48, doc: "fluid-text at or above this drawn size keeps fitting its box instead" }
 } as const

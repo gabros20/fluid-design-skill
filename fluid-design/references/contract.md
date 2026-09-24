@@ -106,7 +106,7 @@ the zoom range (`--fluid-zoom-text-full` / `-none`).
 
 Private, never read or set by your CSS: `--_fluid-*` (the per-band parameters each band block
 points at the active band's settings; the formulas that read them are written once on
-`:root, .<prefix>-scope`). `fluid check` warns if you declare one.
+`:root` and every scope). `fluid check` warns if you declare one.
 
 ## 3. Utility vocabulary and band variants (Tailwind v4; every other stack mirrors the same set)
 
@@ -160,8 +160,27 @@ exclusive — exactly one matches at any viewport (`scripts/lib/model.mjs`'s `ex
 `fluid-desktop:` is min-width `bands.desktop.minWidth` and equals `lg:` when
 `tailwind.breakpoints: "ladder"` (the default; `stacks.md`).
 
-`fluid-scope`: put class `<prefix>-scope` on an element and set any `--fluid-*` setting on it — the
-engine re-declares its formulas there too, so the override applies to that element's subtree only.
+**Scopes and limits.** A scope is an element the engine re-declares its formulas on, so settings set
+there apply to its subtree only. An element is a scope when it has class `<prefix>-scope`, attribute
+`data-fluid-scope`, or any limit utility (the engine matches those by class substring, so variants
+and a Tailwind `prefix()` still count):
+
+| Utility | Writes | Effect inside |
+|---|---|---|
+| `<prefix>-grow-until-<W>` | `--fluid-grow-until: W` | units hold their size at a W-wide window above it |
+| `<prefix>-shrink-until-<W>` | `--fluid-shrink-until: W` | units hold their size at a W-wide window below it (ui too) |
+| `<prefix>-ui-grow-until-<W>` | `--fluid-ui-grow-until: W` | only `--fluid-ui` |
+| `<prefix>-off` | `--fluid-off: 1` | nothing scales |
+
+`W` is a whole number of window px (bare, or `[1680]`); a limit applies in the band containing W.
+The same four are settings (`config.md`), usable on `:root`. Autocomplete suggests common widths
+(375 … 2560). `fluid-scale.md` §10 has the semantics and the `--header-h` trap.
+
+**Autocomplete.** Every value utility resolves through a suggestion scale first
+(`@theme inline reference { --fluid-step-*: … }`, which emits no CSS), then any number — so Tailwind
+IntelliSense lists `fluid-p-24`, `fluid-display-64/72` and the rest, and `fluid-p-37.5` still works.
+Settings complete in CSS files through `fluid.css-data.json` (VS Code `css.customData`; `fluid init`
+wires it).
 
 Other stacks: vanilla CSS and CSS Modules spend the same custom properties directly in `calc()`,
 with no per-value helper classes (`stacks.md`).

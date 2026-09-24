@@ -3,16 +3,17 @@
   "build": "2.0.0+358498dc",
   "stack": "scss",
   "files": {
-    "fluid.css": "08031eb0ed50f408",
+    "fluid.css": "47ded86ea5381d64",
     "base.css": "6f20df579330e8c1",
-    "settings.reference.css": "b89c4d458b930015",
-    "fluid.ts": "205a8508f44899f8",
-    "_index.scss": "36a9e2e2043e3904",
-    "runtime/units.js": "11b0037244b4488c",
-    "runtime/units.d.ts": "db81c7456a5ab306",
+    "settings.reference.css": "f2bcb754b9b1e81c",
+    "fluid.css-data.json": "26d04ff29c56cbe5",
+    "fluid.ts": "ec819beb05bd83a7",
+    "_index.scss": "235a24b4b6783b7f",
+    "runtime/units.js": "a5cdd613cac72d9d",
+    "runtime/units.d.ts": "021649ce164e3328",
     "runtime/zoom.js": "483ffb5d2b02db27",
     "runtime/zoom.d.ts": "756e03c950308408",
     "integrations/vite.ts": "c3a44cda1e53b2f1",
-    "README.md": "59191c056694eccb"
+    "README.md": "bca25d9a91dcdbce"
   }
 }

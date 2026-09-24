@@ -118,13 +118,20 @@ Follow `references/section-recipe.md`. The core:
 - Off the scale on purpose: border and stroke widths, `em` tracking, text measures. Radii scale with
   their box (`fluid-rounded-*`).
 - Need a band-only tweak? `fluid-tablet:`, `fluid-landscape:` (exclusive band variants), or a
-  setting. Need a section with different damping? `class="fluid-scope"` plus the setting on it.
+  setting.
+- Need part of the page to stop scaling? A **limit**, in window px, on its wrapper:
+  `fluid-grow-until-1680` (holds its size above a 1680 window), `fluid-shrink-until-1280`,
+  `fluid-off` (no scaling inside). Everything inside follows. For the site header use
+  `:root { --fluid-ui-grow-until: 1680; }` so `--header-h` follows too (`references/fluid-scale.md` §10).
+  Any other setting for one section: `class="fluid-scope"` plus the setting on it.
 
 ### 4. Tune with settings, not code
 
 Tuning is editing numbers in `:root`: how small phones get (`--fluid-phone-scale-min`), how much
 headings shrink on desktop (`--fluid-desktop-display-damping`), where growth stops
-(`--fluid-desktop-scale-max`), the container (`--fluid-desktop-container-width`). `fluid explain
+(`--fluid-desktop-scale-max`, or in window px `--fluid-grow-until: 1920`), the container
+(`--fluid-desktop-container-width`). Settings, utilities and variants all autocomplete: Tailwind
+IntelliSense lists every `fluid-*` class, and `fluid.css-data.json` completes settings in CSS files. `fluid explain
 390x844` prints the band, every unit, and which default or `file:line` each value came from. An
 invalid value falls back to its default; `fluid check` flags typos with a suggestion.
 
@@ -154,7 +161,7 @@ video *plays* is the `scroll-animation` skill.
 2. The axes combine with `min()` (contain), never `max()` (cover).
 3. Use `svh` for sizing. `dvh` resizes type while the reader scrolls. Pinned layers use `lvh`, and their cancelling negative margin must use the same unit.
 4. The artboard is a viewport, not the container. The design can be drawn 1680 wide; the desktop base width is 1440.
-5. One scale per page. Change how a section scales with its settings (`fluid-scope`), never by redeclaring `--fluid`: custom properties resolve where they are declared, so the type units would not follow.
+5. One scale per page. Change how a part scales with a limit or its settings (a scope), never by redeclaring `--fluid`: custom properties resolve where they are declared, so the type units would not follow.
 6. The number multiplied by a unit is unitless. `64px * var(--fluid)` is invalid and drops the declaration silently; settings are unitless too.
 7. The container's max width and padding sit on one box. A text measure sits inside it and never replaces it.
 8. Never put `transform` or `overflow-x: hidden` on a sticky ancestor. Either one silently turns sticky into static (`references/ios-safari.md` §6); use `overflow-x: clip`, and keep the horizontal guard on `html` only.

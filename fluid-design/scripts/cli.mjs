@@ -12,7 +12,7 @@
 // Every command finds fluid.config.json by walking up from the current
 // directory, or takes --config <file>.
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -181,7 +181,21 @@ function cmdCheck(flags) {
   }
   if (!findings.length) console.log(`${c.green('✓')} settings: nothing to flag`)
 
-  // 3. breakpoints you manage yourself must agree with the bands
+  // 3. A limit class on the site header limits the header but not the page's
+  //    --header-h (anchor offsets, hero padding read it on :root). The root
+  //    ui limit keeps both in step.
+  const p2 = p.structure.prefix
+  const headerLimit = new RegExp(`<header\\b[^>]*class(?:Name)?=[^>]*\\b(?:[\\w-]+:)*${p2}-(?:ui-)?grow-until-(\\[?\\d+\\]?)`, 'g')
+  for (const f of sourceFiles(p.dir, p.outDir)) {
+    const text = readFileSync(f, 'utf8')
+    for (const m of text.matchAll(headerLimit)) {
+      warns++
+      const line = text.slice(0, m.index).split('\n').length
+      console.log(`${c.yellow('!')} ${relative(p.dir, f)}:${line} a grow-until limit on <header> limits the header but not the page's --header-h (anchor offsets and hero padding read it on :root). For the site header, set :root { --fluid-ui-grow-until: ${m[1].replace(/[[\]]/g, '')}; } instead: it holds the header's ui units and --header-h together.`)
+    }
+  }
+
+  // 4. breakpoints you manage yourself must agree with the bands
   if (p.structure.output.stack === 'tailwind-v4' && p.structure.tailwind.breakpoints === 'none') {
     for (const f of projectStyleFiles(p.dir, p.outDir)) {
       const m = /--breakpoint-lg\s*:\s*([\d.]+)(px|rem)/.exec(readFileSync(f, 'utf8'))
@@ -193,6 +207,22 @@ function cmdCheck(flags) {
   }
   console.log(errors ? c.red(`${errors} problem(s)`) : c.green('OK') + (warns ? c.yellow(` (${warns} warning(s))`) : ''))
   process.exit(errors ? 1 : 0)
+}
+
+const SOURCE_EXT = /\.(tsx|jsx|html|vue|svelte|astro|mdx)$/
+function sourceFiles(root, skip) {
+  const out = []
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      if (['node_modules', '.git', '.next', 'dist', 'build', 'out', '.turbo', '.vercel'].includes(name)) continue
+      const abs = join(dir, name)
+      if (abs === skip) continue
+      if (statSync(abs).isDirectory()) walk(abs)
+      else if (SOURCE_EXT.test(name)) out.push(abs)
+    }
+  }
+  walk(root)
+  return out
 }
 
 // ── settings ────────────────────────────────────────────────────────────
@@ -468,6 +498,20 @@ function cmdInit(flags) {
     console.log(`  ${importLine}`)
     console.log(c.dim('  and set any settings you want to change in your :root (settings.reference.css lists them).'))
   }
+  // Editor autocomplete for the settings in CSS files (VS Code custom data).
+  const vsc = join(root, '.vscode/settings.json')
+  const dataRel = toImport(relative(root, join(p.outDir, 'fluid.css-data.json'))).replace(/^\.\//, '')
+  if (existsSync(vsc)) {
+    try {
+      const cur = JSON.parse(readFileSync(vsc, 'utf8'))
+      const list = new Set([...(cur['css.customData'] ?? []), dataRel])
+      cur['css.customData'] = [...list]
+      writeFileSync(vsc, JSON.stringify(cur, null, 2) + '\n')
+      console.log(`${c.green('✓')} .vscode/settings.json: settings autocomplete (css.customData)`)
+    } catch {
+      console.log(c.dim(`  (could not parse .vscode/settings.json; add "css.customData": ["${dataRel}"] for settings autocomplete)`))
+    }
+  } else console.log(c.dim(`  settings autocomplete in VS Code: add "css.customData": ["${dataRel}"] to .vscode/settings.json`))
   if (p.structure.zoom) {
     console.log('')
     console.log(c.bold('Browser zoom:'))

@@ -9,10 +9,10 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // family joins the Tailwind group its property already belongs to (fluid-p joins
 // p, every font-size family joins font-size), so the last class wins, as a
 // caller passing className expects.
-const isFluidValue = (value: string) => /^\d+(\.\d+)?(\/\d+(\.\d+)?)?$/.test(value)
+const isFluidValue = (value: string) => /^(\d+(\.\d+)?(\/\d+(\.\d+)?)?|\[\d+\])$/.test(value)
 const fluid = (name: string) => ({ [name]: [isFluidValue] })
 
-export const twMerge = extendTailwindMerge({
+export const twMerge = extendTailwindMerge<'fluid-grow-until' | 'fluid-shrink-until' | 'fluid-ui-grow-until' | 'fluid-off'>({
   extend: {
     classGroups: {
       p: [fluid('fluid-p'), fluid('fluid-ui-p')],
@@ -66,7 +66,11 @@ export const twMerge = extendTailwindMerge({
       'rounded-l': [fluid('fluid-rounded-l')],
       'rounded-r': [fluid('fluid-rounded-r')],
       'space-x': [fluid('fluid-space-x')],
-      'space-y': [fluid('fluid-space-y')]
+      'space-y': [fluid('fluid-space-y')],
+      'fluid-grow-until': [fluid('fluid-grow-until')],
+      'fluid-shrink-until': [fluid('fluid-shrink-until')],
+      'fluid-ui-grow-until': [fluid('fluid-ui-grow-until')],
+      'fluid-off': ['fluid-off']
     }
   }
 })

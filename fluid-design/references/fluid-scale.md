@@ -13,7 +13,7 @@ Skip when: you are only building a section. `section-recipe.md` is the checklist
 7. No ceiling (and when to set one)
 8. Configuration knobs and where they live
 9. Adding a role
-10. One scale: why sections may not re-anchor it (and what `fluid-scope` is actually for)
+10. One scale: why sections may not re-anchor it, and what scopes and limits are for
 11. Interop with animation (if any)
 12. Limitations, and browser zoom
 13. The bands (phone / tablet / landscape / desktop)
@@ -78,8 +78,8 @@ If a value must be a plain length below a band's breakpoint and a scaled one abo
 Every band computes `--fluid` the same shape: the smaller of a width arm and (desktop only, when
 `fit-height` is on) a height arm, clamped between a floor and a ceiling. Each band reads its own
 settings (`--fluid-<band>-base-width`, `-base-height`, `-scale-min`, `-scale-max`; `references/config.md`
-has the full list), but the formula the generator writes is one shape, once, on `:root, .fluid-scope`
-(`fluid-scope.md` §10) — only the *parameters* a band block points at change per band.
+has the full list), but the formula the generator writes is one shape, once, on `:root` and every scope
+(§10) — only the *parameters* a band block points at change per band.
 
 At the defaults, the desktop band (`--fluid-desktop-base-width: 1440`, `-base-height: 900`,
 `-scale-min: 0.58`, `-scale-max` unset):
@@ -310,7 +310,7 @@ A unit that needs a different reference or axis mix entirely is not a role — i
 of `--fluid`. Write it as its own `max(floor, min(…))`, on the ×1000 precision form (§3). It stays
 outside `roles[]`, so `fluid check`'s settings lint does not know about it.
 
-## 10. One scale: why sections may not re-anchor it (and what `fluid-scope` is actually for)
+## 10. One scale: why sections may not re-anchor it, and what scopes and limits are for
 
 The tempting fix for a section drawn taller than 900 (1198, 987, 973 on the reference build) is to let it
 declare its own drawn height as the reference, so `1198 × --fluid = 100svh` there. It was built
@@ -336,9 +336,49 @@ declare its own drawn height as the reference, so `1198 × --fluid = 100svh` the
   700` on `.fluid-scope` goes through the setting and the formula still runs. `--fluid: 0.5` on any
   selector *replaces* the engine's formula outright — no clamp, no relationship to the other units —
   and `fluid check` warns on it.
-- **Settings only apply on `:root` or `.fluid-scope`.** One set inside a media query, or on any other
+- **Settings only apply on `:root` or a scope** (`.fluid-scope`, `data-fluid-scope`, or an element with a limit utility). One set inside a media query, or on any other
   selector, either does nothing (bands already gate per viewport) or never applies. `fluid check`
   catches both (`scripts/lib/settings.mjs`).
+
+### Limits: "this part stops scaling at a window width"
+
+The everyday reason to scope is not a different reference but a **limit**: a header that should stop
+growing past a 1680 window while the page keeps scaling, a panel that should never shrink below its
+1280 size, a widget that should not scale at all. That is one utility on the element — it makes the
+element a scope and sets the limit in one step, and every `fluid-*` class inside it follows:
+
+| Utility (Tailwind) | Setting it writes | Inside the element |
+|---|---|---|
+| `fluid-grow-until-1680` | `--fluid-grow-until: 1680` | units stop growing: they keep the size they had at a 1680-wide window |
+| `fluid-shrink-until-1280` | `--fluid-shrink-until: 1280` | units stop shrinking below their size at a 1280 window |
+| `fluid-ui-grow-until-1680` | `--fluid-ui-grow-until: 1680` | only `--fluid-ui` (header/nav/footer units) stops growing |
+| `fluid-off` | `--fluid-off: 1` | nothing scales: one drawn px is one CSS px (browser zoom still works) |
+
+- **Widths are window widths**, the way you think about breakpoints; the engine divides by the band's
+  base width (1680 / 1440 → 1.167 on desktop). There is no factor to compute.
+- **A limit applies in the band that contains its width.** `fluid-grow-until-1680` changes only the
+  desktop band; a phone or tablet never sees it. `fluid-grow-until-430` limits the phone band only. The
+  band test is plain-number arithmetic in the engine (1 when `lo <= W < hi`), so still no `clamp()`,
+  `sign()` or `round()`.
+- **They compose.** `lg:fluid-grow-until-1680` limits only from `lg`; nested limits: the innermost
+  wins; `fluid-off` beats a limit on the same element; `fluid-shrink-until` floors `--fluid-ui` too.
+- **They are settings.** The same four work on `:root` (`--fluid-grow-until: 1920` stops the whole
+  site at 1920) or on any `fluid-scope` element. SCSS: `@include fd.fluid-grow-until(1680)` on any
+  selector (the mixin writes the scope). Plain CSS / StyleX: `data-fluid-scope` plus the setting.
+- **`--header-h` trap.** A limit on the `<header>` element limits the header, but the page reads
+  `--header-h` on `:root` (anchor offsets, hero top padding), so the two drift apart above the limit.
+  For the site header use `:root { --fluid-ui-grow-until: 1680; }` — the header spends `--fluid-ui`,
+  and `--header-h` is built from it, so both hold together. `fluid check` warns on a limit class on
+  `<header>`.
+- **`shrink-until` overrides fit-height.** Holding a floor means a section drawn as tall as the
+  artboard can outgrow a short window inside the limited element; use it on components, not on
+  one-screen sections.
+- **Script.** `fluidPx(n, unit, el)` reads the unit at an element, limits included (the engine
+  mirrors each unit as a registered length on every scope); `fluidPx(n)` reads the page's.
+
+Verified: `scripts/test/engine-matrix.mjs` (every limit against the model in Chromium, WebKit and
+Firefox) and `scripts/test/tailwind-compile.mjs` (children follow, nesting, `lg:` gating, a Tailwind
+`prefix()`, `fluidPx` at an element, `--header-h` with the root ui limit).
 
 So a section drawn taller than the artboard **is** more than one screen at every viewport, and the scale keeps
 it a faithful proportional copy of the drawing. Making it fit is a drawing job: take the room out of

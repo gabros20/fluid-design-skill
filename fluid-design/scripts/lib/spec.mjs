@@ -26,7 +26,7 @@ export const RESERVED_ROLE_NAMES = new Set([
   'phone', 'tablet', 'landscape', 'desktop', 'header', 'base', 'scale', 'fit',
   'p', 'px', 'py', 'pt', 'pb', 'pl', 'pr', 'ps', 'pe', 'm', 'mx', 'my', 'mt', 'mb', 'ml', 'mr', 'ms', 'me',
   'gap', 'w', 'h', 'size', 'min', 'max', 'inset', 'top', 'right', 'bottom', 'left', 'start', 'end',
-  'translate', 'basis', 'scroll', 'space', 'rounded'
+  'translate', 'basis', 'scroll', 'space', 'rounded', 'grow', 'shrink', 'off', 'step', 'width', 'until'
 ])
 
 // ── structure: fluid.config.json ────────────────────────────────────────
@@ -352,6 +352,15 @@ export function settingsSpec(structure) {
     add(band, 'header-height', { default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` })
   }
   add(null, 'header-inset', { default: 24, min: 0, doc: 'space above the header row, drawn px (plus the safe-area inset)' })
+  // Limits, in WINDOW px. Usually set on an element by a utility
+  // (fluid-grow-until-1680, fluid-shrink-until-1280, fluid-off), which
+  // also makes it a scope; on :root they limit the whole page. A width limit
+  // applies in the band that contains that width, so a desktop width never
+  // touches the phone bands and a phone width never touches desktop.
+  add(null, 'grow-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit)' })
+  add(null, 'shrink-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window' })
+  if (s.ui) add(null, 'ui-grow-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width' })
+  add(null, 'off', { default: null, optional: true, min: 0, max: 1, integer: true, doc: '1 = nothing scales here: every drawn px is one CSS px (browser zoom still works)' })
   // Read by fluid-text (Tailwind utility, SCSS/StyleX helper); plain CSS has no fluid-text.
   if (s.zoom && s.output.stack !== 'css') {
     add(null, 'zoom-text-full', { default: 24, min: 0, doc: 'fluid-text at or below this drawn size zooms fully with browser zoom' })

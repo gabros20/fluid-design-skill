@@ -45,7 +45,17 @@ const cases = [
   ['no tablet, no landscape', { bands: { tablet: false, landscape: false } }, {}],
   ['width only + ceiling', {}, { '--fluid-desktop-fit-height': 0, '--fluid-desktop-scale-max': 1.4 }],
   ['floors set', {}, { '--fluid-desktop-display-floor': 0.95, '--fluid-phone-copy-floor': 1.02 }],
-  ['desktop at 1280', { bands: { desktop: { minWidth: 1280 } } }, {}]
+  ['desktop at 1280', { bands: { desktop: { minWidth: 1280 } } }, {}],
+  // Limits (window px): each applies only in the band that contains its width.
+  ['grow-until 1680', {}, { '--fluid-grow-until': 1680 }],
+  ['shrink-until 1280', {}, { '--fluid-shrink-until': 1280 }],
+  ['ui-grow-until 1680', {}, { '--fluid-ui-grow-until': 1680 }],
+  ['grow-until 430 (a phone width)', {}, { '--fluid-grow-until': 430 }],
+  ['shrink-until 700 (tablet + landscape)', {}, { '--fluid-shrink-until': 700 }],
+  ['off', {}, { '--fluid-off': 1 }],
+  ['off + ceiling + floors', {}, { '--fluid-off': 1, '--fluid-desktop-scale-max': 1.4, '--fluid-desktop-display-floor': 0.95 }],
+  ['flat + limits (no effect)', { bands: { phone: false, tablet: false, landscape: false } }, { '--fluid-grow-until': 800, '--fluid-shrink-until': 900 }],
+  ['limit + moved desktop band', { bands: { desktop: { minWidth: 1280 } } }, { '--fluid-grow-until': 1100, '--fluid-shrink-until': 1600 }]
 ]
 const v1dir = join(here, '../fixtures/v1-configs')
 for (const f of readdirSync(v1dir).filter((f) => f.endsWith('.json')).sort()) {

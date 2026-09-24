@@ -25,14 +25,23 @@ export function num(n) {
   return String(Math.round(n * 1e6) / 1e6)
 }
 
+// Where the formulas run: the root, and every SCOPE — an element whose
+// settings differ from the page's. A scope is made by the plain class
+// `<prefix>-scope`, a `data-fluid-scope` attribute, or implicitly by any
+// limit utility (matched by substring, so Tailwind variants and a Tailwind
+// prefix — `lg:fluid-grow-until-1680`, `tw:fluid-off` — still match; `off`
+// is matched as a whole class so an unrelated `fluid-offset…` never is).
+// Being a scope where no setting differs is harmless: same numbers.
 export function scopeSelector(prefix) {
-  return `:root, .${prefix}-scope`
+  return [':root', `.${prefix}-scope`, '[data-fluid-scope]', `[class*="${prefix}-grow-until-"]`, `[class*="${prefix}-ui-grow-until-"]`, `[class*="${prefix}-shrink-until-"]`, `[class~="${prefix}-off"]`, `[class*=":${prefix}-off"]`].join(',\n')
 }
+const LIMIT_KEYS = new Set(['grow-until', 'shrink-until', 'ui-grow-until'])
 
 /** var(--setting, default) — the default repeated as a fallback, for a
  * pipeline that drops @property. Optional settings fall back to "off". */
 function ref(spec) {
-  const fallback = spec.default === null ? (spec.key === 'scale-max' ? NO_MAX : 0) : spec.default
+  // Unset optional settings mean "off": no ceiling, no floor, no limit (-1 never lies in a band).
+  const fallback = spec.default === null ? (spec.key === 'scale-max' ? NO_MAX : LIMIT_KEYS.has(spec.key) ? -1 : 0) : spec.default
   return `var(${spec.name}, ${num(fallback)})`
 }
 
@@ -43,6 +52,11 @@ function bandVars(structure, band, specs) {
   const flat = band === 'phone' && !structure.bands.phone.enabled
   const out = []
   const push = (k, v) => out.push([k, v])
+  // The band's window-width range [lo, hi): a width limit applies only in
+  // the band that contains it.
+  const edges = flat ? [0, 0] : bandEdges(structure)[band] // flat: nothing scales, so no limit applies
+  push('--_fluid-lo', num(edges[0]))
+  push('--_fluid-hi', num(edges[1]))
   if (flat) {
     push('--_fluid-base-w', '1')
     push('--_fluid-base-h', '1')
@@ -72,9 +86,9 @@ function bandVars(structure, band, specs) {
     // no-op); on desktop it is minWidth / base-width, where v1's "auto
     // floor" sat, now exact and live.
     if (desktop) push('--_fluid-knee', `calc(${num(structure.bands.desktop.minWidth)} / var(--_fluid-base-w))`)
-    else if (band === 'phone') push('--_fluid-knee', 'var(--_fluid-min)')
+    else if (band === 'phone') push('--_fluid-knee', 'var(--_fluid-min-x)')
     if (desktop) push('--_fluid-ui-min', '0')
-    else if (band === 'phone') push('--_fluid-ui-min', 'var(--_fluid-min)')
+    else if (band === 'phone') push('--_fluid-ui-min', 'var(--_fluid-min-x)')
     for (const role of structure.roles) {
       push(`--_fluid-${role}-d`, r(`${role}-damping`))
       push(`--_fluid-${role}-floor`, r(`${role}-floor`))
@@ -93,8 +107,21 @@ function formulas(structure, specs, aliases) {
   const zoom = structure.zoom
   const g = (name) => ref(specs.find((s) => s.name === name))
   const base = zoom ? 'var(--fluid-z)' : 'var(--fluid)'
-  const unit = (w, h) => `calc(max(calc(var(--_fluid-min) * ${S}px), min(${h}, ${w}, calc(var(--_fluid-max) * ${S}px))) / ${S})`
+  const unit = (w, h) => `calc(max(calc(var(--_fluid-min-x) * ${S}px), min(${h}, ${w}, calc(var(--_fluid-max-x) * ${S}px))) / ${S})`
+  // A width limit W holds the unit at W / base-width, in the band whose
+  // range contains W. The band test is arithmetic on plain numbers (1 when
+  // lo <= W < hi, else 0; W is a whole number, unset is -1), so there is no
+  // sign() or clamp() here either. `off` then pulls min and max to 1.
+  const inBand = (w) => `calc(min(1, max(0, ${w} - var(--_fluid-lo) + 1)) * min(1, max(0, var(--_fluid-hi) - ${w})))`
+  const lim = (k) => g(`--fluid-${k}`)
+  const st = g('--fluid-off')
   const out = [
+    ['--_fluid-in-grow', inBand(lim('grow-until'))],
+    ['--_fluid-in-shrink', inBand(lim('shrink-until'))],
+    ['--_fluid-max-l', `min(var(--_fluid-max), calc(${lim('grow-until')} / var(--_fluid-base-w) + (1 - var(--_fluid-in-grow)) * ${NO_MAX}))`],
+    ['--_fluid-min-l', `max(var(--_fluid-min), calc(${lim('shrink-until')} / var(--_fluid-base-w) * var(--_fluid-in-shrink)))`],
+    ['--_fluid-max-x', `calc(var(--_fluid-max-l) + (1 - var(--_fluid-max-l)) * ${st})`],
+    ['--_fluid-min-x', `calc(var(--_fluid-min-l) + (1 - var(--_fluid-min-l)) * ${st})`],
     ['--_fluid-w', `calc(100vw * ${S} / var(--_fluid-base-w))`],
     ['--_fluid-h', `calc(100svh * ${S} / var(--_fluid-base-h) + (1 - var(--_fluid-fit-h)) * 1e9px)`],
     ['--fluid', unit('var(--_fluid-w)', 'var(--_fluid-h)')]
@@ -110,7 +137,12 @@ function formulas(structure, specs, aliases) {
     ])
   }
   if (structure.ui) {
-    out.push(['--fluid-ui', `calc(max(calc(var(--_fluid-ui-min) * ${S}px), min(var(--_fluid-w), max(${S}px, var(--_fluid-h)), calc(var(--_fluid-max) * ${S}px))) / ${S})`])
+    out.push(['--_fluid-in-ui', inBand(lim('ui-grow-until'))])
+    out.push(['--_fluid-ui-max', `min(var(--_fluid-max-x), calc(${lim('ui-grow-until')} / var(--_fluid-base-w) + (1 - var(--_fluid-in-ui)) * ${NO_MAX}))`])
+    // shrink-until floors ui too; off pulls it to 1.
+    out.push(['--_fluid-ui-min-l', `max(var(--_fluid-ui-min), calc(${lim('shrink-until')} / var(--_fluid-base-w) * var(--_fluid-in-shrink)))`])
+    out.push(['--_fluid-ui-min-x', `calc(var(--_fluid-ui-min-l) + (1 - var(--_fluid-ui-min-l)) * ${st})`])
+    out.push(['--fluid-ui', `calc(max(calc(var(--_fluid-ui-min-x) * ${S}px), min(var(--_fluid-w), max(${S}px, var(--_fluid-h)), calc(var(--_fluid-ui-max) * ${S}px))) / ${S})`])
   }
   out.push(['--fluid-container-width', 'max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)))'])
   out.push(['--fluid-container-padding', 'calc(var(--_fluid-pad) * var(--fluid))'])
@@ -118,11 +150,25 @@ function formulas(structure, specs, aliases) {
   out.push(['--safe-bottom', 'env(safe-area-inset-bottom, 0px)'])
   out.push(['--browser-bar', 'calc(100lvh - 100svh)'])
   out.push(['--header-h', `calc(${g('--fluid-header-inset')} * var(--fluid) + var(--safe-top) + var(--_fluid-header-row))`])
+  // Registered <length> mirrors (×1000) so script can read a unit AT AN
+  // ELEMENT, scopes included, with getComputedStyle: fluidPx(n, unit, el).
+  for (const u of measuredUnits(structure)) out.push([`--_fluid-m-${u}`, `calc(var(--fluid${u === 'fluid' ? '' : '-' + u}) * ${S})`])
   if (aliases) {
     if (structure.ui) out.push(['--fluid-chrome', 'var(--fluid-ui)'])
     if (structure.bands.phone.enabled) out.push(['--fluid-column', 'var(--fluid-container-width)'])
   }
   return out
+}
+
+/** Each band's window-width range [lo, hi); a width limit applies in the band containing it. */
+export function bandEdges(structure) {
+  const b = structure.bands
+  const D = b.desktop.minWidth
+  return { phone: [0, b.tablet.enabled ? b.tablet.minWidth : D], tablet: [b.tablet.minWidth, D], landscape: [0, D], desktop: [D, NO_MAX] }
+}
+
+export function measuredUnits(structure) {
+  return ['fluid', ...structure.roles, ...(structure.ui ? ['ui'] : [])]
 }
 
 const decls = (pairs, indent) => pairs.map(([k, v]) => `${indent}${k}: ${v};`).join('\n')
@@ -134,10 +180,10 @@ const decls = (pairs, indent) => pairs.map(([k, v]) => `${indent}${k}: ${v};`).j
  */
 export function engineParts(structure, { buildId, aliases = structure.aliases } = {}) {
   const specs = settingsSpec(structure)
-  const properties = specs
-    .filter((s) => s.registered)
-    .map((s) => `@property ${s.name} { syntax: '<number>'; inherits: true; initial-value: ${num(s.default)}; }`)
-    .join('\n')
+  const properties = [
+    ...specs.filter((s) => s.registered).map((s) => `@property ${s.name} { syntax: '<number>'; inherits: true; initial-value: ${num(s.default)}; }`),
+    ...measuredUnits(structure).map((u) => `@property --_fluid-m-${u} { syntax: '<length>'; inherits: true; initial-value: 1000px; }`)
+  ].join('\n')
   const media = bandMedia(structure)
   const rules = []
   rules.push({
@@ -162,7 +208,7 @@ export function engineCss(structure, opts = {}) {
   const blocks = rules.map((r) => {
     const c = `/* ${r.comment} */\n`
     if (!r.media) return `${c}${sel} {\n${decls(r.pairs, '  ')}\n}`
-    return `${c}@media ${r.media} {\n  ${sel} {\n${decls(r.pairs, '    ')}\n  }\n}`
+    return `${c}@media ${r.media} {\n  ${sel.replace(/\n/g, '\n  ')} {\n${decls(r.pairs, '    ')}\n  }\n}`
   })
   return `/* Settings: every tuning number, registered with its default. Override any of
    them in your own :root (see settings.reference.css) — no regenerate. */
