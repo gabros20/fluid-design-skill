@@ -52,10 +52,16 @@ export function themeCss(structure) {
 }`)
   }
   if (structure.tailwind.variants) {
+    // No desktop variant: it would be lg: exactly, and Tailwind sorts every
+    // custom variant after every breakpoint, so a fluid-desktop:p-40 would
+    // silently beat xl:p-60. The three below express what breakpoints
+    // can't: an exclusive band, and orientation + height.
     const m = exclusiveMedia(structure)
-    const order = ['phone', 'tablet', 'landscape', 'desktop'].filter((b) => m[b])
-    out.push(`/* Band variants: exactly one matches at any viewport. ${p}-desktop: equals lg:. */
-${order.map((b) => `@custom-variant ${p}-${b} {\n  @media ${m[b]} {\n    @slot;\n  }\n}`).join('\n')}`)
+    const order = ['phone', 'tablet', 'landscape'].filter((b) => m[b])
+    if (order.length) out.push(`/* Band variants below desktop (desktop is lg:). Exactly one matches at a
+   time below lg. They sort after every breakpoint variant, so do not mix
+   fluid-tablet:x with md:y on one property: the band variant always wins. */
+${order.map((b) => `@custom-variant ${p}-${b} {\n  @media ${m[b].query} {\n    @slot;\n  }\n}`).join('\n')}`)
   }
   return out.join('\n\n')
 }
@@ -123,8 +129,8 @@ ${CORE.map(([name, props]) => util(`${p}-${name}-*`, props, `calc(${V} * var(--f
   out.push(`/* A max-width that only grows: the drawn number in CSS px below the artboard, scaled above it. */
 @utility ${p}-cap-* { max-width: max(calc(${V} * 1px), calc(${V} * var(--fluid))); }`)
   out.push(`/* translate, not transform, so it composes with a transform a motion library writes. */
-@utility ${p}-translate-x-* { --tw-translate-x: calc(${V} * var(--fluid)); translate: var(--tw-translate-x) var(--tw-translate-y); }
-@utility ${p}-translate-y-* { --tw-translate-y: calc(${V} * var(--fluid)); translate: var(--tw-translate-x) var(--tw-translate-y); }`)
+@utility ${p}-translate-x-* { --tw-translate-x: calc(${V} * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }
+@utility ${p}-translate-y-* { --tw-translate-y: calc(${V} * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }`)
   out.push(`/* The page container: centred, max width and side padding from the active band
    (--fluid-<band>-container-width / -padding). Apply once per section, to its inner wrapper. */
 @utility ${p}-container {
@@ -166,8 +172,8 @@ ${UI_FAMILY.map(([n, props]) => util(`${p}-ui-${n}-*`, props, `calc(${V} * var(-
     const neg = []
     const byName = Object.fromEntries([...CORE, ...EXTRA_FAMILIES.logical])
     for (const n of [...NEGATABLE, ...(u.logical ? NEGATABLE_LOGICAL : [])]) neg.push(util(`-${p}-${n}-*`, byName[n], `calc(${V} * -1 * var(--fluid))`))
-    neg.push(`@utility -${p}-translate-x-* { --tw-translate-x: calc(${V} * -1 * var(--fluid)); translate: var(--tw-translate-x) var(--tw-translate-y); }`)
-    neg.push(`@utility -${p}-translate-y-* { --tw-translate-y: calc(${V} * -1 * var(--fluid)); translate: var(--tw-translate-x) var(--tw-translate-y); }`)
+    neg.push(`@utility -${p}-translate-x-* { --tw-translate-x: calc(${V} * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }`)
+    neg.push(`@utility -${p}-translate-y-* { --tw-translate-y: calc(${V} * -1 * var(--fluid)); translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0); }`)
     out.push(`/* Negatives: -${p}-mt-8. */\n${neg.join('\n')}`)
   }
   return out.join('\n\n')

@@ -345,11 +345,18 @@ export function settingsSpec(structure) {
     for (const role of s.roles) {
       const damp = ROLE_DAMPING[role] ?? ROLE_DAMPING.copy
       add(band, `${role}-damping`, { role, default: mobile ? damp.mobile : damp.desktop, min: 0, max: 1, doc: `${role} type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size` })
-      add(band, `${role}-floor`, { role, default: null, optional: true, min: 0.01, doc: `optional hard minimum for ${role} type, as a scale factor (unset = none; the damping already holds type up)` })
+      // Desktop only: on a mobile band the knee is scale-min, so a floor
+      // could only bind above scale-min, which the damping says better.
+      if (!mobile) add(band, `${role}-floor`, { role, default: null, optional: true, min: 0.01, doc: `optional hard minimum for ${role} type, as a scale factor (unset = none; the damping already holds type up)` })
     }
-    add(band, 'container-width', { default: d['container-width'], min: 0, doc: mobile ? 'page container max width, drawn px (holds the phone design to a column on wide screens)' : 'page container max width, drawn px (grows with the unit, never narrows below this in CSS px)' })
-    add(band, 'container-padding', { default: d['container-padding'], min: 0, doc: 'page container side padding, drawn px' })
-    add(band, 'header-height', { default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` })
+    // Tablet and landscape share the phone's container and header unless
+    // set: optional there, falling back to the phone value.
+    const shared = band === 'tablet' || band === 'landscape'
+    const sh = (spec) => (shared ? { ...spec, default: null, optional: true, fallback: `--fluid-phone-${spec.key}`, doc: `${spec.doc} (unset = the phone value)` } : spec)
+    const addS = (key, spec) => add(band, key, sh({ key, ...spec }))
+    addS('container-width', { default: d['container-width'], min: 0, doc: mobile ? 'page container max width, drawn px (holds the phone design to a column on wide screens)' : 'page container max width, drawn px (grows with the unit, never narrows below this in CSS px)' })
+    addS('container-padding', { default: d['container-padding'], min: 0, doc: 'page container side padding, drawn px' })
+    addS('header-height', { default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` })
   }
   add(null, 'header-inset', { default: 24, min: 0, doc: 'space above the header row, drawn px (plus the safe-area inset)' })
   // Limits, in WINDOW px. Usually set on an element by a utility
@@ -359,7 +366,7 @@ export function settingsSpec(structure) {
   // touches the phone bands and a phone width never touches desktop.
   add(null, 'grow-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit)' })
   add(null, 'shrink-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window' })
-  if (s.ui) add(null, 'ui-grow-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width' })
+  if (s.ui) add(null, 'ui-grow-until', { default: null, optional: true, min: 1, integer: true, doc: 'window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --fluid-header-h) at their size at that width' })
   add(null, 'off', { default: null, optional: true, min: 0, max: 1, integer: true, doc: '1 = nothing scales here: every drawn px is one CSS px (browser zoom still works)' })
   // Read by fluid-text (Tailwind utility, SCSS/StyleX helper); plain CSS has no fluid-text.
   if (s.zoom && s.output.stack !== 'css') {
@@ -376,6 +383,7 @@ export function unitNames(structure) {
     '--fluid', '--fluid-z',
     ...structure.roles.map((r) => `--fluid-${r}`),
     '--fluid-ui', '--fluid-container-width', '--fluid-container-padding',
+    '--fluid-header-h', '--fluid-safe-top', '--fluid-safe-bottom', '--fluid-browser-bar',
     '--fluid-chrome', '--fluid-column',
     '--fluid-zoom', '--fluid-build'
   ]

@@ -18,16 +18,8 @@
       "description": "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.85 (phone band). fluid-design setting: set it in your :root, number only."
     },
     {
-      "name": "--fluid-phone-display-floor",
-      "description": "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up). Default: unset (phone band). fluid-design setting: set it in your :root, number only."
-    },
-    {
       "name": "--fluid-phone-copy-damping",
       "description": "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.6 (phone band). fluid-design setting: set it in your :root, number only."
-    },
-    {
-      "name": "--fluid-phone-copy-floor",
-      "description": "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up). Default: unset (phone band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-phone-container-width",
@@ -58,28 +50,20 @@
       "description": "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.85 (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
-      "name": "--fluid-tablet-display-floor",
-      "description": "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
-    },
-    {
       "name": "--fluid-tablet-copy-damping",
       "description": "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.6 (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
-      "name": "--fluid-tablet-copy-floor",
-      "description": "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
-    },
-    {
       "name": "--fluid-tablet-container-width",
-      "description": "page container max width, drawn px (holds the phone design to a column on wide screens). Default: 560 (tablet band). fluid-design setting: set it in your :root, number only."
+      "description": "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-tablet-container-padding",
-      "description": "page container side padding, drawn px. Default: 24 (tablet band). fluid-design setting: set it in your :root, number only."
+      "description": "page container side padding, drawn px (unset = the phone value). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-tablet-header-height",
-      "description": "header row height, CSS px (not scaled on mobile). Default: 34 (tablet band). fluid-design setting: set it in your :root, number only."
+      "description": "header row height, CSS px (not scaled on mobile) (unset = the phone value). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-landscape-base-width",
@@ -98,28 +82,20 @@
       "description": "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.85 (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
-      "name": "--fluid-landscape-display-floor",
-      "description": "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
-    },
-    {
       "name": "--fluid-landscape-copy-damping",
       "description": "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size. Default: 0.6 (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
-      "name": "--fluid-landscape-copy-floor",
-      "description": "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
-    },
-    {
       "name": "--fluid-landscape-container-width",
-      "description": "page container max width, drawn px (holds the phone design to a column on wide screens). Default: 560 (landscape band). fluid-design setting: set it in your :root, number only."
+      "description": "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-landscape-container-padding",
-      "description": "page container side padding, drawn px. Default: 24 (landscape band). fluid-design setting: set it in your :root, number only."
+      "description": "page container side padding, drawn px (unset = the phone value). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-landscape-header-height",
-      "description": "header row height, CSS px (not scaled on mobile). Default: 34 (landscape band). fluid-design setting: set it in your :root, number only."
+      "description": "header row height, CSS px (not scaled on mobile) (unset = the phone value). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-desktop-base-width",
@@ -183,7 +159,7 @@
     },
     {
       "name": "--fluid-ui-grow-until",
-      "description": "window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width. Default: unset. fluid-design setting: set it in your :root, number only."
+      "description": "window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --fluid-header-h) at their size at that width. Default: unset. fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-off",

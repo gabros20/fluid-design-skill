@@ -161,23 +161,38 @@ function fluidCss(structure, buildId) {
 
 // ── runtime + integrations ──────────────────────────────────────────────
 
+// The zoom script as one string literal, fixed here at generate time rather
+// than read from Function.prototype.toString in the browser: a CSP hash has
+// to match the exact bytes, and no bundler or minifier touches a string.
+// Whole-line comments are dropped (the function has no multi-line strings,
+// so that is safe); the source keeps them.
+export function zoomInline(src) {
+  const fn = src.slice(src.indexOf('export function installFluidZoom'), src.indexOf('\n/** The same function as an inline')).replace(/^export /, '').trimEnd()
+  const inline = `(${fn.replace(/^[ \t]*\/\/.*\n/gm, '')})();`
+  return { inline, sha256: `sha256-${createHash('sha256').update(inline, 'utf8').digest('base64')}` }
+}
+
 function runtimeFiles(structure) {
   const read = (f) => RUNTIME[f]
   const units = ['fluid', ...structure.roles, ...(structure.ui ? ['ui'] : [])]
   const head = (c) => `// ${stamp(structure)}\n\n${c}`
+  // Without aliases the v1 names (chrome → ui) are not units at all.
+  const noAliases = (src, line) => (structure.aliases ? src : src.replace(/^.*\/\/ @fluid-aliases$/m, line))
   const files = {
-    'runtime/units.js': head(read('fluid-units.js').replace(/^var UNITS = .*\/\/ @fluid-units$/m, `var UNITS = [${units.map((u) => `'${u}'`).join(', ')}] // @fluid-units`)),
-    'runtime/units.d.ts': head(read('fluid-units.d.ts').replace(/^export type FluidUnit = .*\/\/ @fluid-units$/m, `export type FluidUnit = ${units.map((u) => `'${u}'`).join(' | ')} // @fluid-units`))
+    'runtime/units.js': head(noAliases(read('fluid-units.js').replace(/^var UNITS = .*\/\/ @fluid-units$/m, `var UNITS = [${units.map((u) => `'${u}'`).join(', ')}] // @fluid-units`), 'var ALIASES = {} // @fluid-aliases')),
+    'runtime/units.d.ts': head(noAliases(read('fluid-units.d.ts').replace(/^export type FluidUnit = .*\/\/ @fluid-units$/m, `export type FluidUnit = ${units.map((u) => `'${u}'`).join(' | ')} // @fluid-units`), 'export type FluidUnitName = FluidUnit // @fluid-aliases'))
   }
   if (structure.zoom) {
-    files['runtime/zoom.js'] = head(read('fluid-zoom.js'))
+    const src = read('fluid-zoom.js')
+    const { inline, sha256 } = zoomInline(src)
+    files['runtime/zoom.js'] = head(src
+      .replace(/^export const FLUID_ZOOM_INLINE = .*\/\/ @fluid-inline$/m, () => `export const FLUID_ZOOM_INLINE = ${JSON.stringify(inline)}`)
+      .replace(/^export const FLUID_ZOOM_SHA256 = .*\/\/ @fluid-inline-sha256$/m, () => `export const FLUID_ZOOM_SHA256 = '${sha256}'`))
     files['runtime/zoom.d.ts'] = head(read('fluid-zoom.d.ts'))
-    // No framework integration: the same function as a classic script, for
+    // No framework integration: the same literal as a classic script, for
     // <script src> first in <head> (a module script would run too late).
     if (structure.output.integration === 'none') {
-      const src = read('fluid-zoom.js')
-      const fn = src.slice(src.indexOf('export function installFluidZoom'), src.indexOf('\n/** The same function as an inline')).replace(/^export /, '').trimEnd()
-      files['runtime/zoom.classic.js'] = `// ${stamp(structure)}\n// Browser-zoom compensation as a classic script. Load it first in <head>:\n//   <script src="/…/runtime/zoom.classic.js"></script>\n// (not type="module": a module runs after first paint.) Or paste it inline.\n\n(${fn})();\n`
+      files['runtime/zoom.classic.js'] = `// ${stamp(structure)}\n// Browser-zoom compensation as a classic script. Load it first in <head>:\n//   <script src="/…/runtime/zoom.classic.js"></script>\n// (not type="module": a module runs after first paint.) Or paste the line\n// below inline in that <script>; under a hash-based CSP, allow\n//   script-src '${sha256}'\n// (the hash of that line alone, which is also FLUID_ZOOM_SHA256 in zoom.js).\n\n${inline}\n`
     }
   }
   return files
@@ -195,12 +210,22 @@ function integrationFiles(structure) {
  * paints its type at the right size from the first frame:
  *
  *   <html><head><FluidHead /></head>…
+ *
+ * It writes an adopted stylesheet, not an attribute on <html>, so it needs
+ * no suppressHydrationWarning. Under a strict CSP, pass the request's nonce,
+ * set by your middleware:
+ *
+ *   const nonce = (await headers()).get('x-nonce') ?? undefined
+ *   <FluidHead nonce={nonce} />
+ *
+ * or, for a hash-based CSP, allow FLUID_ZOOM_SHA256 (runtime/zoom.js) in
+ * script-src.
  */
-export function FluidHead() {
-  return <script dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />
+export function FluidHead({ nonce }: { nonce?: string } = {}) {
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />
 }
 ` : `/** Zoom compensation is off (zoom: false in fluid.config.json); nothing to render. */
-export function FluidHead() {
+export function FluidHead(_props: { nonce?: string } = {}) {
   return null
 }
 `}`
@@ -216,13 +241,17 @@ ${structure.zoom ? `import { FLUID_ZOOM_INLINE } from '../runtime/zoom.js'
  *
  * Inlines the browser-zoom runtime as the first classic <script> in <head>
  * (a module script is deferred, so a page opened zoomed would paint small
- * type first and then jump).
+ * type first and then jump).${structure.zoom ? `
+ *
+ * Under a strict CSP, fluidPlugin({ nonce }) puts that nonce on the tag (for
+ * a per-request nonce, a placeholder your server replaces); or allow
+ * FLUID_ZOOM_SHA256 (runtime/zoom.js) in script-src for a hash-based CSP.` : ''}
  */
-export function fluidPlugin(): Plugin {
+export function fluidPlugin(${structure.zoom ? '{ nonce }' : '_options'}: { nonce?: string } = {}): Plugin {
   return {
     name: 'fluid-design',
     transformIndexHtml() {
-      return ${structure.zoom ? `[{ tag: 'script', children: FLUID_ZOOM_INLINE, injectTo: 'head-prepend' }]` : '[]'}
+      return ${structure.zoom ? `[{ tag: 'script', attrs: nonce ? { nonce } : {}, children: FLUID_ZOOM_INLINE, injectTo: 'head-prepend' }]` : '[]'}
     }
   }
 }

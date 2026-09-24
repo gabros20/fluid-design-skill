@@ -43,7 +43,7 @@ try {
     writeFileSync(join(dir, 'fluid', rel), content)
   }
   const classes = [
-    'fluid-phone:fluid-p-11', 'fluid-tablet:fluid-p-12', 'fluid-landscape:fluid-p-13', 'fluid-desktop:fluid-p-14',
+    'fluid-phone:fluid-p-11', 'fluid-tablet:fluid-p-12', 'fluid-landscape:fluid-p-13', 'lg:fluid-p-14', 'fluid-desktop:fluid-p-99', 'fluid-translate-y-24',
     'fluid-caption-12/16', 'fluid-display-64/72', 'fluid-text-18', 'fluid-ui-h-48', 'fluid-ui-text-11', 'fluid-container',
     '-fluid-mt-8', 'fluid-rounded-12', 'fluid-space-y-4', 'fluid-cap-1680', 'lg:fluid-py-120', 'fluid-ps-10',
     'fluid-grow-until-1680', 'fluid-grow-until-1920', 'lg:fluid-grow-until-1680', 'fluid-shrink-until-1280', 'fluid-off', 'fluid-ui-grow-until-[1600]', 'fluid-p-37.5', 'fluid-p-24'
@@ -54,7 +54,7 @@ try {
   writeFileSync(join(dir, 'out.css'), css)
   const has = (re) => re.test(css)
   expect(has(/@media \(width < 600px\) and \(not \(\(orientation: landscape\) and \(height <= 500px\)\)\)[\s\S]*?\.fluid-phone\\:fluid-p-11/), 'fluid-phone: compiles to its exclusive media query')
-  expect(has(/\.fluid-tablet\\:fluid-p-12/) && has(/\.fluid-landscape\\:fluid-p-13/) && has(/\.fluid-desktop\\:fluid-p-14/), 'fluid-tablet:, fluid-landscape:, fluid-desktop: compile')
+  expect(has(/\.fluid-tablet\\:fluid-p-12/) && has(/\.fluid-landscape\\:fluid-p-13/) && !has(/fluid-desktop\\:fluid-p-99/), 'fluid-tablet: and fluid-landscape: compile; there is no fluid-desktop: (it is lg:)')
   expect(has(/\.fluid-caption-12\\\/16\s*\{[^}]*font-size: calc\(12 \* var\(--fluid-caption\)\)[^}]*line-height: calc\(16 \* var\(--fluid-caption\)\)/), 'custom role utility fluid-caption-12/16')
   expect(has(/\.fluid-ui-h-48\s*\{\s*height: calc\(48 \* var\(--fluid-ui\)\)/), 'fluid-ui-h-48')
   expect(has(/\.fluid-container\s*\{[^}]*max-width: var\(--fluid-container-width\)/), 'fluid-container')
@@ -120,7 +120,8 @@ export function cn(...inputs) { return twMerge(clsx(inputs)) }`))
 
   // In a browser: exactly one band variant matches, and fluid-scope works.
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="out.css"></head><body>
-<div id="v" class="fluid-phone:fluid-p-11 fluid-tablet:fluid-p-12 fluid-landscape:fluid-p-13 fluid-desktop:fluid-p-14"></div>
+<div id="v" class="fluid-phone:fluid-p-11 fluid-tablet:fluid-p-12 fluid-landscape:fluid-p-13 lg:fluid-p-14"></div>
+<div id="tr" class="fluid-translate-y-24"></div>
 <section id="scoped" class="fluid-scope" style="--fluid-desktop-display-damping: 1; --fluid-phone-display-damping: 1"><p id="in" style="width: calc(1000 * var(--fluid-display))"></p></section>
 <p id="out" style="width: calc(1000 * var(--fluid-display))"></p>
 <header id="capped" class="fluid-grow-until-1680"><div id="cap-ui" class="fluid-ui-h-48"></div><div id="cap-p" class="fluid-p-24"></div>
@@ -134,9 +135,11 @@ export function cn(...inputs) { return twMerge(clsx(inputs)) }`))
   for (const [w, h, band, n] of [[375, 812, 'phone', 11], [820, 1180, 'tablet', 12], [844, 390, 'landscape', 13], [1280, 700, 'desktop', 14], [2560, 1440, 'desktop', 14]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } })
     await page.goto(pathToFileURL(join(dir, 'page.html')).href)
-    const r = await page.evaluate(() => ({ pad: parseFloat(getComputedStyle(document.getElementById('v')).paddingTop), fluid: document.getElementById('v').getBoundingClientRect().width, inW: document.getElementById('in').getBoundingClientRect().width, outW: document.getElementById('out').getBoundingClientRect().width }))
+    const r = await page.evaluate(() => ({ pad: parseFloat(getComputedStyle(document.getElementById('v')).paddingTop), fluid: document.getElementById('v').getBoundingClientRect().width, inW: document.getElementById('in').getBoundingClientRect().width, outW: document.getElementById('out').getBoundingClientRect().width, tr: getComputedStyle(document.getElementById('tr')).translate }))
     const e = evaluateDefaults(s, w, h)
     expect(Math.abs(r.pad - n * e.fluid) < 0.05, `${w}x${h}: only fluid-${band}: applies (padding ${r.pad.toFixed(2)} = ${n} × ${e.fluid.toFixed(4)})`)
+    const ty = parseFloat(String(r.tr).split(' ')[1] ?? 'NaN')
+    expect(Math.abs(ty - 24 * e.fluid) < 0.05, `${w}x${h}: fluid-translate-y-24 alone moves the element (translate: ${r.tr})`)
     // The generated runtime, inlined (file:// pages cannot import modules).
     await page.addScriptTag({ type: 'module', content: `${files['runtime/units.js']}\nwindow.__fluidPx = fluidPx` })
     await page.waitForFunction(() => typeof window.__fluidPx === 'function')
@@ -155,14 +158,14 @@ export function cn(...inputs) { return twMerge(clsx(inputs)) }`))
     expect(Math.abs(r.inW - scoped) < 0.1 && Math.abs(r.outW - e.roles.display * 1000) < 0.1, `${w}x${h}: fluid-scope re-scopes display damping (inside ${r.inW.toFixed(1)}, outside ${r.outW.toFixed(1)})`)
     await page.close()
   }
-  // A limit on :root for the ui unit keeps --header-h in step with a limited header.
+  // A limit on :root for the ui unit keeps --fluid-header-h in step with a limited header.
   {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } })
     await page.goto(pathToFileURL(join(dir, 'page.html')).href)
     const hh = await page.evaluate(() => {
       document.documentElement.style.setProperty('--fluid-ui-grow-until', '1680')
       const d = document.createElement('div')
-      d.style.height = 'var(--header-h)'
+      d.style.height = 'var(--fluid-header-h)'
       document.body.appendChild(d)
       return d.getBoundingClientRect().height
     })

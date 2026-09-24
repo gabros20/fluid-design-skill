@@ -18,7 +18,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import { normaliseStructure } from '../lib/spec.mjs'
 import { migrateV1, evaluateDefaults } from '../lib/model.mjs'
-import { engineCss } from '../lib/emit/engine.mjs'
+import { engineCss, engineParts } from '../lib/emit/engine.mjs'
+import { RUNTIME } from '../lib/emit/runtime-assets.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const TOL = 5e-5 // per drawn px; the ×1000 form keeps every engine well inside this
@@ -44,7 +45,9 @@ const cases = [
   ['custom role', { roles: ['display', 'copy', 'caption'] }, { '--fluid-desktop-caption-damping': 0.2, '--fluid-phone-caption-damping': 0.4 }],
   ['no tablet, no landscape', { bands: { tablet: false, landscape: false } }, {}],
   ['width only + ceiling', {}, { '--fluid-desktop-fit-height': 0, '--fluid-desktop-scale-max': 1.4 }],
-  ['floors set', {}, { '--fluid-desktop-display-floor': 0.95, '--fluid-phone-copy-floor': 1.02 }],
+  ['floors set', {}, { '--fluid-desktop-display-floor': 0.95, '--fluid-desktop-copy-floor': 1.02 }],
+  ['tablet container falls back to phone', {}, { '--fluid-phone-container-width': 480, '--fluid-phone-container-padding': 20, '--fluid-landscape-header-height': 40 }],
+  ['base-width 0 guarded', {}, { '--fluid-desktop-base-width': 0, '--fluid-phone-base-width': 0 }],
   ['desktop at 1280', { bands: { desktop: { minWidth: 1280 } } }, {}],
   // Limits (window px): each applies only in the band that contains its width.
   ['grow-until 1680', {}, { '--fluid-grow-until': 1680 }],
@@ -69,7 +72,7 @@ const viewports = [[320, 568], [375, 812], [430, 932], [599, 900], [600, 900], [
 const zooms = [1, 1.5]
 
 function page(structure, overrides, css) {
-  const probes = [['fluid', 'calc(1000 * var(--fluid))'], ...structure.roles.map((r) => [r, `calc(1000 * var(--fluid-${r}))`]), ...(structure.ui ? [['ui', 'calc(1000 * var(--fluid-ui))']] : []), ['cw', 'var(--fluid-container-width)'], ['cp', 'var(--fluid-container-padding)'], ['hh', 'var(--header-h)']]
+  const probes = [['fluid', 'calc(1000 * var(--fluid))'], ...structure.roles.map((r) => [r, `calc(1000 * var(--fluid-${r}))`]), ...(structure.ui ? [['ui', 'calc(1000 * var(--fluid-ui))']] : []), ['cw', 'var(--fluid-container-width)'], ['cp', 'var(--fluid-container-padding)'], ['hh', 'var(--fluid-header-h)']]
   const style = Object.entries(overrides).map(([k, v]) => `${k}: ${v};`).join(' ')
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}
 :root { ${style} }
@@ -155,6 +158,46 @@ try {
         }
       }
       console.log(`[${name}] ${`live settings (${variant})`.padEnd(36)} base ${r.base.toFixed(4)}  scale-max .9 -> ${r.live.toFixed(4)}  "0.9px" -> ${r.invalid.toFixed(4)}`)
+    }
+    // Scopes: every way to make one, measured inside, and fluidPx(n, unit, el)'s
+    // walk up to the nearest non-inherited mirror. A mixin scope (SCSS/StyleX)
+    // is a plain rule carrying the engine's pairs, no class the selector knows.
+    {
+      const st = normaliseStructure({ version: 2 })
+      const mixin = engineParts(st).rules.map((r) => (r.media ? `@media ${r.media} { .mixin-scope { ${r.pairs.map(([k, v]) => `${k}: ${v};`).join(' ')} } }` : `.mixin-scope { ${r.pairs.map(([k, v]) => `${k}: ${v};`).join(' ')} }`)).join('\n')
+      const runtime = RUNTIME['fluid-units.js'].replace(/^export /gm, '')
+      const scopes = [
+        ['class', 'class="fluid-scope" style="--fluid-grow-until: 1680"', { '--fluid-grow-until': 1680 }],
+        ['important off', 'class="fluid-off!" style="--fluid-off: 1"', { '--fluid-off': 1 }],
+        ['variant off', 'class="lg:fluid-off" style="--fluid-off: 1"', { '--fluid-off': 1 }],
+        ['arbitrary property', 'class="[--fluid-shrink-until:1280]" style="--fluid-shrink-until: 1280"', { '--fluid-shrink-until': 1280 }],
+        ['mixin rule', 'class="mixin-scope" style="--fluid-ui-grow-until: 1680"', { '--fluid-ui-grow-until': 1680 }],
+        ['not a scope (fluid-offset)', 'class="lg:fluid-offset-4" style="--fluid-grow-until: 1680"', {}]
+      ]
+      const body = scopes.map(([id, attrs], i) => `<div ${attrs}><div><span class="q" data-i="${i}" style="display:block;height:1px;width:calc(1000 * var(--fluid))"></span><span class="u" data-i="${i}" style="display:block;height:1px;width:calc(1000 * var(--fluid-ui))"></span></div></div>`).join('\n')
+      const file = join(dir, 'scopes.html')
+      writeFileSync(file, `<!doctype html><html><head><style>${engineCss(st)}\n${mixin}</style><script>${runtime}\nwindow.fluidPx = fluidPx</script></head><body style="margin:0">${body}</body></html>`)
+      for (const [w, h] of [[1440, 900], [1920, 1080], [2560, 1440], [1100, 700], [390, 844]]) {
+        const ctx = await browser.newContext({ viewport: { width: w, height: h } })
+        const p = await ctx.newPage()
+        await p.goto(pathToFileURL(file).href)
+        const got = await p.evaluate(() => [...document.querySelectorAll('.q')].map((q) => {
+          const u = q.nextElementSibling
+          return { fluid: q.getBoundingClientRect().width / 1000, ui: u.getBoundingClientRect().width / 1000, px: window.fluidPx(1000, 'fluid', q) / 1000, pxUi: window.fluidPx(1000, 'ui', u) / 1000 }
+        }))
+        await ctx.close()
+        scopes.forEach(([id, , ov], i) => {
+          const e = evaluateDefaults(st, w, h, 1, ov)
+          for (const [k, exp] of [['fluid', e.fluid], ['ui', e.ui], ['px', e.fluid], ['pxUi', e.ui]]) {
+            checks++
+            if (!(Math.abs(got[i][k] - exp) <= TOL * 2)) {
+              failures++
+              console.error(`FAIL [${name}] scope "${id}" ${w}x${h} ${k}: got ${got[i][k]} expected ${exp}`)
+            }
+          }
+        })
+      }
+      console.log(`[${name}] ${'scopes + fluidPx(el)'.padEnd(36)} ${scopes.length} kinds × 5 viewports`)
     }
     await browser.close()
   }

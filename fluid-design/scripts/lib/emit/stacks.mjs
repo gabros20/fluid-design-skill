@@ -76,16 +76,18 @@ ${structure.zoom ? `  @return calc(#{$n} * (var(--fluid) + (var(--fluid-z) - var
   @return max(#{$n}px, calc(#{$n} * var(--fluid)));
 }
 
-// Band mixins: exactly one matches at any viewport.
-${bands.map((b) => `@mixin ${p}-${b} {\n  @media ${m[b]} {\n    @content;\n  }\n}`).join('\n')}
-
-// v1 name for the desktop band.
+// Band mixins: exactly one matches at any viewport (nested classic
+// queries: \`not all and (…)\` is the exact complement, no gap at
+// fractional widths).
+${bands.map((b) => `@mixin ${p}-${b} {\n${nestMedia(m[b].nest, '  ', '@content;')}\n}`).join('\n')}
+${structure.aliases ? `
+// v1 name for the desktop band (aliases).
 @mixin ${p}-up {
   @include ${p}-desktop {
     @content;
   }
 }
-
+` : ''}
 // font-size + line-height together. $unit: ${[...structure.roles, 'text', ...(structure.ui ? ['ui'] : [])].join(', ')}.
 @mixin ${p}-type($size, $lh, $unit: ${structure.roles[0]}) {
 ${[...structure.roles.map((r) => [r, `${p}-${r}($size)`, `${p}-${r}($lh)`]), ['text', `${p}-text($size)`, `${p}-text($lh, $size)`], ...(structure.ui ? [['ui', `${p}-ui($size)`, `${p}-ui($lh)`]] : [])]
@@ -187,6 +189,12 @@ export const fluidContainer = {
 `
 }
 
+/** Nested @media blocks around a body, innermost last. */
+function nestMedia(queries, indent, body) {
+  if (!queries.length) return `${indent}${body}`
+  return `${indent}@media ${queries[0]} {\n${nestMedia(queries.slice(1), indent + '  ', body)}\n${indent}}`
+}
+
 // ── fluid.ts (every stack) ──────────────────────────────────────────────
 
 export function fluidTs(structure, header) {
@@ -210,16 +218,16 @@ export const ROLES = [${structure.roles.map((r) => `'${r}'`).join(', ')}] as con
 
 /** One matchMedia query per band; exactly one matches at any viewport. */
 export const MEDIA: Record<BandName, string> = {
-${bands.map((b) => `  ${b}: '${ex[b]}'`).join(',\n')}
+${bands.map((b) => `  ${b}: '${ex[b].query}'`).join(',\n')}
 }
 
 /** Where the desktop design takes over (bands.desktop.minWidth). */
 export const DESKTOP_PX = ${num(structure.bands.desktop.minWidth)}
-export const DESKTOP_QUERY = '${cascade.desktop.replace('width >= ', 'min-width: ')}'
-/** v1 names for the same thing. */
+export const DESKTOP_QUERY = '${cascade.desktop}'
+${structure.aliases ? `/** v1 names for the same thing (aliases). */
 export const ENGAGE_PX = DESKTOP_PX
 export const ENGAGE_QUERY = DESKTOP_QUERY
-
+` : ''}
 /** Utility / class names. */
 export const PREFIX = '${structure.prefix}'
 export const CONTAINER_CLASS = '${structure.prefix}-container'

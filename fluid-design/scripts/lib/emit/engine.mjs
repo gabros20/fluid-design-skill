@@ -27,19 +27,31 @@ export function num(n) {
 
 // Where the formulas run: the root, and every SCOPE — an element whose
 // settings differ from the page's. A scope is made by the plain class
-// `<prefix>-scope`, a `data-fluid-scope` attribute, or implicitly by any
-// limit utility (matched by substring, so Tailwind variants and a Tailwind
-// prefix — `lg:fluid-grow-until-1680`, `tw:fluid-off` — still match; `off`
-// is matched as a whole class so an unrelated `fluid-offset…` never is).
-// Being a scope where no setting differs is harmless: same numbers.
+// `<prefix>-scope`, a `data-fluid-scope` attribute, any limit utility, or
+// any Tailwind arbitrary property that sets a fluid setting
+// (`[--fluid-grow-until:1680]`). Limits are matched by substring, so
+// variants and a Tailwind prefix (`lg:fluid-grow-until-1680`) still match.
+// `off` is matched as a whole class, bare, important (`fluid-off!`,
+// `!fluid-off`) or after a variant (`lg:fluid-off`), so an unrelated
+// `lg:fluid-offset-4` never is. Being a scope where no setting differs is
+// harmless: same numbers, a little recalc.
 export function scopeSelector(prefix) {
-  return [':root', `.${prefix}-scope`, '[data-fluid-scope]', `[class*="${prefix}-grow-until-"]`, `[class*="${prefix}-ui-grow-until-"]`, `[class*="${prefix}-shrink-until-"]`, `[class~="${prefix}-off"]`, `[class*=":${prefix}-off"]`].join(',\n')
+  const off = `${prefix}-off`
+  return [
+    ':root', `.${prefix}-scope`, '[data-fluid-scope]',
+    `[class*="${prefix}-grow-until-"]`, `[class*="${prefix}-ui-grow-until-"]`, `[class*="${prefix}-shrink-until-"]`,
+    `[class~="${off}"]`, `[class~="${off}!"]`, `[class~="!${off}"]`,
+    `[class*=":${off} "]`, `[class$=":${off}"]`, `[class*=":${off}! "]`, `[class$=":${off}!"]`, `[class*=":!${off} "]`, `[class$=":!${off}"]`,
+    '[class*="[--fluid-"]'
+  ].join(',\n')
 }
 const LIMIT_KEYS = new Set(['grow-until', 'shrink-until', 'ui-grow-until'])
 
 /** var(--setting, default) — the default repeated as a fallback, for a
  * pipeline that drops @property. Optional settings fall back to "off". */
-function ref(spec) {
+function ref(spec, specs) {
+  // A tablet/landscape container or header setting falls back to the phone's.
+  if (spec.fallback) return `var(${spec.name}, ${ref(specs.find((s) => s.name === spec.fallback), specs)})`
   // Unset optional settings mean "off": no ceiling, no floor, no limit (-1 never lies in a band).
   const fallback = spec.default === null ? (spec.key === 'scale-max' ? NO_MAX : LIMIT_KEYS.has(spec.key) ? -1 : 0) : spec.default
   return `var(${spec.name}, ${num(fallback)})`
@@ -47,7 +59,7 @@ function ref(spec) {
 
 function bandVars(structure, band, specs) {
   const get = (key) => specs.find((s) => s.band === band && s.key === key)
-  const r = (key) => ref(get(key))
+  const r = (key) => ref(get(key), specs)
   const desktop = band === 'desktop'
   const flat = band === 'phone' && !structure.bands.phone.enabled
   const out = []
@@ -70,9 +82,10 @@ function bandVars(structure, band, specs) {
       push(`--_fluid-${role}-floor`, '0')
     }
   } else {
-    push('--_fluid-base-w', r('base-width'))
+    // max(1, …): a 0 artboard set live would divide by zero (NaN → 0: no spacing at all).
+    push('--_fluid-base-w', `max(1, ${r('base-width')})`)
     if (desktop) {
-      push('--_fluid-base-h', r('base-height'))
+      push('--_fluid-base-h', `max(1, ${r('base-height')})`)
       push('--_fluid-fit-h', r('fit-height'))
     } else if (band === 'phone') {
       // Width-only bands: the height arm is gated off (fit-h 0 adds 1e9px).
@@ -91,7 +104,9 @@ function bandVars(structure, band, specs) {
     else if (band === 'phone') push('--_fluid-ui-min', 'var(--_fluid-min-x)')
     for (const role of structure.roles) {
       push(`--_fluid-${role}-d`, r(`${role}-damping`))
-      push(`--_fluid-${role}-floor`, r(`${role}-floor`))
+      // Floors are a desktop setting; the phone block's 0 cascades to tablet and landscape.
+      if (desktop) push(`--_fluid-${role}-floor`, r(`${role}-floor`))
+      else if (band === 'phone') push(`--_fluid-${role}-floor`, '0')
     }
   }
   push('--_fluid-cw', r('container-width'))
@@ -99,13 +114,13 @@ function bandVars(structure, band, specs) {
   else if (band === 'phone') push('--_fluid-cw-grow', '0')
   push('--_fluid-pad', r('container-padding'))
   const row = get('header-height')
-  push('--_fluid-header-row', desktop ? `calc(${ref(row)} * var(${structure.ui ? '--fluid-ui' : '--fluid'}))` : `calc(${ref(row)} * 1px)`)
+  push('--_fluid-header-row', desktop ? `calc(${ref(row, specs)} * var(${structure.ui ? '--fluid-ui' : '--fluid'}))` : `calc(${ref(row, specs)} * 1px)`)
   return out
 }
 
 function formulas(structure, specs, aliases) {
   const zoom = structure.zoom
-  const g = (name) => ref(specs.find((s) => s.name === name))
+  const g = (name) => ref(specs.find((s) => s.name === name), specs)
   const base = zoom ? 'var(--fluid-z)' : 'var(--fluid)'
   const unit = (w, h) => `calc(max(calc(var(--_fluid-min-x) * ${S}px), min(${h}, ${w}, calc(var(--_fluid-max-x) * ${S}px))) / ${S})`
   // A width limit W holds the unit at W / base-width, in the band whose
@@ -146,16 +161,23 @@ function formulas(structure, specs, aliases) {
   }
   out.push(['--fluid-container-width', 'max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)))'])
   out.push(['--fluid-container-padding', 'calc(var(--_fluid-pad) * var(--fluid))'])
-  out.push(['--safe-top', 'env(safe-area-inset-top, 0px)'])
-  out.push(['--safe-bottom', 'env(safe-area-inset-bottom, 0px)'])
-  out.push(['--browser-bar', 'calc(100lvh - 100svh)'])
-  out.push(['--header-h', `calc(${g('--fluid-header-inset')} * var(--fluid) + var(--safe-top) + var(--_fluid-header-row))`])
+  // Namespaced: a site's own --header-h or --safe-top is left alone.
+  out.push(['--fluid-safe-top', 'env(safe-area-inset-top, 0px)'])
+  out.push(['--fluid-safe-bottom', 'env(safe-area-inset-bottom, 0px)'])
+  out.push(['--fluid-browser-bar', 'calc(100lvh - 100svh)'])
+  out.push(['--fluid-header-h', `calc(${g('--fluid-header-inset')} * var(--fluid) + var(--fluid-safe-top) + var(--_fluid-header-row))`])
   // Registered <length> mirrors (×1000) so script can read a unit AT AN
-  // ELEMENT, scopes included, with getComputedStyle: fluidPx(n, unit, el).
+  // ELEMENT, scopes included: fluidPx(n, unit, el) walks up to the first
+  // element whose mirror is set. NOT inherited, on purpose: an inherited,
+  // viewport-dependent registered length made WebKit re-resolve every
+  // element on every resize (45-59 ms a step on a 2000-element page with
+  // 50 scopes, against ~11 ms without; Chromium ~5 ms either way).
   for (const u of measuredUnits(structure)) out.push([`--_fluid-m-${u}`, `calc(var(--fluid${u === 'fluid' ? '' : '-' + u}) * ${S})`])
   if (aliases) {
     if (structure.ui) out.push(['--fluid-chrome', 'var(--fluid-ui)'])
     if (structure.bands.phone.enabled) out.push(['--fluid-column', 'var(--fluid-container-width)'])
+    // v1 / pre-namespace names.
+    out.push(['--header-h', 'var(--fluid-header-h)'], ['--safe-top', 'var(--fluid-safe-top)'], ['--safe-bottom', 'var(--fluid-safe-bottom)'], ['--browser-bar', 'var(--fluid-browser-bar)'])
   }
   return out
 }
@@ -182,7 +204,7 @@ export function engineParts(structure, { buildId, aliases = structure.aliases } 
   const specs = settingsSpec(structure)
   const properties = [
     ...specs.filter((s) => s.registered).map((s) => `@property ${s.name} { syntax: '<number>'; inherits: true; initial-value: ${num(s.default)}; }`),
-    ...measuredUnits(structure).map((u) => `@property --_fluid-m-${u} { syntax: '<length>'; inherits: true; initial-value: 1000px; }`)
+    ...measuredUnits(structure).map((u) => `@property --_fluid-m-${u} { syntax: '<length>'; inherits: false; initial-value: 0px; }`)
   ].join('\n')
   const media = bandMedia(structure)
   const rules = []

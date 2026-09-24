@@ -152,27 +152,40 @@ const valuesOf = (resolved) => Object.fromEntries(Object.entries(resolved).map((
 
 // ── bands ───────────────────────────────────────────────────────────────
 
-/** Media queries for the engine's band blocks (cascade order after :root). */
+/** Media queries for the engine's band blocks (cascade order after :root).
+ * Classic min-/max- syntax, not ranges: the engine then needs only what
+ * svh needs (Safari 15.4, Chrome 108, Firefox 101). With range syntax a
+ * Safari 15.4-16.3 dropped every band block and drew the desktop as a
+ * phone column. */
 export function bandMedia(structure) {
   const b = structure.bands
   return {
-    tablet: b.tablet.enabled ? `(width >= ${b.tablet.minWidth}px)` : null,
-    landscape: b.landscape.enabled ? `(orientation: landscape) and (height <= ${b.landscape.maxHeight}px)` : null,
-    desktop: `(width >= ${b.desktop.minWidth}px)`
+    tablet: b.tablet.enabled ? `(min-width: ${b.tablet.minWidth}px)` : null,
+    landscape: b.landscape.enabled ? `(orientation: landscape) and (max-height: ${b.landscape.maxHeight}px)` : null,
+    desktop: `(min-width: ${b.desktop.minWidth}px)`
   }
 }
 
-/** Mutually exclusive media queries, one per band: what the Tailwind band
- * variants, the SCSS band mixins and fluid.ts's MEDIA use. */
+/** Mutually exclusive media, one per band:
+ *   nest  — classic queries to nest, innermost last (SCSS/StyleX band mixins):
+ *           `not all and (…)` is the exact complement, so there is no gap
+ *           at fractional widths the way a `max-width: 1023.98px` has;
+ *   query — the same band as one range-syntax query (Tailwind variants,
+ *           matchMedia in fluid.ts; Safari 16.4+, which Tailwind v4 needs
+ *           anyway). */
 export function exclusiveMedia(structure) {
   const b = structure.bands
   const D = b.desktop.minWidth
-  const land = b.landscape.enabled ? `(orientation: landscape) and (height <= ${b.landscape.maxHeight}px)` : null
-  const notLand = land ? ` and (not (${land}))` : ''
-  const out = { desktop: `(width >= ${D}px)` }
-  if (b.tablet.enabled) out.tablet = `(${b.tablet.minWidth}px <= width < ${D}px)${notLand}`
-  if (land) out.landscape = `(width < ${D}px) and ${land}`
-  out.phone = `(width < ${b.tablet.enabled ? b.tablet.minWidth : D}px)${notLand}`
+  const landC = b.landscape.enabled ? `(orientation: landscape) and (max-height: ${b.landscape.maxHeight}px)` : null
+  const landR = b.landscape.enabled ? `(orientation: landscape) and (height <= ${b.landscape.maxHeight}px)` : null
+  const notLandR = landR ? ` and (not (${landR}))` : ''
+  const notDesk = `not all and (min-width: ${D}px)`
+  const notLand = landC ? [`not all and ${landC}`] : []
+  const out = { desktop: { nest: [`(min-width: ${D}px)`], query: `(width >= ${D}px)` } }
+  if (b.tablet.enabled) out.tablet = { nest: [`(min-width: ${b.tablet.minWidth}px)`, notDesk, ...notLand], query: `(${b.tablet.minWidth}px <= width < ${D}px)${notLandR}` }
+  if (landC) out.landscape = { nest: [landC, notDesk], query: `(width < ${D}px) and ${landR}` }
+  const top = b.tablet.enabled ? b.tablet.minWidth : D
+  out.phone = { nest: [`not all and (min-width: ${top}px)`, ...notLand], query: `(width < ${top}px)${notLandR}` }
   return out
 }
 
@@ -193,10 +206,14 @@ export function bandAt(structure, w, h) {
  * header in CSS px:
  *   { band, fluid, fluidZ, roles: { display, copy, … }, ui, containerWidth, containerPadding, headerHeight }
  */
+const MOBILE_SHARED = new Set(['container-width', 'container-padding', 'header-height'])
+
 export function evaluate(structure, values, w, h, zoom = 1, band = bandAt(structure, w, h)) {
   const v = values && Object.values(values)[0]?.value !== undefined ? valuesOf(values) : values
   const z = structure.zoom ? zoom : 1
-  const g = (key) => v[`--fluid-${band}-${key}`]
+  // Tablet and landscape container/header settings are optional: unset
+  // means the phone's value ("set mobile once, override a band if needed").
+  const g = (key) => v[`--fluid-${band}-${key}`] ?? (MOBILE_SHARED.has(key) ? v[`--fluid-phone-${key}`] : undefined)
   const inset = v['--fluid-header-inset']
 
   if (band === 'phone' && !structure.bands.phone.enabled) {
@@ -205,8 +222,9 @@ export function evaluate(structure, values, w, h, zoom = 1, band = bandAt(struct
   }
 
   const desktop = band === 'desktop'
-  const baseW = g('base-width')
-  const baseH = desktop ? g('base-height') : baseW
+  // max(1, …): a 0 or negative artboard set live would divide by zero.
+  const baseW = Math.max(1, g('base-width'))
+  const baseH = desktop ? Math.max(1, g('base-height')) : baseW
   const fitH = desktop ? g('fit-height') : 0
   // Limits (window px) apply in the band whose range contains them; off pulls min and max to 1.
   const [lo, hi] = bandEdges(structure)[band]

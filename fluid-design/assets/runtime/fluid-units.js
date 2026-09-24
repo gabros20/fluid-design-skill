@@ -39,9 +39,10 @@ for (var u = 0; u < UNITS.length; u++) {
   ONE[UNITS[u]] = 1
 }
 // v1 name for the ui unit.
-var ALIASES = { chrome: 'ui' }
+var ALIASES = { chrome: 'ui' } // @fluid-aliases
 
 var probes = null
+var observer = null
 var cache = null
 var dirty = true
 var listeners = new Set()
@@ -65,12 +66,15 @@ function ensureProbes() {
   dirty = true
 
   if (typeof ResizeObserver !== 'undefined') {
-    var ro = new ResizeObserver(function () {
-      var before = cache
-      measure()
-      if (!before || changed(before, cache)) notify()
-    })
-    for (var j = 0; j < UNITS.length; j++) ro.observe(els[UNITS[j]])
+    // One observer: probes rebuilt (a framework replaced <body>) re-use it.
+    if (observer) observer.disconnect()
+    else
+      observer = new ResizeObserver(function () {
+        var before = cache
+        measure()
+        if (!before || changed(before, cache)) notify()
+      })
+    for (var j = 0; j < UNITS.length; j++) observer.observe(els[UNITS[j]])
   }
   if (!resizeWired) {
     resizeWired = true
@@ -88,7 +92,7 @@ function measure() {
     var w = p.els[UNITS[i]].getBoundingClientRect().width / 1000
     next[UNITS[i]] = w > 0 && isFinite(w) ? w : 1
   }
-  cache = next
+  cache = Object.freeze(next)
   dirty = false
   return cache
 }
@@ -113,17 +117,22 @@ export function fluidUnits() {
 
 /** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport.
  * Pass `el` to read the unit as it applies AT that element: inside a limit or
- * a scope (fluid-grow-until-1680, fluid-off, fluid-scope) the units differ
- * from the page's. That read is a getComputedStyle of a registered length the
- * engine mirrors on every scope; it costs a style read per call, so cache it
- * per frame, not per tween tick. */
+ * a scope (fluid-grow-until-1680, fluid-off, fluid-scope, an SCSS mixin
+ * scope) the units differ from the page's. The engine sets a registered,
+ * NON-inherited length (--_fluid-m-<unit>, 0px elsewhere) on :root and every
+ * scope, so this walks up from `el` to the first element that has one: one
+ * getComputedStyle per ancestor, so cache it per frame, not per tween tick.
+ * Without @property (Firefox < 128) the mirror is never a length, and this
+ * falls back to the page's units. */
 export function fluidPx(n, unit, el) {
   if (n === undefined) n = 1
   var key = ALIASES[unit] || unit || 'fluid'
   if (UNITS.indexOf(key) < 0) throw new Error('fluid-units: unknown unit "' + unit + '" (known: ' + UNITS.join(', ') + ')')
   if (el && typeof getComputedStyle !== 'undefined') {
-    var v = parseFloat(getComputedStyle(el).getPropertyValue('--_fluid-m-' + key))
-    if (v > 0 && isFinite(v)) return (n * v) / 1000
+    for (var e = el; e && e.nodeType === 1; e = e.parentElement) {
+      var v = parseFloat(getComputedStyle(e).getPropertyValue('--_fluid-m-' + key))
+      if (v > 0 && isFinite(v)) return (n * v) / 1000
+    }
   }
   return n * fluidUnits()[key]
 }

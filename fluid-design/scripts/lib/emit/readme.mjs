@@ -51,6 +51,13 @@ ${'```html'}
 ${'```'}
 (or paste runtime/zoom.classic.js inline in that <script>.)
 (\`output.integration\` can generate this for Next or Vite.)`}
+
+It writes \`--fluid-zoom\` to an adopted stylesheet (\`:root\`), not to an
+attribute on \`<html>\`, so React sees no hydration mismatch; read it with
+\`getComputedStyle\`. Under a strict CSP, ${structure.output.integration === 'next' ? `pass your middleware's nonce,
+\`<FluidHead nonce={(await headers()).get('x-nonce') ?? undefined} />\`, or` : structure.output.integration === 'vite' ? `\`fluidPlugin({ nonce })\` puts a nonce on the tag, or` : `put your nonce on that \`<script>\`, or`}
+allow \`FLUID_ZOOM_SHA256\` from runtime/zoom.js in \`script-src\` (the script
+text is a literal fixed at generate time, so the hash holds).
 ` : ''}
 ## Tuning: settings are CSS variables
 
@@ -71,7 +78,7 @@ what everything resolves to at a viewport and where each value came from.
 
 ## Bands
 
-${bands.map((b) => `- **${b}** — ${bandBlurb(structure, b)}. \`${ex[b]}\``).join('\n')}
+${bands.map((b) => `- **${b}** — ${bandBlurb(structure, b)}. \`${ex[b].query}\``).join('\n')}
 
 Authors write each drawing once: the phone numbers for every mobile band,
 the desktop numbers from \`lg:\` up. Only the unit changes between bands.
@@ -84,7 +91,7 @@ the desktop numbers from \`lg:\` up. Only the unit changes between bands.
 ${roles.map((r) => `| \`--fluid-${r}\` | ${r} type (\`${p}-${r}-64/72\`): damped, so it shrinks less than the layout |`).join('\n')}
 | \`--fluid-text\` (via \`${p}-text-*\`) | type inside a box that scales with the layout |
 ${structure.ui ? `| \`--fluid-ui\` | the header, nav, footer: follows the width, never shrinks for a short window (\`${p}-ui-h-*\`, …) |\n` : ''}| \`--fluid-container-width\` / \`-padding\` | the page container (\`${p}-container\`) |
-| \`--header-h\` | the header's height, safe area included |
+| \`--fluid-header-h\` | the header's height, safe area included |
 
 Scripts read the same units as numbers: \`fluidPx(600)\`, \`fluidPx(24, '${roles[1] ?? roles[0]}')\` (from \`fluid.ts\`).
 

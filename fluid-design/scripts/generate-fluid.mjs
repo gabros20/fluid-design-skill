@@ -101,9 +101,10 @@ ${bandTables}
 ## Custom properties the engine owns
 
 \`--fluid\`, \`--fluid-z\` (zoom on), \`--fluid-<role>\`, \`--fluid-ui\` (ui on),
-\`--fluid-container-width\`, \`--fluid-container-padding\`, \`--header-h\`,
-\`--safe-top\`, \`--safe-bottom\`, \`--browser-bar\`, \`--fluid-build\`. With
-\`aliases\`: \`--fluid-chrome\`, \`--fluid-column\`. Set by the runtime:
+\`--fluid-container-width\`, \`--fluid-container-padding\`, \`--fluid-header-h\`,
+\`--fluid-safe-top\`, \`--fluid-safe-bottom\`, \`--fluid-browser-bar\`, \`--fluid-build\`. With
+\`aliases\`: \`--fluid-chrome\`, \`--fluid-column\`, and the pre-namespace \`--header-h\`,
+\`--safe-top\`, \`--safe-bottom\`, \`--browser-bar\`. Set by the runtime:
 \`--fluid-zoom\`. Private: \`--_fluid-*\`. Never set any of these yourself; set
 the settings they are built from.
 `

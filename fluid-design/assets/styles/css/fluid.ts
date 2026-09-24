@@ -24,9 +24,6 @@ export const MEDIA: Record<BandName, string> = {
 /** Where the desktop design takes over (bands.desktop.minWidth). */
 export const DESKTOP_PX = 1024
 export const DESKTOP_QUERY = '(min-width: 1024px)'
-/** v1 names for the same thing. */
-export const ENGAGE_PX = DESKTOP_PX
-export const ENGAGE_QUERY = DESKTOP_QUERY
 
 /** Utility / class names. */
 export const PREFIX = 'fluid'
@@ -39,9 +36,7 @@ export const SETTINGS = {
   '--fluid-phone-scale-min': { band: 'phone', default: 0.82, doc: "the unit never goes below this (smallest phones stop shrinking)" },
   '--fluid-phone-scale-max': { band: 'phone', default: 1.1, doc: "the unit never goes above this" },
   '--fluid-phone-display-damping': { band: 'phone', default: 0.85, doc: "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-phone-display-floor': { band: 'phone', default: null, doc: "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up)" },
   '--fluid-phone-copy-damping': { band: 'phone', default: 0.6, doc: "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-phone-copy-floor': { band: 'phone', default: null, doc: "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up)" },
   '--fluid-phone-container-width': { band: 'phone', default: 560, doc: "page container max width, drawn px (holds the phone design to a column on wide screens)" },
   '--fluid-phone-container-padding': { band: 'phone', default: 24, doc: "page container side padding, drawn px" },
   '--fluid-phone-header-height': { band: 'phone', default: 34, doc: "header row height, CSS px (not scaled on mobile)" },
@@ -49,22 +44,18 @@ export const SETTINGS = {
   '--fluid-tablet-scale-min': { band: 'tablet', default: 1.1, doc: "the unit never goes below this (smallest phones stop shrinking)" },
   '--fluid-tablet-scale-max': { band: 'tablet', default: 1.3, doc: "the unit never goes above this" },
   '--fluid-tablet-display-damping': { band: 'tablet', default: 0.85, doc: "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-tablet-display-floor': { band: 'tablet', default: null, doc: "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up)" },
   '--fluid-tablet-copy-damping': { band: 'tablet', default: 0.6, doc: "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-tablet-copy-floor': { band: 'tablet', default: null, doc: "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up)" },
-  '--fluid-tablet-container-width': { band: 'tablet', default: 560, doc: "page container max width, drawn px (holds the phone design to a column on wide screens)" },
-  '--fluid-tablet-container-padding': { band: 'tablet', default: 24, doc: "page container side padding, drawn px" },
-  '--fluid-tablet-header-height': { band: 'tablet', default: 34, doc: "header row height, CSS px (not scaled on mobile)" },
+  '--fluid-tablet-container-width': { band: 'tablet', default: null, doc: "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value)" },
+  '--fluid-tablet-container-padding': { band: 'tablet', default: null, doc: "page container side padding, drawn px (unset = the phone value)" },
+  '--fluid-tablet-header-height': { band: 'tablet', default: null, doc: "header row height, CSS px (not scaled on mobile) (unset = the phone value)" },
   '--fluid-landscape-base-width': { band: 'landscape', default: 780, doc: "viewport width where the phone design is drawn 1:1 in this band" },
   '--fluid-landscape-scale-min': { band: 'landscape', default: 1, doc: "the unit never goes below this (smallest phones stop shrinking)" },
   '--fluid-landscape-scale-max': { band: 'landscape', default: 1.2, doc: "the unit never goes above this" },
   '--fluid-landscape-display-damping': { band: 'landscape', default: 0.85, doc: "display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-landscape-display-floor': { band: 'landscape', default: null, doc: "optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up)" },
   '--fluid-landscape-copy-damping': { band: 'landscape', default: 0.6, doc: "copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size" },
-  '--fluid-landscape-copy-floor': { band: 'landscape', default: null, doc: "optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up)" },
-  '--fluid-landscape-container-width': { band: 'landscape', default: 560, doc: "page container max width, drawn px (holds the phone design to a column on wide screens)" },
-  '--fluid-landscape-container-padding': { band: 'landscape', default: 24, doc: "page container side padding, drawn px" },
-  '--fluid-landscape-header-height': { band: 'landscape', default: 34, doc: "header row height, CSS px (not scaled on mobile)" },
+  '--fluid-landscape-container-width': { band: 'landscape', default: null, doc: "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value)" },
+  '--fluid-landscape-container-padding': { band: 'landscape', default: null, doc: "page container side padding, drawn px (unset = the phone value)" },
+  '--fluid-landscape-header-height': { band: 'landscape', default: null, doc: "header row height, CSS px (not scaled on mobile) (unset = the phone value)" },
   '--fluid-desktop-base-width': { band: 'desktop', default: 1440, doc: "viewport width where 1 drawn px = 1 CSS px (the artboard width)" },
   '--fluid-desktop-base-height': { band: 'desktop', default: 900, doc: "artboard height: at this window height a 1:1 section fits exactly" },
   '--fluid-desktop-fit-height': { band: 'desktop', default: 1, doc: "1 = a section drawn as tall as the artboard always fits the window; 0 = scale by width only" },
@@ -80,7 +71,7 @@ export const SETTINGS = {
   '--fluid-header-inset': { band: null, default: 24, doc: "space above the header row, drawn px (plus the safe-area inset)" },
   '--fluid-grow-until': { band: null, default: null, doc: "window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit)" },
   '--fluid-shrink-until': { band: null, default: null, doc: "window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window" },
-  '--fluid-ui-grow-until': { band: null, default: null, doc: "window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width" },
+  '--fluid-ui-grow-until': { band: null, default: null, doc: "window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --fluid-header-h) at their size at that width" },
   '--fluid-off': { band: null, default: null, doc: "1 = nothing scales here: every drawn px is one CSS px (browser zoom still works)" }
 } as const
 

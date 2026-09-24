@@ -65,9 +65,7 @@ phone — portrait phones, the 390 artboard.
 | `--fluid-phone-scale-min` | `0.82` | the unit never goes below this (smallest phones stop shrinking) |
 | `--fluid-phone-scale-max` | `1.1` | the unit never goes above this |
 | `--fluid-phone-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-phone-display-floor` | unset | optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) |
 | `--fluid-phone-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-phone-copy-floor` | unset | optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) |
 | `--fluid-phone-container-width` | `560` | page container max width, drawn px (holds the phone design to a column on wide screens) |
 | `--fluid-phone-container-padding` | `24` | page container side padding, drawn px |
 | `--fluid-phone-header-height` | `34` | header row height, CSS px (not scaled on mobile) |
@@ -82,12 +80,10 @@ tablet — 600px and wider: the phone design, scaled up.
 | `--fluid-tablet-scale-min` | `1.1` | the unit never goes below this (smallest phones stop shrinking) |
 | `--fluid-tablet-scale-max` | `1.3` | the unit never goes above this |
 | `--fluid-tablet-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-tablet-display-floor` | unset | optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) |
 | `--fluid-tablet-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-tablet-copy-floor` | unset | optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) |
-| `--fluid-tablet-container-width` | `560` | page container max width, drawn px (holds the phone design to a column on wide screens) |
-| `--fluid-tablet-container-padding` | `24` | page container side padding, drawn px |
-| `--fluid-tablet-header-height` | `34` | header row height, CSS px (not scaled on mobile) |
+| `--fluid-tablet-container-width` | unset | page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
+| `--fluid-tablet-container-padding` | unset | page container side padding, drawn px (unset = the phone value) |
+| `--fluid-tablet-header-height` | unset | header row height, CSS px (not scaled on mobile) (unset = the phone value) |
 
 ### landscape
 
@@ -99,12 +95,10 @@ landscape — a phone on its side (500px tall or less): the phone design, scaled
 | `--fluid-landscape-scale-min` | `1` | the unit never goes below this (smallest phones stop shrinking) |
 | `--fluid-landscape-scale-max` | `1.2` | the unit never goes above this |
 | `--fluid-landscape-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-landscape-display-floor` | unset | optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) |
 | `--fluid-landscape-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-landscape-copy-floor` | unset | optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) |
-| `--fluid-landscape-container-width` | `560` | page container max width, drawn px (holds the phone design to a column on wide screens) |
-| `--fluid-landscape-container-padding` | `24` | page container side padding, drawn px |
-| `--fluid-landscape-header-height` | `34` | header row height, CSS px (not scaled on mobile) |
+| `--fluid-landscape-container-width` | unset | page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
+| `--fluid-landscape-container-padding` | unset | page container side padding, drawn px (unset = the phone value) |
+| `--fluid-landscape-header-height` | unset | header row height, CSS px (not scaled on mobile) (unset = the phone value) |
 
 ### desktop
 
@@ -132,7 +126,7 @@ desktop — 1024px and wider: the 1440×900 artboard.
 | `--fluid-header-inset` | `24` | space above the header row, drawn px (plus the safe-area inset) |
 | `--fluid-grow-until` | unset | window width (CSS px) past which the units stop growing: they keep the size they had at that width (unset = no limit) |
 | `--fluid-shrink-until` | unset | window width (CSS px) below which the units stop shrinking (unset = no limit). Overrides fit-height: a section sized to the screen can then outgrow a short window |
-| `--fluid-ui-grow-until` | unset | window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --header-h) at their size at that width |
+| `--fluid-ui-grow-until` | unset | window width past which --fluid-ui stops growing. On :root it keeps the header, nav and footer (and --fluid-header-h) at their size at that width |
 | `--fluid-off` | unset | 1 = nothing scales here: every drawn px is one CSS px (browser zoom still works) |
 | `--fluid-zoom-text-full` | `24` | fluid-text at or below this drawn size zooms fully with browser zoom |
 | `--fluid-zoom-text-none` | `48` | fluid-text at or above this drawn size keeps fitting its box instead |
@@ -140,8 +134,9 @@ desktop — 1024px and wider: the 1440×900 artboard.
 ## Custom properties the engine owns
 
 `--fluid`, `--fluid-z` (zoom on), `--fluid-<role>`, `--fluid-ui` (ui on),
-`--fluid-container-width`, `--fluid-container-padding`, `--header-h`,
-`--safe-top`, `--safe-bottom`, `--browser-bar`, `--fluid-build`. With
-`aliases`: `--fluid-chrome`, `--fluid-column`. Set by the runtime:
+`--fluid-container-width`, `--fluid-container-padding`, `--fluid-header-h`,
+`--fluid-safe-top`, `--fluid-safe-bottom`, `--fluid-browser-bar`, `--fluid-build`. With
+`aliases`: `--fluid-chrome`, `--fluid-column`, and the pre-namespace `--header-h`,
+`--safe-top`, `--safe-bottom`, `--browser-bar`. Set by the runtime:
 `--fluid-zoom`. Private: `--_fluid-*`. Never set any of these yourself; set
 the settings they are built from.
