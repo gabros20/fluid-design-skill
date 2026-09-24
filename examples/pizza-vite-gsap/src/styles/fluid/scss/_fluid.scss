@@ -158,8 +158,8 @@ $fluid-zoom-text-none: 48;
 @mixin fluid-units {
   --fluid: calc(clamp(820px, calc(100vw * 1000 / 390), 1100px) / 1000);
   --fluid-z: calc(clamp(820px, calc(100vw * 1000 / 390 * var(--fluid-zoom, 1)), 1100px) / 1000);
-  --fluid-display: calc(max(890px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
-  --fluid-copy: calc(max(940px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+  --fluid-display: calc(max(850px, calc(var(--fluid-z) * 1000), calc(850 * var(--fluid-z) + 150px)) / 1000);
+  --fluid-copy: calc(max(890px, calc(var(--fluid-z) * 1000), calc(600 * var(--fluid-z) + 400px)) / 1000);
   --fluid-chrome: var(--fluid);
   --fluid-column: 1600px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -169,16 +169,16 @@ $fluid-zoom-text-none: 48;
   @media (width >= 600px) {
     --fluid: calc(clamp(1100px, calc(100vw * 1000 / 700), 1300px) / 1000);
     --fluid-z: calc(clamp(1100px, calc(100vw * 1000 / 700 * var(--fluid-zoom, 1)), 1300px) / 1000);
-    --fluid-display: calc(max(1060px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
-    --fluid-copy: calc(max(1030px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+    --fluid-display: calc(max(1090px, calc(var(--fluid-z) * 1000), calc(850 * var(--fluid-z) + 150px)) / 1000);
+    --fluid-copy: calc(max(1060px, calc(var(--fluid-z) * 1000), calc(600 * var(--fluid-z) + 400px)) / 1000);
     --fluid-chrome: var(--fluid);
     --fluid-column: calc(560 * var(--fluid));
   }
   @media (orientation: landscape) and (height <= 500px) {
     --fluid: calc(clamp(1000px, calc(100vw * 1000 / 780), 1200px) / 1000);
     --fluid-z: calc(clamp(1000px, calc(100vw * 1000 / 780 * var(--fluid-zoom, 1)), 1200px) / 1000);
-    --fluid-display: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(620 * var(--fluid-z) + 380px)) / 1000);
-    --fluid-copy: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(330 * var(--fluid-z) + 670px)) / 1000);
+    --fluid-display: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(850 * var(--fluid-z) + 150px)) / 1000);
+    --fluid-copy: calc(max(1000px, calc(var(--fluid-z) * 1000), calc(600 * var(--fluid-z) + 400px)) / 1000);
     --fluid-chrome: var(--fluid);
     --fluid-column: calc(560 * var(--fluid));
   }

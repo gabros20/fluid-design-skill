@@ -34,6 +34,7 @@ export const DEFAULT_CONFIG = Object.freeze({
     min: 0.82,
     max: 1.1,
     column: 560,
+    damping: Object.freeze({ display: 0.85, copy: 0.6 }),
     landscape: Object.freeze({ enabled: true, reference: 780, min: 1, max: 1.2, maxHeight: 500 }),
     tablet: Object.freeze({ enabled: true, from: 600, reference: 700, min: 1.1, max: 1.3 })
   }),
@@ -97,6 +98,7 @@ export function mergeConfig(partial = {}) {
     mobile: {
       ...DEFAULT_CONFIG.mobile,
       ...(partial.mobile ?? {}),
+      damping: { ...DEFAULT_CONFIG.mobile.damping, ...(partial.mobile?.damping ?? {}) },
       landscape: { ...DEFAULT_CONFIG.mobile.landscape, ...(partial.mobile?.landscape ?? {}) },
       tablet: { ...DEFAULT_CONFIG.mobile.tablet, ...(partial.mobile?.tablet ?? {}) }
     },
@@ -150,6 +152,8 @@ export function validateConfig(cfg) {
     assert(isFiniteNumber(b.min) && isFiniteNumber(b.max) && b.min > 0 && b.min <= b.max, `mobile.${name}: need 0 < min <= max`)
   }
   assertPositiveNumber(mo.landscape.maxHeight, 'mobile.landscape.maxHeight')
+  assertDamping(mo.damping?.display, 'mobile.damping.display')
+  assertDamping(mo.damping?.copy, 'mobile.damping.copy')
   assert(isFiniteNumber(mo.tablet.from) && mo.tablet.from > 0 && mo.tablet.from < cfg.engageAt, `mobile.tablet.from must be < engageAt (${cfg.engageAt})`)
 
   for (const k of Object.keys(cfg.utilities)) {
@@ -245,9 +249,13 @@ export function round2(n) {
 /** The type floors below engageAt when the mobile arm is on: the damped
  * curve read at mobile.min, the same derivation as the desktop floors read
  * at engageAt (fluid-scale.md §5). */
+// The mobile bands damp type with mobile.damping, not the desktop dampings:
+// across the narrow phone range (0.82-1.10) the desktop 0.62/0.33 leave type
+// nearly static (body 16 -> 15.1 at 320), so phones use 0.85/0.60 by default.
 export function resolveBandFloors(cfg, min) {
-  const resolve = (unit) => round2(unit.damping * min + (1 - unit.damping))
-  return { display: resolve(cfg.units.display), copy: resolve(cfg.units.copy) }
+  const dm = cfg.mobile.damping
+  const resolve = (damping) => round2(damping * min + (1 - damping))
+  return { display: resolve(dm.display), copy: resolve(dm.copy) }
 }
 export function resolveMobileFloors(cfg) {
   return resolveBandFloors(cfg, cfg.mobile.min)
@@ -306,9 +314,9 @@ export function factors(cfg, w, h, zoom = 1) {
   // fluid-zoom.js writes to --fluid-zoom (1 without it). The type units read
   // the viewport arms times the zoom, clamped exactly like --fluid.
   const z = cfg.zoomCompensation ? zoom : 1
-  const typeUnits = (tf, dFloor, cFloor) => ({
-    display: Math.max(dFloor, tf, cfg.units.display.damping * tf + (1 - cfg.units.display.damping)),
-    copy: Math.max(cFloor, tf, cfg.units.copy.damping * tf + (1 - cfg.units.copy.damping))
+  const typeUnits = (tf, dFloor, cFloor, dd = cfg.units.display.damping, cd = cfg.units.copy.damping) => ({
+    display: Math.max(dFloor, tf, dd * tf + (1 - dd)),
+    copy: Math.max(cFloor, tf, cd * tf + (1 - cd))
   })
 
   if (w < cfg.engageAt) {
@@ -319,7 +327,7 @@ export function factors(cfg, w, h, zoom = 1) {
     const clampB = (v) => Math.min(b.max, Math.max(b.min, v))
     const fluid = clampB(w / b.reference)
     const mf = resolveBandFloors(cfg, b.min)
-    return { fluid, ...typeUnits(clampB((w * z) / b.reference), mf.display, mf.copy), chrome: fluid, band }
+    return { fluid, ...typeUnits(clampB((w * z) / b.reference), mf.display, mf.copy, mo.damping.display, mo.damping.copy), chrome: fluid, band }
   }
 
   const clampD = (widthArm, heightArm) => {
@@ -437,8 +445,8 @@ export function cssUnits(cfg) {
       return {
         '--fluid': bandBase(ref, min, max, false),
         ...(zc ? { '--fluid-z': bandBase(ref, min, max, true) } : {}),
-        '--fluid-display': typeUnit(d, mf.display, typeBase),
-        '--fluid-copy': typeUnit(c, mf.copy, typeBase),
+        '--fluid-display': typeUnit(mo.damping.display, mf.display, typeBase),
+        '--fluid-copy': typeUnit(mo.damping.copy, mf.copy, typeBase),
         ...(cfg.units.chrome.enabled ? { '--fluid-chrome': 'var(--fluid)' } : {}),
         '--fluid-column': column
       }

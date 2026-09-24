@@ -436,6 +436,12 @@ with no tablet design; this is built for that.
   stretching its lines across an 834px screen. Full-bleed section colour stays full width because
   it is on the section, not the frame. Tailwind: `max-w-(--fluid-column)` on the frame box (below
   `lg`); the CSS and SCSS frame helpers apply it themselves. `column: null` turns it off.
+- **Type damping on phones is its own knob** (`mobile.damping`, default display 0.85, copy 0.60).
+  The desktop dampings (0.62 / 0.33) were tuned for a 0.58–1.0 range; across the phone band's
+  0.82–1.10 they leave type nearly static (body 16 → 15.1 at 320). With the phone dampings type
+  follows the layout more closely below 390: heading 44 → 42.6 at 375 and 37.3 at 320, body
+  16 → 15.6 and 14.3. Above the reference, type grows with the layout as on desktop. Smallest drawn
+  labels shrink too (11 → 9.8 at 320): draw phone labels at 12 or more, or raise `copy` toward 0.33.
 - **Why the clamps are narrow.** A phone composition stretched past about 1.3× reads as a toy, and
   outside a clamp the unit is plain px, so text zoom on the phone keeps working there.
 - **A designed tablet.** If the designer draws one (say 834), author its numbers with `md:` and
