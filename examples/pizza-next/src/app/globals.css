@@ -3,8 +3,8 @@
    Generated from fluid.config.json by `fluid generate`. */
 @import '../styles/fluid/fluid.css';
 /* The motion half of a base layer (scroll-behavior, reduced-motion collapse, --fill,
-   noscript): the scroll-animation skill's motion-base.css. */
-@import '../styles/motion-base.css' layer(base);
+   noscript): the scroll-animation skill's styles/motion folder, beside styles/fluid. */
+@import '../styles/motion/motion.css' layer(base);
 
 /* Forno Aurelia tokens: a brand ramp, then semantic roles. Components use the ROLES only. */
 @theme {

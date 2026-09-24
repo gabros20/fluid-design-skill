@@ -59,7 +59,7 @@ the brief, so no questions were asked.
   units and reintroduces the `sm:` before `lg:` ordering bug that first appeared as
   SKILL-FEEDBACK #0 (then caused by the old hand-written `tokens.css`, now impossible: there is no
   hand-written breakpoint token left to conflict).
-- `globals.css` imports the scroll-animation skill's `motion-base.css` right after `fluid.css`
+- `globals.css` imports the scroll-animation skill's `styles/motion/motion.css` right after `fluid.css`
   (both `layer(base)`); it sets `html[data-scroll-behavior] { scroll-behavior: auto }` against
   Next's own instant-scroll override, and hides `[data-scrub-spacer]` under reduced motion. Smooth
   scrolling plus the dough scene's scroll well had stalled anchor jumps at act 3 (SKILL-FEEDBACK

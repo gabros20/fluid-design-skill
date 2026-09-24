@@ -91,7 +91,7 @@ disjoint files to split.
 Brought onto the post-review system (`docs/REVIEW-2026-09.md`):
 - `fluid.config.json`: `zoomCompensation: true`, `zoomTextRange: [24, 48]`; `src/styles/fluid/`
   regenerated (SCSS layer and the render-only `shared/base.css`).
-- `src/motion/motion-base.css` (from the `scroll-animation` skill) carries the motion half the old
+- `src/styles/motion/motion.css` + `motion.gsap.css` (from the `scroll-animation` skill) carries the motion half the old
   `base.css` held; imported right after it in `src/main.ts`.
 - `src/lib/fluid-zoom.js` (+ `.d.ts`) inlined at the top of `<head>` by a small Vite plugin in
   `vite.config.ts` (`transformIndexHtml`), because a `<script type="module">` is deferred and a
