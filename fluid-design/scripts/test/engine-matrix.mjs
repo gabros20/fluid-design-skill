@@ -60,7 +60,7 @@ const cases = [
   ['flat + limits (no effect)', { bands: { phone: false, tablet: false, landscape: false } }, { '--fluid-grow-until': 800, '--fluid-shrink-until': 900 }],
   ['limit + moved desktop band', { bands: { desktop: { minWidth: 1280 } } }, { '--fluid-grow-until': 1100, '--fluid-shrink-until': 1600 }]
 ]
-const v1dir = join(here, '../fixtures/v1-configs')
+const v1dir = join(here, './fixtures/v1-configs')
 for (const f of readdirSync(v1dir).filter((f) => f.endsWith('.json')).sort()) {
   const json = JSON.parse(readFileSync(join(v1dir, f), 'utf8'))
   delete json.$schema

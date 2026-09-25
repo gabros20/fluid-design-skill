@@ -37,7 +37,7 @@
 //
 // Verified with real Chromium zoom (Preferences default_zoom_level, new
 // headless) at 110–300% on 1440, 1920 and 2560 windows, on the fixture page
-// and both example builds: see scripts/verify-matrix.mjs's zoom row.
+// and both example builds: see scripts/tools/verify.mjs's zoom row.
 // Safari has its own path (see detectSafari), verified on Safari 26 by driving
 // real zoom steps and the sidebar through Cua Driver. Firefox is gated off: it
 // reported 2.222 at 110%, and it exposes no unambiguous signal. The false

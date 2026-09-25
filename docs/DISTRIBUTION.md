@@ -20,13 +20,13 @@ interactive answer is a flag.
 ## 2. The binary question: decision
 
 **Ship both: npm is the main channel, standalone binaries are the no-Node channel.** One
-source (`fluid-design/scripts/cli.mjs`), three ways to run it:
+source (`fluid-design/scripts/cli/index.mjs`), three ways to run it:
 
 | Channel | Command | For | Built by |
 |---|---|---|---|
 | skill folder | `node <skill>/bin/fluid init` | A | already there |
 | npm | `npx fluid-design-cli@2 init` | B, D | `npm publish` from `fluid-design/` |
-| standalone | `curl -fsSL …/install.sh \| sh`, then `fluid init` | C, D | `scripts/build-bin.mjs` (`bun build --compile`), attached to GitHub Releases |
+| standalone | `curl -fsSL …/install.sh \| sh`, then `fluid init` | C, D | `scripts/dev/build-bin.mjs` (`bun build --compile`), attached to GitHub Releases |
 
 Why:
 

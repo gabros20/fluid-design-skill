@@ -44,7 +44,7 @@ over copy it cleared at 100%.
 
 **Chromium.** Verified with real zoom (`Preferences` `default_zoom_level`, new headless) at
 110–300% on 1440, 1920 and 2560 windows, on the fixture page and both example builds
-(`verify-matrix.mjs`'s zoom row). `outerWidth` reads 0 until the first frame, so the script retries
+(`verify.mjs`'s zoom row). `outerWidth` reads 0 until the first frame, so the script retries
 on the next frames.
 
 The width match alone is fooled whenever a side panel's share of the window equals a

@@ -11,7 +11,7 @@ stopped myself. The last full run followed the final code change. Compact eviden
 
 ## 2. Audit — PASS (0 errors, 0 warnings, 1 info)
 
-`node ../../fluid-design/scripts/audit.mjs src` (script re-read before running; mtime 13:41) → `verify/audit.txt`
+`node ../../fluid-design/scripts/tools/audit.mjs src` (script re-read before running; mtime 13:41) → `verify/audit.txt`
 
 | Finding | Kept because |
 |---|---|
@@ -19,7 +19,7 @@ stopped myself. The last full run followed the final code change. Compact eviden
 
 ## 3. Viewport matrix — PASS, 27/27
 
-`node ../../fluid-design/scripts/verify-matrix.mjs http://localhost:4310 --reveal --screens --fit-selector '[data-fit=screen]'`
+`node ../../fluid-design/scripts/tools/verify.mjs http://localhost:4310 --reveal --screens --fit-selector '[data-fit=screen]'`
 → `verify/matrix-summary.txt`, `verify/matrix-report.json`
 
 The run covers widths 1024/1280/1440/1680/2560 × heights 640/700/800/900/1440, plus 390×844 and
@@ -105,7 +105,7 @@ Added after the review in `docs/REVIEW-2026-09.md`. The build now inlines
 `src/lib/fluid-zoom.js` in `<head>` (`FLUID_ZOOM_INLINE`, `src/app/layout.tsx`), and
 `fluid.config.json` has `zoomCompensation: true` (regenerated `src/styles/fluid.css`).
 
-`verify-matrix.mjs` zoom row, real Chromium zoom, production build (`next start -p 4317`):
+`verify.mjs` zoom row, real Chromium zoom, production build (`next start -p 4317`):
 
 | Window | Zoom | Before (text growth) | After (text growth) |
 |---|---|---|---|

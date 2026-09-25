@@ -188,7 +188,7 @@ full content width; a grid meant to fill the container edge-to-edge wants (a) in
 **Recommendation: reach for (a) first.** It is correct for a grid that fills its container (the common
 case), needs no change to the grid's own sizing, and holds under every viewport combination — width
 binding, height binding, or the max-width's own grow-only floor — rather than only the ones where the
-container's content box and the scaled minimum happen to move together. `scripts/verify-matrix.mjs`'s
+container's content box and the scaled minimum happen to move together. `scripts/tools/verify.mjs`'s
 grid-cols report is what catches a regression here: mark the grid `data-verify-grid` and it fails
 the run whenever the computed column count differs across desktop viewports, unless the grid opts
 out (by design) with `data-verify-grid="responsive"`.

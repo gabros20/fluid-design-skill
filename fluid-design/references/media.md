@@ -110,7 +110,7 @@ sizes correctly in Chromium. Drop `width`/`height` attributes from the SVG sourc
 size it from a CSS class (paired with an `aspect-[W/H]` utility matching the `viewBox`, so
 `h-* w-auto` resolves the width correctly in every engine) rather than fighting layer order.
 
-`scripts/audit.mjs` flags `<img src="….svg">` (`img-svg`).
+`scripts/tools/audit.mjs` flags `<img src="….svg">` (`img-svg`).
 
 ## 5. The video element: rendering only
 

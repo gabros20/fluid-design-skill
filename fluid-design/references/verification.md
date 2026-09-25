@@ -48,7 +48,7 @@ resolves to and which setting produced it.
 ## 2. Tier 2 — the viewport matrix
 
 A layout change is never verified at one window: sweep the matrix in §5 with `fluid verify`
-(`scripts/verify-matrix.mjs`). It is scripted like tier 1 but broader, and it is what catches the
+(`scripts/tools/verify.mjs`). It is scripted like tier 1 but broader, and it is what catches the
 drift bugs that exist only above the reference.
 
 ### The zoom row (WCAG 1.4.4)
@@ -219,7 +219,7 @@ list — check each script's own `--help` for the current surface:
   its limit does nothing there. `--at <selector>` explains one element instead, and says so when it
   sets fluid settings without being a scope. `--set --fluid-<setting>=<n>` (repeatable) changes the
   prediction without touching any file, offline or with `--url`.
-- **`fluid verify <url> --screens --fit-selector '[data-fit=screen]'`** (`scripts/verify-matrix.mjs`)
+- **`fluid verify <url> --screens --fit-selector '[data-fit=screen]'`** (`scripts/tools/verify.mjs`)
   — drives the viewport matrix (§5) against a running server. It checks horizontal overflow, checks
   units the same way `fluid explain --url` does — resolved against the page's own settings, with the
   build stamp (§6) diagnosing *why* a mismatched unit is wrong: `missing` (no fluid stylesheet at all),
@@ -237,7 +237,7 @@ list — check each script's own `--help` for the current surface:
   zoom row needs Chromium and is skipped on the others. Exit codes: 0 pass, 1 a check failed, 2 usage
   error or Playwright not found. Reveal checking and anchor-jump checking are not here: they are
   the `scroll-animation` skill's `verify-motion` script.
-- **`fluid calc table|px|budget`** (`scripts/calc.mjs`) — a standalone calculator for the fluid-scale
+- **`fluid calc table|px|budget`** (`scripts/tools/calc.mjs`) — a standalone calculator for the fluid-scale
   arithmetic itself, reading settings from the nearest `fluid.config.json` and the project's own CSS
   (or `--config`): `table` prints the resolved unit at a set of viewports plus which arm is binding
   (`width`, `height`, `min`, `max`, or `flat` below the desktop band) — the "Resolved factors" table
@@ -246,7 +246,7 @@ list — check each script's own `--help` for the current surface:
   content budget at the artboard (`min(base-width, container-width) − 2×padding`) before a section is
   built, rather than after it ships and overflows, suggesting `cqw` fractions of the container's
   content box on OVER (`fluid-scale.md` §4.1's container-query escape).
-- **`fluid audit <src>`** (`scripts/audit.mjs`) — the static scanner: walks your project's source,
+- **`fluid audit <src>`** (`scripts/tools/audit.mjs`) — the static scanner: walks your project's source,
   applying the rule table in `scripts/README.md` (`fixed-px-at-engage`, `length-times-unit`,
   `band-variant-with-breakpoint`, `limit-on-children`, and the rest), each finding carrying a rule
   id, `file:line`, the offending snippet, a *why* and a *fix*. With a `fluid.config.json` above the

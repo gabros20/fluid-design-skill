@@ -66,7 +66,7 @@ either (1.29:1); a dark ring at 16:1 is the one that shows where you are.
    near-invisible hairline. Namespace a second component set's tokens (`app-*`) so a foreign name
    either exists or fails, and never silently means something else.
 
-`scripts/audit.mjs` catches 1 and 2; a lint list of banned token families catches 4.
+`scripts/tools/audit.mjs` catches 1 and 2; a lint list of banned token families catches 4.
 
 ### The breakpoint ladder ships in `fluid.css` — don't redeclare rungs
 
@@ -81,7 +81,7 @@ reintroduces the exact px-vs-rem mismatch the ladder exists to avoid, measured o
 `sm:text-[64px]` beating `lg:fluid-display-112` even though 1024px is wider than the 40rem `sm`
 breakpoint — it compiles, the classes are present, and it renders like a plausible design choice.
 Set `tailwind.breakpoints: "none"` in `fluid.config.json` instead if you need to own the ladder
-yourself (`references/config.md`). `scripts/audit.mjs`'s `tw-breakpoint-units` check catches a
+yourself (`references/config.md`). `scripts/tools/audit.mjs`'s `tw-breakpoint-units` check catches a
 redeclared rung.
 
 ## A dark theme later without touching components

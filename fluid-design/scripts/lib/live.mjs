@@ -1,7 +1,7 @@
 // live.mjs — reading a running page: the one Playwright resolver, and the
 // one reader of a page's units, settings, build stamp and scopes. Used by
 // `fluid explain --url` (which `fluid probe` is an alias of) and by
-// verify-matrix.mjs.
+// verify.mjs.
 
 import { createRequire } from 'node:module'
 import { join } from 'node:path'

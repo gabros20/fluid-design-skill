@@ -105,7 +105,7 @@ to the design.
 
 ## Converting a container-based site (never on fluid-design before)
 
-1. **Inventory, read-only.** Run `node <skill>/scripts/audit.mjs src --json > fluid-audit.json`. Record:
+1. **Inventory, read-only.** Run `node <skill>/scripts/tools/audit.mjs src --json > fluid-audit.json`. Record:
    - The container: max-width, horizontal padding per breakpoint. That is today's container width
      and padding (`--fluid-desktop-container-width` / `-padding` once migrated).
    - The breakpoint where the desktop layout starts. That is `bands.desktop.minWidth`.

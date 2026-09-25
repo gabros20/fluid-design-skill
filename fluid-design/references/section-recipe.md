@@ -53,7 +53,7 @@ animation (the `scroll-animation` skill).
     in the container that still reads as a constant is either a deliberate exclusion or a miss. What stays fixed on
     purpose: border and stroke widths (a scaled 1px hairline is a blurry 1.5px one), `em`
     tracking, and text measures. A px radius on a scaling box scales too (`fluid-rounded-*`), or the
-    corner reads sharp on a big screen and blunt on a small one. `scripts/audit.mjs` does this grep for you.
+    corner reads sharp on a big screen and blunt on a small one. `scripts/tools/audit.mjs` does this grep for you.
 12. **Verify the matrix, not one window:** 1024/1280/1440/1680/2560 wide × 640/700/800/900/1440 tall.
     Nothing overflows, no heading changes line count, and 1440×900 is pixel-identical to the container.
 

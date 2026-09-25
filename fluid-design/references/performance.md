@@ -88,7 +88,7 @@ it runs in `npm run test:browsers` and CI.
 re-lays-out on every frame of that animation, and if the scale itself were on `dvh`, every
 `fluid-*` value on the page (type included) would resize while the reader scrolls. The scale is on
 `svh` for exactly this reason (`fluid-scale.md` §3, invariant 3). Full-height boxes use `svh`, or
-`lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/audit.mjs` flags `dvh-on-scaled`.
+`lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/tools/audit.mjs` flags `dvh-on-scaled`.
 
 ## 3. Image `sizes` on a page that grows
 

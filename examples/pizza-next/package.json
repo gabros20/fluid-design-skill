@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "audit": "node ../../fluid-design/scripts/audit.mjs src"
+    "audit": "node ../../fluid-design/scripts/tools/audit.mjs src"
   },
   "dependencies": {
     "clsx": "^2.1.1",

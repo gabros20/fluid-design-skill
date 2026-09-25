@@ -7,7 +7,7 @@ on:
 jobs:
   # The zero-browser suite on every OS the binaries ship for: generated files
   # current, invariants, v1 parity, the CLI end to end (CRLF and formatter
-  # cases included), the audit self-test, the zoom-detect table, and the
+  # cases included), the audit self-test, the zoom-detect table (npm test), and the
   # standalone binary for that runner through init / check / calc / explain.
   test:
     strategy:
@@ -24,9 +24,8 @@ jobs:
         with:
           node-version: 24
       - run: npm test
-      - run: node scripts/test/zoom-detect.mjs
       - uses: oven-sh/setup-bun@v2
-      - run: node scripts/build-bin.mjs --target host --smoke
+      - run: node scripts/dev/build-bin.mjs --target host --smoke
 
   # The real-browser suites (Chromium, WebKit, Firefox): the engine against
   # the model, scopes and fluidPx, the Tailwind layer through the real

@@ -15,7 +15,7 @@ repeat their values. Motion attributes and constants (`data-stage`, `data-scrub-
 names, which is also why it exists on its own rather than folded into one of them.
 
 Every name below was checked against `scripts/lib/spec.mjs`, `scripts/lib/model.mjs`,
-`scripts/lib/emit/{engine,tailwind,stacks,project}.mjs` and `scripts/verify-matrix.mjs`, as of the
+`scripts/lib/emit/{engine,tailwind,stacks,project}.mjs` and `scripts/tools/verify.mjs`, as of the
 version of this skill you are reading. If a name here ever stops matching the code, the code is
 the source of truth — file that as a doc bug against this page.
 
@@ -279,8 +279,8 @@ one file every consumer imports; there is no separate `fluid.config.ts`.
 
 | Attribute | On | Meaning |
 |---|---|---|
-| `data-fit="screen"` | a section drawn at the reference height | `scripts/verify-matrix.mjs`'s default `--fit-selector`: asserts the element's height is `<=` the viewport at every desktop cell. Pass another selector with `--fit-selector` |
-| `data-verify-grid` | a grid inside a scaling frame | `verify-matrix.mjs` reports its computed `grid-template-columns` track count at every desktop viewport and fails if it changes — the drift symptom of an unscaled `auto-fill` minimum (`frame-and-gutter.md` §3) |
+| `data-fit="screen"` | a section drawn at the reference height | `scripts/tools/verify.mjs`'s default `--fit-selector`: asserts the element's height is `<=` the viewport at every desktop cell. Pass another selector with `--fit-selector` |
+| `data-verify-grid` | a grid inside a scaling frame | `verify.mjs` reports its computed `grid-template-columns` track count at every desktop viewport and fails if it changes — the drift symptom of an unscaled `auto-fill` minimum (`frame-and-gutter.md` §3) |
 | `data-verify-grid="responsive"` | a grid whose column count is meant to change | reported but never fails the run |
 
 Neither attribute changes rendering; both exist for the verifier.

@@ -11,7 +11,7 @@ because they are large and reproducible.
   and 96.4 kB of JS (37.5 kB gzip, mostly GSAP).
 
 ## 2. Audit: 1 error, a false positive in the skill's generated file (see SKILL-FEEDBACK #10)
-`node ../../fluid-design/scripts/audit.mjs src` → `verify-out/audit-src.txt`:
+`node ../../fluid-design/scripts/tools/audit.mjs src` → `verify-out/audit-src.txt`:
 one `length-times-unit` error at `src/styles/fluid/scss/_fluid.scss:39`. That line is the
 generator's own `@error "…64px * var(--fluid)…"` message string, in a do-not-edit generated
 file. No hand-written file has a finding. Scanning the project root (which adds `index.html`)
@@ -97,7 +97,7 @@ Brought onto the post-review system (`docs/REVIEW-2026-09.md`):
   `vite.config.ts` (`transformIndexHtml`), because a `<script type="module">` is deferred and a
   zoomed page would paint small type first.
 
-`verify-matrix.mjs` on `vite preview`: full matrix PASS (including the ceiling viewport), zoom row
+`verify.mjs` on `vite preview`: full matrix PASS (including the ceiling viewport), zoom row
 with `--zoom-selector 'main p'` (the hero copy, `fluid-type(16, 22, text)`):
 
 | Window | 125% | 150% | 200% |

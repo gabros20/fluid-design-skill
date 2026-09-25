@@ -31,9 +31,7 @@
     "bin",
     "scripts",
     "!scripts/test",
-    "!scripts/build-bin.mjs",
-    "!scripts/fixtures/configs",
-    "!scripts/fixtures/v1-configs",
+    "!scripts/dev",
     "!scripts/lib/v1-math.mjs",
     "!scripts/README.md",
     "assets",
@@ -45,9 +43,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node scripts/generate-fluid.mjs --check && node scripts/test/cli.mjs && node scripts/audit.mjs --selftest",
+    "test": "node scripts/dev/generate-fluid.mjs --check && node scripts/test/cli.mjs && node scripts/tools/audit.mjs --selftest && node scripts/test/zoom-detect.mjs",
     "test:browsers": "cd ../examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs && node ../../fluid-design/scripts/test/tailwind-compile.mjs && node ../../fluid-design/scripts/test/explain-live.mjs && node ../../fluid-design/scripts/test/resize-perf.mjs && cd ../pizza-vite-gsap && node ../../fluid-design/scripts/test/scss-browser.mjs",
-    "generate": "node scripts/generate-fluid.mjs",
-    "build:bin": "node scripts/build-bin.mjs --smoke"
+    "generate": "node scripts/dev/generate-fluid.mjs",
+    "build:bin": "node scripts/dev/build-bin.mjs --smoke"
   }
 }

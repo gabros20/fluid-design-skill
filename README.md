@@ -129,25 +129,29 @@ fluid-design/                      the skill: copy this folder into your skills 
                                    the CSP literal + hash, and zoom.classic.js with no framework)
     runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
   README.md                        the by-hand guide (no agent), also the npm page
-  bin/fluid                        the `fluid` CLI (node scripts/cli.mjs); scripts/bin-entry.mjs for the binary
+  bin/fluid                        the `fluid` command (runs scripts/cli/index.mjs)
   scripts/
-    cli.mjs                        fluid init/generate/check/settings/explain/migrate, + calc/verify/audit passthrough
-    calc.mjs                       factor tables, drawn-px resolution, content-budget check (cqw suggestions)
-    probe.mjs                      old name for `fluid explain --url --brief` (the stale-stylesheet verdict)
-    verify-matrix.mjs              Playwright: overflow, unit maths, one-screen fit, grid column counts,
+    cli/                           the fluid command
+      index.mjs                    routing, help, error handling
+      commands/                    init · generate (--watch) · check · settings · explain (+ probe) · migrate
+      ui.mjs · args.mjs · project.mjs   output/errors · argument parsing · the project on disk (config, lock)
+    tools/                         the heavier tools, also runnable on their own (fluid calc | verify | audit)
+      calc.mjs                     factor tables, drawn-px resolution, content-budget check (cqw suggestions)
+      verify.mjs                   Playwright: overflow, unit maths, one-screen fit, grid column counts,
                                    screenshots, the real-zoom row, across a viewport matrix
-    audit.mjs                      static scan for the silent layout failure modes (self-tested)
-    generate-fluid.mjs             the skill's OWN generator: regenerates assets/ and references/config.md
-                                   from scripts/lib/spec.mjs; --check also runs the tests below
-    lib/                           spec (the one source of truth) · model (the maths) · settings (the lint) ·
-                                   css-scan (the CSS tokenizer) · live (the live-page reader) ·
-                                   context (what the CLI/tools share) · emit/ (CSS/Tailwind/SCSS/StyleX/project)
-    test/                          parity.mjs (v1 maths, no browser) · cli.mjs (the CLI, no browser) ·
-                                   zoom-detect.mjs (the zoom runtime, no browser) ·
-                                   engine-matrix.mjs + tailwind-compile.mjs (real browsers, run from a
-                                   project with playwright/tailwind — see examples/pizza-next)
-    fixtures/                      v1-configs (parity fixtures) · configs (v2 structures) · audit (rule fixtures)
-  evals/evals.json                 test prompts used to validate the skill
+      audit.mjs                    static scan for the silent layout failure modes (self-tested); fluid check
+                                   runs its source rules
+    lib/                           the core: spec (the one source of truth) · model (the maths) ·
+                                   settings (the lint) · css-scan (the CSS tokenizer) · live (the live-page
+                                   reader) · context · emit/ (the engine, Tailwind/SCSS/StyleX, the project)
+    dev/                           maintaining the skill (not in the npm package)
+      generate-fluid.mjs           regenerates assets/ and references/config.md from lib/spec.mjs;
+                                   --check also runs the parity test
+      build-bin.mjs · bin-entry.mjs   the standalone binaries (bun build --compile)
+    test/                          parity · cli · zoom-detect (no browser) · engine-matrix · tailwind-compile ·
+                                   scss-browser · explain-live · resize-perf (real browsers, run from the
+                                   examples) · fixtures/ (v1-configs, configs, audit)
+  evals/                           evals.json (test prompts) · grade.mjs (scripted assertions for evals 5–6)
 
 examples/                          integration examples using both skills
   pizza-next/                      Next 16 + Tailwind v4 + Motion editorial restaurant page (default stack)
@@ -194,12 +198,12 @@ list.
 From `fluid-design/`:
 
 ```bash
-npm test              # generate-fluid.mjs --check (regeneration + invariants + v1 parity)
+npm test              # dev/generate-fluid.mjs --check (regeneration + invariants + v1 parity)
                        #   && test/cli.mjs (the fluid CLI, no browser)
-                       #   && audit.mjs --selftest
-npm run test:browsers  # engine-matrix + tailwind-compile + explain-live (from examples/pizza-next)
-                       #   && scss-browser (from examples/pizza-vite-gsap): 3 browsers, needs the
-                       #   examples' node_modules installed
+                       #   && tools/audit.mjs --selftest && test/zoom-detect.mjs
+npm run test:browsers  # engine-matrix + tailwind-compile + explain-live + resize-perf (from
+                       #   examples/pizza-next) && scss-browser (from examples/pizza-vite-gsap):
+                       #   3 browsers, needs the examples' node_modules installed
 npm run build:bin      # the standalone binaries → dist/, smoke-tested on this machine (needs bun)
 ```
 
@@ -207,7 +211,7 @@ Releases: push a tag `v2.x.y` matching `fluid-design/package.json`. `.github/wor
 tests, builds the five binaries with `SHA256SUMS` into a GitHub Release, and publishes
 `fluid-design-cli` to npm if the `NPM_TOKEN` repo secret is set.
 
-`generate-fluid.mjs --check` is also what proves nothing in `assets/styles/**` or
+`scripts/dev/generate-fluid.mjs --check` is also what proves nothing in `assets/styles/**` or
 `references/config.md` has drifted from `scripts/lib/spec.mjs`, the one place every name and default
 lives.
 

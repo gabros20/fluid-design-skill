@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 // fluid — the fluid-design CLI. `fluid help` for commands.
-import { run } from '../scripts/cli.mjs'
+import { run } from '../scripts/cli/index.mjs'
 await run(process.argv.slice(2))

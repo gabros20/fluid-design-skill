@@ -22,7 +22,7 @@
         },
         {
           "text": "audit.mjs reports zero errors",
-          "check": "node fluid-design/scripts/audit.mjs examples/pizza-next/src"
+          "check": "node fluid-design/scripts/tools/audit.mjs examples/pizza-next/src"
         },
         {
           "text": "fluid check passes (generated output matches fluid.config.json, no bad settings)",
@@ -55,7 +55,7 @@
         },
         {
           "text": "audit zero errors",
-          "check": "node fluid-design/scripts/audit.mjs examples/pizza-vite-gsap/src"
+          "check": "node fluid-design/scripts/tools/audit.mjs examples/pizza-vite-gsap/src"
         },
         {
           "text": "fluid check passes on the scss/vite config",

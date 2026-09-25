@@ -14,7 +14,7 @@ import { migrateV1, evaluateDefaults } from '../lib/model.mjs'
 import { normaliseStructure } from '../lib/spec.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const fixturesDir = join(here, '../fixtures/v1-configs')
+const fixturesDir = join(here, './fixtures/v1-configs')
 const cases = [['v1 defaults', {}], ['v1 defaults + mobile', { mobile: { enabled: true } }]]
 for (const f of readdirSync(fixturesDir).filter((f) => f.endsWith('.json')).sort()) {
   const json = JSON.parse(readFileSync(join(fixturesDir, f), 'utf8'))

@@ -1,23 +1,40 @@
 # fluid-design scripts
 
 Node 20+, ESM, zero runtime dependencies except `playwright` (only needed by
-`fluid explain --url`, `verify-matrix.mjs` and the browser tests under
+`fluid explain --url`, `verify.mjs` and the browser tests under
 `test/`, resolved from the target project by `lib/live.mjs` — see below).
 
-`bin/fluid` (`cli.mjs`) is the `fluid` command projects use day to day. It
-finds the nearest `fluid.config.json` (walking up from `cwd`, or `--config
-<file>`) and either runs its own logic or forwards straight to one of the
-standalone tools below (`fluid calc|verify|audit` == `node
-calc.mjs|verify-matrix.mjs|audit.mjs`). All of it — the CLI and the
-tools — is built on `lib/`, never duplicates a formula, and never hand-writes
-a config default: everything traces back to `lib/spec.mjs`.
+## Layout
+
+```
+cli/        the fluid command
+  index.mjs          routing, help, error handling (run / main)
+  commands/          one file per command: init, generate, check, settings, explain (+ probe), migrate
+  ui.mjs             colours, CliError / fail, JSON and path helpers, the binary flag
+  args.mjs           argument parsing and validation: flags, WxH, zoom, --set, prompt answers
+  project.mjs        the project on disk: finding/loading the config, the lock, comparing
+                     generated output with what is there, keeping formatters off it
+tools/      the heavier tools, run as `fluid calc|verify|audit` or `node scripts/tools/<name>.mjs`
+lib/        the core every command and tool builds on (spec, model, settings lint, CSS scanner,
+            live-page reader, context, emit/)
+dev/        maintaining the skill: generate-fluid.mjs, build-bin.mjs, bin-entry.mjs (not in the npm package)
+test/       the suites and their fixtures/
+```
+
+`bin/fluid` runs `cli/index.mjs`: the `fluid` command projects use day to
+day. It finds the nearest `fluid.config.json` (walking up from `cwd`, or
+`--config <file>`) and either runs a command from `cli/commands/` or hands
+over to a tool in `tools/` (imported in process, not spawned: a compiled
+binary has no node to spawn). Everything is built on `lib/`, never
+duplicates a formula, and never hand-writes a config default: everything
+traces back to `lib/spec.mjs`.
 
 Animation/scroll-scene verification (a triggered entrance, a scrub scene's
 state, a real anchor click through smooth scrolling) lives in the
 `scroll-animation` skill's `scripts/` — `audit-motion.mjs`,
 `verify-motion.mjs`, `anchor-check.mjs` — not here.
 
-## bin/fluid — the CLI (cli.mjs)
+## bin/fluid — the CLI (cli/)
 
 ```
 fluid init [--yes] [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integration next|vite|none]
@@ -119,7 +136,7 @@ test runs in process.
   `--safe-*`, `--browser-bar`, `--fluid-chrome`, `--fluid-column`,
   `.fluid-frame`, SCSS `fluid-up`, `ENGAGE_*`, `fluidPx(n, 'chrome')`)
   alongside the v2 ones until callers are moved over.
-- **`calc | verify | audit`** — `calc.mjs`, `verify-matrix.mjs`, `audit.mjs`
+- **`calc | verify | audit`** — `calc.mjs`, `verify.mjs`, `audit.mjs`
   (below), imported in process with the remaining args forwarded verbatim (a
   compiled binary has no node to spawn).
 
@@ -144,7 +161,7 @@ One source, three ways to run it (`docs/DISTRIBUTION.md` has the reasoning):
   attaches the output to the GitHub Release, which `install.sh` and
   `install.ps1` at the repo root download from after checking the sha256.
 
-## calc.mjs — the math, with no browser and no live project
+## tools/calc.mjs — the math, with no browser and no live project
 
 ```
 node calc.mjs table [--w list] [--h list] [--zoom z] [--raw]
@@ -175,17 +192,10 @@ sets at the top level (`lib/context.mjs`'s `loadContext`, the same scan
 
 Exit codes: `0` ok / budget PASS, `1` budget OVER, `2` usage error.
 
-## probe.mjs — kept for old commands
-
-`node probe.mjs <url> [--config f] [--width 1440] [--height 900]` runs
-`fluid probe`, which is `fluid explain <W>x<H> --url <url> --brief` (above).
-The verdicts are explain's: OK / STALE / MISMATCH / V1 / MISSING, exit codes
-0 · 1 · 2.
-
-## verify-matrix.mjs — the browser harness
+## tools/verify.mjs — the browser harness
 
 ```
-node verify-matrix.mjs <url> [--config f] [--out dir]
+node verify.mjs <url> [--config f] [--out dir]
   [--widths 1024,1280,1440,1680,2560] [--heights 640,700,800,900,1440]
   [--mobile 390x844,375x667 | none] [--fit-selector '[data-fit=screen]']   (mobile bands on: 320x568,375x812,390x844,430x932,844x390,932x430,820x1180,834x1194)
   [--screens] [--zoom 1.25,1.5,2 | none] [--zoom-bases 1440x900,1920x1080,2560x1440]
@@ -248,7 +258,7 @@ install, then a clear install hint if neither exists.
 Exit codes: `0` every check passed, `1` at least one failed, `2` usage error
 or playwright could not be resolved/launched.
 
-## audit.mjs — static scanner
+## tools/audit.mjs — static scanner
 
 ```
 node audit.mjs [srcDir] [--desktop-variant lg] [--prefix fluid] [--json]
@@ -302,7 +312,7 @@ the readable table.
 Exit codes: `0` no error-severity findings, `1` at least one error-severity
 finding, `2` usage error. `--selftest` exits `0`/`1` on pass/fail.
 
-## generate-fluid.mjs — the SKILL's own generator
+## dev/generate-fluid.mjs — the SKILL's own generator
 
 ```
 node generate-fluid.mjs            write every generated file this skill commits
@@ -331,7 +341,7 @@ present iff its `tailwind.utilities.*` flag is on, an integration emitted iff
 `output.integration` isn't `none` — over the defaults and every fixture in
 `fixtures/configs/`, then runs `test/parity.mjs` (below) as a subprocess.
 `npm test` is `generate-fluid.mjs --check && node scripts/test/cli.mjs &&
-node scripts/audit.mjs --selftest` — the full no-browser gate.
+node scripts/tools/audit.mjs --selftest` — the full no-browser gate.
 
 ## lib/ — everything above is a thin CLI over these
 
@@ -363,7 +373,7 @@ node scripts/audit.mjs --selftest` — the full no-browser gate.
 - **`live.mjs`** — reading a running page: the one Playwright resolver
   (project first, then beside the skill) and the one reader of a page's
   units, settings, build stamp and scopes. Used by `explain --url` and
-  `verify-matrix.mjs`.
+  `verify.mjs`.
 - **`context.mjs`** — `loadContext()`: what every static tool (`calc`,
   `verify-matrix`, `explain --url`, `audit`) needs in one call — the structure, the
   resolved settings with where each came from, and the output dir. A v1
@@ -474,18 +484,18 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   stylesheet, `<html>` style fallback). No browser.
   `node scripts/test/zoom-detect.mjs`.
 
-## fixtures/
+## test/fixtures/
 
-- **`fixtures/v1-configs/`** — real v1 `fluid.config.json` files (`canvas-
+- **`test/fixtures/v1-configs/`** — real v1 `fluid.config.json` files (`canvas-
   gutter-ceiling`, `chrome-disabled`, `mobile-arm`, `utilities-flipped`,
   `width-only`, `zoom-off`), each a genuine v1 shape. Consumed by
   `test/parity.mjs`, by `generate-fluid.mjs --check` (migrated then checked
   against the same invariants as any v2 structure), and by
   `test/engine-matrix.mjs`.
-- **`fixtures/configs/`** — v2 structures exercising the less-default corners
+- **`test/fixtures/configs/`** — v2 structures exercising the less-default corners
   (`custom-role`, `flat-below-desktop`, `moved-breakpoints`, `phone-only`,
   `scss-vite`, `stylex-next`, `tailwind-minimal`, `ui-off`, `zoom-off`,
   `css-aliases`), each checked against `generate-fluid.mjs --check`'s
   invariants.
-- **`fixtures/audit/<rule-id>/{positive,negative}/`** — one isolated
+- **`test/fixtures/audit/<rule-id>/{positive,negative}/`** — one isolated
   directory pair per audit rule, consumed by `audit.mjs --selftest`.

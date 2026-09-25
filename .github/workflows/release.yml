@@ -30,7 +30,7 @@ jobs:
         run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
       - run: npm test
       - name: binaries (every target) + host smoke test
-        run: node scripts/build-bin.mjs --smoke
+        run: node scripts/dev/build-bin.mjs --smoke
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
