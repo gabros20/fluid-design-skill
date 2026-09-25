@@ -106,6 +106,7 @@
   nav{display:flex; flex-wrap:wrap; gap:8px; margin-top:26px}
   nav a, .tgl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; text-decoration:none; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px; background:var(--panel); line-height:1.55}
   nav a:hover,nav a:focus-visible,.tgl:hover,.tgl:focus-visible{color:var(--accent); border-color:var(--accent); outline:none}
+  .tgl:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
   .tgl{cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin-left:auto}
   .tgl .lu{width:14px; height:14px}
   .secnav a::before{content:"#"; color:var(--glyph); margin-right:5px}
@@ -119,7 +120,10 @@
   .term:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 
   /* hero: the Remotion video, swapped in over the poster → static CSS diagram */
-  .vidwrap{display:none; margin-top:22px}
+  .vidwrap{display:none; margin-top:22px; position:relative}
+  .vidwrap .vpause{position:absolute; right:12px; bottom:12px; margin:0; font-size:11.5px; padding:3px 10px; gap:5px; background:color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
+  .vidwrap .vpause .lu{width:12px; height:12px}
+  .vidwrap .vpause[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
   .vidwrap video{display:block; width:100%; aspect-ratio:16/9; border:1px solid var(--line); border-radius:10px; background:var(--bg); box-shadow:0 30px 70px -40px rgba(0,0,0,.45)}
   body.has-vid .vidwrap{display:block}
   body.has-vid .poster{display:none}
@@ -296,7 +300,16 @@
   .chart .floorzone{fill:color-mix(in srgb, var(--glyph) 10%, transparent)}
   .chart .cur{stroke:var(--ink); stroke-width:1; stroke-dasharray:2 3}
   .chart .dot{stroke:var(--panel); stroke-width:2}
-  @media (max-width:640px){ .chart .tk{font-size:17px} .chart .lbl{font-size:18px} }
+  .chart .sm{font-size:10px}
+  .chart .nw{display:none}
+  /* phones: the 640-wide viewBox renders at ~0.48, so type is sized to land at 11.5px+ and the
+     in-plot labels drop to a short set (the legend carries the names) */
+  @media (max-width:640px){
+    .chart svg{margin-bottom:14px}
+    .chart .tk{font-size:24px} .chart .lbl{font-size:25px}
+    .chart .ns{display:none} .chart .nw{display:inline}
+    .chart .xt{transform:translateY(8px)} .chart .at{transform:translateY(22px)}
+  }
   .clegend{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12.5px; color:var(--muted); margin-top:8px}
   .clegend span{display:inline-flex; align-items:center; gap:7px}
   .clegend i{display:inline-block; width:18px; height:0; border-top:2.5px solid}
@@ -511,6 +524,8 @@
   <symbol id="lu-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></symbol>
   <symbol id="lu-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.929 4.929 19.07 19.071"/></symbol>
   <symbol id="lu-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="lu-pause" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></symbol>
+  <symbol id="lu-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
 </svg>
 <div class="wrap">
 <header>
@@ -731,20 +746,22 @@
       <line class="gr" x1="56" y1="262.7" x2="616" y2="262.7"/><line class="gr" x1="56" y1="193.3" x2="616" y2="193.3"/><line class="gr" x1="56" y1="124" x2="616" y2="124"/><line class="gr" x1="56" y1="54.7" x2="616" y2="54.7"/>
       <line class="gr" x1="392" y1="20" x2="392" y2="280"/>
       <line class="ax" x1="56" y1="280" x2="616" y2="280"/><line class="ax" x1="56" y1="20" x2="56" y2="280"/>
-      <text class="tk" x="93.3" y="296" text-anchor="middle">0.6</text><text class="tk" x="242.7" y="296" text-anchor="middle">0.8</text><text class="tk" x="392" y="296" text-anchor="middle">1.0</text><text class="tk" x="541.3" y="296" text-anchor="middle">1.2</text>
+      <text class="tk xt" x="93.3" y="296" text-anchor="middle">0.6</text><text class="tk xt" x="242.7" y="296" text-anchor="middle">0.8</text><text class="tk xt" x="392" y="296" text-anchor="middle">1.0</text><text class="tk xt" x="541.3" y="296" text-anchor="middle">1.2</text>
       <text class="tk" x="48" y="266.7" text-anchor="end">0.6</text><text class="tk" x="48" y="197.3" text-anchor="end">0.8</text><text class="tk" x="48" y="128" text-anchor="end">1.0</text><text class="tk" x="48" y="58.7" text-anchor="end">1.2</text>
-      <text class="tk" x="336" y="314" text-anchor="middle">--fluid (the layout unit)</text>
+      <text class="tk at" x="336" y="314" text-anchor="middle">--fluid (the layout unit)</text>
       <line class="knee" x1="176.3" y1="20" x2="176.3" y2="280"/>
       <text class="tk" x="180" y="34" style="fill:var(--bad)">knee 0.711</text>
-      <text class="tk" x="180" y="48">= 1024 / 1440</text>
-      <text class="tk" x="60" y="272" style="font-size:10px">floor</text>
+      <text class="tk ns" x="180" y="48">= 1024 / 1440</text>
+      <text class="tk sm ns" x="60" y="272">floor</text>
       <path class="c-fluid" d="M78.4 269.6L616 20"/>
       <path class="c-copy" d="M78.4 157L176.3 157L392 124L616 20"/>
       <path class="c-display" d="M78.4 186.1L176.3 186.1L392 124L616 20"/>
-      <text class="lbl" x="84" y="150" style="fill:var(--tok-val)">copy 0.905</text>
-      <text class="lbl" x="84" y="180" style="fill:var(--accent)">display 0.821</text>
-      <text class="lbl" x="235" y="236" style="fill:var(--glyph)">layout</text>
-      <text class="tk" x="398" y="138">1440×900: all = 1</text>
+      <text class="lbl ns" x="84" y="150" style="fill:var(--tok-val)">copy 0.905</text>
+      <text class="lbl ns" x="84" y="180" style="fill:var(--accent)">display 0.821</text>
+      <text class="lbl ns" x="235" y="236" style="fill:var(--glyph)">layout</text>
+      <text class="lbl nw" x="84" y="150" style="fill:var(--tok-val)" aria-hidden="true">0.905</text>
+      <text class="lbl nw" x="84" y="180" style="fill:var(--accent)" aria-hidden="true">0.821</text>
+      <text class="tk ns" x="398" y="138">1440×900: all = 1</text>
       <g id="dmp-cur"><line class="cur" x1="258.2" y1="20" x2="258.2" y2="280"/><circle class="dot" cx="258.2" cy="186.9" r="5" fill="var(--glyph)"/><circle class="dot" cx="258.2" cy="162.6" r="5" fill="var(--accent)"/><circle class="dot" cx="258.2" cy="143.5" r="5" fill="var(--tok-val)"/></g>
     </svg>
     <div class="clegend"><span><i style="border-color:var(--glyph);border-top-style:dashed"></i>--fluid · layout</span><span><i style="border-color:var(--accent)"></i>--fluid-display · damping 0.62</span><span><i style="border-color:var(--tok-val)"></i>--fluid-copy · damping 0.33</span><span><i style="border-color:var(--bad);border-top-style:dashed;border-top-width:1.5px"></i>the knee</span></div>
@@ -786,17 +803,20 @@
       <line class="gr" x1="56" y1="203.3" x2="616" y2="203.3"/><line class="gr" x1="56" y1="166.7" x2="616" y2="166.7"/><line class="gr" x1="56" y1="130" x2="616" y2="130"/><line class="gr" x1="56" y1="93.3" x2="616" y2="93.3"/><line class="gr" x1="56" y1="56.7" x2="616" y2="56.7"/>
       <line class="gr" x1="149.3" y1="20" x2="149.3" y2="240"/><line class="gr" x1="207.7" y1="20" x2="207.7" y2="240"/><line class="gr" x1="295.2" y1="20" x2="295.2" y2="240"/><line class="gr" x1="382.7" y1="20" x2="382.7" y2="240"/>
       <line class="ax" x1="56" y1="240" x2="616" y2="240"/><line class="ax" x1="56" y1="20" x2="56" y2="240"/>
-      <text class="tk" x="56" y="256" text-anchor="middle">1024</text><text class="tk" x="149.3" y="256" text-anchor="middle">1280</text><text class="tk" x="207.7" y="256" text-anchor="middle">1440</text><text class="tk" x="295.2" y="256" text-anchor="middle">1680</text><text class="tk" x="382.7" y="256" text-anchor="middle">1920</text><text class="tk" x="616" y="256" text-anchor="end">2560</text>
+      <text class="tk xt" x="56" y="256" text-anchor="middle">1024</text><text class="tk xt" x="149.3" y="256" text-anchor="middle">1280</text><text class="tk xt ns" x="207.7" y="256" text-anchor="middle">1440</text><text class="tk xt" x="295.2" y="256" text-anchor="middle">1680</text><text class="tk xt" x="382.7" y="256" text-anchor="middle">1920</text><text class="tk xt" x="616" y="256" text-anchor="end">2560</text>
       <text class="tk" x="48" y="207.3" text-anchor="end">0.8</text><text class="tk" x="48" y="170.7" text-anchor="end">1.0</text><text class="tk" x="48" y="134" text-anchor="end">1.2</text><text class="tk" x="48" y="97.3" text-anchor="end">1.4</text><text class="tk" x="48" y="60.7" text-anchor="end">1.6</text>
-      <text class="tk" x="336" y="272" text-anchor="middle">window width (CSS px)</text>
+      <text class="tk at" x="336" y="272" text-anchor="middle">window width (CSS px)</text>
       <path class="c-fluid" d="M56 219.6L616 24.1"/>
       <path class="c-off" d="M56 166.7L616 166.7"/>
       <path class="c-shrink" d="M56 187L149.3 187"/>
       <path class="c-grow" d="M295.2 136.1L616 136.1"/>
       <circle cx="295.2" cy="136.1" r="4" fill="var(--accent)"/><circle cx="149.3" cy="187" r="4" fill="var(--tok-dim)"/>
-      <text class="lbl" x="440" y="128" style="fill:var(--accent)">grow-until-1680 → 1.167</text>
-      <text class="lbl" x="160" y="226" style="fill:var(--tok-dim)">shrink-until-1280 → 0.889</text>
-      <text class="lbl" x="440" y="160" style="fill:var(--amber)">fluid-off → 1</text>
+      <text class="lbl ns" x="440" y="128" style="fill:var(--accent)">grow-until-1680 → 1.167</text>
+      <text class="lbl ns" x="160" y="226" style="fill:var(--tok-dim)">shrink-until-1280 → 0.889</text>
+      <text class="lbl ns" x="440" y="160" style="fill:var(--amber)">fluid-off → 1</text>
+      <text class="lbl nw" x="616" y="126" text-anchor="end" style="fill:var(--accent)" aria-hidden="true">1.167</text>
+      <text class="lbl nw" x="158" y="214" style="fill:var(--tok-dim)" aria-hidden="true">0.889</text>
+      <text class="lbl nw" x="616" y="160" text-anchor="end" style="fill:var(--amber)" aria-hidden="true">1</text>
     </svg>
     <div class="clegend"><span><i style="border-color:var(--glyph);border-top-style:dashed"></i>default</span><span><i style="border-color:var(--accent)"></i>fluid-grow-until-1680</span><span><i style="border-color:var(--tok-dim)"></i>fluid-shrink-until-1280</span><span><i style="border-color:var(--amber);border-top-style:dashed"></i>fluid-off</span></div>
   </div>
@@ -1100,7 +1120,7 @@ git clone https://github.com/gabros20/fluid-design-skill && cd fluid-design-skil
 ./install.sh claude   <span class="c"># or: codex | agents | cursor | antigravity | opencode | grok | hermes | all</span>
 
 <span class="c"># then ask</span>
-<span class="p">/fluid-design</span> make this landing page match our 1680×900 Figma frames at every laptop size
+<span class="p">/fluid-design</span> make this landing page match our 1440×900 Figma frames at every laptop size
 <span class="p">/fluid-design</span> convert this Tailwind site to fluid scaling
 <span class="p">/fluid-design</span> the hero doesn't fit on a 13-inch laptop and the header is huge on 5K</div>
   <p style="margin-top:14px">The same install runs on any <a href="https://agentskills.io">Agent&nbsp;Skills</a>
@@ -1209,19 +1229,41 @@ README.md · CHANGELOG.md · LICENSE</div>
     var wrap = document.getElementById("vidwrap");
     if (!wrap || !document.createElement("video").canPlayType) return;
     var v = document.createElement("video");
+    var paused = false; // the reader's choice; a theme swap keeps it
     v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
     v.setAttribute("playsinline", "");
     v.setAttribute("aria-label", "Animated explainer, about a minute, in nine scenes: a design drawn at 1440 by 900 breaks on other windows; every drawn number becomes number times one unit, 1px at the artboard; the unit follows whichever window axis is tighter, so a 900-tall section always fits; four bands, phone, tablet, landscape and desktop, each scale their own artboard; display and copy type shrink more gently than the layout; the ui unit keeps the header usable on a short window and limits stop part of a page from scaling; fluid init sets a project up; using the utilities in a page; and the proof: the engine checked against a model in three browsers.");
     v.addEventListener("loadeddata", function () { document.body.classList.add("has-vid"); });
     v.addEventListener("error", function () { document.body.classList.remove("has-vid"); wrap.remove(); }, true);
     function apply(t) {
+      var at = v.currentTime || 0;
+      v.autoplay = !paused;
       v.poster = "assets/hero-" + t + "-poster.png";
       v.src = "assets/hero-" + t + ".mp4";
-      v.play && v.play().catch(function () {});
+      // the swapped-in render resumes at the same moment, playing or held
+      if (at) v.addEventListener("loadedmetadata", function seek() { v.removeEventListener("loadedmetadata", seek); try { v.currentTime = at; } catch (e) {} });
+      if (!paused && v.play) v.play().catch(function () {});
     }
+    // WCAG 2.2.2: a minute-long loop needs a pause control
+    var pb = document.createElement("button");
+    pb.type = "button"; pb.className = "tgl vpause";
+    pb.setAttribute("aria-label", "Pause animation");
+    pb.innerHTML = '<svg class="lu" aria-hidden="true"><use href="#lu-pause"/></svg><span>pause</span>';
+    function paintPause() {
+      pb.setAttribute("aria-pressed", String(paused));
+      pb.querySelector("use").setAttribute("href", paused ? "#lu-play" : "#lu-pause");
+    }
+    pb.addEventListener("click", function () {
+      paused = !paused;
+      v.autoplay = !paused;
+      if (paused) v.pause(); else if (v.play) v.play().catch(function () {});
+      paintPause();
+    });
+    paintPause();
     apply(theme());
     onTheme(apply);
     wrap.appendChild(v);
+    wrap.appendChild(pb);
   })();
 
   // ── the live frame ──
@@ -1254,7 +1296,9 @@ README.md · CHANGELOG.md · LICENSE</div>
       fbox.style.width = (W * scale) + "px"; fbox.style.height = (H * scale) + "px";
       scl.textContent = W + "×" + H + " shown at " + Math.round(scale * 100) + "%";
     }
-    function fmtU(v) { return v == null ? "—" : v.toFixed(4); }
+    // round half-up with a hair of epsilon: the ×1000 probe serialises 844/780 as 1082.05, and
+    // 1.08205 in binary sits just under the half, where the CLI's exact value (1.082051) does not
+    function fmtU(v) { return v == null ? "—" : (Math.round(v * 1e4 + 1e-6) / 1e4).toFixed(4); }
     function fmtPx(v) { return v == null ? "—" : v.toFixed(1); }
     function paintCli() {
       var c = CLI[W + "x" + H];

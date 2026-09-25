@@ -195,6 +195,22 @@ the skill got wrong during the build, since fixed upstream) and `CREDITS.md`.
   v4's own floor (Safari 16.4, Chrome 111, Firefox 128) on the Tailwind stack.
 - It was extracted from a production marketing site; the references record the bug behind each rule.
 
+## Validate
+
+```bash
+scripts/check-sync
+scripts/count-skill-tokens
+npm run verify            # check-sync, then the no-browser suite (generator drift, CLI, audit selftest, zoom)
+npm run test:browsers     # the engine, Tailwind, explain --url, resize and SCSS suites, run from the examples
+node scripts/dev/build-bin.mjs --target host --smoke   # compile this machine's binary (needs Bun) and run it
+```
+
+`check-sync` validates the package, reference routing, metadata, evaluation fixtures and scripts;
+`count-skill-tokens` keeps each reference within its token target. `test:browsers` needs the
+examples' dependencies and Playwright's browsers (`pnpm install` in `examples/pizza-next`, `npm ci`
+in `examples/pizza-vite-gsap`, then `npx playwright install chromium webkit firefox` in each), as
+CI does.
+
 ## Documentation
 
 - [Installation](docs/installation.md): every channel, prerequisites, pinning, upgrade, uninstall
