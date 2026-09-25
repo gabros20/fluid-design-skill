@@ -1,6 +1,6 @@
 # remotion — hero animation
 
-The hero animation for the **fluid-design** skill's site. 16:9, ~66s (nine scenes, see [`STORYBOARD.md`](STORYBOARD.md)), loops.
+The hero animation for the **fluid-design** skill's site. 16:9, ~80s (ten scenes, see [`STORYBOARD.md`](STORYBOARD.md)), loops.
 
 The palette in [`src/theme.ts`](src/theme.ts) mirrors `site/index.html`'s `:root` tokens
 exactly, so the video reads as part of the page in both light and dark.

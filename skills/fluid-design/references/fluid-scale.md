@@ -14,7 +14,7 @@ resolved value.
 1. The problem it solves
 2. The model: drawn number × unit
 3. The base unit and its two arms
-4. The reference is a viewport, not the container
+4. The reference is the design frame, not the container
 5. The type units and the knee
 6. The ui unit
 7. No ceiling (and when to set one)
@@ -130,31 +130,30 @@ runs depends on `bands.phone`: by default (`bands.phone: true`) the phone, table
 bands each scale their own frame the same way (§13). Set `bands.phone: false` and everything below
 desktop is a flat `1px` unit instead.
 
-## 4. The reference is a viewport, not the container
+## 4. The reference is the design frame, not the container
 
-This is the most surprising part of the system, and the part most likely to be "fixed" wrongly.
+The reference (`--fluid-desktop-base-width` × `-base-height`) is the desktop frame the designer
+draws on, read off the design file. At a window that size one drawn px is one CSS px. 1440×900 is
+the default; a 1680×1050 frame sets 1680 and 1050. A mismatched reference raises no error: numbers
+from a 1680 frame on a 1440 reference render 17% too big at every window. The container
+(`--fluid-desktop-container-width`, §6) is a separate number: the content box's widest size.
 
-The height reference matches the drawing: frames are 900 tall and the arm divides by 900. The width
-reference does not: frames are 1680 wide, but the arm divides by **1440**. So a number read from
-Figma means "this size at 1440 wide", not "this size in a 1680 frame, scaled". Between 1440 and 1680
-the factor stays pinned at 1.0 by the height arm, and the composition just gains room. 1680 is the
-default `--fluid-desktop-container-width` — the page container's cap (§6, `fluid-container`), not the
-unit's reference.
-
-The drawing is a wider shape than the screen (1.87:1 against 1.60:1), and a contain fit has to
-letterbox one axis. There is no third answer:
+The one case where reference and frame differ is a canvas wider than any screen. The reference
+build this skill came from draws on 1680×900: a 1.87:1 shape against a 1.60:1 screen, with the
+content composed for 1440. A contain fit has to letterbox one axis. There is no third answer:
 
 | | Horizontal | Vertical |
 |---|---|---|
-| **1440 reference (this system)** | 240px of drawn content does not fit | sections fill the window exactly |
-| 1680 container width + scaled padding | pixel-exact at every width | a 771px section in a 900px window |
+| **1440×900 reference, 1680 container** | 240px of drawn canvas does not fit | sections fill the window exactly |
+| 1680×900 reference | pixel-exact at every width | a 771px section in a 900px window |
 
 The second option was modelled and **rejected twice**. It shrinks every rendering already approved at 1440 by
 14%, and it breaks `900 × --fluid = 100svh` across most of the range. That guarantee is load-bearing:
-it is what makes a four-act pinned scene exactly 4.00 viewports long.
+it is what makes a four-act pinned scene exactly 4.00 viewports long. A frame with a screen's shape
+(1680×1050) has no such conflict, so it is its own reference.
 
-**Practical consequence: treat 1440 as a content budget, not a container.** Drawn content must fit
-`base-width − 2 × container-padding` (1440 − 160 = 1280) at full size. The outer 400px (to the 1680
+**On a wide canvas, treat the reference width as a content budget.** Drawn content must fit
+`base-width − 2 × container-padding` (1440 − 160 = 1280) at full size. The rest of the canvas (to the 1680
 container cap) is air a wide screen gains, not space to compose in. Check it with `fluid calc budget`.
 A row over budget is fixed in the drawing (take the difference out of the whitespace, with design
 sign-off) or with `cqw` (`frame-and-gutter.md`), never by changing the divisor.

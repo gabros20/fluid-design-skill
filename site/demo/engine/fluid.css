@@ -68,7 +68,7 @@
 @property --_fluid-m-copy { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --_fluid-m-ui { syntax: '<length>'; inherits: false; initial-value: 0px; }
 
-/* phone — portrait phones, the 390 artboard (the default band) */
+/* phone — portrait phones: your phone design frame (default 390 wide) (the default band) */
 :root,
 .fluid-scope,
 [data-fluid-scope],
@@ -85,7 +85,7 @@
 [class*=":!fluid-off "],
 [class$=":!fluid-off"],
 [class*="[--fluid-"] {
-  --fluid-build: "2.0.0+8d6e60be";
+  --fluid-build: "2.0.0+fd2f2a59";
   --_fluid-lo: 0;
   --_fluid-hi: 600;
   --_fluid-base-w: max(1, var(--fluid-phone-base-width, 390));
@@ -213,7 +213,7 @@
   }
 }
 
-/* desktop — 1024px and wider: the 1440×900 artboard */
+/* desktop — 1024px and wider: your desktop design frame (default 1440×900) */
 @media (min-width: 1024px) {
   :root,
   .fluid-scope,

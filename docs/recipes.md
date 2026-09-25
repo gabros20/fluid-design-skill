@@ -5,7 +5,7 @@ Codex's `$fluid-design` form; use `/fluid-design`, an `@` mention or plain langu
 clients. The commands are written as `fluid …`: in a Node project, prefix them with
 `npx fluid-design-cli@2`.
 
-- [Match a 1440 Figma frame at every laptop size](#match-a-1440-figma-frame-at-every-laptop-size)
+- [Match your Figma frame at every laptop size](#match-your-figma-frame-at-every-laptop-size)
 - [Stop the header growing on a 5K display](#stop-the-header-growing-on-a-5k-display)
 - [Keep an existing shadcn `cn`](#keep-an-existing-shadcn-cn)
 - [An SCSS project on Vite](#an-scss-project-on-vite)
@@ -15,28 +15,46 @@ clients. The commands are written as `fluid …`: in a Node project, prefix them
 - [Add a custom type role](#add-a-custom-type-role)
 - [Tweak the landscape phone layout](#tweak-the-landscape-phone-layout)
 
-## Match a 1440 Figma frame at every laptop size
+## Match your Figma frame at every laptop size
 
 Use when the design is drawn on one desktop frame and the build should be pixel-exact there and a
-proportional copy everywhere else.
+proportional copy everywhere else. First read the frame's size off the design file: 1440×900,
+1680×1050, whatever the designer used.
 
 ```text
-Use $fluid-design to make this landing page match our 1440×900 Figma frame at every laptop size,
+Use $fluid-design to make this landing page match our 1680×1050 Figma frame at every laptop size,
 with the hero exactly one screen tall.
 ```
 
 By hand:
 
 ```bash
-fluid init                                 # 1440x900 is the default frame; a 1600x1000 frame: --desktop 1600x1000
-fluid calc budget --widths 400,400,400     # does the widest drawn row fit the container at the artboard?
+fluid init --desktop 1680x1050             # the frame's size; 1440x900 is only the default
+fluid explain 1512x982                     # what a 14" MacBook Pro gets: --fluid 0.9000
+fluid calc budget --widths 400,400,400     # does the widest drawn row fit the container?
+```
+
+`init` writes the frame into your `:root`. You can also set it, or change it later, by hand:
+
+```css
+:root {
+  --fluid-desktop-base-width: 1680;          /* the frame */
+  --fluid-desktop-base-height: 1050;
+  --fluid-desktop-container-width: 1680;     /* the content box's widest size, margins included */
+  --fluid-desktop-container-padding: 80;     /* the side margin */
+}
 ```
 
 Then write each number from the frame through a fluid utility: `lg:py-[120px]` becomes
-`lg:fluid-py-120`, a 64px heading `lg:fluid-display-64`. A section drawn 900 tall gets
-`lg:fluid-h-900` and `data-fit="screen"`, so `fluid verify` checks it fits one screen at every
-desktop size. At 1440×900 the page must match the frame pixel for pixel; that is the calibration
-check. A row over budget is a drawing problem (or a `cqw` one), never a smaller padding: see
+`lg:fluid-py-120`, a 64px heading `lg:fluid-display-64`. A section drawn as tall as the frame gets
+`lg:fluid-h-1050` (`lg:fluid-h-900` on a 900 frame) and `data-fit="screen"`, so `fluid verify`
+checks it fits one screen at every desktop size. At a window the size of the frame the page must
+match it pixel for pixel; that is the calibration check.
+
+If the base doesn't match the frame, nothing errors: the page just renders at the wrong size
+everywhere. Numbers from a 1680 frame on the default 1440 base come out 17% too big.
+
+A row over budget is a drawing problem (or a `cqw` one), never a smaller padding: see
 [`frame-and-gutter.md`](../skills/fluid-design/references/frame-and-gutter.md).
 
 ## Stop the header growing on a 5K display

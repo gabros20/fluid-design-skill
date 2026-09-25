@@ -3,7 +3,7 @@
   "properties": [
     {
       "name": "--fluid-phone-base-width",
-      "description": "viewport width where 1 drawn px = 1 CSS px (the artboard width). Default: 390 (phone band). fluid-design setting: set it in your :root, number only."
+      "description": "your design frame's width: at this window width 1 drawn px = 1 CSS px. Default: 390 (phone band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-phone-scale-min",
@@ -23,7 +23,7 @@
     },
     {
       "name": "--fluid-phone-container-width",
-      "description": "page container max width, drawn px (holds the phone design to a column on wide screens). Default: 560 (phone band). fluid-design setting: set it in your :root, number only."
+      "description": "the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens). Default: 560 (phone band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-phone-container-padding",
@@ -55,7 +55,7 @@
     },
     {
       "name": "--fluid-tablet-container-width",
-      "description": "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
+      "description": "the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (tablet band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-tablet-container-padding",
@@ -87,7 +87,7 @@
     },
     {
       "name": "--fluid-landscape-container-width",
-      "description": "page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
+      "description": "the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens) (unset = the phone value). Default: unset (landscape band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-landscape-container-padding",
@@ -99,11 +99,11 @@
     },
     {
       "name": "--fluid-desktop-base-width",
-      "description": "viewport width where 1 drawn px = 1 CSS px (the artboard width). Default: 1440 (desktop band). fluid-design setting: set it in your :root, number only."
+      "description": "your design frame's width: at this window width 1 drawn px = 1 CSS px. Default: 1440 (desktop band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-desktop-base-height",
-      "description": "artboard height: at this window height a 1:1 section fits exactly. Default: 900 (desktop band). fluid-design setting: set it in your :root, number only."
+      "description": "your design frame's height: a section drawn this tall fits the window exactly. Default: 900 (desktop band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-desktop-fit-height",
@@ -135,7 +135,7 @@
     },
     {
       "name": "--fluid-desktop-container-width",
-      "description": "page container max width, drawn px (grows with the unit, never narrows below this in CSS px). Default: 1680 (desktop band). fluid-design setting: set it in your :root, number only."
+      "description": "the content box's widest size, side margins included, drawn px (grows with the unit, never below this in CSS px). Default: 1680 (desktop band). fluid-design setting: set it in your :root, number only."
     },
     {
       "name": "--fluid-desktop-container-padding",

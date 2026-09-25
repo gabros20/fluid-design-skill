@@ -71,17 +71,24 @@ Default: **Tailwind v4** (`"tailwind-v4"`) if it is present or the project is gr
 ### 2. Desktop artboard and desktop container (settings: `--fluid-desktop-base-width/-height`, `--fluid-desktop-container-width/-padding`)
 Default: artboard **1440 × 900** (the viewport where 1 drawn px = 1 CSS px), container **1680 wide,
 80 padding**.
-- The artboard is a content budget, not the design canvas. Keep it at the most common laptop
-  viewport, 1440. Anchoring it to a wider canvas (1680) shrinks every rendering at 1440 by 14% and
-  breaks the one-screen guarantee whenever width binds. This option was modelled and rejected twice
-  (`fluid-scale.md` §4).
-- The consequence: drawn content has to fit `base-width − 2 × container-padding` (1440 − 160 =
-  1280 at the defaults). Tell the designer early.
+- The artboard is the desktop frame the designer draws on. Read its width and height off the design
+  file: a 1680×1050 frame means `--fluid-desktop-base-width: 1680; --fluid-desktop-base-height: 1050;`.
+  A base that doesn't match the frame raises no error; the page is just the wrong size everywhere
+  (1680-frame numbers on a 1440 base render 17% too big).
+- Exception: a canvas wider than any screen (1680×900, 1.87:1) with the content composed in a
+  1440 column. Its base is the screen the content was composed for (1440×900), and the canvas width
+  goes in the container width. Anchoring such a canvas at 1680 breaks the one-screen guarantee
+  (`fluid-scale.md` §4). The defaults describe this case.
+- Some teams type 1680-frame numbers 1:1 on a 1440 laptop on purpose. That is a 1440 base with the
+  design 17% larger than drawn; confirm it's intended and record it in `FLUID.md`.
+- The container is the content box's widest size, side margins included: the frame's width, or
+  less if the design caps its content. Drawn content has to fit
+  `base-width − 2 × container-padding` (1440 − 160 = 1280 at the defaults). Tell the designer early.
 - These four numbers are **settings**, not structure — they go in the project's `:root`
   (`--fluid-desktop-base-width: 1440;` etc.), not in `fluid.config.json`. Only the *existence* of
   the desktop band is structure (§3).
-- Ask when: the artboard size is not visible anywhere, or frames are not 900 tall, or the
-  designer's container differs from 1680/80.
+- Ask when: the frame size is not visible anywhere (always ask rather than assume 1440×900), or the
+  frame is wider than a screen, or the designer's content box differs from 1680/80.
 
 ### 3. Desktop breakpoint (structure: `bands.desktop.minWidth`)
 Default: **1024** (Tailwind `lg`). Below it, either the mobile bands scale a phone design (§7,

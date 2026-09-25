@@ -11,6 +11,16 @@ metadata.
 
 ## [Unreleased]
 
+### Changed
+
+- The docs, site, video and skill now say where the artboard comes from: it is the desktop frame
+  your designer draws on, set as `--fluid-desktop-base-width` / `-base-height` (1440×900 is only
+  the default), with `--fluid-desktop-container-width` as the content box's widest size. The skill
+  reads the frame size off the design instead of keeping 1440; only a canvas wider than a screen
+  (1680×900) keeps the screen size as its base.
+- The setting descriptions in `settings.reference.css`, `fluid.ts` and editor autocomplete use the
+  same wording.
+
 ## [2.0.0] — 2026-09-25
 
 The first published release. Earlier versions (v1, never tagged) were used from a clone; v2 splits
