@@ -45,10 +45,10 @@ After `npm run generate`, regenerate the examples too if the output changed:
 Run before opening a pull request:
 
 ```bash
-npm test                    # scripts/check-sync, then npm run test:unit:
-                            #   scripts/dev/generate-fluid.mjs --check (generated files current,
-                            #   fixture invariants, v1 parity), tests/cli.mjs, fluid audit --selftest,
-                            #   tests/zoom-detect.mjs
+npm run verify              # scripts/check-sync, then npm test
+npm test                    # the code: scripts/dev/generate-fluid.mjs --check (generated files
+                            #   current, fixture invariants, v1 parity), tests/cli.mjs,
+                            #   fluid audit --selftest, tests/zoom-detect.mjs
 npm run test:browsers       # from the examples, in Chromium, WebKit and Firefox: engine-matrix,
                             #   tailwind-compile, explain-live, resize-perf, scss-browser
 node scripts/dev/build-bin.mjs --target host --smoke   # this machine's binary, then a smoke run
@@ -59,12 +59,13 @@ scripts/count-skill-tokens  # SKILL.md and every reference against its token tar
   primacy headers and contents lists, plugin and client metadata, eval fixture structure, runtime
   links and placeholders, script executability, and the plugin version against the newest
   `CHANGELOG.md` release. `npm run check-sync` runs it alone.
-- `npm run test:unit` is the same suite without the gate (what the Windows CI runner runs).
+- `npm test` is the code suite without the gate: it answers "does the CLI work", `check-sync`
+  answers "is this a conforming skill-family member", and `npm run verify` asks both.
 - `npm run build:bin` builds every target into `dist/` and smoke-tests this machine's.
 
-CI (`.github/workflows/ci.yml`) runs `npm run test:unit` and the host binary smoke test on Ubuntu,
-macOS and Windows, `npm test` (with the gate) on Ubuntu, and the browser suites;
-`.github/workflows/check-sync.yml` runs the gate on its own.
+CI (`.github/workflows/ci.yml`) runs `npm test` and the host binary smoke test on Ubuntu, macOS
+and Windows, and the browser suites on Ubuntu; `.github/workflows/check-sync.yml` runs the gate,
+once per push.
 
 ## Before opening a pull request
 
@@ -105,6 +106,6 @@ To release:
 4. Tag and push: `git tag v<version> && git push origin v<version>`.
 
 `.github/workflows/release.yml` then checks the tag against `package.json` and
-`.codex-plugin/plugin.json`, runs `npm test`, builds the five binaries with `SHA256SUMS` into a
+`.codex-plugin/plugin.json`, runs `npm run verify`, builds the five binaries with `SHA256SUMS` into a
 GitHub Release (which `install-cli.sh` and `install-cli.ps1` download from), and publishes
 `fluid-design-cli` to npm when the `NPM_TOKEN` secret is set.

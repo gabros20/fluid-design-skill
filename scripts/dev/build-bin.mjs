@@ -11,6 +11,7 @@
 //   node scripts/dev/build-bin.mjs --target host   only this machine's
 //   node scripts/dev/build-bin.mjs --smoke         then run the host binary through
 //                                              init / generate / check / calc / explain / audit
+//                                              (and audit --selftest's exit 2 outside the repository)
 //   --out <dir>                                instead of dist/ at the repository root
 //
 // Needs bun (https://bun.sh). Commands that drive a browser (verify, probe,
@@ -91,6 +92,9 @@ if (args.includes('--smoke')) {
     step('calc table', ['calc', 'table', '--w', '1600', '--h', '900'], (code, t) => code === 0 && /1600\s+900\s+desktop\s+\S+\s+1\.000/.test(t))
     step('explain --set', ['explain', '1920x1080', '--set', '--fluid-grow-until=1600'], (code, t) => code === 0 && /--fluid\s+1\.0000/.test(t))
     step('audit', ['audit', '.'], (code) => code === 0)
+    // The fixtures are not in the binary: the self-test must say so and exit 2, not throw.
+    step('audit --selftest says it runs from the repository', ['audit', '--selftest'], (code, t) => code === 2 && t.includes('runs from the repository'))
+    step('generate --help prints usage, runs nothing', ['generate', '--help'], (code, t) => code === 0 && t.includes('fluid generate') && !t.includes('files ('))
     step('verify says it needs Node', ['verify', '--url', 'http://localhost:1'], (code, t) => code === 2 && t.includes('npx fluid-design-cli@'))
   } finally {
     rmSync(dir, { recursive: true, force: true })

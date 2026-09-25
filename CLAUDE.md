@@ -10,6 +10,6 @@ The runtime pack is `skills/fluid-design/`; everything else is repository toolin
 generated file: change `skills/fluid-design/scripts/lib/spec.mjs` or the emitters and run
 `node scripts/dev/generate-fluid.mjs` (then `--check`). Keep `package.json`,
 `.codex-plugin/plugin.json`, `SKILL_VERSION` and the newest `CHANGELOG.md` release in step. Run
-`npm test` (which starts with `scripts/check-sync`) after every runtime, routing, metadata,
+`npm run verify` (`scripts/check-sync`, then `npm test`) after every runtime, routing, metadata,
 documentation or evaluation change. Commit only the paths you changed, with conventional messages;
 never push or tag unless asked.

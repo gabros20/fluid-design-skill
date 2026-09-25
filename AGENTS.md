@@ -67,7 +67,8 @@ component libraries are out of scope too.
 ## Validation
 
 ```bash
-npm test                  # scripts/check-sync, then npm run test:unit (generate --check, CLI, audit self-test, zoom-detect)
+npm test                  # the code: generate --check, CLI, audit self-test, zoom-detect
+npm run verify            # scripts/check-sync (the skill-family gate), then npm test
 npm run test:browsers     # the three-browser suites, run from the examples (needs their node_modules)
 node scripts/dev/build-bin.mjs --target host --smoke   # needs bun
 scripts/count-skill-tokens

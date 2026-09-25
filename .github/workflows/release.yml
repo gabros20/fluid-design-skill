@@ -1,8 +1,13 @@
-# A tag v2.x.y (matching the root package.json, .codex-plugin/plugin.json and
-# the newest released CHANGELOG.md heading) builds the standalone binaries,
+# A tag v2.x.y builds the standalone binaries,
 # attaches them with SHA256SUMS to a GitHub Release (install-cli.sh and
 # install-cli.ps1 download from there), and publishes fluid-design-cli to npm
 # from the repository root when the NPM_TOKEN secret is set.
+#
+# The tag step checks the tag against the root package.json and
+# .codex-plugin/plugin.json only. The newest released CHANGELOG.md heading is
+# checked against plugin.json by `npm run verify` (scripts/check-sync, through
+# scripts/lint-skill), and package.json against SKILL_VERSION by its
+# `npm test` (generate-fluid.mjs --check): so all four agree before a release.
 name: release
 on:
   push:
@@ -28,7 +33,7 @@ jobs:
         run: |
           test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
           test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./.codex-plugin/plugin.json').version")"
-      - run: npm test
+      - run: npm run verify
       - name: binaries (every target) + host smoke test
         run: node scripts/dev/build-bin.mjs --smoke
       - name: GitHub Release

@@ -347,9 +347,9 @@ actually read somewhere in the output, each role's unit present, `--fluid-z`/
 present iff its `tailwind.utilities.*` flag is on, an integration emitted iff
 `output.integration` isn't `none` — over the defaults and every fixture in
 `tests/fixtures/configs/`, then runs `tests/parity.mjs` (below) as a subprocess.
-`npm run test:unit` is `generate-fluid.mjs --check && node tests/cli.mjs &&
+`npm test` is `generate-fluid.mjs --check && node tests/cli.mjs &&
 fluid audit --selftest && node tests/zoom-detect.mjs` — the full no-browser
-gate; `npm test` runs `scripts/check-sync` first.
+suite; `npm run verify` runs `scripts/check-sync` first.
 
 ## lib/ — everything above is a thin CLI over these
 

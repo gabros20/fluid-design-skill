@@ -42,8 +42,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "bash scripts/check-sync && npm run test:unit",
-    "test:unit": "node scripts/dev/generate-fluid.mjs --check && node tests/cli.mjs && node skills/fluid-design/bin/fluid audit --selftest && node tests/zoom-detect.mjs",
+    "test": "node scripts/dev/generate-fluid.mjs --check && node tests/cli.mjs && node skills/fluid-design/bin/fluid audit --selftest && node tests/zoom-detect.mjs",
+    "verify": "bash scripts/check-sync && npm test",
     "test:browsers": "cd examples/pizza-next && node ../../tests/engine-matrix.mjs && node ../../tests/tailwind-compile.mjs && node ../../tests/explain-live.mjs && node ../../tests/resize-perf.mjs && cd ../pizza-vite-gsap && node ../../tests/scss-browser.mjs",
     "check-sync": "bash scripts/check-sync",
     "generate": "node scripts/dev/generate-fluid.mjs",

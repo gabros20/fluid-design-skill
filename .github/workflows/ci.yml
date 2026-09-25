@@ -7,9 +7,10 @@ on:
 jobs:
   # The zero-browser suite on every OS the binaries ship for: generated files
   # current, invariants, v1 parity, the CLI end to end (CRLF and formatter
-  # cases included), the audit self-test, the zoom-detect table (npm run
-  # test:unit), and the standalone binary for that runner through init / check /
-  # calc / explain. Everything runs from the repository root.
+  # cases included), the audit self-test, the zoom-detect table (npm test),
+  # and the standalone binary for that runner through init / check / calc /
+  # explain / audit. Everything runs from the repository root. The
+  # skill-family gate (scripts/check-sync) is check-sync.yml's alone.
   test:
     strategy:
       fail-fast: false
@@ -21,21 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm run test:unit
+      - run: npm test
       - uses: oven-sh/setup-bun@v2
       - run: node scripts/dev/build-bin.mjs --target host --smoke
-
-  # The skill-family gate (package, routes, references, metadata, eval
-  # fixtures), then the same suite: `npm test` is check-sync + test:unit.
-  # check-sync.yml runs the gate on its own as well.
-  check-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: npm test
 
   # The real-browser suites (Chromium, WebKit, Firefox): the engine against
   # the model, scopes and fluidPx, the Tailwind layer through the real
