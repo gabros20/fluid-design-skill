@@ -1,5 +1,8 @@
 # Contract: config keys, custom properties, utilities and attributes
 
+**Purpose:** The checked vocabulary this skill ships: browser floor per stack, config keys, emitted
+custom properties, utilities and band variants, the SCSS and StyleX API, `fluid.ts` exports, DOM
+attributes, and the interface with `scroll-animation`.
 **Read when:** you need the exact vocabulary this skill ships — a `fluid.config.json` key, an
 emitted custom property, a `fluid-*` utility name, a `data-*` attribute the verifier reads, or a
 name the companion `scroll-animation` skill depends on — and you want the name checked against
@@ -11,6 +14,8 @@ default and doc string, read `config.md` (generated) — this page names the set
 repeat their values. Motion attributes and constants (`data-stage`, `data-scrub-*`,
 `data-motion-state`, `data-header-theme`, the entrance curves) are the `scroll-animation` skill's
 `references/attribute-contract.md`.
+**Inputs:** the name, key, utility, attribute or export in question, and the project's stack.
+**Produces:** the exact shipped name and what it does, or the browser floor for a stack.
 **Depends on:** nothing. This is the leaf reference every other doc in this skill cites for exact
 names, which is also why it exists on its own rather than folded into one of them.
 

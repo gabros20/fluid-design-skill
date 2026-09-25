@@ -2,6 +2,24 @@
 
 # Configuration reference (fluid-design 2.0.0)
 
+Purpose: The exact name, default and meaning of every `fluid.config.json` structure key and every
+`--fluid-*` setting, generated from `scripts/lib/spec.mjs`, plus the custom properties the engine
+owns.
+
+Read when: you need a key's or a setting's exact spelling, default, allowed values or effect before
+writing it into `fluid.config.json` or a `:root` declaration.
+Skip when: you need the reasoning behind a number (`fluid-scale.md`) or the emitted utilities,
+variants and exports (`contract.md`).
+Inputs: the structure key or setting in question.
+Produces: the exact key or `--fluid-<band>-<setting>` name and value to write, and whether it needs
+`fluid generate` (structure) or applies live (setting).
+
+## Contents
+
+- Structure: `fluid.config.json`
+- Settings: CSS variables (everywhere, then per band)
+- Custom properties the engine owns
+
 Two kinds of configuration, split by one rule:
 
 - **Structure** changes which CSS rules exist: which bands, their breakpoints,

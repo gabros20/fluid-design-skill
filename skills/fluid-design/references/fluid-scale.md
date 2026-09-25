@@ -1,7 +1,14 @@
 # The fluid scale: one measured unit, two derived type units
 
+Purpose: The model and maths behind the scale: the base unit and its two arms, the type units and
+the knee, the ui unit, the ceiling, settings vs structure, adding a role, scopes and limits,
+animation interop, limitations (browser zoom included) and the bands.
+
 Read when: setting up units, changing `fluid.config.json`, adding a new unit role, or explaining the maths.
 Skip when: you are only building a section. `section-recipe.md` is the checklist for that.
+Inputs: `fluid.config.json`, the settings the project sets in its `:root`, and the design artboards.
+Produces: a unit, setting, role or limit decision with its reasoning, or the explanation of a
+resolved value.
 
 ## Contents
 1. The problem it solves

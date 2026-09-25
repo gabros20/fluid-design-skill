@@ -1,8 +1,25 @@
 # Tokens and theming
 
+Purpose: Where colour, surface and type tokens live next to the fluid settings, semantic roles over
+the brand ramp, the traps that compile cleanly and render wrong, dark themes, header ink, hit
+targets, selection and focus.
+
 Read when: setting up colour, surface and type tokens; adding a dark section; porting components
 from another codebase.
 Skip when: working on pure layout.
+Inputs: the design tokens and the existing `globals.css` / `@theme`.
+Produces: semantic tokens in `globals.css` that components use, free of the compile-clean traps.
+
+## Contents
+
+- Tokens live in `globals.css`, next to the fluid settings
+- Semantic names over the ramp
+- Four traps that compile and render plausibly wrong
+- A dark theme later without touching components
+- Header ink and `--fluid-header-h`
+- Small hit targets in a drawn row
+- Selection and focus
+- Traps
 
 ## Tokens live in `globals.css`, next to the fluid settings
 

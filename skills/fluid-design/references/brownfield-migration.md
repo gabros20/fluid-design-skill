@@ -1,10 +1,24 @@
 # Brownfield migration: moving an existing site onto the scale
 
+Purpose: Move an existing site onto the scale without a big bang: a fluid-design v1 project through
+`fluid migrate`, or a container-based site converted route by route, keeping any existing `cn`.
+
 Read when: the site already exists — either with `.container`/`max-w-7xl` wrappers, px sizes, maybe
 some `clamp()` or `vw` type and no fluid-design yet (§"Converting a container-based site"), or
 already running fluid-design v1 (§"From fluid-design v1"). The job in both cases is to convert
 without a big bang.
 Skip when: greenfield. Go straight to `section-recipe.md`.
+Inputs: the existing project: its CSS entry, `@theme`, container wrappers and breakpoints, any v1
+`fluid.config.json`, any `cn`/`tailwind-merge` helper.
+Produces: a migrated or brownfield-initialised `fluid.config.json`, a conversion order, converted
+sections, and the `withFluid` change to an existing `cn`.
+
+## Contents
+
+- From fluid-design v1
+- Converting a container-based site (never on fluid-design before)
+- Traps
+- A project that already has `cn` (shadcn and friends)
 
 ## From fluid-design v1
 

@@ -1,7 +1,22 @@
 # Styling stacks: the same units, five spellings
 
+Purpose: How the same units are spelled in Tailwind v4, vanilla CSS and CSS Modules, SCSS and
+StyleX, how to choose between them, and scopes and limits per stack.
+
 Read when: implementing in a stack other than Tailwind v4, or choosing a stack.
 Skip when: you are on Tailwind v4 and `fluid.css` is already imported.
+Inputs: `output.stack` or the project's styling stack.
+Produces: authoring in the right surface for the stack, scopes and limits included.
+
+## Contents
+
+- Tailwind v4 (richest)
+- Vanilla CSS and CSS Modules
+- SCSS
+- StyleX
+- Choosing
+- Traps
+- Scopes and limits per stack
 
 Every stack spends the same custom properties (`--fluid`, `--fluid-<role>` per entry in `roles`,
 `--fluid-ui` with `ui: true`, `--fluid-container-width`/`-padding`, `--fluid-header-h`), defined once on

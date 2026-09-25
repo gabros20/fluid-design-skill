@@ -1,10 +1,17 @@
 # iOS Safari: render fixes
 
+**Purpose:** iOS Safari render fixes for a fluid page: `svh`/`lvh`/`dvh`, `--fluid-browser-bar` and
+safe areas, the iOS 26 toolbar tint policy, the hero overshoot, sticky killers, input zoom,
+overscroll, and device verification discipline.
 **Read when:** anything full-height, sticky or edge-to-edge is about to ship, or a device report
 says "it looks wrong on iPhone."
 **Skip when:** the change is desktop-only and doesn't touch layout. SVG rules live in `media.md`;
 anything that moves (a pin's scroll maths, video playback, a mask sweep) lives in the
 `scroll-animation` skill, `references/ios-safari-motion.md`.
+**Inputs:** the full-height, sticky or edge-to-edge elements, the viewport meta tag, and any device
+report.
+**Produces:** unit and structure choices that render right on iPhone, and the checks only a real
+device can do.
 **Depends on:** `performance.md` for the render budget; `fluid-scale.md` §3 for why the scale's
 height arm is `svh`.
 

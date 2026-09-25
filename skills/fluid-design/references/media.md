@@ -1,9 +1,14 @@
 # Media: images, SVG and the video element
 
+**Purpose:** Sizing and reserving images, inline SVG and `<video>` elements in fluid units, Safari's
+SVG rendering rules, and posters.
 **Read when:** placing any image, inline SVG, logo, icon set or `<video>` on a fluid page, or a
 graphic renders empty, clipped, at the wrong size or soft in one engine only.
 **Skip when:** the question is how a video *plays* (scrubbing, loops, preload tiers, autoplay,
 tab-sleep, encoding for scrub or loops). That is the `scroll-animation` skill, `references/video.md`.
+**Inputs:** the media elements, their intrinsic sizes, and how the stack imports SVG.
+**Produces:** media sized in fluid units with reserved dimensions, Safari-safe SVG, and video
+element markup with a poster.
 **Depends on:** `performance.md` §3 for image `sizes` on a page that grows; `ios-safari.md` for the
 viewport units a full-bleed picture uses.
 

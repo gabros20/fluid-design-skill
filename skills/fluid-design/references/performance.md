@@ -1,10 +1,16 @@
 # Performance: render budget
 
+**Purpose:** The render budget of a page on the scale: units that recompute on resize only, no `dvh`
+thrash, image `sizes` on a page that grows past the artboard, fonts, `content-visibility`, and
+bundle and asset budgets.
 **Read when:** you're shipping a page on the scale and want it fast to load and cheap to lay out:
 image `sizes`, fonts, below-fold content, asset and bundle budgets.
 **Skip when:** the question is about frame rate while something moves (per-frame writes, springs,
 concurrent scenes, `will-change`, blur, library weight). That is motion performance: see the
 `scroll-animation` skill, `references/performance.md`.
+**Inputs:** the page's images, fonts and below-fold content, and the growth ceiling setting.
+**Produces:** correct `sizes` attributes, font-loading choices, and budget checks to pass before
+shipping.
 **Depends on:** `media.md` for how media is sized and reserved; `fluid-scale.md` §7 for the growth
 ceiling; `ios-safari.md` §1 for why the scale is on `svh`.
 

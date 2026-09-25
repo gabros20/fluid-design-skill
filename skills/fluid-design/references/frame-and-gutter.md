@@ -4,9 +4,15 @@ The page **container**: one utility, `fluid-container`, plus two per-band settin
 the frame and its padding the gutter, hence the filename; `brownfield-migration.md` maps the old
 names.)
 
+Purpose: The page container (`fluid-container`: max width and scaled padding on one box, per band),
+what to do when a row will not fit it, and constants that drift against a scaled box.
+
 Read when: writing any section's outer structure, a row will not fit the container, a grid changes
 its column count on big screens, or a section sits a few pixels off its neighbours' rail.
 Skip when: you are only adjusting type inside an existing container.
+Inputs: the section's drawn widths and paddings, and the container settings.
+Produces: a section wrapper on one container, a content-budget verdict (or `cqw` fractions for an
+over-budget row), and drift-free gaps and constants.
 
 ## Contents
 1. There is one container, and it is one box (padding and max-width on one box; container is not measure; the drawn padding)

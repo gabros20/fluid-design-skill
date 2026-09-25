@@ -1,7 +1,23 @@
 # Preflight: settle the decisions before any code
 
+Purpose: The decisions to settle before any code (stack, artboards, bands, container, type roles,
+growth ceiling, browser zoom), each with its default, a detection hint and how to phrase the
+question.
+
 Read when: starting any fluid-design task, greenfield or brownfield.
 Skip when: `fluid.config.json` and `FLUID.md` already exist and the task stays inside their decisions.
+Inputs: the project (`package.json`, CSS entry, `@theme`, breakpoints, container widths, framework
+and router) and the design frames.
+Produces: the answers as `fluid init` flags and settings, `fluid.config.json`, and a `FLUID.md`
+decision log.
+
+## Contents
+
+- Detection pass (about two minutes, read-only)
+- The decisions
+- Writing the result
+- Phrasing the questions
+- Traps
 
 Inspect the project first and ask second. Every question below has a default and a detection
 hint. Ask only when detection is inconclusive **and** the answer changes the output. Put all the open

@@ -1,8 +1,25 @@
 # Section recipe: putting one section on the system
 
+Purpose: The per-section checklist for building or converting one section on the scale, with the
+shipped anatomy, heroes under a fixed header, mobile min-heights, sections over a pinned render, and
+parts that stop scaling.
+
 Read when: building any section, greenfield or converted.
 Skip when: you are working only on media inside an existing section (`media.md`), or only on its
 animation (the `scroll-animation` skill).
+Inputs: the section's desktop and phone drawings (their numbers) and the container settings.
+Produces: one section on one container, every drawn number through a fluid utility, and a fit that
+holds at the artboard.
+
+## Contents
+
+- The checklist
+- Anatomy, as shipped
+- Heroes under a fixed, floating header
+- Mobile min-heights: use `svh`, and put the baseline on screen
+- When a section rides over a pinned render
+- Traps
+- A part that should stop scaling
 
 ## The checklist
 

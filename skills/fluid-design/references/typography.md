@@ -1,9 +1,30 @@
 # Typography on the fluid scale
 
+Purpose: Choosing a type unit by what its box does, the `/lh` modifier, `em` tracking, hard breaks,
+line-count holds, mobile title ladders, shared type atoms, fonts, and the browser font-size and zoom
+behaviour.
+
 Read when: sizing any text through a `fluid-*` type utility, building a type scale, choosing fonts, or when a
 heading wraps differently from the design.
 Skip when: a size is plain Tailwind (`text-[15px]`, untouched by any `fluid-*` class) — that stays exactly what
 it says at every band, by design (`fluid-scale.md` §13).
+Inputs: the drawn type sizes and line heights, the box each text sits in, and the fonts.
+Produces: a type utility per text element (`fluid-display-*`, `fluid-text-*`, `fluid-copy-*`,
+`fluid-ui-*`), stable wraps, and font loading.
+
+## Contents
+
+- Type units in v2
+- Choosing a unit: ask what the box around the text does
+- The `/lh` modifier
+- Tracking in `em`, never in px
+- Hard breaks when the natural wrap is not stable
+- Type that must hold a drawn line count in an over-budget column
+- Variable-driven title ladders (mobile) plus fluid (desktop)
+- Shared type atoms take an opt-in `fluid` prop
+- Fonts
+- Browser font-size setting, and browser zoom
+- Traps
 
 ## Type units in v2
 

@@ -1,10 +1,16 @@
 # Verification
 
+**Purpose:** Proving the scale works: the scripted harness, the viewport matrix, real-device checks,
+the matrix cell by cell, the stale-stylesheet diagnosis, and the scripts.
 **Read when:** you've built or changed a fluid-scale value, a section frame, a full-height section, or
 anything else that needs checking across viewports rather than at one window size.
 **Skip when:** the change is a static, non-responsive tweak with no viewport dependency — a plain
 visual diff is enough. Verifying an animation (reveals, scene progress, anchor jumps through a
 scroll well) is the `scroll-animation` skill's `references/verification.md`.
+**Inputs:** a running page URL, `fluid.config.json`, the fit selectors, and access to real devices
+where needed.
+**Produces:** `fluid check`, `fluid audit` and `fluid verify` results across the matrix, and a
+current/stale stylesheet verdict.
 **Depends on:** nothing. This is the one home of the stale-stylesheet diagnosis (§6); the other
 references link here.
 
