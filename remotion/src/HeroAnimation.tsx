@@ -1,40 +1,24 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { themes, MONO, type ThemeName } from "./theme";
+import { AbsoluteFill, Series } from "remotion";
+import { themes, type ThemeName } from "./theme";
+import { ThemeProvider } from "./lib";
+import { SCENES } from "./scenes";
 
-// TODO: replace with a composition that SHOWS what the skill does — see the sibling repos'
-// hero animations for the bar (a wireframe becoming a finished, reviewed page, etc.). This is
-// a minimal placeholder: the theme background + the skill name fading in.
+// The fluid-design explainer: nine scenes played back to back (see ../STORYBOARD.md).
+// Each scene starts and ends on the bare background, so the loop seam is invisible.
 export const HeroAnimation: React.FC<{ theme: ThemeName }> = ({ theme }) => {
-  const frame = useCurrentFrame();
   const t = themes[theme];
-
-  const opacity = interpolate(frame, [0, 30], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
   return (
-    <AbsoluteFill style={{ backgroundColor: t.bg }}>
-      <AbsoluteFill
-        style={{
-          alignItems: "center",
-          justifyContent: "center",
-          opacity,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 64,
-            color: t.ink,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          <span style={{ color: t.accent }}>/</span>
-          Fluid Design
-        </div>
+    <ThemeProvider value={t}>
+      <AbsoluteFill style={{ backgroundColor: t.bg }}>
+        <Series>
+          {SCENES.map(({ name, dur, C }) => (
+            <Series.Sequence key={name} name={name} durationInFrames={dur} premountFor={30}>
+              <C />
+            </Series.Sequence>
+          ))}
+        </Series>
       </AbsoluteFill>
-    </AbsoluteFill>
+    </ThemeProvider>
   );
 };
