@@ -2,18 +2,17 @@
 
 **Purpose:** The checked vocabulary this skill ships: browser floor per stack, config keys, emitted
 custom properties, utilities and band variants, the SCSS and StyleX API, `fluid.ts` exports, DOM
-attributes, and the interface with `scroll-animation`.
+attributes, and what motion code reads.
 **Read when:** you need the exact vocabulary this skill ships — a `fluid.config.json` key, an
 emitted custom property, a `fluid-*` utility name, a `data-*` attribute the verifier reads, or a
-name the companion `scroll-animation` skill depends on — and you want the name checked against
+name motion code depends on — and you want the name checked against
 what actually ships, not remembered from a planning doc.
 **Skip when:** you already know the name and just need the *why* behind it — that lives in
 `fluid-scale.md` (units/config), `stacks.md` (per-stack authoring surface) or `tokens-and-theming.md`
 (design tokens, a separate vocabulary from this one). For the full settings table with every
 default and doc string, read `config.md` (generated) — this page names the settings, it does not
-repeat their values. Motion attributes and constants (`data-stage`, `data-scrub-*`,
-`data-motion-state`, `data-header-theme`, the entrance curves) are the `scroll-animation` skill's
-`references/attribute-contract.md`.
+repeat their values. Motion attributes and constants (entrance curves, scene state) are not
+part of this skill.
 **Inputs:** the name, key, utility, attribute or export in question, and the project's stack.
 **Produces:** the exact shipped name and what it does, or the browser floor for a stack.
 **Depends on:** nothing. This is the leaf reference every other doc in this skill cites for exact
@@ -33,7 +32,7 @@ the source of truth — file that as a doc bug against this page.
 4. SCSS and StyleX API
 5. `fluid.ts` exports
 6. DOM attributes this skill reads
-7. The interface with `scroll-animation`
+7. For motion code
 8. Traps
 
 ## 0. Browser support
@@ -290,18 +289,19 @@ one file every consumer imports; there is no separate `fluid.config.ts`.
 
 Neither attribute changes rendering; both exist for the verifier.
 
-## 7. The interface with `scroll-animation`
+## 7. For motion code
 
-The two skills share exactly three things. Keep them in this skill's generated `fluid.ts` and let
-the other read them.
+Animation is outside this skill, but motion code in the project reads exactly three things from it,
+plus `fluidPx()` for scaled distances. Keep them in this skill's generated `fluid.ts` and let motion
+code read them.
 
 - **The desktop breakpoint.** `bands.desktop.minWidth` in `fluid.config.json`. `fluid generate`
   (any stack) always writes `<output.dir>/fluid.ts` with `DESKTOP_PX` and `DESKTOP_QUERY`; the
-  motion ports import one of those instead of their own hard-coded breakpoint literal. It must also
+  motion code imports one of those instead of their own hard-coded breakpoint literal. It must also
   equal Tailwind's `--breakpoint-lg` (§3, `stacks.md`) and the SCSS band mixin's edge.
 - **`--fluid-header-h`** (§2). Header ink, anchor offsets and scroll wells read it; this skill owns
   its value. It uses the header's **resting** inset, so it holds through a header transition.
-  `scroll-animation` reads `var(--fluid-header-h, var(--header-h, 0px))`, so it also works on a v1
+  Motion code should read `var(--fluid-header-h, var(--header-h, 0px))`, so it also works on a v1
   or hand-made site; `--header-h` itself is emitted here only with `aliases: true`.
 - **The `translate` property.** `fluid-translate-*` (and SCSS/StyleX callers writing `translate:`
   directly) writes `translate`, never `transform`, so a per-frame engine `transform` composes with

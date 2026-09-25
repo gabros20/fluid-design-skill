@@ -7,8 +7,7 @@
 // This is Tier 1 from verification.md §7: "the browser harness" — drive a
 // real page and read numbers out of it, because the bugs that matter are
 // invisible in source. Reveal/scene verification (a triggered entrance
-// left stuck invisible, a scroll-driven scene's motion state) lives in the
-// scroll-animation skill's verify-motion.mjs, not here.
+// left stuck invisible, a scroll-driven scene's motion state) is not here.
 //
 // Usage:
 //   node verify.mjs <url> [--config f] [--out dir]
@@ -115,8 +114,7 @@ Options:
   -h, --help          print this message and exit
 
 Reveal/scene checks (a triggered entrance stuck invisible, a scroll-driven
-scene's data-motion-state across progress) live in the scroll-animation
-skill's verify-motion.mjs --reveal/--scenes, not here.
+scene's motion state across progress) are not here.
 
 When the config sets a \`ceiling\`, one extra desktop viewport is appended automatically — sized so
 the natural (uncapped) --fluid factor clears the ceiling by 25% — so the ceiling is always exercised

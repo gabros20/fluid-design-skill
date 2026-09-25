@@ -63,9 +63,7 @@ adopts the skill-template repository layout.
   rounded floor.
 - Custom properties are namespaced (`--fluid-header-h`, `--fluid-safe-top`, …); `aliases: true`
   keeps the v1 names for a brownfield migration, and `fluid migrate --write` turns it on.
-- The skill is scoped to layout, render, responsive and mobile work; animation moved to the
-  companion `scroll-animation` skill, which meets this one at the desktop breakpoint,
-  `--fluid-header-h` and the `translate` property.
+- The skill is scoped to layout, render, responsive and mobile work; animation is out of scope.
 - The repository follows the gabros20 skill-template layout: the runtime pack lives in
   `skills/fluid-design/` (router-ordered `SKILL.md`, references with primacy headers); the
   generator and binary builder in `scripts/dev/`; the suites and fixtures in `tests/`; the four

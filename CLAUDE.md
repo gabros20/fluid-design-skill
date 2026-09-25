@@ -3,8 +3,7 @@
 Read [AGENTS.md](AGENTS.md) before changing runtime behaviour and
 [CONTRIBUTING.md](CONTRIBUTING.md) before preparing a release. Keep `fluid-design` focused on making
 the page the right size (the fluid scale, bands, settings, generated output per stack, media, iOS
-Safari, browser zoom and verification) and hand animation to the companion `scroll-animation`
-skill.
+Safari, browser zoom and verification); animation is out of scope.
 
 The runtime pack is `skills/fluid-design/`; everything else is repository tooling. Never hand-edit a
 generated file: change `skills/fluid-design/scripts/lib/spec.mjs` or the emitters and run

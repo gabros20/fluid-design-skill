@@ -6,8 +6,8 @@ bundle and asset budgets.
 **Read when:** you're shipping a page on the scale and want it fast to load and cheap to lay out:
 image `sizes`, fonts, below-fold content, asset and bundle budgets.
 **Skip when:** the question is about frame rate while something moves (per-frame writes, springs,
-concurrent scenes, `will-change`, blur, library weight). That is motion performance: see the
-`scroll-animation` skill, `references/performance.md`.
+concurrent scenes, `will-change`, blur, library weight). That is motion performance, outside this
+skill.
 **Inputs:** the page's images, fonts and below-fold content, and the growth ceiling setting.
 **Produces:** correct `sizes` attributes, font-loading choices, and budget checks to pass before
 shipping.
@@ -151,7 +151,7 @@ with the browser's placeholder estimate until it nears the viewport, which **zer
 geometry** of anything that reads `offsetHeight`. This is a strict either/or: a section is either a
 `content-visibility` candidate (ordinary flow content, nothing measuring it) or part of something
 measured, never both. Never apply it inside, or wrapping, a pinned scene's runway or a triggered
-reveal group: the full reason is in the `scroll-animation` skill, `references/performance.md`.
+reveal group: both measure their own geometry.
 
 ## 6. Bundle and asset budgets
 
@@ -161,16 +161,14 @@ Enforceable numeric targets, worth wiring into CI rather than trusting review to
 - **Image and video formats:** modern, well-compressed formats sized to their actual display
   dimensions — never ship a source asset's native resolution to a container a fraction of its size.
   On this system "actual display dimensions" includes growth above the reference (§3).
-- **A scrub-encoded (all-intra) video re-pays its background texture on every frame.** Its size
-  budget and the measured 37MB → 9MB case live in the `scroll-animation` skill (`references/video.md`,
-  `references/performance.md`).
+- **A scrub-encoded (all-intra) video re-pays its background texture on every frame.** Budget its
+  size with that in mind.
 - **A stray large asset is a permanent cost in version control**, not just a one-time download —
   most VCS systems keep every blob forever, so an oversized commit's clone-time cost never comes back
   once someone "fixes" it later by re-encoding. Catch it before the commit, not after.
 - A CI budget script (asset sizes, bundle size deltas) plus a Lighthouse-class check on preview
   deployments is the concrete enforcement mechanism worth having; `verification.md` describes the
-  companion runtime checks this doesn't cover. JavaScript weight from animation libraries is the
-  `scroll-animation` skill's budget.
+  runtime checks this doesn't cover.
 
 ## Traps
 

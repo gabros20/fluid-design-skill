@@ -34,11 +34,6 @@ binary has no node to spawn). Everything is built on `lib/`, never
 duplicates a formula, and never hand-writes a config default: everything
 traces back to `lib/spec.mjs`.
 
-Animation/scroll-scene verification (a triggered entrance, a scrub scene's
-state, a real anchor click through smooth scrolling) lives in the
-`scroll-animation` skill's `scripts/` — `audit-motion.mjs`,
-`verify-motion.mjs`, `anchor-check.mjs` — not here.
-
 ## bin/fluid — the CLI (cli/)
 
 ```
@@ -304,11 +299,6 @@ removed variant; use `lg:`), `limit-on-children` (warn — a limit behind
 `runAudit({ root, prefix, desktopVariant, rules, … })` is the programmatic
 entry; `fluid check` runs it with `rules: CHECK_RULES` (the last six above)
 and the project's context.
-
-Motion-specific rules (`motion-strict`, `scroll-well-vs-smooth-scroll`,
-`fractional-amount`, `contents-reveal`, `video-attrs`, plus
-`lenis-with-scroll-well` and `gsap-pin-with-sticky-scene`) live in the
-`scroll-animation` skill's `scripts/audit-motion.mjs`.
 
 `--selftest` runs the scanner over the repository's
 `tests/fixtures/audit/<rule-id>/{positive,negative}` (an installed skill exits 2)

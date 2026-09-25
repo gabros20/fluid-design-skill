@@ -6,7 +6,7 @@ the matrix cell by cell, the stale-stylesheet diagnosis, and the scripts.
 anything else that needs checking across viewports rather than at one window size.
 **Skip when:** the change is a static, non-responsive tweak with no viewport dependency — a plain
 visual diff is enough. Verifying an animation (reveals, scene progress, anchor jumps through a
-scroll well) is the `scroll-animation` skill's `references/verification.md`.
+scroll well) is outside this skill.
 **Inputs:** a running page URL, `fluid.config.json`, the fit selectors, and access to real devices
 where needed.
 **Produces:** `fluid check`, `fluid audit` and `fluid verify` results across the matrix, and a
@@ -119,8 +119,8 @@ skipped:
 
 What only a device can verify here: the iOS toolbar tint (`ios-safari.md` §3), the `lvh` shortfall
 and hero overshoot (§5 there), safe-area and `--fluid-browser-bar` padding (§2 there), and the 16px input
-auto-zoom (§7 there). Video compositing and scroll-driven behaviour on a device are the
-`scroll-animation` skill's checks.
+auto-zoom (§7 there). Video compositing and scroll-driven behaviour on a device are outside this
+skill.
 
 ## 5. The viewport matrix, cell by cell
 
@@ -241,8 +241,7 @@ list — check each script's own `--help` for the current surface:
   WebKit is the closest a script gets to Safari: run it before asking for a device test. Firefox is
   where precision bugs show (it rounds `min()`/`max()` results to 1/60px, `fluid-scale.md` §3). The
   zoom row needs Chromium and is skipped on the others. Exit codes: 0 pass, 1 a check failed, 2 usage
-  error or Playwright not found. Reveal checking and anchor-jump checking are not here: they are
-  the `scroll-animation` skill's `verify-motion` script.
+  error or Playwright not found. Reveal checking and anchor-jump checking are not here.
 - **`fluid calc table|px|budget`** (`scripts/tools/calc.mjs`) — a standalone calculator for the fluid-scale
   arithmetic itself, reading settings from the nearest `fluid.config.json` and the project's own CSS
   (or `--config`): `table` prints the resolved unit at a set of viewports plus which arm is binding

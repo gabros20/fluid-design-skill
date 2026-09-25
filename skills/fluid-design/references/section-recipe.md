@@ -6,7 +6,7 @@ parts that stop scaling.
 
 Read when: building any section, greenfield or converted.
 Skip when: you are working only on media inside an existing section (`media.md`), or only on its
-animation (the `scroll-animation` skill).
+animation (outside this skill).
 Inputs: the section's desktop and phone drawings (their numbers) and the container settings.
 Produces: one section on one container, every drawn number through a fluid utility, and a fit that
 holds at the artboard.
@@ -63,7 +63,7 @@ holds at the artboard.
    at each call site — see `typography.md`'s "height contract" note. Nothing in this skill ships a
    `Btn`/`Eyebrow`/etc. component; the anatomy example below inlines the classes a small label like
    that would carry, on purpose (an atom is extracted at its **second** consumer, never invented
-   ahead of one; the `scroll-animation` skill applies the same rule to motion components).
+   ahead of one; the same rule applies to motion components).
 10. **Scale the comparison constants:** any `auto-fill` minimum, `flex-wrap` basis or `min-w` inside
     the scaling box (`frame-and-gutter.md` §3).
 11. **Grep the finished file** for a fixed px value that has no fluid twin at the breakpoint. Anything drawn
@@ -107,10 +107,8 @@ What to notice:
 - The heading's drawn lines are authored as block spans, so a later entrance can split at the
   authored break (`typography.md` §Hard breaks).
 - Mobile values are authored plainly (`text-[40px] sm:text-[52px]`). The fluid classes exist only from `lg`.
-- Entrances: see the `scroll-animation` skill. It wraps these same elements (its `Stage`/`StageItem`
-  in React) without changing any class here. Its entrance distances are fixed px in CSS variables,
-  not fluid (engines resolve `var()` once), and a section whose header ink it drives also carries
-  `data-header-theme`.
+- Entrances wrap these same elements without changing any class here. Entrance distances stay
+  fixed px, not fluid (engines resolve `var()` once).
 
 The same section in SCSS:
 
@@ -152,8 +150,8 @@ both toolbar states, and 640 is the landscape floor.
 
 ## When a section rides over a pinned render
 
-Copy sections inside a pinned scene have extra rules (no background, no `overflow-hidden`): see the
-`scroll-animation` skill, `references/scroll-scenes.md`.
+Copy sections inside a pinned scene have extra rules: no background (it would cover the render) and
+no `overflow-hidden`.
 
 ## Traps
 - [ ] `fluid-h-*` only for sections drawn at the reference height; `fluid-min-h-*` for taller ones.
@@ -161,8 +159,8 @@ Copy sections inside a pinned scene have extra rules (no background, no `overflo
 - [ ] Contents scale along with the whitespace: sizes, icons, controls, decorations.
 - [ ] No second sizing ladder inside a section (`xl:` rules on a private var).
 - [ ] Mobile min-heights in `svh`; fixed header subtracted via `--fluid-header-h`.
-- [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (the `scroll-animation`
-      skill explains why; `audit.mjs` no longer checks it here).
+- [ ] No `lg:contents` wrapper on anything that carries a reveal trigger (a `display: contents` box
+      has no geometry to observe; `audit.mjs` no longer checks it here).
 - [ ] A part that must stop scaling has a limit on its wrapper (`fluid-grow-until-*`,
       `fluid-shrink-until-*`, `fluid-off`), not fixed px on its children; the site header uses
       `:root { --fluid-ui-grow-until: … }` instead.

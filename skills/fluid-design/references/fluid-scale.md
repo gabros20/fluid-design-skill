@@ -115,7 +115,7 @@ uses only `min()`/`max()`/`calc()` — no `clamp()`, no `round()` — because `c
   guarantee: **never taller than the window, and exactly one screen tall whenever height binds.**
 - **`svh`, not `dvh`.** The small viewport does not move when a mobile toolbar collapses. With `dvh`
   the type would resize mid-scroll, and over a scrubbed video that thrashes layout on the worst possible surface.
-  (Pinned layers use `lvh`; see the `scroll-animation` skill, `references/scroll-scenes.md`.)
+  (A pinned scene's sticky layer is the exception and uses `lvh`; see `ios-safari.md` §1.)
 - **`100vw` includes a classic scrollbar gutter.** That is harmless when scrollbars are hidden or overlay. If it bites,
   use `calc((100vw - var(--scrollbar-width)) / 1440)`.
 - **`--fluid-desktop-scale-min: 0.58`** was *chosen*, not derived: "structure stops compressing at a 522px-tall section".
@@ -383,8 +383,8 @@ its padding (622 of one 1198-tall section was whitespace). A second sizing ladde
 
 ## 11. Interop with animation (if any)
 
-This skill ships no animation. If the companion `scroll-animation` skill (or any engine) animates
-the page, four facts keep the two from fighting:
+This skill ships no animation. If motion code (any engine) animates the page, these facts keep it
+and the scale from fighting:
 
 - **No property collides.** Animation writes `transform`/`opacity`; the scale writes `font-size`,
   `padding`, `gap`, `width` and `height`. The units recompute on resize only, never per frame and
@@ -408,13 +408,12 @@ the page, four facts keep the two from fighting:
   `fluidUnits()` returns all of them, `onFluidChange(cb)`
   fires when they change. It resolves them through a hidden probe element
   (`getPropertyValue('--fluid')` returns the formula text, not a number) and costs one layout read
-  per change. The engine recipes (GSAP function values, Motion `useFluidUnit`, and the
-  engine-neutral `--scene-p` pattern where CSS does the multiplying) are in the `scroll-animation`
-  skill's `references/fluid-interop.md` §3, which ships a mirror of this file so it works alone.
-- **A pin re-measures itself on `ResizeObserver` plus `resize`**, reads the desktop breakpoint from
-  this skill's generated `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`) and the header height from
-  `--fluid-header-h`. Details:
-  the `scroll-animation` skill, `references/scroll-scenes.md`.
+  per change. With GSAP, pass function values (`x: () => fluidPx(600)`) with
+  `invalidateOnRefresh: true` so ScrollTrigger re-reads them; with Motion, wrap `fluidPx()` in a
+  MotionValue updated from `onFluidChange`.
+- **A pin should re-measure itself on `ResizeObserver` plus `resize`**, read the desktop breakpoint
+  from this skill's generated `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`) and the header height from
+  `--fluid-header-h`.
 
 ## 12. Limitations
 

@@ -102,16 +102,8 @@ Tailwind site to fluid scaling", fluid Tailwind/CSS/SCSS/StyleX tokens, iOS Safa
 media sizing on a growing page, browser zoom, and a page that looks broken right after a CSS edit
 and a dev-server restart (a stale stylesheet).
 
-It is not for:
-
-- **Animation.** Triggered entrances, pinned and scrubbed scenes, scroll wells, video playback and
-  coexistence with GSAP or Lenis belong to the companion
-  [`scroll-animation`](https://github.com/gabros20/scroll-animation-skill) skill. Each works alone;
-  together they meet at three points owned here: the desktop breakpoint (`DESKTOP_QUERY` in the
-  generated `fluid.ts`), `--fluid-header-h`, and the `translate` property. Drawn motion distances
-  scale through `fluidPx()`.
-- **Generic "make it responsive" work** with breakpoints and a `clamp()` type ramp, design tokens and
-  colour systems as a topic of their own, or component libraries.
+It is not for generic "make it responsive" work with breakpoints and a `clamp()` type ramp, design
+tokens and colour systems as a topic of their own, or component libraries.
 
 ## Install
 
@@ -173,8 +165,7 @@ In your project, `fluid init` and `fluid generate` produce:
 
 ## Examples
 
-Two complete builds in [`examples/`](examples/) use this skill for layout and the `scroll-animation`
-skill for motion:
+Two complete builds in [`examples/`](examples/) use this skill for layout:
 
 - [`pizza-next`](examples/pizza-next/): Next 16 + Tailwind v4 + Motion, the default stack and
   settings, with the site header held at 1680 through `--fluid-ui-grow-until`.

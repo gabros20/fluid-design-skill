@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Fluid Design",
     "shortDescription": "Viewport-fluid layouts that scale as one drawing",
-    "longDescription": "Turn a fixed design (a desktop artboard and a phone artboard) into a site whose layout, type, spacing and element sizes scale from both viewport axes off one measured unit: exactly one screen tall when height binds, pixel-exact at the reference, correct on a 5K display, with phone, tablet and landscape bands scaling their own design. The bundled fluid CLI generates the engine for Tailwind v4, CSS, SCSS or StyleX from a small fluid.config.json; every tuning number is a live CSS variable. Covers section conversion, tokens, media sizing, iOS Safari viewport and render bugs, browser zoom (WCAG 1.4.4) and a real-browser viewport-matrix verifier. No animation: that is the scroll-animation skill.",
+    "longDescription": "Turn a fixed design (a desktop artboard and a phone artboard) into a site whose layout, type, spacing and element sizes scale from both viewport axes off one measured unit: exactly one screen tall when height binds, pixel-exact at the reference, correct on a 5K display, with phone, tablet and landscape bands scaling their own design. The bundled fluid CLI generates the engine for Tailwind v4, CSS, SCSS or StyleX from a small fluid.config.json; every tuning number is a live CSS variable. Covers section conversion, tokens, media sizing, iOS Safari viewport and render bugs, browser zoom (WCAG 1.4.4) and a real-browser viewport-matrix verifier. It contains no animation.",
     "developerName": "gabros20",
     "category": "Productivity",
     "capabilities": [],
