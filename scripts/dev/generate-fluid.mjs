@@ -22,14 +22,15 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
-import { normaliseStructure, structureDefaults, jsonSchema, settingsSpec, STRUCTURE, STACKS, BAND_NAMES, bandBlurb, SKILL_VERSION, RESERVED_ROLE_NAMES } from '../lib/spec.mjs'
-import { buildOutput } from '../lib/emit/project.mjs'
-import { CORE, UI_FAMILY, EXTRA_FAMILIES } from '../lib/emit/tailwind.mjs'
-import { num } from '../lib/emit/engine.mjs'
+import { normaliseStructure, structureDefaults, jsonSchema, settingsSpec, STRUCTURE, STACKS, BAND_NAMES, bandBlurb, SKILL_VERSION, RESERVED_ROLE_NAMES } from '../../skills/fluid-design/scripts/lib/spec.mjs'
+import { buildOutput } from '../../skills/fluid-design/scripts/lib/emit/project.mjs'
+import { CORE, UI_FAMILY, EXTRA_FAMILIES } from '../../skills/fluid-design/scripts/lib/emit/tailwind.mjs'
+import { num } from '../../skills/fluid-design/scripts/lib/emit/engine.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SKILL = resolvePath(__dirname, '../..')
-const FIXTURES = join(__dirname, '../test/fixtures/configs')
+const ROOT = resolvePath(__dirname, '../..')
+const SKILL = join(ROOT, 'skills/fluid-design')
+const FIXTURES = join(ROOT, 'tests/fixtures/configs')
 
 // ── what the skill commits ──────────────────────────────────────────────
 
@@ -198,7 +199,7 @@ function main() {
   for (const [name] of [...CORE, ...UI_FAMILY, ...Object.values(EXTRA_FAMILIES).flat()]) {
     if (!RESERVED_ROLE_NAMES.has(name.split('-')[0])) problems.push(`utility family ${name}: "${name.split('-')[0]}" is not in RESERVED_ROLE_NAMES (spec.mjs)`)
   }
-  const pkg = JSON.parse(readFileSync(join(SKILL, 'package.json'), 'utf8'))
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
   if (pkg.version !== SKILL_VERSION) problems.push(`package.json version ${pkg.version} is not SKILL_VERSION ${SKILL_VERSION} (spec.mjs): npm, the binaries and the lock stamp must agree`)
   checkInvariants('defaults', normaliseStructure({}), problems)
   const fixtures = readdirSync(FIXTURES).filter((f) => f.endsWith('.json')).sort()
@@ -214,7 +215,7 @@ function main() {
     }
     checkInvariants(`fixture ${f}`, s, problems)
   }
-  const parity = spawnSync(process.execPath, [join(__dirname, '../test/parity.mjs')], { encoding: 'utf8' })
+  const parity = spawnSync(process.execPath, [join(ROOT, 'tests/parity.mjs')], { encoding: 'utf8' })
   if (parity.status !== 0) problems.push(`v1 parity failed:\n${parity.stdout}${parity.stderr}`)
   if (problems.length) {
     console.error('[fluid-design] --check found problems:')

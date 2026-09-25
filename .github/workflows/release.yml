@@ -1,7 +1,8 @@
-# A tag v2.x.y (matching fluid-design/package.json) builds the standalone
-# binaries, attaches them with SHA256SUMS to a GitHub Release (install.sh
-# downloads from there), and publishes fluid-design-cli to npm when the
-# NPM_TOKEN secret is set.
+# A tag v2.x.y (matching the root package.json, .codex-plugin/plugin.json and
+# the newest released CHANGELOG.md heading) builds the standalone binaries,
+# attaches them with SHA256SUMS to a GitHub Release (install-cli.sh and
+# install-cli.ps1 download from there), and publishes fluid-design-cli to npm
+# from the repository root when the NPM_TOKEN secret is set.
 name: release
 on:
   push:
@@ -16,9 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-    defaults:
-      run:
-        working-directory: fluid-design
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +24,10 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - uses: oven-sh/setup-bun@v2
-      - name: tag matches the package version
-        run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
+      - name: tag matches the package and plugin versions
+        run: |
+          test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
+          test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./.codex-plugin/plugin.json').version")"
       - run: npm test
       - name: binaries (every target) + host smoke test
         run: node scripts/dev/build-bin.mjs --smoke

@@ -22,7 +22,7 @@
 // Exit codes: 0 = no error-severity findings, 1 = at least one error-severity
 // finding, 2 = usage/invocation error.
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative, extname, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -46,7 +46,8 @@ Options:
   --desktop-variant <bp>  the desktop breakpoint variant (default: lg)
   --prefix <p>            the utility class prefix (default: the config's, else fluid)
   --json                  print { srcDir, findings } instead of the readable table
-  --selftest              run every rule against fixtures/audit/<rule-id>/{positive,negative}
+  --selftest              run every rule against the repository's tests/fixtures/audit/<rule-id>/{positive,negative}
+                          (repository only: an installed skill has no fixtures and exits 2)
   -h, --help              print this message and exit
 
 Exit codes: 0 = no error-severity findings, 1 = at least one error-severity
@@ -1032,8 +1033,13 @@ function printTable(findings, root) {
 
 // ── selftest ────────────────────────────────────────────────────────────
 
+// The fixtures live in the repository (tests/fixtures/audit), four levels up
+// from skills/fluid-design/scripts/tools/. An installed skill, the npm package
+// and the binary do not ship them.
+const SELFTEST_FIXTURES = join(__dirname_, '..', '..', '..', '..', 'tests', 'fixtures', 'audit')
+
 function selftest() {
-  const fixturesRoot = join(__dirname_, '..', 'test', 'fixtures', 'audit')
+  const fixturesRoot = SELFTEST_FIXTURES
   let pass = 0
   let fail = 0
   let caseCount = 0
@@ -1095,6 +1101,10 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   if (args.selftest) {
+    if (!existsSync(SELFTEST_FIXTURES)) {
+      console.error(`[selftest] the self-test runs from the repository (gabros20/fluid-design-skill): its fixtures are in tests/fixtures/audit, which an installed skill does not ship (looked in ${SELFTEST_FIXTURES}).`)
+      process.exit(2)
+    }
     const ok = selftest()
     process.exit(ok ? 0 : 1)
   }

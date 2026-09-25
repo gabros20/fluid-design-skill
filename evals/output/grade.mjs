@@ -4,14 +4,14 @@
 // fixture, git-initialised before the run) and `outputs/response.md`; it
 // writes grading.json into each run.
 //
-//   node fluid-design/evals/grade.mjs <workspace>/iteration-N
+//   node evals/output/grade.mjs <workspace>/iteration-N
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname, resolve as resolvePath } from 'node:path'
 import { execSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const W = resolvePath(process.argv[2] ?? '.')
-const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../bin/fluid')
+const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../../skills/fluid-design/bin/fluid')
 const sh = (cwd, cmd) => execSync(cmd, { cwd, encoding: 'utf8' })
 const check = (cwd) => { const r = spawnSync(process.execPath, [FLUID, 'check'], { cwd, encoding: 'utf8' }); return { code: r.status, out: r.stdout + r.stderr } }
 

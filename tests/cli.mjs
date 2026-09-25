@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import { spawnSync, spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
-const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../../bin/fluid')
+const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../skills/fluid-design/bin/fluid')
 let failures = 0
 const expect = (ok, what, extra = '') => {
   if (!ok) failures++

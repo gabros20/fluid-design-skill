@@ -5,5 +5,5 @@
 // static one): the CLI must know it is the binary without guessing from its
 // module URL, which is /$bunfs/… on macOS and Linux but B:/~BUN/… on Windows.
 globalThis.__fluidBinary = true
-const { run } = await import('../cli/index.mjs')
+const { run } = await import('../../skills/fluid-design/scripts/cli/index.mjs')
 await run(process.argv.slice(2))

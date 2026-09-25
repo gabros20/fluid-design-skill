@@ -12,10 +12,10 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { buildOutput } from '../lib/emit/project.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { buildOutput } from '../skills/fluid-design/scripts/lib/emit/project.mjs'
 
-const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../../bin/fluid')
+const FLUID = join(dirname(fileURLToPath(import.meta.url)), '../skills/fluid-design/bin/fluid')
 const structure = normaliseStructure({ version: 2, output: { stack: 'css', dir: 'fluid' } })
 const css = buildOutput(structure).files['fluid.css']
 const html = `<!doctype html><html><head><style>${css}</style></head><body>

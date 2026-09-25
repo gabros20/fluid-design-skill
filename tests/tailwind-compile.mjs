@@ -11,9 +11,9 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { buildOutput } from '../lib/emit/project.mjs'
-import { evaluateDefaults } from '../lib/model.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { buildOutput } from '../skills/fluid-design/scripts/lib/emit/project.mjs'
+import { evaluateDefaults } from '../skills/fluid-design/scripts/lib/model.mjs'
 
 const req = createRequire(join(process.cwd(), 'package.json'))
 const tailwind = req('@tailwindcss/postcss')

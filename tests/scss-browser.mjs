@@ -24,9 +24,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { evaluateDefaults, bandAt } from '../lib/model.mjs'
-import { buildOutput } from '../lib/emit/project.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { evaluateDefaults, bandAt } from '../skills/fluid-design/scripts/lib/model.mjs'
+import { buildOutput } from '../skills/fluid-design/scripts/lib/emit/project.mjs'
 
 const TOL = 5e-5 // per drawn px, ×1000 probes (matches engine-matrix.mjs)
 const CTOL = 0.06 // raw-px probes (container, type, band mixins) — a hair over engine-matrix's

@@ -43,7 +43,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   zoomTextRange: Object.freeze([24, 48])
 })
 
-export const DEFAULT_CONFIG_PATH = resolvePath(__dirname, '../../assets/fluid.config.json')
+export const DEFAULT_CONFIG_PATH = resolvePath(__dirname, '../../skills/fluid-design/assets/fluid.config.json')
 
 // ── validation ──────────────────────────────────────────────────────────
 

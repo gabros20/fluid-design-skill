@@ -11,7 +11,7 @@
 //   node scripts/dev/build-bin.mjs --target host   only this machine's
 //   node scripts/dev/build-bin.mjs --smoke         then run the host binary through
 //                                              init / generate / check / calc / explain / audit
-//   --out <dir>                                instead of fluid-design/dist
+//   --out <dir>                                instead of dist/ at the repository root
 //
 // Needs bun (https://bun.sh). Commands that drive a browser (verify, probe,
 // explain --url) need Playwright, a Node library: the binary says so and
@@ -23,9 +23,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync
 import { dirname, join, resolve as resolvePath } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { SKILL_VERSION } from '../lib/spec.mjs'
+import { SKILL_VERSION } from '../../skills/fluid-design/scripts/lib/spec.mjs'
 
-const SKILL = resolvePath(dirname(fileURLToPath(import.meta.url)), '../..')
+const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '../..')
 const TARGETS = [
   ['darwin', 'arm64'],
   ['darwin', 'x64'],
@@ -38,7 +38,7 @@ const assetName = (os, arch) => `fluid-${os}-${arch}${os === 'windows' ? '.exe' 
 
 const args = process.argv.slice(2)
 const flag = (k) => (args.includes(k) ? args[args.indexOf(k) + 1] : undefined)
-const out = resolvePath(flag('--out') ?? join(SKILL, 'dist'))
+const out = resolvePath(flag('--out') ?? join(ROOT, 'dist'))
 const only = flag('--target')
 const targets = only === 'host' ? TARGETS.filter(([os, arch]) => os === hostOs && arch === process.arch) : only ? TARGETS.filter(([os, arch]) => `${os}-${arch}` === only) : TARGETS
 if (!targets.length) {
@@ -54,7 +54,7 @@ mkdirSync(out, { recursive: true })
 const sums = []
 for (const [os, arch] of targets) {
   const file = join(out, assetName(os, arch))
-  const r = spawnSync('bun', ['build', '--compile', '--minify', `--target=bun-${os}-${arch}`, join(SKILL, 'scripts/dev/bin-entry.mjs'), '--outfile', file], { encoding: 'utf8' })
+  const r = spawnSync('bun', ['build', '--compile', '--minify', `--target=bun-${os}-${arch}`, join(ROOT, 'scripts/dev/bin-entry.mjs'), '--outfile', file], { encoding: 'utf8' })
   if (r.status !== 0) {
     console.error(`✗ ${os}-${arch}\n${r.stdout}${r.stderr}`)
     process.exit(1)

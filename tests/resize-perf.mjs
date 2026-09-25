@@ -15,8 +15,8 @@ import { createServer } from 'node:http'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { engineCss } from '../lib/emit/engine.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { engineCss } from '../skills/fluid-design/scripts/lib/emit/engine.mjs'
 
 const args = process.argv.slice(2)
 const flag = (k, d) => (args.includes(k) ? args[args.indexOf(k) + 1] : d)

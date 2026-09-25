@@ -16,10 +16,10 @@ import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { migrateV1, evaluateDefaults } from '../lib/model.mjs'
-import { engineCss, engineParts } from '../lib/emit/engine.mjs'
-import { RUNTIME } from '../lib/emit/runtime-assets.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { migrateV1, evaluateDefaults } from '../skills/fluid-design/scripts/lib/model.mjs'
+import { engineCss, engineParts } from '../skills/fluid-design/scripts/lib/emit/engine.mjs'
+import { RUNTIME } from '../skills/fluid-design/scripts/lib/emit/runtime-assets.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const TOL = 5e-5 // per drawn px; the ×1000 form keeps every engine well inside this

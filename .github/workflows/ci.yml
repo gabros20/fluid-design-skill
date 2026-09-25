@@ -1,31 +1,41 @@
 name: ci
 on:
   push:
-    branches: [main, v2-api]
+    branches: [main]
   pull_request:
 
 jobs:
   # The zero-browser suite on every OS the binaries ship for: generated files
   # current, invariants, v1 parity, the CLI end to end (CRLF and formatter
-  # cases included), the audit self-test, the zoom-detect table (npm test), and the
-  # standalone binary for that runner through init / check / calc / explain.
+  # cases included), the audit self-test, the zoom-detect table (npm run
+  # test:unit), and the standalone binary for that runner through init / check /
+  # calc / explain. Everything runs from the repository root.
   test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: fluid-design
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run test:unit
+      - uses: oven-sh/setup-bun@v2
+      - run: node scripts/dev/build-bin.mjs --target host --smoke
+
+  # The skill-family gate (package, routes, references, metadata, eval
+  # fixtures), then the same suite: `npm test` is check-sync + test:unit.
+  # check-sync.yml runs the gate on its own as well.
+  check-sync:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: npm test
-      - uses: oven-sh/setup-bun@v2
-      - run: node scripts/dev/build-bin.mjs --target host --smoke
 
   # The real-browser suites (Chromium, WebKit, Firefox): the engine against
   # the model, scopes and fluidPx, the Tailwind layer through the real
@@ -50,4 +60,3 @@ jobs:
       - run: npx playwright install chromium webkit firefox
         working-directory: examples/pizza-vite-gsap
       - run: npm run test:browsers
-        working-directory: fluid-design

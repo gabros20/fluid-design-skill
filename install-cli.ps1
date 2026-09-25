@@ -1,6 +1,6 @@
-# install.ps1 — the standalone `fluid` binary on Windows, for projects without Node.
+# install-cli.ps1 — the standalone `fluid` binary on Windows, for projects without Node.
 #
-#   irm https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.ps1 | iex
 #
 # Env: FLUID_VERSION=v2.0.0 (default: latest), FLUID_INSTALL_DIR (default: %LOCALAPPDATA%\fluid)
 # Checks the download against the release's SHA256SUMS before installing.

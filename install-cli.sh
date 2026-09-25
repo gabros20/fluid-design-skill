@@ -1,7 +1,7 @@
 #!/bin/sh
-# install.sh — the standalone `fluid` binary, for projects without Node.
+# install-cli.sh — the standalone `fluid` binary, for projects without Node.
 #
-#   curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.sh | sh
 #
 # Env: FLUID_VERSION=v2.0.0 (default: the latest release)
 #      FLUID_INSTALL_DIR=/usr/local/bin (default: ~/.local/bin)
@@ -16,7 +16,7 @@ DIR="${FLUID_INSTALL_DIR:-$HOME/.local/bin}"
 case "$(uname -s)" in
   Darwin) os=darwin ;;
   Linux) os=linux ;;
-  *) echo "fluid: unsupported OS $(uname -s). On Windows, download fluid-windows-x64.exe from https://github.com/$REPO/releases (or run install.ps1)." >&2; exit 1 ;;
+  *) echo "fluid: unsupported OS $(uname -s). On Windows, download fluid-windows-x64.exe from https://github.com/$REPO/releases (or run install-cli.ps1)." >&2; exit 1 ;;
 esac
 case "$(uname -m)" in
   arm64 | aarch64) arch=arm64 ;;

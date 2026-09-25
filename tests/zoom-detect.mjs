@@ -17,8 +17,8 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
-import { normaliseStructure } from '../lib/spec.mjs'
-import { buildOutput } from '../lib/emit/project.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
+import { buildOutput } from '../skills/fluid-design/scripts/lib/emit/project.mjs'
 
 let failures = 0
 const expect = (ok, what, extra = '') => {

@@ -9,9 +9,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { mergeConfig, factors, resolveFloors, resolveBandFloors } from '../lib/v1-math.mjs'
-import { migrateV1, evaluateDefaults } from '../lib/model.mjs'
-import { normaliseStructure } from '../lib/spec.mjs'
+import { mergeConfig, factors, resolveFloors, resolveBandFloors } from './lib/v1-math.mjs'
+import { migrateV1, evaluateDefaults } from '../skills/fluid-design/scripts/lib/model.mjs'
+import { normaliseStructure } from '../skills/fluid-design/scripts/lib/spec.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const fixturesDir = join(here, './fixtures/v1-configs')
