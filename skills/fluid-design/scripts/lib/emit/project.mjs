@@ -24,11 +24,22 @@ import { readmeMd } from './readme.mjs'
 // compiled into a single binary.
 import { RUNTIME } from './runtime-assets.mjs'
 
-/** The build stamp's hash: the structure AND the engine it generates, so an
- * engine change inside one version (a fix) also marks an open tab's old
- * stylesheet as stale, not just a config change. */
-export function structureHash(structure) {
-  return createHash('sha256').update(JSON.stringify(structure)).update(engineCss(structure)).digest('hex').slice(0, 8)
+/** The build stamp's hash: the engine CSS alone (it already folds in the
+ * bands, roles, prefix, ui, zoom and aliases), so an engine change, from the
+ * config or from a fix inside one version, marks an open tab's old
+ * stylesheet as stale, while output.* and tailwind.* (which stack, which
+ * folder, which utility families) do not: the engine is the same. An
+ * @property the engine's own rules never read (--fluid-zoom-text-*, which
+ * only the fluid-text utilities use, so the css stack has none) is left out
+ * of the hash for the same reason. */
+export function engineHash(structure) {
+  const lines = engineCss(structure).split('\n')
+  const rest = lines.filter((l) => !l.startsWith('@property ')).join('\n')
+  const read = lines.filter((l) => {
+    const m = /^@property (\S+)/.exec(l)
+    return !m || rest.includes(`var(${m[1]}`)
+  })
+  return createHash('sha256').update(read.join('\n')).digest('hex').slice(0, 8)
 }
 
 export function fileHash(content) {
@@ -57,7 +68,9 @@ export function settingsReferenceCss(structure) {
   return `${cssHeader(structure, 'settings.reference.css — every setting, with its default. NOT imported.')}/* To change one, copy its line into the :root in your own CSS (globals.css,
    next to your tokens), uncomment it and set the number. Order does not
    matter: the defaults are registered with @property, so your value wins.
-   Numbers only, no units. An invalid value falls back to the default.
+   The optional ones ("unset") are not registered: unset means off, or the
+   phone value. Numbers only, no units. An invalid value falls back to the
+   default.
    \`fluid check\` lints them; \`fluid explain 390x844\` shows what each
    resolves to. Changes apply live: no regenerate. */
 :root {${lines.join('\n')}
@@ -268,7 +281,7 @@ export function fluidPlugin(${structure.zoom ? '{ nonce }' : '_options'}: { nonc
 
 /** { relativePath: content } for a structure. Deterministic. */
 export function buildOutput(structure) {
-  const buildId = `${SKILL_VERSION}+${structureHash(structure)}`
+  const buildId = `${SKILL_VERSION}+${engineHash(structure)}`
   const stack = structure.output.stack
   const files = {}
   files['fluid.css'] = fluidCss(structure, buildId)

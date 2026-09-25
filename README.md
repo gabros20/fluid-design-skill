@@ -78,9 +78,11 @@ The whole configuration model is one rule:
   names, the prefix, `ui` and `zoom` on or off, the output stack and folder. It lives in
   `fluid.config.json` (about a dozen lines, with a JSON Schema) and needs `fluid generate`.
 - **Settings** change *a number inside those rules*: artboard widths, scale min and max, per-band
-  damping, the container, header heights, limits. They are 43 `@property`-registered CSS variables
-  (at the default structure), set in your own `:root` next to your tokens. They apply live, with no
-  regenerate, and an invalid value falls back to its default.
+  damping, the container, header heights, limits. They are 43 CSS variables (at the default
+  structure), set in your own `:root` next to your tokens: 30 are `@property`-registered with their
+  defaults, and 13 optional ones (scale ceilings, type floors, limits, the tablet and landscape
+  container/header fallbacks) stay unregistered, so unset means off or falls back to the phone
+  value. They apply live, with no regenerate, and an invalid value falls back to its default.
 
 ```css
 @import 'tailwindcss';

@@ -24,7 +24,7 @@ function printExplain(structure, resolved, w, h, zoom, label) {
   if (structure.ui) row('--fluid-ui', `${e.ui.toFixed(4)}`)
   row('--fluid-container-width', `${e.containerWidth.toFixed(1)}px`)
   row('--fluid-container-padding', `${e.containerPadding.toFixed(1)}px`)
-  row('--header-h', `${e.headerHeight.toFixed(1)}px`, '+ safe-area inset')
+  row('--fluid-header-h', `${e.headerHeight.toFixed(1)}px`, '+ safe-area inset')
   console.log('')
   console.log(`  settings in play (${band}${flat ? ', flat' : ''}):`)
   for (const [name, r] of Object.entries(resolved)) {

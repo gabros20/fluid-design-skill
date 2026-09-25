@@ -246,8 +246,10 @@ export function engineCss(structure, opts = {}) {
     if (!r.media) return `${c}${sel} {\n${decls(r.pairs, '  ')}\n}`
     return `${c}@media ${r.media} {\n  ${sel.replace(/\n/g, '\n  ')} {\n${decls(r.pairs, '    ')}\n  }\n}`
   })
-  return `/* Settings: every tuning number, registered with its default. Override any of
-   them in your own :root (see settings.reference.css) — no regenerate. */
+  return `/* Settings: every tuning number. Each one with a default is registered with it;
+   the optional ones stay unregistered, so unset means off (or falls back).
+   Override any of them in your own :root (see settings.reference.css) — no
+   regenerate. */
 ${properties}
 
 ${blocks.join('\n\n')}

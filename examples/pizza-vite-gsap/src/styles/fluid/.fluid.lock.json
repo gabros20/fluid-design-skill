@@ -1,11 +1,11 @@
 {
   "generator": "fluid-design 2.0.0",
-  "build": "2.0.0+db44c23b",
+  "build": "2.0.0+8d6e60be",
   "stack": "scss",
   "files": {
-    "fluid.css": "33119f21bff1a392",
+    "fluid.css": "79b6cdea6dde33f8",
     "base.css": "6f20df579330e8c1",
-    "settings.reference.css": "ebe27b8776a646c5",
+    "settings.reference.css": "f9c5d219a63dcf1a",
     "fluid.css-data.json": "2487abf3d84cfe6f",
     "fluid.ts": "f833b60cca4041ac",
     "_index.scss": "8790fb51c206bc97",

@@ -23,8 +23,9 @@ adopts the skill-template repository layout.
   lint all derive from it.
 - **Structure vs settings.** `fluid.config.json` (about a dozen lines) decides which bands, type
   roles and outputs exist; every number (artboards, scale min/max, per-band damping, container,
-  header, limits) is a registered CSS variable set in the project's own `:root`, live, with no
-  regenerate. An invalid value falls back to its default.
+  header, limits) is a CSS variable set in the project's own `:root`, live, with no regenerate:
+  43 at the default structure, 30 registered with their defaults and 13 optional (unset = off, or
+  falls back to the phone value). An invalid value falls back to its default.
 - **Bands.** Phone (a 390 artboard), tablet, landscape phone and desktop, each scaling its own
   artboard, with exclusive Tailwind band variants `fluid-phone:`, `fluid-tablet:` and
   `fluid-landscape:`. `bands.phone: false` keeps a flat 1px below desktop.

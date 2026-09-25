@@ -4,7 +4,7 @@
 // hand edit), generate's hand-edit guard, migrate (a v1 fixture), explain,
 // settings. No browser, no network.
 
-import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync, appendFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync, appendFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync, spawn } from 'node:child_process'
@@ -233,6 +233,42 @@ try {
   await new Promise((res) => setTimeout(res, 500))
   wchild.kill()
   expect(alive && wlog.includes('did you mean "bands"'), 'generate --watch survives an invalid save and reports it', wlog)
+
+  // <command> --help prints that command's usage and runs nothing
+  const H = join(root, 'help')
+  mkdirSync(H)
+  for (const cmd of ['init', 'generate', 'check', 'settings', 'explain', 'probe', 'migrate']) {
+    for (const flag of ['--help', '-h']) {
+      r = run(H, cmd, flag)
+      expect(r.code === 0 && r.out.includes(`fluid ${cmd}`) && !r.out.includes('fluid calc'), `${cmd} ${flag} prints its usage and exits 0`, r.out)
+    }
+  }
+  expect(readdirSync(H).length === 0, 'init --help and generate --help write nothing in an empty directory', readdirSync(H).join(', '))
+  r = run(g, 'generate', '--help')
+  expect(r.code === 0 && !r.out.includes('files ('), 'generate --help in a project does not generate', r.out)
+  for (const tool of ['calc', 'verify', 'audit']) {
+    r = run(H, tool, '--help')
+    expect(r.code === 0 && r.out.includes(`${tool}.mjs`), `${tool} --help prints its own usage and exits 0`, r.out)
+  }
+
+  // the build stamp identifies the engine: the stack and folder do not change it
+  const stamps = []
+  for (const stack of ['css', 'tailwind-v4', 'scss']) {
+    const d = join(root, `stamp-${stack}`)
+    mkdirSync(d)
+    r = run(d, 'init', '--yes', '--stack', stack, '--out', `out-${stack}`)
+    const lock = join(d, `out-${stack}`, '.fluid.lock.json')
+    stamps.push(existsSync(lock) ? JSON.parse(readFileSync(lock, 'utf8')).build : `(no lock: ${r.out})`)
+  }
+  expect(stamps.every((b) => b === stamps[0]), 'css, tailwind-v4 and scss builds of one structure share a build id', stamps.join(' '))
+  const dz = join(root, 'stamp-zoom')
+  mkdirSync(dz)
+  run(dz, 'init', '--yes', '--stack', 'css', '--out', 'out')
+  const zcfg = JSON.parse(readFileSync(join(dz, 'fluid.config.json'), 'utf8'))
+  writeFileSync(join(dz, 'fluid.config.json'), JSON.stringify({ ...zcfg, zoom: !(zcfg.zoom ?? true) }))
+  r = run(dz, 'generate')
+  const zb = existsSync(join(dz, 'out/.fluid.lock.json')) ? JSON.parse(readFileSync(join(dz, 'out/.fluid.lock.json'), 'utf8')).build : ''
+  expect(r.code === 0 && zb && zb !== stamps[0], 'an engine change (zoom toggled) changes the build id', `${r.out}\n${zb}`)
 } finally {
   rmSync(root, { recursive: true, force: true })
 }

@@ -68,9 +68,32 @@ const HELP = `fluid ${SKILL_VERSION} — fluid-design
 
   --config <file>   use this config instead of the nearest fluid.config.json`
 
+// `fluid <command> --help`: that command's block of HELP (its first line up to
+// the next command), never a run of the command. The tools print their own.
+const CONFIG_LINE = HELP.split('\n').at(-1)
+const USAGE = {}
+{
+  let cur = null
+  for (const line of HELP.split('\n').slice(2)) {
+    const m = /^  fluid (\w+)/.exec(line)
+    if (m) cur = USAGE[m[1]] = [line]
+    else if (!line.trim()) cur = null
+    else if (cur) cur.push(line)
+  }
+  delete USAGE.calc
+}
+const usageOf = (cmd) => `${USAGE[cmd].join('\n')}\n\n${CONFIG_LINE}`
+const wantsHelp = (args) => {
+  const end = args.indexOf('--')
+  return (end === -1 ? args : args.slice(0, end)).some((a) => a === '--help' || a === '-h')
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv
   if (TOOLS[cmd]) return runTool(cmd, rest)
+  if (USAGE[cmd] && wantsHelp(rest)) return void console.log(usageOf(cmd))
+  if (cmd === 'help' && USAGE[rest[0]]) return void console.log(usageOf(rest[0]))
+  if (cmd === 'help' && TOOLS[rest[0]]) return runTool(rest[0], ['--help'])
   const { _, flags } = parse(rest)
   switch (cmd) {
     case 'init':
