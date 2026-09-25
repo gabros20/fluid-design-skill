@@ -68,7 +68,7 @@ Break one and the system stops working:
 1. `--fluid` is purely proportional on both arms, with no intercept, so `900 × --fluid = 100svh` whenever height binds.
 2. The axes combine with `min()` (contain), never `max()` (cover).
 3. Use `svh` for sizing. `dvh` resizes type while the reader scrolls. Pinned layers use `lvh`, and their cancelling negative margin must use the same unit.
-4. The artboard is a viewport, not the container. The design can be drawn 1680 wide; the desktop base width is 1440.
+4. The artboard is the design frame, not the container. Base width × height = the desktop frame the designer draws on (1440×900 by default, 1680×1050 if that is the frame); the container width is the content box. Only a canvas wider than a screen (1680×900) takes the screen it was composed for (1440×900) as its base.
 5. One scale per page. Change how a part scales with a limit or its settings (a scope), never by redeclaring `--fluid`: custom properties resolve where they are declared, so the type units would not follow.
 6. The number multiplied by a unit is unitless. `64px * var(--fluid)` is invalid and drops the declaration silently; settings are unitless too.
 7. The container's max width and padding sit on one box. A text measure sits inside it and never replaces it.
@@ -96,8 +96,8 @@ default; ask only where the codebase does not already answer it and the choice m
 - **Stack**: Tailwind v4 (default), CSS, SCSS, StyleX (CSS Modules use the CSS stack). `fluid init` detects it
   (Tailwind 3 gets the CSS stack). Browser floor: Tailwind v4's own; Safari 15.4 on the others
   ([contract.md](references/contract.md) §0).
-- **Artboards**: desktop base width × height (default 1440×900) and the phone artboard (390). These
-  are settings; set them only if the design differs.
+- **Artboards**: the desktop frame's width × height from the design file (default 1440×900) and the
+  phone frame's width (390). Read them off the frames, don't assume the defaults. These are settings.
 - **Bands**: phone, tablet (≥600), landscape phone (≤500 tall), desktop (≥1024). All on by default.
   `bands.phone: false` keeps a flat 1px below desktop (a separately authored mobile layout).
 - **Container**: the centred page wrapper's max width and side padding per band (default 1680/80 desktop, 560/24 mobile).

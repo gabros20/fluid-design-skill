@@ -174,7 +174,261 @@ const UnitScene: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 3 · tighter axis ─────────────────────────── */
+/* ─────────────────────────── 3 · your frame sets the base ─────────────────────────── */
+
+// The design app's desktop frame → the three settings in :root. The frame resizes
+// 1440×900 → 1680×1050 → 1920×1080 (the same design drawn on a bigger frame) and the settings
+// follow. With the base set to the frame, a window that size renders at --fluid 1.0000
+// (`fluid explain <W>x<H> --set --fluid-desktop-base-width=<W> --set --fluid-desktop-base-height=<H>`).
+const FR_FLY = 58; // the frame's W × H lift off the label…
+const FR_FLY_LEN = 24;
+const FR_FLY_GAP = 5; // …900 follows 1440
+const FR_TYPE = 90; // container-width types in, 3 frames a character
+const FR_NOTE = 98;
+const FR_READ = 106;
+const FR_R1 = FR_READ + 18 + s(2.8); // → 1680×1050
+const FR_R_LEN = 30;
+const FR_R2 = FR_R1 + FR_R_LEN + s(1.3); // → 1920×1080
+const FR_LAST = FR_R2 + FR_R_LEN + 4; // "whatever your designer draws on"
+export const FRAME = { inEnd: FR_LAST + 18, hold: 2.8 };
+export const FRAME_DUR = dur(FRAME.inEnd, FRAME.hold);
+
+// scene-absolute layout (px on the 1280×720 stage), so the flying numbers land exactly
+const FR_K = 0.29; // drawn px → diagram px inside the design app
+const FR_X = 102; // frame's left edge
+const FR_Y = 240; // frame's top edge
+const FR_LABEL_Y = FR_Y - 32;
+const CODE_X = 712; // code card
+const CODE_Y = 240;
+const CODE_W = 496;
+const CODE_BAR = 36;
+const CODE_PAD_X = 18;
+const CODE_PAD_Y = 16;
+const CODE_LINE = 28;
+const CODE_BODY_X = CODE_X + CODE_PAD_X;
+const CODE_BODY_Y = CODE_Y + CODE_BAR + CODE_PAD_Y;
+const CODE_FONT = 18;
+// monospace columns (1ch) where each value starts
+const COL_LABEL_W = "Desktop · ".length;
+const COL_LABEL_H = "Desktop · 1440 × ".length;
+const COL_W = "  --fluid-desktop-base-width: ".length;
+const COL_H = "  --fluid-desktop-base-height: ".length;
+
+const FrameScene: React.FC = () => {
+  const t = useTheme();
+  const frame = useCurrentFrame();
+  const a = morph(frame, FR_R1, FR_R_LEN);
+  const b = morph(frame, FR_R2, FR_R_LEN);
+  const W = b > 0 ? lerp(1680, 1920, b) : lerp(1440, 1680, a);
+  const H = b > 0 ? lerp(1050, 1080, b) : lerp(900, 1050, a);
+  const CW = lerp(1680, 1920, b);
+  const w = Math.round(W);
+  const h = Math.round(H);
+  const cw = Math.round(CW);
+  const resizing = (a > 0 && a < 1) || (b > 0 && b < 1);
+  const cursor = Math.max(
+    enter(frame, FR_R1 - 10, 10) * (1 - enter(frame, FR_R1 + FR_R_LEN + 4, 10)),
+    enter(frame, FR_R2 - 10, 10) * (1 - enter(frame, FR_R2 + FR_R_LEN + 4, 10)),
+  );
+  const pick = enter(frame, FR_FLY - 8, 8);
+  const flyW = morph(frame, FR_FLY, FR_FLY_LEN);
+  const flyH = morph(frame, FR_FLY + FR_FLY_GAP, FR_FLY_LEN);
+  const typed = Math.max(0, Math.min(4, Math.floor((frame - FR_TYPE) / 3) + 1));
+  const fw = W * FR_K;
+  const fh = H * FR_K;
+
+  const mono: React.CSSProperties = {
+    fontFamily: MONO,
+    fontSize: CODE_FONT,
+    lineHeight: `${CODE_LINE}px`,
+    whiteSpace: "pre",
+  };
+  const value = (v: number, shown: boolean, extra?: React.CSSProperties) => (
+    <span
+      style={{
+        color: t.dim,
+        fontWeight: 700,
+        opacity: shown ? 1 : 0,
+        background: resizing ? t.amberBg : "transparent",
+        borderRadius: 4,
+        ...extra,
+      }}
+    >
+      {v}
+    </span>
+  );
+  // a number lifting off the frame label and landing in its :root slot (px + ch, so it is exact)
+  const Fly: React.FC<{ p: number; text: string; fromCol: number; toCol: number; toLine: number }> = ({
+    p,
+    text,
+    fromCol,
+    toCol,
+    toLine,
+  }) =>
+    p > 0 && p < 1 ? (
+      <div
+        style={{
+          ...mono,
+          position: "absolute",
+          left: `calc(${lerp(FR_X, CODE_BODY_X, p)}px + ${lerp(fromCol, toCol, p)}ch)`,
+          top: lerp(FR_LABEL_Y, CODE_BODY_Y + toLine * CODE_LINE, p) - 46 * Math.sin(Math.PI * p),
+          color: t.dim,
+          fontWeight: 700,
+          background: t.amberBg,
+          borderRadius: 4,
+        }}
+      >
+        {text}
+      </div>
+    ) : null;
+
+  return (
+    <Scene dur={FRAME_DUR}>
+      <In at={0}>
+        <Headline>The artboard is your design frame.</Headline>
+      </In>
+      <In at={8}>
+        <Sub>Copy its size into :root. 1440×900 is only the default.</Sub>
+      </In>
+      <div style={{ position: "absolute", inset: 0 }}>
+        {/* the design app: a dotted canvas with one desktop frame on it */}
+        <In
+          at={18}
+          style={{
+            position: "absolute",
+            left: 72,
+            top: 186,
+            width: 604,
+            height: 440,
+            borderRadius: 14,
+            border: `1px solid ${t.line}`,
+            background: t.codeBg,
+            backgroundImage: `radial-gradient(${t.line} 1.2px, transparent 1.6px)`,
+            backgroundSize: "16px 16px",
+          }}
+        >
+          {null}
+        </In>
+        <In at={24} style={{ position: "absolute", left: FR_X, top: FR_Y }}>
+          <div style={{ position: "relative", width: fw, height: fh }}>
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.08)" }}>
+              <DesktopPage W={W} H={H} k={FR_K} u={unitAt(W, H)} />
+            </div>
+            <div style={{ position: "absolute", inset: -1, border: `2px solid ${t.dim}` }} />
+            {[
+              [0, 0],
+              [1, 0],
+              [0, 1],
+              [1, 1],
+            ].map(([x, y]) => (
+              <div
+                key={`${x}${y}`}
+                style={{
+                  position: "absolute",
+                  left: x * fw - 5,
+                  top: y * fh - 5,
+                  width: 10,
+                  height: 10,
+                  background: t.panel,
+                  border: `2px solid ${t.dim}`,
+                  boxSizing: "border-box",
+                }}
+              />
+            ))}
+            {/* the designer's pointer on the corner handle while the frame resizes */}
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 22 22"
+              style={{ position: "absolute", left: fw + 2, top: fh + 2, opacity: cursor }}
+            >
+              <path d="M2 2 L2 18 L7 13.5 L10.5 20.5 L13.5 19 L10 12 L17 12 Z" fill={t.ink} stroke={t.panel} strokeWidth="1.5" />
+            </svg>
+          </div>
+        </In>
+        <In at={30} style={{ ...mono, position: "absolute", left: FR_X, top: FR_LABEL_Y, color: t.muted }}>
+          Desktop ·{" "}
+          <span style={{ color: t.dim, fontWeight: 700, background: pick > 0 && flyH < 1 ? t.amberBg : "transparent", borderRadius: 4 }}>
+            {w}
+          </span>{" "}
+          ×{" "}
+          <span style={{ color: t.dim, fontWeight: 700, background: pick > 0 && flyH < 1 ? t.amberBg : "transparent", borderRadius: 4 }}>
+            {h}
+          </span>
+        </In>
+
+        {/* the settings */}
+        <In
+          at={40}
+          style={{
+            position: "absolute",
+            left: CODE_X,
+            top: CODE_Y,
+            width: CODE_W,
+            background: t.codeBg,
+            border: `1px solid ${t.line}`,
+            borderRadius: 14,
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            style={{
+              height: CODE_BAR,
+              boxSizing: "border-box",
+              padding: "0 18px",
+              display: "flex",
+              alignItems: "center",
+              borderBottom: `1px solid ${t.line}`,
+              fontFamily: MONO,
+              fontSize: 17,
+              color: t.muted,
+              background: t.panel,
+            }}
+          >
+            src/app/globals.css
+          </div>
+          <div style={{ ...mono, padding: `${CODE_PAD_Y - 1}px ${CODE_PAD_X - 1}px`, color: t.ink }}>
+            <span style={{ color: t.accent, fontWeight: 700 }}>:root</span> {"{"}
+            {"\n"}
+            {"  "}--fluid-desktop-base-width: {value(w, flyW >= 1)};{"\n"}
+            {"  "}--fluid-desktop-base-height: {value(h, flyH >= 1)};{"\n"}
+            {"  "}--fluid-desktop-container-width:{" "}
+            <span style={{ color: t.dim, fontWeight: 700, background: b > 0 && b < 1 ? t.amberBg : "transparent", borderRadius: 4 }}>
+              {String(cw).slice(0, typed)}
+              <span style={{ opacity: 0 }}>{String(cw).slice(typed)}</span>
+            </span>
+            ;{"\n"}
+            {"}"}
+          </div>
+        </In>
+        <Fly p={flyW} text="1440" fromCol={COL_LABEL_W} toCol={COL_W} toLine={1} />
+        <Fly p={flyH} text="900" fromCol={COL_LABEL_H} toCol={COL_H} toLine={2} />
+
+        <div style={{ position: "absolute", left: CODE_X + 4, top: CODE_Y + 226, width: CODE_W, display: "flex", flexDirection: "column", gap: 12 }}>
+          <In at={FR_NOTE}>
+            <div style={{ fontSize: 20, color: t.muted }}>
+              <Mono size={19} color={t.muted}>
+                container-width
+              </Mono>
+              : how wide the content box may get
+            </div>
+          </In>
+          <In at={FR_READ}>
+            <Readout name={`--fluid at a ${w} × ${h} window`} value="1.0000" size={21} />
+          </In>
+          <In at={FR_LAST} style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 26, fontWeight: 600, color: t.good, lineHeight: 1.3 }}>
+              1440, 1680, 1920… whatever your designer draws on.
+            </div>
+          </In>
+        </div>
+      </div>
+    </Scene>
+  );
+};
+
+/* ─────────────────────────── 4 · tighter axis ─────────────────────────── */
 
 const X_IN = 46;
 const X_A = X_IN + 20;
@@ -273,7 +527,7 @@ const Axis: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 4 · bands ─────────────────────────── */
+/* ─────────────────────────── 5 · bands ─────────────────────────── */
 
 export const BANDS = { inEnd: 92, hold: 3.6 };
 export const BANDS_DUR = dur(BANDS.inEnd, BANDS.hold);
@@ -324,7 +578,7 @@ const Bands: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 5 · type roles ─────────────────────────── */
+/* ─────────────────────────── 6 · type roles ─────────────────────────── */
 
 export const TYPE = { inEnd: 76, hold: 3.6 };
 export const TYPE_DUR = dur(TYPE.inEnd, TYPE.hold);
@@ -423,7 +677,7 @@ const TypeRoles: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 6 · the ui unit + limits ─────────────────────────── */
+/* ─────────────────────────── 7 · the ui unit + limits ─────────────────────────── */
 
 export const UI = { inEnd: 80, hold: 3.8 };
 export const UI_DUR = dur(UI.inEnd, UI.hold);
@@ -488,7 +742,7 @@ const UiScene: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 7 · fluid init ─────────────────────────── */
+/* ─────────────────────────── 8 · fluid init ─────────────────────────── */
 
 const INIT_LINES: { kind: "cmd" | "q" | "ok" | "gap"; text: string; def?: string }[] = [
   { kind: "cmd", text: "fluid init" },
@@ -561,7 +815,7 @@ const Init: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 8 · use it ─────────────────────────── */
+/* ─────────────────────────── 9 · use it ─────────────────────────── */
 
 export const USE = { inEnd: 68, hold: 3.6 };
 export const USE_DUR = dur(USE.inEnd, USE.hold);
@@ -623,7 +877,7 @@ const Use: React.FC = () => {
             <A>:root</A> {"{"}
             {"\n"}
             {"  "}
-            <C>/* a setting, not code */</C>
+            <C>{"/* a setting, not code */"}</C>
             {"\n"}
             {"  "}--fluid-desktop-scale-max: <V>1.4</V>;{"\n"}
             {"}"}
@@ -652,7 +906,7 @@ const Use: React.FC = () => {
   );
 };
 
-/* ─────────────────────────── 9 · why it holds ─────────────────────────── */
+/* ─────────────────────────── 10 · why it holds ─────────────────────────── */
 
 export const PROOF = { inEnd: 90, hold: 3.5, fade: 21 };
 export const PROOF_DUR = dur(PROOF.inEnd, PROOF.hold, PROOF.fade);
@@ -733,6 +987,7 @@ const Proof: React.FC = () => {
 export const SCENES: { name: string; dur: number; C: React.FC; holdMid: number }[] = [
   { name: "problem", dur: PROBLEM_DUR, C: Problem, holdMid: PROBLEM.inEnd + s(PROBLEM.hold) / 2 },
   { name: "unit", dur: UNIT_DUR, C: UnitScene, holdMid: UNIT.inEnd + s(UNIT.hold) / 2 },
+  { name: "frame", dur: FRAME_DUR, C: FrameScene, holdMid: FRAME.inEnd + s(FRAME.hold) / 2 },
   { name: "axis", dur: AXIS_DUR, C: Axis, holdMid: AXIS.inEnd + s(AXIS.hold) / 2 },
   { name: "bands", dur: BANDS_DUR, C: Bands, holdMid: BANDS.inEnd + s(BANDS.hold) / 2 },
   { name: "type", dur: TYPE_DUR, C: TypeRoles, holdMid: TYPE.inEnd + s(TYPE.hold) / 2 },

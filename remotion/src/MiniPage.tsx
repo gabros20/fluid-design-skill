@@ -20,7 +20,7 @@ export type PageProps = {
   markHeader?: boolean;
 };
 
-export const DesktopPage: React.FC<PageProps> = ({ W, H, k, u, ui = u, disp = u, fixed, markHeader }) => {
+export const DesktopPage: React.FC<PageProps> = ({ W, k, u, ui = u, disp = u, fixed, markHeader }) => {
   const t = useTheme();
   const U = fixed ? 1 : u;
   const UI = fixed ? 1 : ui;

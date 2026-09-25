@@ -75,16 +75,16 @@ landscape have the same settings as phone. Shown here at the default structure.
 
 ### phone
 
-phone — portrait phones, the 390 artboard.
+phone — portrait phones: your phone design frame (default 390 wide).
 
 | Setting | Default | What it does |
 |---|---|---|
-| `--fluid-phone-base-width` | `390` | viewport width where 1 drawn px = 1 CSS px (the artboard width) |
+| `--fluid-phone-base-width` | `390` | your design frame's width: at this window width 1 drawn px = 1 CSS px |
 | `--fluid-phone-scale-min` | `0.82` | the unit never goes below this (smallest phones stop shrinking) |
 | `--fluid-phone-scale-max` | `1.1` | the unit never goes above this |
 | `--fluid-phone-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
 | `--fluid-phone-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-phone-container-width` | `560` | page container max width, drawn px (holds the phone design to a column on wide screens) |
+| `--fluid-phone-container-width` | `560` | the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens) |
 | `--fluid-phone-container-padding` | `24` | page container side padding, drawn px |
 | `--fluid-phone-header-height` | `34` | header row height, CSS px (not scaled on mobile) |
 
@@ -99,7 +99,7 @@ tablet — 600px and wider: the phone design, scaled up.
 | `--fluid-tablet-scale-max` | `1.3` | the unit never goes above this |
 | `--fluid-tablet-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
 | `--fluid-tablet-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-tablet-container-width` | unset | page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
+| `--fluid-tablet-container-width` | unset | the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
 | `--fluid-tablet-container-padding` | unset | page container side padding, drawn px (unset = the phone value) |
 | `--fluid-tablet-header-height` | unset | header row height, CSS px (not scaled on mobile) (unset = the phone value) |
 
@@ -114,18 +114,18 @@ landscape — a phone on its side (500px tall or less): the phone design, scaled
 | `--fluid-landscape-scale-max` | `1.2` | the unit never goes above this |
 | `--fluid-landscape-display-damping` | `0.85` | display type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
 | `--fluid-landscape-copy-damping` | `0.6` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
-| `--fluid-landscape-container-width` | unset | page container max width, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
+| `--fluid-landscape-container-width` | unset | the content box's widest size, side margins included, drawn px (holds the phone design to a column on wide screens) (unset = the phone value) |
 | `--fluid-landscape-container-padding` | unset | page container side padding, drawn px (unset = the phone value) |
 | `--fluid-landscape-header-height` | unset | header row height, CSS px (not scaled on mobile) (unset = the phone value) |
 
 ### desktop
 
-desktop — 1024px and wider: the 1440×900 artboard.
+desktop — 1024px and wider: your desktop design frame (default 1440×900).
 
 | Setting | Default | What it does |
 |---|---|---|
-| `--fluid-desktop-base-width` | `1440` | viewport width where 1 drawn px = 1 CSS px (the artboard width) |
-| `--fluid-desktop-base-height` | `900` | artboard height: at this window height a 1:1 section fits exactly |
+| `--fluid-desktop-base-width` | `1440` | your design frame's width: at this window width 1 drawn px = 1 CSS px |
+| `--fluid-desktop-base-height` | `900` | your design frame's height: a section drawn this tall fits the window exactly |
 | `--fluid-desktop-fit-height` | `1` | 1 = a section drawn as tall as the artboard always fits the window; 0 = scale by width only |
 | `--fluid-desktop-scale-min` | `0.58` | the unit never goes below this (small, short windows stop shrinking) |
 | `--fluid-desktop-scale-max` | unset | optional ceiling: stop growing on huge screens (unset = no ceiling) |
@@ -133,7 +133,7 @@ desktop — 1024px and wider: the 1440×900 artboard.
 | `--fluid-desktop-display-floor` | unset | optional hard minimum for display type, as a scale factor (unset = none; the damping already holds type up) |
 | `--fluid-desktop-copy-damping` | `0.33` | copy type: 1 = shrinks with the layout, 0 = never shrinks below its drawn size |
 | `--fluid-desktop-copy-floor` | unset | optional hard minimum for copy type, as a scale factor (unset = none; the damping already holds type up) |
-| `--fluid-desktop-container-width` | `1680` | page container max width, drawn px (grows with the unit, never narrows below this in CSS px) |
+| `--fluid-desktop-container-width` | `1680` | the content box's widest size, side margins included, drawn px (grows with the unit, never below this in CSS px) |
 | `--fluid-desktop-container-padding` | `80` | page container side padding, drawn px |
 | `--fluid-desktop-header-height` | `48` | header row height, drawn px (scaled by --fluid-ui) |
 

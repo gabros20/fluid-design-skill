@@ -2,12 +2,12 @@
 
 **Viewport-fluid layouts that scale as one drawing.**
 
-Your design is drawn on one frame, usually 1440×900. A normal site matches it there and drifts
-everywhere else: it cramps at 1280, floats in a sea of margin at 2560, runs off the bottom of a
-1440×700 laptop, and needs its phone layout redrawn at every breakpoint. `fluid-design` writes every
-drawn number (padding, gap, width, type) as `number × unit`, where the unit is 1px at your design
-frame, so the page stays a proportional copy of the design at every window size: pixel-exact at the
-frame, one screen tall when the height binds, still right on a 5K display.
+Your designer draws the desktop page on one frame in Figma (or Sketch, Penpot…), say 1440×900. A
+normal build matches that frame and drifts on every other window: cramped at 1280, lost in margin at
+2560, cut off at the bottom of a 1440×700 laptop, and the phone layout gets redrawn at every
+breakpoint. `fluid-design` writes every drawn number (padding, gap, width, type) as
+`number × unit`. The unit is 1px when the window is the size of the frame, so the page is a
+proportional copy of the design at every window size.
 
 It ships three ways, all running the same `fluid` CLI and generating the same files:
 
@@ -25,13 +25,43 @@ It generates for **Tailwind v4, plain CSS (and CSS Modules), SCSS and StyleX**.
 **Visual guide:** [fluid-design-skill.vercel.app](https://fluid-design-skill.vercel.app) ·
 **Source:** [github.com/gabros20/fluid-design-skill](https://github.com/gabros20/fluid-design-skill)
 
+## Start from your design file
+
+Three numbers come from the design file and go in your `:root`:
+
+| In the design file | Setting | Default |
+|---|---|---|
+| The desktop frame's width × height | `--fluid-desktop-base-width` / `--fluid-desktop-base-height` | 1440 × 900 |
+| The content box's widest size, side margins included | `--fluid-desktop-container-width` | 1680 |
+| The side margin | `--fluid-desktop-container-padding` | 80 |
+
+1440×900 is only the default. If your designer draws on 1680×1050 frames, set that:
+
+```css
+:root {
+  --fluid-desktop-base-width: 1680;
+  --fluid-desktop-base-height: 1050;
+}
+```
+
+`fluid init --desktop 1680x1050` writes the same thing. The page is then pixel-exact at a 1680×1050
+window, 0.9 of the frame on a 14" MacBook Pro (1512×982) and 0.857 at 1440×900. Leave the base at
+1440 while you type numbers from a 1680 frame and everything renders 17% too big, at every window.
+
+The container scales with the unit like everything else. On a window with the frame's proportions
+it fills the width; on a wider one the design sits centred and the container width decides how wide
+the content box gets. A frame wider than
+any screen (1680×900, content composed in a 1440 column) is the one exception: the base is the
+screen the content was drawn for (1440×900) and the 1680 goes in the container width. That is what
+the defaults describe.
+
 ## How it works
 
-There is one measured unit, `--fluid`. It is 1px at the design frame and follows whichever window
-axis is tighter: `min(width / 1440, height / 900)` on desktop, with a floor
-(`--fluid-desktop-scale-min`, 0.58) and an optional ceiling (`--fluid-desktop-scale-max`). A section
-drawn 900 tall therefore always fits the window. It uses `svh`, not `dvh`, so nothing resizes while
-the reader scrolls.
+There is one measured unit, `--fluid`. On desktop it is
+`min(width / base-width, height / base-height)`, so whichever window axis is tighter wins, with a
+floor (`--fluid-desktop-scale-min`, 0.58) and an optional ceiling (`--fluid-desktop-scale-max`). A
+section drawn as tall as the frame therefore always fits the window. It uses `svh`, not `dvh`, so
+nothing resizes while the reader scrolls.
 
 You write the number from the design file; the unit does the rest:
 
@@ -63,8 +93,8 @@ Around that unit:
 - **Limits.** `fluid-grow-until-1680`, `fluid-shrink-until-1280`, `fluid-ui-grow-until-1680` and
   `fluid-off` stop a subtree scaling past a window width; `:root { --fluid-ui-grow-until: 1680 }`
   holds the whole site header together with `--fluid-header-h`.
-- **The container.** `fluid-container` is the page wrapper: max width 1680 drawn px, side padding
-  80, both from the active band.
+- **The container.** `fluid-container` is the page wrapper. Its max width and side padding come
+  from the active band's settings (above).
 - **Browser zoom (WCAG 1.4.4).** Viewport units do not grow with Cmd/Ctrl +. A small runtime
   measures the zoom so text still zooms 1:1 while the layout keeps fitting. It works under a strict
   CSP (a nonce, or the published `FLUID_ZOOM_SHA256`).
@@ -77,12 +107,10 @@ The whole configuration model is one rule:
 - **Structure** changes *which CSS rules exist*: which bands and their breakpoints, the type role
   names, the prefix, `ui` and `zoom` on or off, the output stack and folder. It lives in
   `fluid.config.json` (about a dozen lines, with a JSON Schema) and needs `fluid generate`.
-- **Settings** change *a number inside those rules*: artboard widths, scale min and max, per-band
-  damping, the container, header heights, limits. They are 43 CSS variables (at the default
-  structure), set in your own `:root` next to your tokens: 30 are `@property`-registered with their
-  defaults, and 13 optional ones (scale ceilings, type floors, limits, the tablet and landscape
-  container/header fallbacks) stay unregistered, so unset means off or falls back to the phone
-  value. They apply live, with no regenerate, and an invalid value falls back to its default.
+- **Settings** change *a number inside those rules*: the frame sizes, scale min and max, per-band
+  damping, the container, header heights, limits. They are 43 CSS variables, set in your own
+  `:root` next to your tokens. They apply live, with no regenerate. An invalid value falls back to
+  its default, and an optional one left unset is off.
 
 ```css
 @import 'tailwindcss';
@@ -96,7 +124,7 @@ The whole configuration model is one rule:
 
 ## Boundary
 
-Use `fluid-design` for "match our 1440 Figma frame at every laptop size", "the page floats on a
+Use `fluid-design` for "match our Figma frame at every laptop size", "the page floats on a
 2560 screen", "the hero doesn't fit on a 13-inch laptop", "the header is huge on 5K", "convert this
 Tailwind site to fluid scaling", fluid Tailwind/CSS/SCSS/StyleX tokens, iOS Safari viewport bugs,
 media sizing on a growing page, browser zoom, and a page that looks broken right after a CSS edit
@@ -123,13 +151,13 @@ upgrades and removal: [docs/installation.md](docs/installation.md).
 With an agent, describe the outcome:
 
 ```text
-Use $fluid-design to make this landing page match our 1440×900 Figma frame at every laptop size.
+Use $fluid-design to make this landing page match our 1680×1050 Figma frame at every laptop size.
 Use $fluid-design to convert this Tailwind site to fluid scaling, route by route.
 Use $fluid-design to stop the header growing on a 5K display while the page keeps scaling.
 ```
 
 (`$fluid-design` is Codex's form; use `/fluid-design`, an `@` mention or plain language in other
-clients.) The skill inspects the project, settles a short preflight (stack, design frame, bands),
+clients.) The skill inspects the project, settles a short preflight (stack, your design frame's size, bands),
 records the decisions in `fluid.config.json` and a `FLUID.md` decision log, converts section by
 section, and verifies at a matrix of viewports.
 

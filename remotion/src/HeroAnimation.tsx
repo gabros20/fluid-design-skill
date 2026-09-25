@@ -4,7 +4,7 @@ import { themes, type ThemeName } from "./theme";
 import { ThemeProvider } from "./lib";
 import { SCENES } from "./scenes";
 
-// The fluid-design explainer: nine scenes played back to back (see ../STORYBOARD.md).
+// The fluid-design explainer: ten scenes played back to back (see ../STORYBOARD.md).
 // Each scene starts and ends on the bare background, so the loop seam is invisible.
 export const HeroAnimation: React.FC<{ theme: ThemeName }> = ({ theme }) => {
   const t = themes[theme];

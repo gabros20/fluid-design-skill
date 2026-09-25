@@ -6,14 +6,14 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f7fa">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#12151d">
 <title>fluid-design — Viewport-fluid layouts that scale as one drawing</title>
-<meta name="description" content="fluid-design is an agent skill and a CLI that put a website on one viewport-fluid unit: every drawn number is written as number × unit, 1px at the design's artboard, so the page stays a proportional copy of the 1440×900 design at every window size. Generates for Tailwind v4, CSS, SCSS and StyleX.">
+<meta name="description" content="fluid-design is an agent skill and a CLI that put a website on one viewport-fluid unit: every drawn number is written as number × unit, 1px at the design's artboard, so the page stays a proportional copy of the design at every window size. The artboard is your own desktop frame (1440×900 by default). Generates for Tailwind v4, CSS, SCSS and StyleX.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fluid-design-skill.vercel.app/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="fluid-design — Viewport-fluid layouts that scale as one drawing">
-<meta property="og:description" content="One measured unit, 1px at the artboard, following whichever window axis is tighter. A 1440×900 design stays pixel-exact at 1440×900 and a proportional copy on every other window. Agent skill + fluid CLI for Tailwind v4, CSS, SCSS and StyleX.">
+<meta property="og:description" content="One measured unit, 1px at the artboard, following whichever window axis is tighter. A design drawn on a 1440×900 frame (or your own size) stays pixel-exact at that size and a proportional copy on every other window. Agent skill + fluid CLI for Tailwind v4, CSS, SCSS and StyleX.">
 <meta property="og:url" content="https://fluid-design-skill.vercel.app/">
 <meta property="og:image" content="https://fluid-design-skill.vercel.app/og.png">
 <meta property="og:image:width" content="1200">
@@ -502,6 +502,7 @@
   <symbol id="lu-sliders-horizontal" viewBox="0 0 24 24"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></symbol>
   <symbol id="lu-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
   <symbol id="lu-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m6.08 9.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59"/><path d="m6.08 14.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59"/></symbol>
+  <symbol id="lu-frame" viewBox="0 0 24 24"><line x1="22" x2="2" y1="6" y2="6"/><line x1="22" x2="2" y1="18" y2="18"/><line x1="6" x2="6" y1="2" y2="22"/><line x1="18" x2="18" y1="2" y2="22"/></symbol>
   <symbol id="lu-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></symbol>
   <symbol id="lu-scaling" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M14 15H9v-5"/><path d="M16 3h5v5"/><path d="M21 3 9 15"/></symbol>
   <symbol id="lu-monitor-smartphone" viewBox="0 0 24 24"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8"/><path d="M10 19v-3.96 3.15"/><path d="M7 19h5"/><rect width="6" height="10" x="16" y="12" rx="2"/></symbol>
@@ -533,19 +534,20 @@
     <button type="button" class="tgl" id="tgl" aria-label="Switch to dark theme"><svg class="lu" aria-hidden="true"><use href="#lu-moon"/></svg><span>dark</span></button>
   </nav>
   <h1><span class="sl">/</span>fluid-design</h1>
-  <p class="lede">A design is drawn on one frame, usually 1440×900. A normal build is exact there
-  and wrong on every other window: cramped at 1280, floating at 2560, off the bottom of a 700-tall
-  laptop. <b>fluid-design</b> writes every drawn number as <b>number × one unit</b>, 1px at the
-  artboard, so the page is a proportional copy of the design at every size.
+  <p class="lede">Your designer draws the desktop page on one frame: 1440×900, or whatever size
+  they picked. A normal build is exact at that size and wrong on every other window: cramped at
+  1280, floating at 2560, off the bottom of a 700-tall laptop. <b>fluid-design</b> writes every
+  drawn number as <b>number × one unit</b>, 1px at your frame, so the page is a proportional copy
+  of the design at every size.
   Viewport-fluid layouts that scale as one drawing.</p>
   <div class="term" style="margin-top:22px"><span class="c"># that's the whole start</span>
-<span class="p">/fluid-design</span> make this landing page match our 1440×900 Figma frame at every laptop size</div>
+<span class="p">/fluid-design</span> make this landing page match our Figma desktop frame at every laptop size</div>
   <p class="hosts"><span class="hl">runs on</span><span class="ref">Claude Code</span><span>Codex</span><span>Cursor</span><span>Antigravity</span><span>opencode</span><span>Grok Build</span><span>Hermes</span><span class="hl" style="margin-left:10px">generates</span><span>Tailwind v4</span><span>CSS</span><span>SCSS</span><span>StyleX</span></p>
 
   <div class="vidwrap" id="vidwrap"></div>
-  <div class="poster" role="img" aria-label="Diagram: one design drawn on a 1440 by 900 artboard becomes the same composition in three windows. At 1280 by 800 the unit is 0.889 and the drawing fills the window. At 1440 by 700 height binds, the unit is 0.778 and the drawing is exactly one screen tall with margin at the sides. At 2560 by 1440 the unit is 1.6 and the drawing grows to fill the height.">
+  <div class="poster" role="img" aria-label="Diagram: one design drawn on a 1440 by 900 frame, the default artboard, becomes the same composition in three windows. At 1280 by 800 the unit is 0.889 and the drawing fills the window. At 1440 by 700 height binds, the unit is 0.778 and the drawing is exactly one screen tall with margin at the sides. At 2560 by 1440 the unit is 1.6 and the drawing grows to fill the height.">
     <div class="pflow">
-      <div class="win art"><div class="scr" style="aspect-ratio:1440/900"><div class="comp"><i class="mk h"></i><i class="mk n"></i><i class="mk t1"></i><i class="mk t2"></i><i class="mk l1"></i><i class="mk l2"></i><i class="mk b"></i><i class="mk a"></i></div></div><small><b>the artboard</b> 1440×900 · <i>1px = 1px</i></small></div>
+      <div class="win art"><div class="scr" style="aspect-ratio:1440/900"><div class="comp"><i class="mk h"></i><i class="mk n"></i><i class="mk t1"></i><i class="mk t2"></i><i class="mk l1"></i><i class="mk l2"></i><i class="mk b"></i><i class="mk a"></i></div></div><small><b>your frame</b> 1440×900 · <i>1px = 1px</i></small></div>
       <div class="arr"><b>× --fluid</b>tighter axis<br>wins</div>
       <div class="wins">
         <div class="win"><div class="scr" style="aspect-ratio:1280/800"><div class="comp"><i class="mk h"></i><i class="mk n"></i><i class="mk t1"></i><i class="mk t2"></i><i class="mk l1"></i><i class="mk l2"></i><i class="mk b"></i><i class="mk a"></i></div></div><small><b>1280×800</b> <i>0.889</i></small></div>
@@ -560,7 +562,7 @@
   </div>
 
   <nav class="secnav" aria-label="page sections">
-    <a href="#idea">the idea</a><a href="#unit">the unit</a><a href="#live">try it live</a><a href="#bands">bands</a><a href="#type">type</a><a href="#limits">limits</a>
+    <a href="#idea">the idea</a><a href="#unit">the unit</a><a href="#design-frame">your frame</a><a href="#live">try it live</a><a href="#bands">bands</a><a href="#type">type</a><a href="#limits">limits</a>
     <a href="#config">structure vs settings</a><a href="#cli">the CLI</a><a href="#stacks">stacks</a><a href="#proof">proof</a><a href="#refs">references</a><a href="#start">start</a><a href="#boundary">boundary</a>
   </nav>
 </header>
@@ -598,10 +600,10 @@
 
 <section id="unit">
   <h2><svg class="lu" aria-hidden="true"><use href="#lu-ruler"/></svg>The unit: n × --fluid</h2>
-  <p>There is one measured unit. <code>--fluid</code> is <b>1px at the artboard</b> and follows
-  whichever window axis is tighter. Every drawn number becomes that number times the unit, so the
-  whole page shrinks and grows against one shared factor, and the design's proportions hold by
-  construction. There is no table of per-property <code>clamp()</code> pairs to keep in sync.</p>
+  <p>There is one measured unit. <code>--fluid</code> is <b>1px at the artboard</b>, your desktop
+  design frame, and follows whichever window axis is tighter. Every drawn number becomes that
+  number times the unit, so the whole page scales by one factor and keeps the design's
+  proportions. No per-property <code>clamp()</code> pairs to keep in sync.</p>
   <div class="formula">
     <div class="eq"><span class="nw"><span class="u">--fluid</span> =</span> <span class="nw">max( <span class="f">0.58</span>,</span> <span class="nw">min( <span class="w">W / 1440</span>,</span> <span class="nw"><span class="h">H / 900</span> ) )</span></div>
     <div class="legend">
@@ -610,6 +612,7 @@
       <span><i>min()</i> contain, never cover</span>
       <span><i>0.58</i> <code>--fluid-desktop-scale-min</code></span>
       <span><i>no ceiling</i> <code>--fluid-desktop-scale-max</code> unset</span>
+      <span><i>1440 · 900</i> your frame, the default <a href="#design-frame">you can change</a></span>
     </div>
     <div class="spell">
       <div><small>Tailwind v4</small><code>lg:fluid-py-120</code></div>
@@ -618,7 +621,7 @@
       <div><small>StyleX</small><code>fluid(120)</code></div>
     </div>
   </div>
-  <p style="margin-top:14px">The desktop band's defaults. Each window below is a real
+  <p style="margin-top:14px">With the default 1440×900 frame. Each window below is a real
   <code>fluid explain</code> run; the coloured column is the arm that binds.</p>
   <div class="tblwrap"><table>
     <tr><th>window</th><th class="num">W / 1440</th><th class="num">H / 900</th><th class="num">--fluid</th><th>a 900-tall section</th></tr>
@@ -630,13 +633,60 @@
     <tr><td class="dim">2560×1440</td><td class="num">1.7778</td><td class="num win-h">1.6000</td><td class="num"><b>1.6000</b></td><td>1440px, exactly one screen</td></tr>
   </table></div>
   <ul class="rules">
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-scaling"/></svg>purely proportional</b>No intercept on either arm, so <code>900 × --fluid = 100svh</code> whenever height binds. The artboard is a viewport, not the container.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-scaling"/></svg>purely proportional</b>No intercept on either arm, so <code>900 × --fluid = 100svh</code> whenever height binds. The artboard is your design frame, not the container.</li>
     <li><b><svg class="lu" aria-hidden="true"><use href="#lu-gauge"/></svg>svh, never dvh</b><code>dvh</code> resizes type while the reader scrolls. Pinned layers use <code>lvh</code>, and their cancelling margin uses the same unit.</li>
     <li><b><svg class="lu" aria-hidden="true"><use href="#lu-layers"/></svg>one scale per page</b>Change how a part scales with a limit or a setting on a scope, never by redeclaring <code>--fluid</code>: the type units would not follow.</li>
     <li><b><svg class="lu" aria-hidden="true"><use href="#lu-braces"/></svg>the number is unitless</b><code>64px * var(--fluid)</code> is invalid and drops the declaration silently. Write the drawn number, never a converted one.</li>
     <li><b><svg class="lu" aria-hidden="true"><use href="#lu-lock"/></svg>off the scale on purpose</b>Border and stroke widths, <code>em</code> tracking and text measures stay fixed. Radii scale with their box (<code>fluid-rounded-*</code>).</li>
     <li><b><svg class="lu" aria-hidden="true"><use href="#lu-ban"/></svg>generate, never hand-write</b>The output encodes measured numbers (the ×1000 precision form, the knee, the zoom thresholds). <code>fluid generate</code> refuses to overwrite a hand-edited file.</li>
   </ul>
+</section>
+
+<section id="design-frame">
+  <h2><svg class="lu" aria-hidden="true"><use href="#lu-frame"/></svg>Your design frame sets the scale</h2>
+  <p>The 1440 and 900 in the formula are the desktop frame your designer draws on in Figma, Sketch,
+  Penpot or any design app. Put that frame's size in your <code>:root</code> and the unit is 1px
+  there. 1440×900 is only the default: a 1680×1050 frame, or any other size, works the same way.</p>
+  <div class="tblwrap"><table>
+    <tr><th>from the design file</th><th>setting in your :root</th><th>default</th></tr>
+    <tr><td>the desktop frame's width × height</td><td><code>--fluid-desktop-base-width</code> / <code>--fluid-desktop-base-height</code></td><td class="num">1440 × 900</td></tr>
+    <tr><td>the content box's max width, side margins included</td><td><code>--fluid-desktop-container-width</code></td><td class="num">1680</td></tr>
+    <tr><td>the side margin</td><td><code>--fluid-desktop-container-padding</code></td><td class="num">80</td></tr>
+  </table></div>
+  <div class="split">
+    <div class="side"><h3><svg class="lu" aria-hidden="true"><use href="#lu-braces"/></svg>a 1680×1050 frame<em>your :root</em></h3>
+      <div class="term">:root {
+  <span class="c">/* the Figma frame */</span>
+  <span class="v">--fluid-desktop-base-width</span>: 1680;
+  <span class="v">--fluid-desktop-base-height</span>: 1050;
+  <span class="v">--fluid-desktop-container-width</span>: 1680;
+}</div>
+      <ul>
+        <li>At a window exactly the frame's size, 1 drawn px = 1 CSS px. Every other window gets <code>min(W / base-width, H / base-height)</code>.</li>
+        <li>The container width is in drawn px and scales with the unit. Its cap only shows on a window wider than the frame's shape, where the design is centred. Set it to the frame's width, or narrower if the design caps its content.</li>
+      </ul>
+      <div class="how now">change it → <b>nothing to run</b>: live, no regenerate</div></div>
+    <div class="side"><h3><svg class="lu" aria-hidden="true"><use href="#lu-terminal"/></svg>setting it<em>once, at init</em></h3>
+      <div class="term"><span class="c">$</span> <span class="p">fluid init --desktop 1680x1050</span></div>
+      <ul>
+        <li>Without the flag, <code>fluid init</code> asks: <b>Desktop design frame, width x height (1440x900)</b>.</li>
+        <li>Or edit the two variables later.</li>
+        <li>The default container of 1680 lets a 1440 design spread a little wider on wide windows.</li>
+      </ul></div>
+  </div>
+  <div class="tblwrap"><table>
+    <tr><th>window</th><th class="num">base 1440×900 (default)</th><th class="num">base 1680×1050</th></tr>
+    <tr><td class="dim">1440×900</td><td class="num">1.0000</td><td class="num">0.8571</td></tr>
+    <tr><td class="dim">1512×982 <span class="d">14″ MacBook Pro</span></td><td class="num">1.0500</td><td class="num">0.9000</td></tr>
+    <tr><td class="dim">1680×1050</td><td class="num">1.1667</td><td class="num"><b>1.0000</b> <span class="d">pixel-exact to the frame</span></td></tr>
+    <tr><td class="dim">1920×1080</td><td class="num">1.2000</td><td class="num">1.0286</td></tr>
+  </table></div>
+  <p class="note"><b>Match the base to the frame.</b> Leave it at 1440 while typing numbers from a 1680
+  frame and everything renders 1.1667×, about 17% too big, at every window. It never matches the frame.</p>
+  <p class="pcap"><b>One exception:</b> a frame wider than any screen, such as 1680×900 with the
+  content composed in a 1440 column. The base is the screen the content was composed for
+  (1440×900), and the frame's 1680 goes in <code>--fluid-desktop-container-width</code>. That is
+  what the defaults describe.</p>
 </section>
 
 <section id="live">
@@ -698,11 +748,11 @@
   artboard, its own min and max for the unit, and its own type damping. Authors write the phone
   numbers for every mobile band and the desktop numbers from <code>lg:</code> up; only the unit
   changes between bands.</p>
-  <div class="ruler" role="img" aria-label="Window width ruler from 0 to 2560: phone band below 600 with a 390 artboard, tablet band from 600 to 1023 scaling the phone design, desktop band from 1024 with the 1440 by 900 artboard. Landscape band overlays any width under 1024 when the window is landscape and 500 tall or less.">
+  <div class="ruler" role="img" aria-label="Window width ruler from 0 to 2560: phone band below 600 with a 390 artboard, tablet band from 600 to 1023 scaling the phone design, desktop band from 1024 with your desktop frame as its artboard, 1440 by 900 by default. Landscape band overlays any width under 1024 when the window is landscape and 500 tall or less.">
     <div class="rbar">
       <div class="ph"><b>phone</b><small>390 artboard</small></div>
       <div class="tb"><b>tablet</b><small>600+</small></div>
-      <div class="dt"><b>desktop</b><small>1024+ · the 1440×900 artboard</small></div>
+      <div class="dt"><b>desktop</b><small>1024+ · your frame, 1440×900 default</small></div>
     </div>
     <div class="rticks">
       <span>0</span><span class="k hide-s" style="left:15.23%">390</span><span style="left:23.44%">600</span><span class="k" style="left:40%">1024</span><span class="k" style="left:56.25%">1440</span><span class="hide-s" style="left:65.63%">1680</span><span style="left:100%">2560</span>
@@ -720,10 +770,10 @@
       <div class="use">A phone on its side, 500 tall or less: the phone design, scaled a bit.</div>
       <dl class="kv"><dt>base width</dt><dd>780</dd><dt>unit min · max</dt><dd>1 · 1.2</dd><dt>display · copy damping</dt><dd>0.85 · 0.6</dd><dt>container · padding</dt><dd>phone's</dd></dl></div>
     <div class="card" style="--bc:var(--accent)"><div class="top"><h3>desktop</h3><code class="mono" style="font-size:11px;color:var(--muted)">lg:</code></div>
-      <div class="use">1024px and wider. Both axes: <code>min(W/1440, H/900)</code>.</div>
+      <div class="use">1024px and wider. Both axes against your frame: <code>min(W/1440, H/900)</code> at the default.</div>
       <dl class="kv"><dt>artboard</dt><dd>1440×900</dd><dt>unit min · max</dt><dd>0.58 · none</dd><dt>display · copy damping</dt><dd>0.62 · 0.33</dd><dt>container · padding</dt><dd>1680 · 80</dd></dl></div>
   </div>
-  <p class="pcap">Every number above is a setting (<code>--fluid-tablet-scale-max</code>, <code>--fluid-phone-container-padding</code>…).
+  <p class="pcap">Every number above is a default you can set (<code>--fluid-desktop-base-width</code>, <code>--fluid-tablet-scale-max</code>, <code>--fluid-phone-container-padding</code>…).
   The band variants are exclusive, and <b>never mix one with <code>sm:</code>/<code>md:</code> on a property</b>: band variants sort after
   every breakpoint, so they always win. Have a separately authored mobile layout? <code>bands.phone: false</code>
   (or <code>fluid init --no-mobile</code>) keeps a flat 1px below desktop.</p>
@@ -767,7 +817,7 @@
     </div>
   </div>
   <p style="margin-top:16px"><code style="white-space:normal">--fluid-display = max(--fluid, d · max(--fluid, knee) + (1 − d))</code>.
-  <b>The knee</b> is the unit at the band's lower edge (1024 / 1440 = 0.711). Below it, on a short
+  <b>The knee</b> is the unit at the band's lower edge (1024 / 1440 = 0.711 with the default frame). Below it, on a short
   desktop window where the layout keeps compressing toward 0.58, headings hold at the size they had
   there, so they stay readable while the section still fits.</p>
   <div class="tblwrap"><table>
@@ -831,7 +881,7 @@
   <div class="split">
     <div class="side"><h3><svg class="lu" aria-hidden="true"><use href="#lu-ruler"/></svg>fluid-container<em>one per section</em></h3>
       <ul>
-        <li>The page wrapper: max width <b>1680</b> drawn px and side padding <b>80</b> on desktop, <b>560 / 24</b> on the mobile bands, both from the active band.</li>
+        <li>The page wrapper: max width <b>1680</b> drawn px and side padding <b>80</b> on desktop by default (<a href="#design-frame">set from your frame</a>), <b>560 / 24</b> on the mobile bands, both from the active band.</li>
         <li>The max width <b>only grows</b>: at 2560×1440 it is 2688px, never narrower than 1680 CSS px.</li>
         <li>Apply it once per section, on the section's inner wrapper. A text measure sits inside it and never replaces it.</li>
       </ul></div>
@@ -1030,14 +1080,14 @@ const s = stylex.create({
     <div><b><svg class="lu" aria-hidden="true"><use href="#lu-check"/></svg>fluid check</b><span>Config, generated files, settings lint and source rules. Resolve every error <b>and every warning</b>; put it in CI.</span></div>
     <div><b><svg class="lu" aria-hidden="true"><use href="#lu-search-check"/></svg>fluid audit src</b><span>A static scan for the silent failure modes: <code>dvh</code> on scaled boxes, a limit on children, a <code>/1.5</code> line-height ratio.</span></div>
     <div><b><svg class="lu" aria-hidden="true"><use href="#lu-monitor-smartphone"/></svg>fluid verify &lt;url&gt; --screens</b><span>Widths 1024–2560 × heights 640–1440 plus the phone, tablet and landscape set: horizontal overflow, every unit against the maths, one-screen fit, grid column counts, and a <b>real browser-zoom row</b>. Again with <code>--browser webkit</code> and <code>--browser firefox</code>.</span></div>
-    <div><b><svg class="lu" aria-hidden="true"><use href="#lu-ruler"/></svg>1440×900, pixel for pixel</b><span>The calibration point: at the artboard the page must match the design exactly.</span></div>
+    <div><b><svg class="lu" aria-hidden="true"><use href="#lu-ruler"/></svg>your frame, pixel for pixel</b><span>The calibration point: at the frame's own size (1440×900 by default) the page must match the design exactly.</span></div>
     <div class="dev"><b><svg class="lu" aria-hidden="true"><use href="#lu-smartphone"/></svg>a real device</b><span>The iOS toolbar tint, the <code>lvh</code> shortfall and safe areas can only be verified on a phone. The skill reports this gate as open rather than claiming it.</span></div>
   </div>
 </section>
 
 <section id="refs">
   <h2><svg class="lu" aria-hidden="true"><use href="#lu-compass"/></svg>Pick by job</h2>
-  <p>The skill activates on what people actually say, even if nobody says "fluid". Its
+  <p>The skill triggers on what people say, even without the word "fluid". Its
   <code>SKILL.md</code> is a router: preflight first, then only the references the task touches.</p>
   <div class="strip" aria-label="what you ask, and what the skill reads">
     <a href="#r-scale"><span class="q">"Scale with the viewport" · "fit one screen"</span><span class="a">fluid-scale.md</span></a>
@@ -1116,13 +1166,13 @@ git clone https://github.com/gabros20/fluid-design-skill && cd fluid-design-skil
 ./install.sh claude   <span class="c"># or: codex | agents | cursor | antigravity | opencode | grok | hermes | all</span>
 
 <span class="c"># then ask</span>
-<span class="p">/fluid-design</span> make this landing page match our 1440×900 Figma frames at every laptop size
+<span class="p">/fluid-design</span> make this landing page match our Figma frames at every laptop size
 <span class="p">/fluid-design</span> convert this Tailwind site to fluid scaling
 <span class="p">/fluid-design</span> the hero doesn't fit on a 13-inch laptop and the header is huge on 5K</div>
   <p style="margin-top:14px">The same install runs on any <a href="https://agentskills.io">Agent&nbsp;Skills</a>
   host. Codex installs to <code>${CODEX_HOME:-$HOME/.codex}/skills</code>; <code>agents</code>
-  remains a separate cross-agent installation target. A project may already use one of the three
-  channels; the skill uses that one rather than installing a second.</p>
+  remains a separate cross-agent target. If a project already uses one of the three channels,
+  the skill uses it instead of installing a second.</p>
   <details class="disc">
     <summary>install targets by host</summary>
     <div>
@@ -1165,7 +1215,7 @@ README.md · CHANGELOG.md · LICENSE</div>
   <div class="bound">
     <div class="side yes"><h3><svg class="lu" aria-hidden="true"><use href="#lu-check"/></svg>fluid-design</h3>
       <ul>
-        <li><b>"Match our 1440 Figma frame at every laptop size"</b>, "fit one screen"</li>
+        <li><b>"Match our Figma frame at every laptop size"</b>, "fit one screen"</li>
         <li><b>"The page floats on 2560"</b>, "the header is huge on 5K"</li>
         <li><b>"The hero doesn't fit on a 13-inch laptop"</b></li>
         <li><b>Converting</b> an existing site, or a v1 fluid-design project</li>
@@ -1221,7 +1271,7 @@ README.md · CHANGELOG.md · LICENSE</div>
     var paused = false; // the reader's choice; a theme swap keeps it
     v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
     v.setAttribute("playsinline", "");
-    v.setAttribute("aria-label", "Animated explainer, about a minute, in nine scenes: a design drawn at 1440 by 900 breaks on other windows; every drawn number becomes number times one unit, 1px at the artboard; the unit follows whichever window axis is tighter, so a 900-tall section always fits; four bands, phone, tablet, landscape and desktop, each scale their own artboard; display and copy type shrink more gently than the layout; the ui unit keeps the header usable on a short window and limits stop part of a page from scaling; fluid init sets a project up; using the utilities in a page; and the proof: the engine checked against a model in three browsers.");
+    v.setAttribute("aria-label", "Animated explainer, about eighty seconds, in ten scenes: a design drawn on a 1440 by 900 frame breaks on other windows; every drawn number becomes number times one unit, 1px at the artboard; the artboard is your design frame, its size copied into :root as base width and height, 1440 by 900 only by default; the unit follows whichever window axis is tighter, so a 900-tall section always fits; four bands, phone, tablet, landscape and desktop, each scale their own artboard; display and copy type shrink more gently than the layout; the ui unit keeps the header usable on a short window and limits stop part of a page from scaling; fluid init sets a project up; using the utilities in a page; and the proof: the engine checked against a model in three browsers.");
     v.addEventListener("loadeddata", function () { document.body.classList.add("has-vid"); });
     v.addEventListener("error", function () { document.body.classList.remove("has-vid"); wrap.remove(); }, true);
     function apply(t) {

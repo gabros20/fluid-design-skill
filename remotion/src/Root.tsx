@@ -8,7 +8,7 @@ const schema = z.object({
   theme: z.enum(["light", "dark"]),
 });
 
-// 16:9 · ~65s (sum of the scene durations in scenes.tsx). One composition per theme so each renders to its own file with no --props juggling.
+// 16:9 · ~80s (sum of the scene durations in scenes.tsx). One composition per theme so each renders to its own file with no --props juggling.
 const COMMON = {
   component: HeroAnimation,
   schema,

@@ -52,6 +52,21 @@ What each answer means:
 | Stops widening at | `--fluid-desktop-container-width` | setting |
 | Generated files go in | `output.dir` | structure |
 
+**Where the two frame answers come from.** Open the design file and read them off the frames:
+
+| Answer | Read it from | Setting |
+|---|---|---|
+| Desktop design frame | the desktop frame's width × height (1440×900, 1680×1050…) | `--fluid-desktop-base-width` / `-base-height` |
+| Phone design frame | the phone frame's width (390, 375…) | `--fluid-phone-base-width` |
+| Stops widening at | the content box's widest size, side margins included (the frame's width, or less if the design caps its content) | `--fluid-desktop-container-width` |
+
+The base is where 1 drawn px = 1 CSS px: at a window exactly the frame's size the page matches the
+design, and every other window gets it scaled by `min(width / base-width, height / base-height)`.
+Get it wrong and nothing errors; the page is just the wrong size everywhere (numbers from a 1680
+frame on a 1440 base render 17% too big). One exception: a frame wider than any screen, such as
+1680×900 with the content composed in a 1440 column, takes the screen's size as the base (1440×900)
+and puts the 1680 in the container width.
+
 Then it:
 
 - writes `fluid.config.json` (and `fluid.config.schema.json` beside it);

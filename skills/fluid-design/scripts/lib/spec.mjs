@@ -307,10 +307,10 @@ const BAND_DEFAULTS = {
 }
 
 const BAND_BLURB = {
-  phone: (s) => `phone — portrait phones, the ${BAND_DEFAULTS.phone['base-width']} artboard`,
+  phone: (s) => `phone — portrait phones: your phone design frame (default ${BAND_DEFAULTS.phone['base-width']} wide)`,
   tablet: (s) => `tablet — ${s.bands.tablet.minWidth}px and wider: the phone design, scaled up`,
   landscape: (s) => `landscape — a phone on its side (${s.bands.landscape.maxHeight}px tall or less): the phone design, scaled a bit`,
-  desktop: (s) => `desktop — ${s.bands.desktop.minWidth}px and wider: the ${BAND_DEFAULTS.desktop['base-width']}×${BAND_DEFAULTS.desktop['base-height']} artboard`
+  desktop: (s) => `desktop — ${s.bands.desktop.minWidth}px and wider: your desktop design frame (default ${BAND_DEFAULTS.desktop['base-width']}×${BAND_DEFAULTS.desktop['base-height']})`
 }
 export function bandBlurb(structure, band) {
   if (band === 'phone' && !structure.bands.phone.enabled) return `below ${structure.bands.desktop.minWidth}px — flat 1px, no mobile scaling (bands.phone is false)`
@@ -336,9 +336,9 @@ export function settingsSpec(structure) {
       add(band, 'header-height', { default: d['header-height'], min: 0, doc: 'header row height below desktop, CSS px' })
       continue
     }
-    add(band, 'base-width', { default: d['base-width'], min: 1, doc: band === 'phone' || band === 'desktop' ? 'viewport width where 1 drawn px = 1 CSS px (the artboard width)' : 'viewport width where the phone design is drawn 1:1 in this band' })
+    add(band, 'base-width', { default: d['base-width'], min: 1, doc: band === 'phone' || band === 'desktop' ? 'your design frame\'s width: at this window width 1 drawn px = 1 CSS px' : 'viewport width where the phone design is drawn 1:1 in this band' })
     if (!mobile) {
-      add(band, 'base-height', { default: d['base-height'], min: 1, doc: 'artboard height: at this window height a 1:1 section fits exactly' })
+      add(band, 'base-height', { default: d['base-height'], min: 1, doc: 'your design frame\'s height: a section drawn this tall fits the window exactly' })
       add(band, 'fit-height', { default: d['fit-height'], min: 0, max: 1, integer: true, doc: '1 = a section drawn as tall as the artboard always fits the window; 0 = scale by width only' })
     }
     add(band, 'scale-min', { default: d['scale-min'], min: 0.01, doc: mobile ? 'the unit never goes below this (smallest phones stop shrinking)' : 'the unit never goes below this (small, short windows stop shrinking)' })
@@ -356,7 +356,7 @@ export function settingsSpec(structure) {
     const shared = band === 'tablet' || band === 'landscape'
     const sh = (spec) => (shared ? { ...spec, default: null, optional: true, fallback: `--fluid-phone-${spec.key}`, doc: `${spec.doc} (unset = the phone value)` } : spec)
     const addS = (key, spec) => add(band, key, sh({ key, ...spec }))
-    addS('container-width', { default: d['container-width'], min: 0, doc: mobile ? 'page container max width, drawn px (holds the phone design to a column on wide screens)' : 'page container max width, drawn px (grows with the unit, never narrows below this in CSS px)' })
+    addS('container-width', { default: d['container-width'], min: 0, doc: mobile ? 'the content box\'s widest size, side margins included, drawn px (holds the phone design to a column on wide screens)' : 'the content box\'s widest size, side margins included, drawn px (grows with the unit, never below this in CSS px)' })
     addS('container-padding', { default: d['container-padding'], min: 0, doc: 'page container side padding, drawn px' })
     addS('header-height', { default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` })
   }
