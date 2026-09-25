@@ -130,10 +130,10 @@
   .wins{display:grid; grid-template-columns:1.28fr 1.44fr 2.56fr; gap:14px; align-items:end}
   .win{display:flex; flex-direction:column; gap:6px; min-width:0}
   .win .scr{position:relative; background:var(--code-bg); border:1px solid var(--line); border-radius:5px; overflow:hidden; display:flex; justify-content:center}
-  .win .comp{height:100%; aspect-ratio:1440/900; background:var(--bg); border-inline:1px dashed color-mix(in srgb, var(--accent) 55%, transparent); position:relative; flex:none}
+  .win .comp{height:100%; max-width:100%; aspect-ratio:1440/900; background:var(--bg); border-inline:1px dashed color-mix(in srgb, var(--accent) 55%, transparent); position:relative; flex:none}
   .win.art .comp{border:none}
   .win.art .scr{border-color:var(--accent); border-width:1.5px}
-  .win small{font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .win small{font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted); line-height:1.4}
   .win small b{color:var(--ink)}
   .win small i{font-style:normal; color:var(--accent)}
   /* the mini composition, in % of the drawn 1440×900 frame */
@@ -172,7 +172,8 @@
 
   /* formula */
   .formula{margin-top:20px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px 22px; display:grid; gap:14px}
-  .formula .eq{font-family:ui-monospace,Menlo,monospace; font-size:clamp(15px,2.3vw,21px); letter-spacing:-.01em; overflow-x:auto; white-space:nowrap; padding-bottom:2px}
+  .formula .eq{font-family:ui-monospace,Menlo,monospace; font-size:clamp(16px,2.3vw,21px); letter-spacing:-.01em; line-height:1.5}
+  .formula .eq .nw{white-space:nowrap}
   .formula .eq .u{color:var(--accent); font-weight:600}
   .formula .eq .w{color:var(--tok-dim)} .formula .eq .h{color:var(--good)} .formula .eq .f{color:var(--muted)}
   .formula .legend{display:flex; flex-wrap:wrap; gap:8px 22px; font-size:13px; color:var(--muted)}
@@ -228,7 +229,7 @@
   .stage{position:relative; background:repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--line) 45%, transparent) 7px 8px), var(--code-bg); border:1px solid var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; padding:14px; min-height:200px; overflow:hidden}
   .fbox{position:relative; flex:none}
   .fbox iframe{position:absolute; left:0; top:0; border:0; transform-origin:0 0; background:var(--bg); box-shadow:0 0 0 1px var(--accent), 0 18px 40px -24px rgba(0,0,0,.5); border-radius:2px}
-  .grip{position:absolute; right:-9px; bottom:-9px; width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid var(--panel); cursor:nwse-resize; touch-action:none; box-shadow:0 2px 6px rgba(0,0,0,.25)}
+  .grip{position:absolute; right:3px; bottom:3px; width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid var(--panel); cursor:nwse-resize; touch-action:none; box-shadow:0 2px 6px rgba(0,0,0,.25)}
   .grip:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
   .stage .scl{position:absolute; z-index:2; left:10px; top:8px; font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:1px 6px}
   .readout{display:grid; gap:10px; font-family:ui-monospace,Menlo,monospace; min-width:0}
@@ -295,11 +296,12 @@
   .chart .floorzone{fill:color-mix(in srgb, var(--glyph) 10%, transparent)}
   .chart .cur{stroke:var(--ink); stroke-width:1; stroke-dasharray:2 3}
   .chart .dot{stroke:var(--panel); stroke-width:2}
-  @media (max-width:640px){ .chart .tk{font-size:17px} .chart .lbl{font-size:18px} .tblwrap table:not(.mx){min-width:560px} }
+  @media (max-width:640px){ .chart .tk{font-size:17px} .chart .lbl{font-size:18px} }
   .clegend{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12.5px; color:var(--muted); margin-top:8px}
   .clegend span{display:inline-flex; align-items:center; gap:7px}
   .clegend i{display:inline-block; width:18px; height:0; border-top:2.5px solid}
   .slider{display:grid; grid-template-columns:auto 1fr; gap:10px 14px; align-items:center; margin-top:12px; font-size:13px}
+  .slider input{margin:0}
   .slider label{font-family:ui-monospace,Menlo,monospace; color:var(--muted); font-size:12.5px}
   .slider .res{grid-column:1 / -1; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--muted); line-height:1.7}
   .slider .res b{color:var(--ink)}
@@ -323,7 +325,7 @@
   .tx{margin-top:20px; display:grid; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--code-bg)}
   .txrow{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); border-top:1px solid var(--line)}
   .txrow:first-child{border-top:none}
-  .txrow .term{border:none; border-radius:0; background:none; font-size:12.5px; line-height:1.6; padding:14px 16px}
+  .txrow .term{border:none; border-radius:0; background-color:transparent; font-size:12.5px; line-height:1.6; padding:14px 16px}
   .txrow aside{background:var(--panel); border-left:1px solid var(--line); padding:14px 16px; font-size:13.5px; color:var(--muted); line-height:1.55}
   .txrow aside > b:first-child{display:flex; align-items:center; gap:7px; color:var(--ink); font-family:ui-monospace,Menlo,monospace; font-size:13px; margin-bottom:4px}
   .txrow aside > b .st{font-family:system-ui; font-weight:600; font-size:10.5px; border-radius:999px; padding:1px 8px; border:1px solid var(--accent); color:var(--accent)}
@@ -435,6 +437,40 @@
   .files .d{color:var(--muted)}
   .files .hl{color:var(--accent); font-weight:600}
 
+
+  /* ── narrow screens: nothing clips. Code wraps; the two column-aligned transcripts and the
+     repo tree scroll sideways with an edge shadow as the cue; tables become stacked rows. ── */
+  .hs{
+    background:
+      linear-gradient(to right, var(--code-bg) 40%, transparent) left center / 36px 100% no-repeat local,
+      linear-gradient(to left, var(--code-bg) 40%, transparent) right center / 36px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) left center / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) right center / 14px 100% no-repeat scroll;
+    background-color:var(--code-bg);
+  }
+  .txrow .term.hs{background-color:var(--code-bg)}
+  .hs:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .term:not(.hs){white-space:pre-wrap; overflow-wrap:anywhere}
+  @media (max-width:900px){ td code{white-space:normal; overflow-wrap:anywhere} }
+  @media (max-width:640px){
+    p code, li code, .pcap code, .note code, .card .use code, .card .mech code{white-space:normal; overflow-wrap:anywhere}
+    .rbar{height:40px}
+    .rbar div small{display:none}
+    .tblwrap{overflow:visible}
+    .tblwrap table, .tblwrap tbody, .tblwrap tr, .tblwrap td{display:block; width:auto}
+    .tblwrap tr:first-child{display:none}
+    .tblwrap tr{padding:10px 14px; border-bottom:1px solid var(--line)}
+    .tblwrap tr:last-child{border-bottom:none}
+    .tblwrap td{border:none; padding:2px 0; display:grid; grid-template-columns:8.5em minmax(0,1fr); gap:10px; text-align:left !important; white-space:normal}
+    .tblwrap td::before{content:attr(data-label); font-family:"Avenir Next Condensed","Arial Narrow",system-ui,sans-serif; text-transform:uppercase; letter-spacing:.07em; font-size:11px; font-weight:600; color:var(--muted); padding-top:2px}
+    .tblwrap td:first-child{display:block; padding-bottom:4px}
+    .tblwrap td:first-child::before{display:none}
+    .tblwrap td code{white-space:normal; overflow-wrap:anywhere}
+    .mx td small{display:inline; margin-left:4px}
+    .formula .legend{display:grid; gap:4px}
+    .formula .legend span{display:block}
+    .formula .legend i{margin-right:6px}
+  }
   footer{margin-top:72px; padding-top:20px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px}
   /* iOS 26 chrome tint: Safari samples fixed edge elements; theme-color alone is ignored */
   .edge{position:fixed; left:0; right:0; height:8px; background:var(--bg); z-index:0; pointer-events:none}
@@ -556,7 +592,7 @@
   whole page shrinks and grows against one shared factor, and the design's proportions hold by
   construction. There is no table of per-property <code>clamp()</code> pairs to keep in sync.</p>
   <div class="formula">
-    <div class="eq"><span class="u">--fluid</span> = max( <span class="f">0.58</span>, min( <span class="w">W / 1440</span>, <span class="h">H / 900</span> ) )</div>
+    <div class="eq"><span class="nw"><span class="u">--fluid</span> =</span> <span class="nw">max( <span class="f">0.58</span>,</span> <span class="nw">min( <span class="w">W / 1440</span>,</span> <span class="nw"><span class="h">H / 900</span> ) )</span></div>
     <div class="legend">
       <span><i style="color:var(--tok-dim)">W / 1440</i> the width arm</span>
       <span><i style="color:var(--good)">H / 900</i> the height arm, in <code>svh</code></span>
@@ -851,7 +887,7 @@ budget at the artboard: min(base-width 1440, container-width 1680) − 2 × padd
   <div class="tx">
     <div class="txrow"><div class="term" tabindex="0" aria-label="fluid init transcript"><span class="c">$</span> <span class="p">fluid init --yes</span>
 <span class="g">✓</span> fluid.config.json (tailwind-v4, next)
-<span class="g">✓</span> src/styles/fluid: 13 files (13 changed) · build 2.0.0+ccc5f1d1
+<span class="g">✓</span> src/styles/fluid: 13 files (13 changed) · build 2.0.0+8d6e60be
 <span class="g">✓</span> src/app/globals.css: added @import '../styles/fluid/fluid.css';,
   and a commented settings starter in your :root
   <span class="c">…</span>
@@ -864,7 +900,7 @@ Browser zoom:
 <span class="g">✓</span> settings: nothing to flag
 <span class="g">OK</span></div>
       <aside><b>check <span class="st">CI gate</span></b>Config, generated files, settings lint and the source rules (a <code>cn</code> without <code>withFluid</code>, a limit on <code>&lt;header&gt;</code>, a band variant mixed with a breakpoint). Non-zero on problems; no browser needed.</aside></div>
-    <div class="txrow"><div class="term" tabindex="0" aria-label="fluid explain transcript"><span class="c">$</span> <span class="p">fluid explain 1440x700</span>
+    <div class="txrow"><div class="term hs" tabindex="0" aria-label="fluid explain transcript"><span class="c">$</span> <span class="p">fluid explain 1440x700</span>
 1440×700 → desktop: 1024px and wider: the 1440×900 artboard
   --fluid                    <span class="i">0.7778</span>       100 drawn px = 77.8 CSS px
   --fluid-display            <span class="i">0.8622</span>       64 drawn px = 55.2 CSS px
@@ -876,7 +912,7 @@ Browser zoom:
     --fluid-desktop-display-damping        0.62     default
     <span class="c">…</span></div>
       <aside><b>explain <span class="st">why</span></b>Every unit at a viewport, and which default or <code>file:line</code> each value came from. <code>--set --fluid-grow-until=1680</code> answers a what-if without editing anything; <code>--at 'header'</code> explains one element.</aside></div>
-    <div class="txrow"><div class="term" tabindex="0" aria-label="fluid explain with url transcript"><span class="c">$</span> <span class="p">fluid explain 1440x700 --url http://127.0.0.1:4391/demo/ --brief</span>
+    <div class="txrow"><div class="term hs" tabindex="0" aria-label="fluid explain with url transcript"><span class="c">$</span> <span class="p">fluid explain 1440x700 --url http://127.0.0.1:4391/demo/ --brief</span>
   --fluid            page 0.7778   expected 0.7778
   --fluid-display    page 0.8622   expected 0.8622
   --fluid-copy       page 0.9267   expected 0.9267
@@ -1091,7 +1127,7 @@ git clone https://github.com/gabros20/fluid-design-skill && cd fluid-design-skil
   <details class="disc">
     <summary>what's in the repo</summary>
     <div>
-      <div class="files"><span class="hl">skills/fluid-design/</span>       <span class="d">the skill: SKILL.md (router) · references/ · bin/fluid · scripts/ · assets/</span>
+      <div class="files hs" tabindex="0" aria-label="repository layout"><span class="hl">skills/fluid-design/</span>       <span class="d">the skill: SKILL.md (router) · references/ · bin/fluid · scripts/ · assets/</span>
   assets/styles/          <span class="d">reference output per stack at the defaults: tailwind-v4 · css · scss · stylex</span>
   assets/runtime/         <span class="d">fluid-units.js (fluidPx) · fluid-zoom.js</span>
 <span class="hl">docs/</span>                      <span class="d">installation · usage (the by-hand guide) · recipes · cli-internals</span>
@@ -1327,6 +1363,24 @@ README.md · CHANGELOG.md · LICENSE</div>
     });
     paint();
   })();
+
+  // ── stacked-table labels: each cell carries its column header (colspans join theirs) ──
+  Array.prototype.forEach.call(document.querySelectorAll(".tblwrap table"), function (t) {
+    var rows = t.rows; if (!rows.length) return;
+    var heads = Array.prototype.map.call(rows[0].cells, function (c) { return c.textContent.trim(); });
+    for (var i = 1; i < rows.length; i++) {
+      var col = 0;
+      Array.prototype.forEach.call(rows[i].cells, function (c) {
+        var span = c.colSpan || 1;
+        c.setAttribute("data-label", heads.slice(col, col + span).join(" · ").toLowerCase());
+        // one wrapper, so a stacked cell is label + value, not a grid of text fragments
+        var v = document.createElement("span"); v.className = "cv";
+        while (c.firstChild) v.appendChild(c.firstChild);
+        c.appendChild(v);
+        col += span;
+      });
+    }
+  });
 
   // ── stack tabs (WAI-ARIA tabs: arrow keys move, Home/End jump) ──
   (function () {

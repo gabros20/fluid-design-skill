@@ -5,8 +5,10 @@
 
 @import './base.css' layer(base);
 
-/* Settings: every tuning number, registered with its default. Override any of
-   them in your own :root (see settings.reference.css) — no regenerate. */
+/* Settings: every tuning number. Each one with a default is registered with it;
+   the optional ones stay unregistered, so unset means off (or falls back).
+   Override any of them in your own :root (see settings.reference.css) — no
+   regenerate. */
 @property --fluid-phone-base-width { syntax: '<number>'; inherits: true; initial-value: 390; }
 @property --fluid-phone-scale-min { syntax: '<number>'; inherits: true; initial-value: 0.82; }
 @property --fluid-phone-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.1; }
@@ -83,7 +85,7 @@
 [class*=":!fluid-off "],
 [class$=":!fluid-off"],
 [class*="[--fluid-"] {
-  --fluid-build: "2.0.0+bf39f06e";
+  --fluid-build: "2.0.0+8d6e60be";
   --_fluid-lo: 0;
   --_fluid-hi: 600;
   --_fluid-base-w: max(1, var(--fluid-phone-base-width, 390));
