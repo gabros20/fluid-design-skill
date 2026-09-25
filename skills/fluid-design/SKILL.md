@@ -150,13 +150,9 @@ The result, for Tailwind:
 - **Tailwind `cn`**: every component that takes `className` needs a `cn` that knows the fluid
   classes, or two fluid classes for one property both ship and stylesheet order picks the winner.
   **If the project already has one** (shadcn's `src/lib/utils.ts`, any file importing
-  `tailwind-merge`), keep it and its callers, and change only how it builds `twMerge`:
-  ```ts
-  import { extendTailwindMerge } from 'tailwind-merge'
-  import { withFluid } from '@/styles/fluid/cn'
-  const twMerge = extendTailwindMerge(withFluid)   // was: import { twMerge } from 'tailwind-merge'
-  ```
-  (Already extending it? `extendTailwindMerge({ extend: … }, withFluid)`.) Never add a second `cn`.
+  `tailwind-merge`), keep it and its callers, and change only how it builds `twMerge`: pass the
+  generated `withFluid` to `extendTailwindMerge` (the exact lines:
+  [preflight.md](references/preflight.md) §13). Never add a second `cn`.
   No `cn` at all: import the generated one. `fluid init` prints the lines for the file it finds.
 - **Script**: import `DESKTOP_QUERY`, `MEDIA`, `fluidPx` from the generated `fluid.ts`; never
   hand-type the breakpoint.
