@@ -1,0 +1,82 @@
+[
+  {
+    "id": "figma-frame-every-laptop",
+    "prompt": "Our designer drew everything on a 1440 Figma frame. The site should look exactly like that frame on every laptop, a 13-inch MacBook and a 16-inch alike, not just reflow. How do I set that up in our Next + Tailwind v4 app?",
+    "should_trigger": true
+  },
+  {
+    "id": "hero-overflows-13-inch",
+    "prompt": "The hero section doesn't fit on a 13-inch MacBook Air: the CTA sits below the fold and the headline wraps onto a third line. At 1440x900 it's perfect. Can you make it fit one screen on smaller laptops too?",
+    "should_trigger": true
+  },
+  {
+    "id": "floats-on-5k",
+    "prompt": "On a 5K iMac our landing page is a small island floating in a sea of white. Everything is capped at max-w-7xl. I want the composition to grow with the screen instead.",
+    "should_trigger": true
+  },
+  {
+    "id": "convert-tailwind-spacing-scales",
+    "prompt": "Convert this existing Tailwind site so padding, gaps and font sizes scale with the viewport instead of jumping at sm/md/lg breakpoints. There are about 20 sections using .container and px values.",
+    "should_trigger": true
+  },
+  {
+    "id": "header-huge-on-2560",
+    "prompt": "The site header is enormous on a 2560 monitor, the nav links look like headlines. The rest of the page scaling up is fine, just not the header.",
+    "should_trigger": true
+  },
+  {
+    "id": "ios-svh-hero-cut-off",
+    "prompt": "Our full-height hero uses 100vh and on iPhone the bottom is hidden behind Safari's toolbar, and the headline font size changes while I scroll. The rest of the site uses viewport-based sizing from our design frame.",
+    "should_trigger": true
+  },
+  {
+    "id": "stale-css-after-restart",
+    "prompt": "I edited globals.css, restarted the dev server, and now the homepage sections are the wrong height, the copy looks unstyled and the video has no gutters. Nothing in the components changed. What broke?",
+    "should_trigger": true
+  },
+  {
+    "id": "explicit-scss-vite",
+    "prompt": "Use $fluid-design to set up a Vite + SCSS marketing page from our 1600x1000 desktop frame and 375 phone frame, with growth capped at 1.4x on large monitors.",
+    "should_trigger": true
+  },
+  {
+    "id": "explicit-zoom-a11y",
+    "prompt": "$fluid-design: Cmd+ zoom to 200% barely enlarges text on our fluid site on a 27-inch monitor. Fix it without breaking the one-screen layout.",
+    "should_trigger": true
+  },
+  {
+    "id": "near-miss-pinned-scroll-scene",
+    "prompt": "Build a pinned section where scrolling scrubs through a product video frame by frame, then releases into the next section. We use Motion.",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-breakpoint-responsive",
+    "prompt": "Make this pricing card grid responsive: one column on mobile, two on tablet, three on desktop, with the usual Tailwind sm/md/lg breakpoints. Nothing needs to scale continuously.",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-utopia-clamp-scale",
+    "prompt": "Generate a Utopia-style modular type scale with clamp(): a 1.2 ratio at 320px to 1.333 at 1240px, steps -2 to 5, as CSS custom properties for our blog.",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-colour-theme-tokens",
+    "prompt": "Set up a colour system for our app: a brand ramp from 50 to 950, semantic surface/text/border tokens, and a dark theme toggled by a class on html.",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-component-library",
+    "prompt": "Scaffold a React component library with Button, Input, Select and Dialog, using Radix primitives and Storybook, published as an npm package.",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-css-zindex-bug",
+    "prompt": "Our dropdown menu renders behind the sticky table header even though its z-index is 50. How do I fix the stacking?",
+    "should_trigger": false
+  },
+  {
+    "id": "near-miss-gsap-reveal",
+    "prompt": "Add staggered fade-up entrances to the feature cards when they scroll into view, and make the header change colour over dark sections.",
+    "should_trigger": false
+  }
+]

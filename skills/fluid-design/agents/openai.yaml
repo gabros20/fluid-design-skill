@@ -1,0 +1,6 @@
+interface:
+  display_name: "Fluid Design"
+  short_description: "Viewport-fluid layouts that scale as one drawing"
+  default_prompt: "Use $fluid-design to make this landing page match our 1440x900 Figma frame at every laptop size."
+policy:
+  allow_implicit_invocation: true

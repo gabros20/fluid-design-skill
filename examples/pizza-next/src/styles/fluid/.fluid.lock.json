@@ -1,11 +1,11 @@
 {
   "generator": "fluid-design 2.0.0",
-  "build": "2.0.0+ccc5f1d1",
+  "build": "2.0.0+8d6e60be",
   "stack": "tailwind-v4",
   "files": {
-    "fluid.css": "14bf32fa9f2d2462",
+    "fluid.css": "6bfb127a9061553b",
     "base.css": "6f20df579330e8c1",
-    "settings.reference.css": "ebe27b8776a646c5",
+    "settings.reference.css": "f9c5d219a63dcf1a",
     "fluid.css-data.json": "2487abf3d84cfe6f",
     "fluid.ts": "f833b60cca4041ac",
     "cn.ts": "3f2cc24b9441b326",

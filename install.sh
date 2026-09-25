@@ -1,53 +1,51 @@
-#!/bin/sh
-# install.sh — the standalone `fluid` binary, for projects without Node.
-#
-#   curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.sh | sh
-#
-# Env: FLUID_VERSION=v2.0.0 (default: the latest release)
-#      FLUID_INSTALL_DIR=/usr/local/bin (default: ~/.local/bin)
-#      FLUID_DOWNLOAD_BASE=https://mirror/… (default: the GitHub release)
-# Checks the download against the release's SHA256SUMS before installing.
-# Projects with Node don't need this: npx fluid-design-cli@2 init
-set -eu
+#!/usr/bin/env bash
+# Install one runtime skill without exposing repository-only docs, evals, or release files.
+set -euo pipefail
 
-REPO="gabros20/fluid-design-skill"
-DIR="${FLUID_INSTALL_DIR:-$HOME/.local/bin}"
+here="$(cd "$(dirname "$0")" && pwd)"
+target="${1:-claude}"
+skill_name="fluid-design"
+source_dir="$here/skills/$skill_name"
 
-case "$(uname -s)" in
-  Darwin) os=darwin ;;
-  Linux) os=linux ;;
-  *) echo "fluid: unsupported OS $(uname -s). On Windows, download fluid-windows-x64.exe from https://github.com/$REPO/releases (or run install.ps1)." >&2; exit 1 ;;
+[ -f "$source_dir/SKILL.md" ] || { echo "install: missing $source_dir/SKILL.md" >&2; exit 1; }
+
+install_to() {
+  parent="$1"
+  dest="$parent/$skill_name"
+  staging="$parent/.${skill_name}.install.$$"
+  backup="$parent/.${skill_name}.backup.$$"
+
+  mkdir -p "$parent"
+  trap 'rm -rf "$staging" "$backup"' RETURN
+  cp -R "$source_dir" "$staging"
+
+  if [ -e "$dest" ]; then
+    mv "$dest" "$backup"
+  fi
+  if mv "$staging" "$dest"; then
+    rm -rf "$backup"
+  else
+    [ ! -e "$backup" ] || mv "$backup" "$dest"
+    echo "install: failed; previous installation restored" >&2
+    return 1
+  fi
+  echo "installed → $dest"
+}
+
+case "$target" in
+  claude)      install_to "$HOME/.claude/skills" ;;
+  codex)       install_to "${CODEX_HOME:-$HOME/.codex}/skills" ;;
+  agents)      install_to "$HOME/.agents/skills" ;;
+  cursor)      install_to "$HOME/.cursor/skills" ;;
+  antigravity) install_to "$HOME/.gemini/config/skills"
+               install_to "$HOME/.gemini/antigravity-cli/skills" ;;
+  opencode)    install_to "$HOME/.config/opencode/skills" ;;
+  grok)        install_to "$HOME/.grok/skills" ;;
+  hermes)      install_to "$HOME/.hermes/skills" ;;
+  all)         install_to "$HOME/.claude/skills"
+               install_to "${CODEX_HOME:-$HOME/.codex}/skills"
+               install_to "$HOME/.agents/skills" ;;
+  *) echo "usage: ./install.sh [claude|codex|agents|cursor|antigravity|opencode|grok|hermes|all]" >&2; exit 1 ;;
 esac
-case "$(uname -m)" in
-  arm64 | aarch64) arch=arm64 ;;
-  x86_64 | amd64) arch=x64 ;;
-  *) echo "fluid: unsupported CPU $(uname -m)" >&2; exit 1 ;;
-esac
-# Rosetta: an arm64 Mac running this shell under x86_64 still wants the native binary.
-if [ "$os" = darwin ] && [ "$arch" = x64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)" = 1 ]; then arch=arm64; fi
 
-asset="fluid-$os-$arch"
-if [ -n "${FLUID_DOWNLOAD_BASE:-}" ]; then base="$FLUID_DOWNLOAD_BASE"; elif [ -n "${FLUID_VERSION:-}" ]; then base="https://github.com/$REPO/releases/download/$FLUID_VERSION"; else base="https://github.com/$REPO/releases/latest/download"; fi
-
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-echo "fluid: downloading $asset ${FLUID_VERSION:-(latest)}"
-curl -fsSL "$base/$asset" -o "$tmp/$asset"
-curl -fsSL "$base/SHA256SUMS" -o "$tmp/SHA256SUMS"
-
-expected="$(grep " $asset\$" "$tmp/SHA256SUMS" | cut -d' ' -f1)"
-if command -v sha256sum >/dev/null 2>&1; then actual="$(sha256sum "$tmp/$asset" | cut -d' ' -f1)"; else actual="$(shasum -a 256 "$tmp/$asset" | cut -d' ' -f1)"; fi
-if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
-  echo "fluid: checksum mismatch for $asset (expected ${expected:-nothing}, got $actual). Not installing." >&2
-  exit 1
-fi
-
-mkdir -p "$DIR"
-mv "$tmp/$asset" "$DIR/fluid"
-chmod +x "$DIR/fluid"
-echo "fluid: installed $("$DIR/fluid" --version) to $DIR/fluid"
-case ":$PATH:" in
-  *":$DIR:"*) ;;
-  *) echo "fluid: $DIR is not on your PATH. Add it:  export PATH=\"$DIR:\$PATH\"" ;;
-esac
-echo "Next, in your project:  fluid init"
+echo "Codex explicit invocation: \$$skill_name. Other clients may use slash commands, @mentions, a skill tool, or natural language."

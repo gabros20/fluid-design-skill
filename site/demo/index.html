@@ -1,0 +1,190 @@
+<!doctype html>
+<!-- The live demo framed by ../index.html (#live). A small marketing page drawn once at
+     1440×900 (desktop) and once at 390 (phone), written ONLY as drawn number × unit through
+     the shipped engine: engine/fluid.css is the pack's CSS-stack output at the defaults
+     (skills/fluid-design/assets/styles/css/), copied byte-for-byte. Refresh it with
+     ./refresh-engine.sh; never edit engine/. The page reports its live units to the parent
+     with postMessage (read from the engine's registered mirrors, the same way fluidPx() does). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Harbor — the demo page inside fluid-design's live frame</title>
+<link rel="stylesheet" href="engine/fluid.css">
+<script>
+  // theme from the parent (?theme=light|dark), else the OS
+  (function () {
+    var t = new URLSearchParams(location.search).get("theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<style>
+  :root{
+    --bg:#f6f7fa; --panel:#ffffff; --ink:#1c2333; --muted:#5a6478; --line:#d8dde8;
+    --accent:#796100; --accent-ink:#ffffff; --art-a:#efe4b8; --art-b:#d9c77a; --code-bg:#eef1f7;
+    --focus-ring:#796100;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#12151d; --panel:#1a1f2b; --ink:#e6eaf3; --muted:#93a0b8; --line:#2b3245;
+    --accent:#f2cf3b; --accent-ink:#0d1220; --art-a:#2a2614; --art-b:#5c4d12; --code-bg:#141824;
+    --focus-ring:#f2cf3b;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#12151d; --panel:#1a1f2b; --ink:#e6eaf3; --muted:#93a0b8; --line:#2b3245;
+    --accent:#f2cf3b; --accent-ink:#0d1220; --art-a:#2a2614; --art-b:#5c4d12; --code-bg:#141824;
+    --focus-ring:#f2cf3b;
+  }
+  html{ background:var(--bg); color:var(--ink); color-scheme:light dark; }
+  body{ margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
+
+  /* ── phone design (the 390 artboard); every number is drawn px × a unit ── */
+  .hdr{ position:absolute; inset:0 0 auto; z-index:2; height:var(--fluid-header-h); display:flex; align-items:flex-end; }
+  .hdr .fluid-container{ display:flex; align-items:center; justify-content:space-between; height:34px; }
+  .logo{ display:flex; align-items:center; gap:calc(8 * var(--fluid-ui)); font-weight:700; font-size:calc(17 * var(--fluid-ui)); letter-spacing:-.01em; }
+  .logo i{ width:calc(20 * var(--fluid-ui)); height:calc(20 * var(--fluid-ui)); border-radius:calc(6 * var(--fluid-ui)); background:var(--accent); display:block; }
+  .nav{ display:none; }
+  .hdr .cta{ font-size:calc(14 * var(--fluid-ui)); padding:calc(6 * var(--fluid-ui)) calc(12 * var(--fluid-ui)); border:1px solid var(--line); border-radius:999px; background:var(--panel); }
+
+  .hero{ position:relative; padding-top:calc(var(--fluid-header-h) + 40 * var(--fluid)); padding-bottom:calc(56 * var(--fluid)); border-bottom:1px solid var(--line); }
+  .hero .fluid-container{ display:grid; gap:calc(32 * var(--fluid)); }
+  .eyebrow{ font-size:calc(12 * var(--fluid-copy)); letter-spacing:.12em; text-transform:uppercase; font-weight:600; color:var(--muted); margin:0 0 calc(12 * var(--fluid)); }
+  h1{ font-size:calc(40 * var(--fluid-display)); line-height:calc(44 * var(--fluid-display)); letter-spacing:-.02em; margin:0; font-weight:700; text-wrap:balance; }
+  h1 em{ font-style:normal; color:var(--accent); }
+  .lead{ font-size:calc(16 * var(--fluid-copy)); line-height:calc(24 * var(--fluid-copy)); color:var(--muted); margin:calc(16 * var(--fluid)) 0 0; max-width:calc(520 * var(--fluid)); }
+  .btns{ display:flex; gap:calc(12 * var(--fluid)); margin-top:calc(24 * var(--fluid)); flex-wrap:wrap; }
+  .btn{ display:inline-flex; align-items:center; height:calc(44 * var(--fluid)); padding:0 calc(20 * var(--fluid)); border-radius:calc(10 * var(--fluid)); font-size:calc(15 * var(--fluid-copy)); font-weight:600; border:1px solid var(--line); background:var(--panel); }
+  .btn.pri{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .art{ aspect-ratio:1; width:100%; border-radius:calc(20 * var(--fluid)); background:var(--art-a); position:relative; overflow:hidden; border:1px solid var(--line); }
+  .art b{ position:absolute; display:block; border-radius:calc(14 * var(--fluid)); background:var(--art-b); }
+  .art b:nth-child(1){ left:10%; top:10%; width:46%; height:30%; }
+  .art b:nth-child(2){ left:62%; top:10%; width:28%; height:62%; background:var(--accent); opacity:.85; }
+  .art b:nth-child(3){ left:10%; top:46%; width:46%; height:44%; }
+  .art b:nth-child(4){ left:62%; top:78%; width:28%; height:12%; }
+  .dim{ display:none; }
+
+  .feat{ padding-block:calc(56 * var(--fluid)); }
+  h2{ font-size:calc(28 * var(--fluid-display)); line-height:calc(34 * var(--fluid-display)); letter-spacing:-.015em; margin:0; }
+  .cards{ display:grid; gap:calc(16 * var(--fluid)); margin-top:calc(24 * var(--fluid)); }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:calc(16 * var(--fluid)); padding:calc(24 * var(--fluid)); }
+  .card .n{ font-size:calc(32 * var(--fluid-display)); line-height:1; font-weight:700; color:var(--accent); }
+  .card h3{ font-size:calc(19 * var(--fluid-copy)); line-height:calc(26 * var(--fluid-copy)); margin:calc(12 * var(--fluid)) 0 calc(6 * var(--fluid)); }
+  .card p{ font-size:calc(15 * var(--fluid-copy)); line-height:calc(22 * var(--fluid-copy)); color:var(--muted); margin:0; }
+  .foot{ border-top:1px solid var(--line); padding-block:calc(24 * var(--fluid-ui)); font-size:calc(13 * var(--fluid-ui)); color:var(--muted); }
+  .foot .fluid-container{ display:flex; justify-content:space-between; gap:calc(16 * var(--fluid-ui)); flex-wrap:wrap; }
+
+  /* ── desktop design (the 1440×900 artboard, drawn 1280 inside the 80 padding) ── */
+  @media (min-width: 1024px){
+    .hdr .fluid-container{ height:calc(48 * var(--fluid-ui)); }
+    .nav{ display:flex; gap:calc(32 * var(--fluid-ui)); font-size:calc(15 * var(--fluid-ui)); color:var(--muted); }
+    .hdr .cta{ font-size:calc(15 * var(--fluid-ui)); padding:calc(9 * var(--fluid-ui)) calc(18 * var(--fluid-ui)); }
+
+    /* one screen: drawn 900 tall, so it fits whenever height binds */
+    .hero{ height:calc(900 * var(--fluid)); padding:var(--fluid-header-h) 0 0; display:flex; align-items:center; }
+    .hero > .fluid-container{ grid-template-columns:calc(600 * var(--fluid)) calc(560 * var(--fluid)); justify-content:space-between; align-items:center; gap:0; }
+    .eyebrow{ font-size:calc(13 * var(--fluid-copy)); margin-bottom:calc(20 * var(--fluid)); }
+    h1{ font-size:calc(64 * var(--fluid-display)); line-height:calc(72 * var(--fluid-display)); }
+    .lead{ font-size:calc(18 * var(--fluid-copy)); line-height:calc(28 * var(--fluid-copy)); margin-top:calc(24 * var(--fluid)); }
+    .btns{ gap:calc(16 * var(--fluid)); margin-top:calc(40 * var(--fluid)); }
+    .btn{ height:calc(52 * var(--fluid)); padding:0 calc(28 * var(--fluid)); border-radius:calc(12 * var(--fluid)); font-size:calc(16 * var(--fluid-copy)); }
+    .art{ width:calc(560 * var(--fluid)); border-radius:calc(28 * var(--fluid)); }
+    /* the dimension line: the section is 900 drawn px, the window's full height when height binds */
+    .dim{ display:flex; position:absolute; right:calc(24 * var(--fluid)); top:0; bottom:0; width:calc(40 * var(--fluid)); align-items:center; justify-content:center; }
+    .dim::before{ content:""; position:absolute; left:50%; top:calc(6 * var(--fluid)); bottom:calc(6 * var(--fluid)); border-left:1px dashed var(--accent); }
+    .dim::after{ content:""; position:absolute; left:calc(50% - 6 * var(--fluid)); top:calc(6 * var(--fluid)); width:calc(12 * var(--fluid)); bottom:calc(6 * var(--fluid)); border-block:1px solid var(--accent); }
+    .dim span{ position:relative; z-index:1; writing-mode:vertical-rl; background:var(--bg); padding:calc(8 * var(--fluid)) 0; font-size:calc(12 * var(--fluid-copy)); color:var(--accent); font-weight:600; }
+
+    .feat{ padding-block:calc(120 * var(--fluid)); }
+    h2{ font-size:calc(40 * var(--fluid-display)); line-height:calc(48 * var(--fluid-display)); }
+    .cards{ grid-template-columns:repeat(3, 1fr); gap:calc(24 * var(--fluid)); margin-top:calc(48 * var(--fluid)); }
+    .card{ padding:calc(32 * var(--fluid)); border-radius:calc(20 * var(--fluid)); }
+    .card .n{ font-size:calc(48 * var(--fluid-display)); }
+    .card h3{ font-size:calc(22 * var(--fluid-copy)); line-height:calc(30 * var(--fluid-copy)); margin:calc(20 * var(--fluid)) 0 calc(8 * var(--fluid)); }
+    .card p{ font-size:calc(16 * var(--fluid-copy)); line-height:calc(24 * var(--fluid-copy)); }
+    .foot{ padding-block:calc(32 * var(--fluid-ui)); font-size:calc(14 * var(--fluid-ui)); }
+  }
+
+  /* probes the parent's readout measures (never visible) */
+  .probe{ position:absolute; visibility:hidden; pointer-events:none; left:0; top:0; height:0; }
+  #p-cw{ width:var(--fluid-container-width); }
+  #p-pad{ width:var(--fluid-container-padding); }
+  #p-hh{ width:var(--fluid-header-h); }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="fluid-container">
+    <a class="logo" href="#top"><i></i>Harbor</a>
+    <nav class="nav" aria-label="demo"><a href="#features">Product</a><a href="#features">Pricing</a><a href="#features">Docs</a><a href="#features">Journal</a></nav>
+    <a class="cta" href="#features">Get started</a>
+  </div>
+</header>
+<main id="top">
+  <section class="hero">
+    <div class="fluid-container">
+      <div>
+        <p class="eyebrow">drawn once at 1440 × 900</p>
+        <h1>Every window gets <em>the same drawing</em>.</h1>
+        <p class="lead">This page is written only as drawn number × unit. Drag the frame: at 1440 × 900 it is pixel-exact, and everywhere else it is a proportional copy.</p>
+        <div class="btns"><a class="btn pri" href="#features">Start a project</a><a class="btn" href="#features">See the numbers</a></div>
+      </div>
+      <div class="art" aria-hidden="true"><b></b><b></b><b></b><b></b></div>
+    </div>
+    <div class="dim" aria-hidden="true"><span class="mono">900 drawn px · fluid-h-900</span></div>
+  </section>
+  <section class="feat" id="features">
+    <div class="fluid-container">
+      <h2>Three cards, one scale.</h2>
+      <div class="cards">
+        <div class="card"><div class="n mono">120</div><h3>Section padding</h3><p>Drawn 120 at the artboard, 120 × --fluid everywhere else. No breakpoint table.</p></div>
+        <div class="card"><div class="n mono">64</div><h3>Display type</h3><p>Reads --fluid-display, so it shrinks more gently than the layout on a small window.</p></div>
+        <div class="card"><div class="n mono">48</div><h3>Header row</h3><p>Reads --fluid-ui: follows the width and never shrinks for a short window.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="foot"><div class="fluid-container"><span>Harbor is a made-up page for this demo.</span><span class="mono">engine/fluid.css</span></div></footer>
+<div class="probe" id="p-cw"></div><div class="probe" id="p-pad"></div><div class="probe" id="p-hh"></div>
+<script>
+(function () {
+  // Exclusive band queries, as the generated fluid.ts MEDIA map (classic syntax here).
+  var BANDS = [
+    ["desktop", "(min-width: 1024px)"],
+    ["landscape", "(max-width: 1023.98px) and (orientation: landscape) and (max-height: 500px)"],
+    ["tablet", "(min-width: 600px) and (max-width: 1023.98px)"],
+    ["phone", "(max-width: 599.98px)"]
+  ];
+  var root = document.documentElement;
+  function unit(name) {
+    // the engine mirrors each unit as a registered <length> = unit × 1000 (what fluidPx() reads)
+    var v = parseFloat(getComputedStyle(root).getPropertyValue("--_fluid-m-" + name));
+    return isNaN(v) ? null : v / 1000;
+  }
+  function px(id) { return parseFloat(getComputedStyle(document.getElementById(id)).width); }
+  function band() {
+    for (var i = 0; i < BANDS.length; i++) if (matchMedia(BANDS[i][1]).matches) return BANDS[i][0];
+    return "phone";
+  }
+  function report() {
+    var msg = {
+      type: "fluid-readout",
+      w: innerWidth, h: innerHeight, band: band(),
+      fluid: unit("fluid"), display: unit("display"), copy: unit("copy"), ui: unit("ui"),
+      cw: px("p-cw"), pad: px("p-pad"), hh: px("p-hh"),
+      build: getComputedStyle(root).getPropertyValue("--fluid-build").trim()
+    };
+    if (parent !== window) parent.postMessage(msg, location.origin === "null" ? "*" : location.origin);
+  }
+  addEventListener("resize", report);
+  addEventListener("load", report);
+  addEventListener("message", function (e) {
+    if (e.source !== parent || !e.data) return;
+    if (e.data.type === "theme") root.setAttribute("data-theme", e.data.theme);
+    if (e.data.type === "ping") report();
+  });
+})();
+</script>
+</body>
+</html>
