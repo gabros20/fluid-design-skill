@@ -108,4 +108,6 @@ To release:
 `.github/workflows/release.yml` then checks the tag against `package.json` and
 `.codex-plugin/plugin.json`, runs `npm run verify`, builds the five binaries with `SHA256SUMS` into a
 GitHub Release (which `install-cli.sh` and `install-cli.ps1` download from), and publishes
-`fluid-design-cli` to npm when the `NPM_TOKEN` secret is set.
+`fluid-design-cli` to npm through npm Trusted Publishing (GitHub's OIDC identity, no token secret:
+the package's Trusted Publisher on npmjs.com names this repository and `release.yml`). Both publish
+steps skip what already exists, so re-running a release is safe.

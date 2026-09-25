@@ -1,7 +1,10 @@
 # A tag v2.x.y builds the standalone binaries,
 # attaches them with SHA256SUMS to a GitHub Release (install-cli.sh and
 # install-cli.ps1 download from there), and publishes fluid-design-cli to npm
-# from the repository root when the NPM_TOKEN secret is set.
+# from the repository root through npm Trusted Publishing: GitHub's OIDC
+# identity (id-token: write), no token secret. The package's Trusted
+# Publisher on npmjs.com names this repository and this workflow file.
+# Both publish steps are idempotent, so re-running a release is safe.
 #
 # The tag step checks the tag against the root package.json and
 # .codex-plugin/plugin.json only. The newest released CHANGELOG.md heading is
@@ -20,8 +23,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,9 +40,19 @@ jobs:
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "fluid $GITHUB_REF_NAME" --generate-notes
-      - name: npm
-        if: env.NPM_TOKEN != ''
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "fluid $GITHUB_REF_NAME" --generate-notes
+          fi
+      # Trusted Publishing needs npm 11.5.1+; Node 24 ships 11.x, so upgrade.
+      - name: npm (trusted publishing)
+        run: |
+          npm install -g npm@latest
+          v="$(node -p "require('./package.json').version")"
+          if npm view "fluid-design-cli@$v" version >/dev/null 2>&1; then
+            echo "fluid-design-cli@$v is already on npm; nothing to publish"
+          else
+            npm publish --access public
+          fi
