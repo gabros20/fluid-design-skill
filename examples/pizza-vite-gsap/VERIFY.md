@@ -11,7 +11,7 @@ because they are large and reproducible.
   and 96.4 kB of JS (37.5 kB gzip, mostly GSAP).
 
 ## 2. Audit: 1 error, a false positive in the skill's generated file (see SKILL-FEEDBACK #10)
-`node ../../fluid-design/scripts/tools/audit.mjs src` → `verify-out/audit-src.txt`:
+`node ../../skills/fluid-design/scripts/tools/audit.mjs src` → `verify-out/audit-src.txt`:
 one `length-times-unit` error at `src/styles/fluid/scss/_fluid.scss:39`. That line is the
 generator's own `@error "…64px * var(--fluid)…"` message string, in a do-not-edit generated
 file. No hand-written file has a finding. Scanning the project root (which adds `index.html`)
@@ -88,7 +88,7 @@ disjoint files to split.
 
 ## Browser zoom (WCAG 1.4.4), added 2026-09-23
 
-Brought onto the post-review system (`docs/REVIEW-2026-09.md`):
+Brought onto the post-review system (`docs/designs/REVIEW-2026-09.md`):
 - `fluid.config.json`: `zoomCompensation: true`, `zoomTextRange: [24, 48]`; `src/styles/fluid/`
   regenerated (SCSS layer and the render-only `shared/base.css`).
 - `src/styles/animation/animation.css` + `animation.gsap.css` (from the `scroll-animation` skill) carries the motion half the old
@@ -190,6 +190,6 @@ happened.
 - **verify-matrix:** PASS in Chromium, WebKit and Firefox, including the real-zoom row.
 - **Geometry:** identical to the pre-migration (v1) build at 9 of 10 verified viewports. The
   exception is 320×568, where type differs by 0.3% — v1 rounded its phone floor to 2 decimals,
-  v2's knee computes it exactly (`fluid-design/references/config.md`, "The engine"). Not a
+  v2's knee computes it exactly (`skills/fluid-design/references/config.md`, "The engine"). Not a
   regression; the more precise number is v2's.
 - **verify-motion:** `--reveal --scenes --anchors` PASS.

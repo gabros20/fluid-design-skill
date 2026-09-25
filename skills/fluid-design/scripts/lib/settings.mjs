@@ -9,7 +9,7 @@
 // `variants` lists the values set on a qualified root (`:root.dark`,
 // `html[data-theme=x]`) or a sibling part of a root list: listed, not applied.
 //
-// The policy (docs/FIX-PLAN-2026-09.md P4): --fluid-* is not a reserved
+// The policy (docs/designs/FIX-PLAN-2026-09.md P4): --fluid-* is not a reserved
 // namespace. An unknown name is an error only when it is a near-miss of a real
 // setting (a typo) or an engine-owned variable; otherwise it is the project's
 // own token and gets an info note.

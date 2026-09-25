@@ -20,13 +20,13 @@ interactive answer is a flag.
 ## 2. The binary question: decision
 
 **Ship both: npm is the main channel, standalone binaries are the no-Node channel.** One
-source (`fluid-design/scripts/cli/index.mjs`), three ways to run it:
+source (`skills/fluid-design/scripts/cli/index.mjs`), three ways to run it:
 
 | Channel | Command | For | Built by |
 |---|---|---|---|
 | skill folder | `node <skill>/bin/fluid init` | A | already there |
-| npm | `npx fluid-design-cli@2 init` | B, D | `npm publish` from `fluid-design/` |
-| standalone | `curl -fsSL …/install.sh \| sh`, then `fluid init` | C, D | `scripts/dev/build-bin.mjs` (`bun build --compile`), attached to GitHub Releases |
+| npm | `npx fluid-design-cli@2 init` | B, D | `npm publish` from the repository root |
+| standalone | `curl -fsSL …/install-cli.sh \| sh`, then `fluid init` | C, D | `scripts/dev/build-bin.mjs` (`bun build --compile`), attached to GitHub Releases |
 
 Why:
 
@@ -46,7 +46,7 @@ Why:
   meaning init, generate, check, settings, explain, migrate, calc and audit, works in the binary.
 - **Releases are CI, not a laptop.** A tag `v2.x.y` runs the tests, builds the five binaries
   plus `SHA256SUMS`, attaches them to the GitHub Release and publishes to npm, if an
-  `NPM_TOKEN` secret exists. `install.sh` picks the right asset, checks its sha256 and installs
+  `NPM_TOKEN` secret exists. `install-cli.sh` picks the right asset, checks its sha256 and installs
   to `~/.local/bin`, or to `$FLUID_INSTALL_DIR` if set.
 
 What the binary needs from the code:
@@ -139,7 +139,7 @@ No Zed doc or issue confirms that Zed passes this option through, so this snippe
 1. CLI core for the binary: embedded runtime, in-process tools, `main(argv)`, version check.
 2. Interactive init, the flags, `--set`, and `generate --watch`.
 3. `explain --at`, `--set` and the scopes report.
-4. `build-bin.mjs`, `install.sh`, the release workflow, and npm packaging.
+4. `build-bin.mjs`, `install-cli.sh`, the release workflow, and npm packaging.
 5. Tests: extend the CLI test (flags and scripted answers), a binary smoke test, and the SCSS
    browser test.
 6. Examples, the scroll-animation mirror, and docs.

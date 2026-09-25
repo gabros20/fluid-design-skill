@@ -338,4 +338,4 @@ the group of the property it sets, and gives the limits groups of their own), `t
 (`extendTailwindMerge(withFluid)`) and `cn`. A project with its own `cn` (shadcn's `lib/utils.ts`)
 keeps it and adds the plugin: `extendTailwindMerge(withFluid)`, or
 `extendTailwindMerge({ extend: … }, withFluid)` when it already extends tailwind-merge. Tested with
-both shapes in `scripts/test/tailwind-compile.mjs`.
+both shapes in the repository's `tests/tailwind-compile.mjs`.

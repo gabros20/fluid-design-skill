@@ -372,8 +372,8 @@ element a scope and sets the limit in one step, and every `fluid-*` class inside
   `fluidPx(n)` reads the page's. Without `@property` (Firefox < 128, Safari < 16.4) the walk finds
   nothing and falls back to the page's units.
 
-Verified: `scripts/test/engine-matrix.mjs` (every limit against the model in Chromium, WebKit and
-Firefox) and `scripts/test/tailwind-compile.mjs` (children follow, nesting, `lg:` gating, a Tailwind
+Verified (in the repository): `tests/engine-matrix.mjs` (every limit against the model in Chromium, WebKit and
+Firefox) and `tests/tailwind-compile.mjs` (children follow, nesting, `lg:` gating, a Tailwind
 `prefix()`, `fluidPx` at an element, `--fluid-header-h` with the root ui limit).
 
 So a section drawn taller than the artboard **is** more than one screen at every viewport, and the scale keeps
@@ -501,7 +501,7 @@ the desktop layout is still active.
   | Firefox | not compensated (reads 1). Desktop-layout type ignores zoom until the page falls through to mobile; say so before promising WCAG 1.4.4 to a client |
 
   The measurements behind each row, the false-positive geometries and the known limit's arithmetic
-  are in the repository's `docs/zoom-measurements.md`; `scripts/test/zoom-detect.mjs` is the
+  are in the repository's `docs/research/zoom-measurements.md`; `tests/zoom-detect.mjs` is the
   geometry table as a test. To check a browser yourself, serve `assets/runtime/zoom-debug.html`
   next to `zoom.js`, zoom, and read the detected `--fluid-zoom` off the page.
 - **The mobile handover.** When zoom pushes the CSS viewport below the desktop breakpoint, the page

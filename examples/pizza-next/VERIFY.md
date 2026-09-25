@@ -11,7 +11,7 @@ stopped myself. The last full run followed the final code change. Compact eviden
 
 ## 2. Audit — PASS (0 errors, 0 warnings, 1 info)
 
-`node ../../fluid-design/scripts/tools/audit.mjs src` (script re-read before running; mtime 13:41) → `verify/audit.txt`
+`node ../../skills/fluid-design/scripts/tools/audit.mjs src` (script re-read before running; mtime 13:41) → `verify/audit.txt`
 
 | Finding | Kept because |
 |---|---|
@@ -19,7 +19,7 @@ stopped myself. The last full run followed the final code change. Compact eviden
 
 ## 3. Viewport matrix — PASS, 27/27
 
-`node ../../fluid-design/scripts/tools/verify.mjs http://localhost:4310 --reveal --screens --fit-selector '[data-fit=screen]'`
+`node ../../skills/fluid-design/scripts/tools/verify.mjs http://localhost:4310 --reveal --screens --fit-selector '[data-fit=screen]'`
 → `verify/matrix-summary.txt`, `verify/matrix-report.json`
 
 The run covers widths 1024/1280/1440/1680/2560 × heights 640/700/800/900/1440, plus 390×844 and
@@ -101,7 +101,7 @@ Fixed after looking:
 
 ## Browser zoom (WCAG 1.4.4), added 2026-09-23
 
-Added after the review in `docs/REVIEW-2026-09.md`. The build now inlines
+Added after the review in `docs/designs/REVIEW-2026-09.md`. The build now inlines
 `src/lib/fluid-zoom.js` in `<head>` (`FLUID_ZOOM_INLINE`, `src/app/layout.tsx`), and
 `fluid.config.json` has `zoomCompensation: true` (regenerated `src/styles/fluid.css`).
 
@@ -213,6 +213,6 @@ behavioural change was intended by the migration; the checks below confirm none 
 - **verify-matrix:** PASS in Chromium, WebKit and Firefox, including the real-zoom row.
 - **Geometry:** identical to the pre-migration (v1) build at 9 of 10 verified viewports. The
   exception is 320×568, where type differs by 0.3% — v1 rounded its phone floor to 2 decimals,
-  v2's knee computes it exactly (`fluid-design/references/config.md`, "The engine"). Not a
+  v2's knee computes it exactly (`skills/fluid-design/references/config.md`, "The engine"). Not a
   regression; the more precise number is v2's.
 - **verify-motion:** `--reveal --scenes --anchors` PASS.

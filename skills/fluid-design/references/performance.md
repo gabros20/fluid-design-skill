@@ -52,7 +52,7 @@ A small set of reused `fluid-*` classes (or SCSS/CSS rules shared across element
 third of a frame per resize step, less than per-declaration `clamp()`. The same unit written as a
 unique rule per element (CSS-in-JS generating one class per instance, inline styles) costs about
 nine times more style recalculation, a whole frame per step. Scrolling costs nothing either way.
-Evidence and harness: the repository's `docs/review-2026-09/`.
+Evidence and harness: the repository's `docs/designs/review-2026-09/`.
 
 **WebKit, and why the unit mirrors don't inherit.** `fluidPx(n, unit, el)` reads a unit at an
 element through a registered `<length>` mirror (`--_fluid-m-<unit>`) that the engine sets on
@@ -84,7 +84,7 @@ is the same 2,000 elements (30 classes × 4 declarations), timed per resize step
 | unregistered | 9.8–10.2 ms | 7.7–7.9 ms |
 | registered `<number>` (now) | 7.8–8.4 ms | 5.0–5.1 ms |
 
-`scripts/test/resize-perf.mjs` guards both findings in WebKit and Chromium. It checks that 50 limit
+The repository's `tests/resize-perf.mjs` guards both findings in WebKit and Chromium. It checks that 50 limit
 scopes cost at most 1.6× the same page without them (the inherited mirrors measured 2.2× there), and
 it runs in `npm run test:browsers` and CI.
 

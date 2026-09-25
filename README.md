@@ -19,7 +19,7 @@ scrubbed scenes, scroll wells, video playback, header ink that follows the secti
 coexistence with existing GSAP, Lenis or header scripts live in the companion skill,
 [`scroll-animation`](https://github.com/gabros20/scroll-animation-skill). Each works alone; together
 they share the desktop band's `minWidth`, `--fluid-header-h` and the `translate` property
-(`fluid-design/references/contract.md` §7).
+(`skills/fluid-design/references/contract.md` §7).
 
 The whole thing is extracted from a production marketing site. Nearly every rule in `references/`
 records the bug it prevents and the measurement behind it.
@@ -30,16 +30,16 @@ Three ways to run the same `fluid` CLI:
 
 | You are | Install | Then |
 |---|---|---|
-| **An agent** (Claude Code, Codex, Cursor…) | `cp -r fluid-design ~/.claude/skills/` (or `.claude/skills/` in a project), or `npx skills add gabros20/fluid-design-skill` | ask for what you want: the skill runs `node <skill>/bin/fluid …` itself |
+| **An agent** (Claude Code, Codex, Cursor…) | `./install.sh claude` from a clone (also `codex`, `agents`, `cursor`, … — see [docs/installation.md](docs/installation.md)), or `npx skills add gabros20/fluid-design-skill` | ask for what you want: the skill runs `node <skill>/bin/fluid …` itself |
 | **A developer, Node project** | nothing | `npx fluid-design-cli@2 init` |
-| **A developer, no Node** (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | `curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.sh \| sh` (Windows: `install.ps1`) | `fluid init` |
+| **A developer, no Node** (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | `curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.sh \| sh` (Windows: `install-cli.ps1`) | `fluid init` |
 
 By hand, `fluid init` asks the design questions on the terminal (stack, framework, stylesheet,
 desktop frame, breakpoints, mobile bands, max width). Each has a detected default, and each is also
 a flag for scripts: `fluid init --yes --desktop 1600x1000 --set --fluid-desktop-scale-max=1.4`. The
 full by-hand guide, covering tuning, `generate --watch`, CI, explain and verify, is
-[`fluid-design/README.md`](fluid-design/README.md), which is also the npm page. How it ships, and
-why: [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md).
+[`docs/usage.md`](docs/usage.md). How it ships, and
+why: [`docs/designs/DISTRIBUTION.md`](docs/designs/DISTRIBUTION.md).
 
 In a project:
 
@@ -94,7 +94,7 @@ fluid explain 1440x900 --url <url> --brief   # is the open page running the curr
 
 Browser floor: Tailwind v4's own (Safari 16.4, Chrome 111, Firefox 128) on the Tailwind stack;
 Safari 15.4, Chrome 108, Firefox 101 on the CSS, SCSS and StyleX stacks
-(`fluid-design/references/contract.md` §0).
+(`skills/fluid-design/references/contract.md` §0).
 
 Ask the agent for what you want, for example "make this landing page match our 1680×900 Figma
 frames at every laptop size" or "convert this Tailwind site to fluid scaling." The skill runs a
@@ -104,8 +104,9 @@ and `FLUID.md` in your project.
 ## What's inside
 
 ```
-fluid-design/                      the skill: copy this folder into your skills directory
-  SKILL.md                         workflow: preflight → foundation → sections → tokens → media → verify
+skills/fluid-design/               the skill (the runtime pack): ./install.sh copies this folder
+  SKILL.md                         the router: mission, routes, invariants, workflow, artifacts, completion
+  agents/openai.yaml               client metadata
   references/                      the method and its reasons
     preflight.md                   the decisions, their defaults, detection hints
     config.md                      GENERATED — every fluid.config.json key and every setting, with its default
@@ -128,7 +129,6 @@ fluid-design/                      the skill: copy this folder into your skills 
     runtime/fluid-zoom.js (+ .d.ts) makes fluid type follow browser zoom (fluid generate stamps it and adds
                                    the CSP literal + hash, and zoom.classic.js with no framework)
     runtime/fluid-units.js (+ .d.ts) the units as numbers for script: fluidPx(), onFluidChange()
-  README.md                        the by-hand guide (no agent), also the npm page
   bin/fluid                        the `fluid` command (runs scripts/cli/index.mjs)
   scripts/
     cli/                           the fluid command
@@ -144,14 +144,21 @@ fluid-design/                      the skill: copy this folder into your skills 
     lib/                           the core: spec (the one source of truth) · model (the maths) ·
                                    settings (the lint) · css-scan (the CSS tokenizer) · live (the live-page
                                    reader) · context · emit/ (the engine, Tailwind/SCSS/StyleX, the project)
-    dev/                           maintaining the skill (not in the npm package)
-      generate-fluid.mjs           regenerates assets/ and references/config.md from lib/spec.mjs;
+
+scripts/                           repository tooling (not in the npm package or the installed skill)
+  check-sync · lint-skill · count-skill-tokens   the skill-family gate
+  dev/
+    generate-fluid.mjs             regenerates assets/ and references/config.md from lib/spec.mjs;
                                    --check also runs the parity test
-      build-bin.mjs · bin-entry.mjs   the standalone binaries (bun build --compile)
-    test/                          parity · cli · zoom-detect (no browser) · engine-matrix · tailwind-compile ·
+    build-bin.mjs · bin-entry.mjs  the standalone binaries (bun build --compile)
+tests/                             parity · cli · zoom-detect (no browser) · engine-matrix · tailwind-compile ·
                                    scss-browser · explain-live · resize-perf (real browsers, run from the
-                                   examples) · fixtures/ (v1-configs, configs, audit)
-  evals/                           evals.json (test prompts) · grade.mjs (scripted assertions for evals 5–6)
+                                   examples) · fixtures/ (v1-configs, configs, audit) · lib/v1-math.mjs
+evals/                             activation · traversal · output (evals.json + grade.mjs) · compression-ablation
+docs/                              installation · usage (the by-hand guide) · recipes · cli-internals ·
+                                   designs/ · research/
+install.sh                         installs the skill into agent skill folders
+install-cli.sh · install-cli.ps1   install the standalone `fluid` binary
 
 examples/                          integration examples using both skills
   pizza-next/                      Next 16 + Tailwind v4 + Motion editorial restaurant page (default stack)
@@ -189,30 +196,31 @@ override it in your own `:root`; `fluid.config.json` only decides which bands an
 Type units read `--fluid-z`, which folds in `--fluid-zoom` (written by a small runtime script), so
 text still follows browser zoom (WCAG 1.4.4) even though the layout unit itself never does. Each
 section has one `fluid-container` (the centred page wrapper, max width and padding from the active
-band's settings) applied once, to its inner wrapper. Read `fluid-design/references/fluid-scale.md`
+band's settings) applied once, to its inner wrapper. Read `skills/fluid-design/references/fluid-scale.md`
 for why each of those numbers is what it is, and `references/config.md` for the exact key/setting
 list.
 
 ## Tests
 
-From `fluid-design/`:
+From the repository root:
 
 ```bash
-npm test              # dev/generate-fluid.mjs --check (regeneration + invariants + v1 parity)
-                       #   && test/cli.mjs (the fluid CLI, no browser)
-                       #   && tools/audit.mjs --selftest && test/zoom-detect.mjs
+npm test              # scripts/check-sync (the skill-family gate), then npm run test:unit:
+                       #   scripts/dev/generate-fluid.mjs --check (regeneration + invariants + v1 parity)
+                       #   && tests/cli.mjs (the fluid CLI, no browser)
+                       #   && fluid audit --selftest && tests/zoom-detect.mjs
 npm run test:browsers  # engine-matrix + tailwind-compile + explain-live + resize-perf (from
                        #   examples/pizza-next) && scss-browser (from examples/pizza-vite-gsap):
                        #   3 browsers, needs the examples' node_modules installed
 npm run build:bin      # the standalone binaries → dist/, smoke-tested on this machine (needs bun)
 ```
 
-Releases: push a tag `v2.x.y` matching `fluid-design/package.json`. `.github/workflows/release.yml`
+Releases: push a tag `v2.x.y` matching the root `package.json` and `.codex-plugin/plugin.json`. `.github/workflows/release.yml`
 tests, builds the five binaries with `SHA256SUMS` into a GitHub Release, and publishes
 `fluid-design-cli` to npm if the `NPM_TOKEN` repo secret is set.
 
 `scripts/dev/generate-fluid.mjs --check` is also what proves nothing in `assets/styles/**` or
-`references/config.md` has drifted from `scripts/lib/spec.mjs`, the one place every name and default
+`references/config.md` has drifted from `skills/fluid-design/scripts/lib/spec.mjs`, the one place every name and default
 lives.
 
 ## Credits and licence

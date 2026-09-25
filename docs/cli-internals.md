@@ -1,12 +1,16 @@
-# fluid-design scripts
+# fluid-design CLI internals
+
+The maintainer map of the `fluid` CLI's source: the runtime scripts in
+`skills/fluid-design/scripts/`, the repository's `scripts/dev/`, and the suites in `tests/`.
 
 Node 20+, ESM, zero runtime dependencies except `playwright` (only needed by
 `fluid explain --url`, `verify.mjs` and the browser tests under
-`test/`, resolved from the target project by `lib/live.mjs` — see below).
+`tests/`, resolved from the target project by `lib/live.mjs` — see below).
 
 ## Layout
 
 ```
+skills/fluid-design/scripts/   (the runtime pack)
 cli/        the fluid command
   index.mjs          routing, help, error handling (run / main)
   commands/          one file per command: init, generate, check, settings, explain (+ probe), migrate
@@ -17,8 +21,9 @@ cli/        the fluid command
 tools/      the heavier tools, run as `fluid calc|verify|audit` or `node scripts/tools/<name>.mjs`
 lib/        the core every command and tool builds on (spec, model, settings lint, CSS scanner,
             live-page reader, context, emit/)
-dev/        maintaining the skill: generate-fluid.mjs, build-bin.mjs, bin-entry.mjs (not in the npm package)
-test/       the suites and their fixtures/
+
+scripts/dev/   (repository only) maintaining the skill: generate-fluid.mjs, build-bin.mjs, bin-entry.mjs
+tests/         (repository only) the suites, their fixtures/ and lib/v1-math.mjs
 ```
 
 `bin/fluid` runs `cli/index.mjs`: the `fluid` command projects use day to
@@ -142,11 +147,12 @@ test runs in process.
 
 ## Distribution: npm, binaries, the skill folder
 
-One source, three ways to run it (`docs/DISTRIBUTION.md` has the reasoning):
+One source, three ways to run it (`docs/designs/DISTRIBUTION.md` has the reasoning):
 
 - **The skill folder:** `node <skill>/bin/fluid`, what agents run.
-- **npm:** `package.json` publishes this folder as `fluid-design-cli` (bin
-  `fluid`); tests, the v1 parity fixtures and `build-bin.mjs` are left out.
+- **npm:** the root `package.json` publishes the runtime pieces of
+  `skills/fluid-design/` as `fluid-design-cli` (bin `fluid`); tests, the v1
+  parity fixtures and `scripts/dev/` are left out.
   `generate-fluid.mjs --check` fails when its version isn't `SKILL_VERSION`.
 - **`build-bin.mjs`:** standalone binaries (`bun build --compile` of
   `bin-entry.mjs`) for darwin-arm64/x64, linux-x64/arm64 and windows-x64,
@@ -158,8 +164,8 @@ One source, three ways to run it (`docs/DISTRIBUTION.md` has the reasoning):
   `probe`) need Playwright, so the binary refuses them and prints the `npx`
   command.
   The repo's `.github/workflows/release.yml` runs it on a `v*` tag and
-  attaches the output to the GitHub Release, which `install.sh` and
-  `install.ps1` at the repo root download from after checking the sha256.
+  attaches the output to the GitHub Release, which `install-cli.sh` and
+  `install-cli.ps1` at the repo root download from after checking the sha256.
 
 ## tools/calc.mjs — the math, with no browser and no live project
 
@@ -304,7 +310,8 @@ Motion-specific rules (`motion-strict`, `scroll-well-vs-smooth-scroll`,
 `lenis-with-scroll-well` and `gsap-pin-with-sticky-scene`) live in the
 `scroll-animation` skill's `scripts/audit-motion.mjs`.
 
-`--selftest` runs the scanner over `fixtures/audit/<rule-id>/{positive,negative}`
+`--selftest` runs the scanner over the repository's
+`tests/fixtures/audit/<rule-id>/{positive,negative}` (an installed skill exits 2)
 for every rule and asserts each positive fixture trips the rule and each
 negative fixture does not. `--json` prints `{ srcDir, findings }` instead of
 the readable table.
@@ -312,7 +319,7 @@ the readable table.
 Exit codes: `0` no error-severity findings, `1` at least one error-severity
 finding, `2` usage error. `--selftest` exits `0`/`1` on pass/fail.
 
-## dev/generate-fluid.mjs — the SKILL's own generator
+## scripts/dev/generate-fluid.mjs — the SKILL's own generator
 
 ```
 node generate-fluid.mjs            write every generated file this skill commits
@@ -339,9 +346,10 @@ actually read somewhere in the output, each role's unit present, `--fluid-z`/
 `base.css` presence follows `output.base`, every Tailwind utility family
 present iff its `tailwind.utilities.*` flag is on, an integration emitted iff
 `output.integration` isn't `none` — over the defaults and every fixture in
-`fixtures/configs/`, then runs `test/parity.mjs` (below) as a subprocess.
-`npm test` is `generate-fluid.mjs --check && node scripts/test/cli.mjs &&
-node scripts/tools/audit.mjs --selftest` — the full no-browser gate.
+`tests/fixtures/configs/`, then runs `tests/parity.mjs` (below) as a subprocess.
+`npm run test:unit` is `generate-fluid.mjs --check && node tests/cli.mjs &&
+fluid audit --selftest && node tests/zoom-detect.mjs` — the full no-browser
+gate; `npm test` runs `scripts/check-sync` first.
 
 ## lib/ — everything above is a thin CLI over these
 
@@ -401,25 +409,25 @@ node scripts/tools/audit.mjs --selftest` — the full no-browser gate.
 - **`emit/readme.mjs`** — the generated output folder's own `README.md`
   (install, tuning, bands, units, why, file list) — what a developer reads
   standing in `output.dir`, not this file.
-- **`v1-math.mjs`** — the FROZEN v1 maths (`factors()`, `mergeConfig()`,
-  `resolveFloors()`, `resolveBandFloors()`), used ONLY by `test/parity.mjs`
+- **`tests/lib/v1-math.mjs`** (repository only) — the FROZEN v1 maths (`factors()`, `mergeConfig()`,
+  `resolveFloors()`, `resolveBandFloors()`), used ONLY by `tests/parity.mjs`
   to check v2 reproduces v1's numbers. Never imported by the generator or the
   CLI — v2's real engine is `emit/engine.mjs`.
 
-## test/
+## tests/
 
-Run from the skill root unless noted. `generate-fluid.mjs --check` runs
+Run from the repository root unless noted. `generate-fluid.mjs --check` runs
 `parity.mjs` itself; the rest are run directly or via `npm test` /
 `npm run test:browsers`.
 
-- **`test/parity.mjs`** — v2's model must reproduce v1's numbers for every v1
+- **`tests/parity.mjs`** — v2's model must reproduce v1's numbers for every v1
   config. Each fixture in `fixtures/v1-configs/` (plus the v1 defaults, with
   and without the mobile arm) is migrated to v2 structure + settings and
   evaluated on a viewport × zoom grid, compared against the frozen v1 maths
-  in `lib/v1-math.mjs`. Tolerance `1e-9`, except where v1 rounded a type
+  in `tests/lib/v1-math.mjs`. Tolerance `1e-9`, except where v1 rounded a type
   floor to 2 decimals — there v2's exact knee value is allowed the documented
-  slack (≤ 0.005). No browser. `node scripts/test/parity.mjs`.
-- **`test/cli.mjs`** — the `fluid` command end to end, no browser, no
+  slack (≤ 0.005). No browser. `node tests/parity.mjs`.
+- **`tests/cli.mjs`** — the `fluid` command end to end, no browser, no
   network: `init` on a throwaway greenfield Next+Tailwind project (the
   config, the one import, the settings starter, every generated file,
   `check` passing clean), `check` catching a typo and a bad unit with a
@@ -439,8 +447,8 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   breakpoints (kept by init, an error next to the ladder), Tailwind 3
   detection, `init --force` over v1, init refusing over hand-edited output,
   `--zoom` validation, and watch surviving an invalid save.
-  `node scripts/test/cli.mjs`.
-- **`test/engine-matrix.mjs`** — the generated engine CSS against
+  `node tests/cli.mjs`.
+- **`tests/engine-matrix.mjs`** — the generated engine CSS against
   `model.evaluate()`, in real browsers. For each of a set of structures
   (defaults, flat below desktop, zoom off, ui off, a custom role, no
   tablet/landscape, width-only + ceiling, floors set, desktop at a moved
@@ -450,11 +458,11 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   same numbers with `@property` stripped, and every kind of scope (limit
   classes in their variant and important forms, an arbitrary property,
   `fluid-scope`, `data-fluid-scope`) with `fluidPx(n, unit, el)`'s walk read
-  against the model. `node scripts/test/engine-matrix.mjs
+  against the model. `node tests/engine-matrix.mjs
   [--browsers chromium,webkit,firefox]` — needs `playwright`, resolved from
   the current directory first, so run it from a project that has it, e.g.
-  `cd examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs`.
-- **`test/tailwind-compile.mjs`** — the generated Tailwind layer through the
+  `cd examples/pizza-next && node ../../tests/engine-matrix.mjs`.
+- **`tests/tailwind-compile.mjs`** — the generated Tailwind layer through the
   real Tailwind v4 compiler (`@tailwindcss/postcss`): band variants (and no
   `fluid-desktop:`), every utility family, a custom role, the container,
   negatives, bracket values and modifiers (`fluid-p-[8.3]`,
@@ -465,37 +473,37 @@ Run from the skill root unless noted. `generate-fluid.mjs --check` runs
   `tailwindcss`, `@tailwindcss/postcss`, `postcss` and `playwright` in the
   current project — same caveat as `engine-matrix.mjs`, run it from
   `examples/pizza-next`.
-- **`test/scss-browser.mjs`** — the SCSS module (`_index.scss`) compiled with
+- **`tests/scss-browser.mjs`** — the SCSS module (`_index.scss`) compiled with
   `sass` and measured in Chromium, WebKit and Firefox against
   `model.evaluate()`: the unit functions, every band mixin, `fluid-scope`,
   `fluid-container`, `fluid-type`, and every limit mixin
   (`fluid-grow-until`, `fluid-shrink-until`, `fluid-ui-grow-until`,
   `fluid-off`). Run it from `examples/pizza-vite-gsap` (sass + playwright).
-- **`test/explain-live.mjs`** — `fluid explain --url` against a served page:
+- **`tests/explain-live.mjs`** — `fluid explain --url` against a served page:
   the scopes report (a limit with nothing fluid inside must warn), `--at`,
   `--at` with no match, the verdicts and exit codes (via `probe`), and
   `--zoom` emulated with no false drift. Needs playwright.
-- **`test/zoom-detect.mjs`** — the zoom runtime in Node with stubbed
+- **`tests/zoom-detect.mjs`** — the zoom runtime in Node with stubbed
   `window`/`document`/`navigator`: real zoom that must be read, the
   side-panel and docked-DevTools geometries that must read 1, Safari's
   steps, Firefox gated off; each row through `installFluidZoom` and through
   the generated `FLUID_ZOOM_INLINE` string. It also checks `FLUID_ZOOM_SHA256`
   and `zoom.classic.js` against that string, and both write paths (adopted
   stylesheet, `<html>` style fallback). No browser.
-  `node scripts/test/zoom-detect.mjs`.
+  `node tests/zoom-detect.mjs`.
 
-## test/fixtures/
+## tests/fixtures/
 
-- **`test/fixtures/v1-configs/`** — real v1 `fluid.config.json` files (`canvas-
+- **`tests/fixtures/v1-configs/`** — real v1 `fluid.config.json` files (`canvas-
   gutter-ceiling`, `chrome-disabled`, `mobile-arm`, `utilities-flipped`,
   `width-only`, `zoom-off`), each a genuine v1 shape. Consumed by
-  `test/parity.mjs`, by `generate-fluid.mjs --check` (migrated then checked
+  `tests/parity.mjs`, by `generate-fluid.mjs --check` (migrated then checked
   against the same invariants as any v2 structure), and by
-  `test/engine-matrix.mjs`.
-- **`test/fixtures/configs/`** — v2 structures exercising the less-default corners
+  `tests/engine-matrix.mjs`.
+- **`tests/fixtures/configs/`** — v2 structures exercising the less-default corners
   (`custom-role`, `flat-below-desktop`, `moved-breakpoints`, `phone-only`,
   `scss-vite`, `stylex-next`, `tailwind-minimal`, `ui-off`, `zoom-off`,
   `css-aliases`), each checked against `generate-fluid.mjs --check`'s
   invariants.
-- **`test/fixtures/audit/<rule-id>/{positive,negative}/`** — one isolated
+- **`tests/fixtures/audit/<rule-id>/{positive,negative}/`** — one isolated
   directory pair per audit rule, consumed by `audit.mjs --selftest`.

@@ -1,6 +1,6 @@
 # Browser zoom: the measurements
 
-The measurement record behind `fluid-design/references/fluid-scale.md` §12 (Browser zoom) and
+The measurement record behind `skills/fluid-design/references/fluid-scale.md` §12 (Browser zoom) and
 `assets/runtime/fluid-zoom.js`. The skill keeps the rules; this file keeps the numbers they came
 from. Moved out of `fluid-scale.md` in the September 2026 docs pass (FIX-PLAN S5).
 
@@ -53,7 +53,7 @@ display-scaling ratio: Windows at 125% with a 20% side panel gives r = 1.25 = dp
 with DevTools docked right at 50% gives 2 = 2 / 1. Zoom shrinks `innerHeight` by the same factor as
 `innerWidth`, and a side panel doesn't, so a factor is accepted only when the toolbar it implies,
 `outerHeight − innerHeight × z`, is 0–200 window px. In those cases it comes out tens to hundreds of
-px negative. `scripts/test/zoom-detect.mjs` is the table (stubbed window values, runs in Node).
+px negative. `tests/zoom-detect.mjs` is the table (stubbed window values, runs in Node).
 
 - DevTools docked at the bottom with real zoom fails the height check and reads 1: uncompensated,
   the safe failure.
@@ -80,6 +80,6 @@ screen zoomed in does. A wrong factor inflates type, so Firefox reads 1.
 
 ## Reproducing
 
-Serve `fluid-design/assets/runtime/zoom-debug.html` next to `zoom.js`, open it, zoom, and read the
+Serve `skills/fluid-design/assets/runtime/zoom-debug.html` next to `zoom.js`, open it, zoom, and read the
 live signals and the detected `--fluid-zoom` off the page. `fluid verify <url>` runs the Chromium zoom
-row; `node fluid-design/scripts/test/zoom-detect.mjs` runs the geometry table.
+row; `node tests/zoom-detect.mjs` runs the geometry table.

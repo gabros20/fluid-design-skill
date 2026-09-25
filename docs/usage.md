@@ -15,8 +15,8 @@ This page is the by-hand path. It needs no agent.
 | Your project | Run |
 |---|---|
 | Has Node (Next, Vite, Astro, Remix, SvelteKit…) | `npx fluid-design-cli@2 init` |
-| No Node (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | `curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.sh \| sh`, then `fluid init` |
-| Windows, no Node | `irm https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install.ps1 \| iex`, then `fluid init` |
+| No Node (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | `curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.sh \| sh`, then `fluid init` |
+| Windows, no Node | `irm https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.ps1 \| iex`, then `fluid init` |
 
 The generated files are committed, so the CLI is only needed again when you change the structure,
 and in CI. Nothing is added to your dependencies.
@@ -247,13 +247,14 @@ fluid type doesn't grow with zoom until the page falls through to the mobile lay
   In VS Code, `init` adds it to `.vscode/settings.json` (`"css.customData"`) when that file exists.
 - **Zed:** the Tailwind language server gives the same class autocomplete. For the settings file,
   Zed's CSS server takes `dataPaths` in `lsp.vscode-css-language-server.initialization_options`.
-  This is unverified in Zed; `docs/DISTRIBUTION.md` in the repo has the snippet.
+  This is unverified in Zed; `docs/designs/DISTRIBUTION.md` in the repo has the snippet.
 
 ## With an agent
 
-Copy the `fluid-design` folder into your agent's skills directory (for Claude Code,
-`~/.claude/skills/` or `.claude/skills/`), or run `npx skills add gabros20/fluid-design-skill`. The
-agent runs the same CLI from the skill folder. For the method behind every number, start at
-`SKILL.md` and `references/fluid-scale.md`.
+From a clone, `./install.sh claude` (or `codex`, `agents`, `cursor`, …; see
+[installation.md](installation.md)) copies `skills/fluid-design` into your agent's skills directory,
+or run `npx skills add gabros20/fluid-design-skill`. The agent runs the same CLI from the skill
+folder. For the method behind every number, start at `skills/fluid-design/SKILL.md` and
+`skills/fluid-design/references/fluid-scale.md`.
 
 MIT © Tamás Gábor

@@ -151,7 +151,7 @@ try {
   child.kill()
   expect(readFileSync(join(f, 'src/styles/fluid/fluid.css'), 'utf8').includes('--fluid-caption:'), 'generate --watch regenerates when fluid.config.json changes', log)
 
-  // ── Phase 3 regressions (docs/FIX-PLAN-2026-09.md) ──
+  // ── Phase 3 regressions (docs/designs/FIX-PLAN-2026-09.md) ──
   const R = join(root, 'robust')
   mkdirSync(join(R, 'src/app'), { recursive: true })
   writeFileSync(join(R, 'package.json'), JSON.stringify({ dependencies: { next: '16', tailwindcss: '4' }, devDependencies: { prettier: '3' } }))
