@@ -1,0 +1,41 @@
+{
+  "name": "fluid-design-skill",
+  "version": "2.0.0",
+  "description": "Build or convert a website onto a viewport-fluid design scale: one measured unit from both viewport axes, so the desktop composition stays a proportional copy of the design frame at every size and each device band scales its own design. Generates Tailwind v4, CSS, SCSS or StyleX output with the fluid CLI and verifies it across a viewport matrix.",
+  "author": {
+    "name": "gabros20",
+    "url": "https://github.com/gabros20"
+  },
+  "homepage": "https://fluid-design-skill.vercel.app",
+  "repository": "https://github.com/gabros20/fluid-design-skill",
+  "license": "MIT",
+  "keywords": [
+    "agent-skill",
+    "fluid-design",
+    "fluid-typography",
+    "responsive",
+    "viewport-units",
+    "design-system",
+    "tailwindcss",
+    "css",
+    "scss",
+    "stylex",
+    "ios-safari",
+    "browser-zoom"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Fluid Design",
+    "shortDescription": "Viewport-fluid layouts that scale as one drawing",
+    "longDescription": "Turn a fixed design (a desktop artboard and a phone artboard) into a site whose layout, type, spacing and element sizes scale from both viewport axes off one measured unit: exactly one screen tall when height binds, pixel-exact at the reference, correct on a 5K display, with phone, tablet and landscape bands scaling their own design. The bundled fluid CLI generates the engine for Tailwind v4, CSS, SCSS or StyleX from a small fluid.config.json; every tuning number is a live CSS variable. Covers section conversion, tokens, media sizing, iOS Safari viewport and render bugs, browser zoom (WCAG 1.4.4) and a real-browser viewport-matrix verifier. No animation: that is the scroll-animation skill.",
+    "developerName": "gabros20",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Use $fluid-design to make this landing page match our 1440x900 Figma frame at every laptop size.",
+      "Use $fluid-design to convert this Tailwind site's sections to fluid scaling, one section at a time.",
+      "Use $fluid-design to find out why the hero loses its height right after a CSS edit and a dev-server restart."
+    ],
+    "brandColor": "#796100"
+  }
+}

@@ -1,0 +1,30 @@
+# fluid-design
+
+> Viewport-fluid layouts that scale as one drawing. Installs as an agent skill.
+
+TODO — one paragraph: what problem this replaces, the workflow it runs (stages/strategies, in
+order), and what "read only what you need" the router gives you. Claude Code is the reference
+host; it's plain Agent Skills format (agentskills.io), so it installs on Codex, Cursor,
+Antigravity, opencode, Grok Build, and Hermes too.
+
+## Install
+
+- npm/skills.sh: `npx skills add gabros20/fluid-design-skill`
+- Clone + installer (per-host targets: claude | codex | cursor | antigravity | opencode | grok | hermes | agents | all): `git clone https://github.com/gabros20/fluid-design-skill && cd fluid-design-skill && ./install.sh codex`
+- Manual copy: `cp -R skills/fluid-design ~/.claude/skills/fluid-design`
+
+## Docs
+
+- [README.md](https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/README.md): overview, install, workflow, and repository map.
+- [skills/fluid-design/SKILL.md](https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/skills/fluid-design/SKILL.md): runtime router, workflow, artifact contract, and completion rules.
+- [docs/installation.md](https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/docs/installation.md): installation and verification by client.
+- [docs/usage.md](https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/docs/usage.md): activation boundary, routes, outputs, and completion.
+- [docs/recipes.md](https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/docs/recipes.md): representative starting prompts.
+
+## Reference inventory (`skills/fluid-design/references/`)
+
+- `example.md` — TODO: what job this reference answers.
+
+## Optional
+
+- [Visual guide](https://fluid-design-skill.vercel.app): the workflow, boundaries, and reference map on one page.
