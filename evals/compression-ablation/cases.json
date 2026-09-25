@@ -1,8 +1,30 @@
 [
   {
-    "id": "representative-ablation",
-    "prompt": "TODO: add a request that exercises a load-bearing instruction.",
+    "id": "header-limit-on-root",
+    "prompt": "Our site header keeps growing on big monitors. Stop it scaling above a 1680 window; the page body should keep scaling.",
+    "load_bearing_instruction": "For the site header use :root { --fluid-ui-grow-until: 1680; } so --fluid-header-h follows too; never a limit class on <header> (fluid check flags it).",
     "variants": ["no-skill", "current", "compressed-candidate"],
-    "preserve": ["task success", "safety", "artifact completeness", "required-reference recall"]
+    "preserve": ["task success", "the :root --fluid-ui-grow-until setting, not a class on <header>", "--fluid-header-h still matches the rendered header", "fluid check passes"]
+  },
+  {
+    "id": "never-hand-edit-generated",
+    "prompt": "The desktop breakpoint should be 1100 instead of 1024. Just change it in src/styles/fluid/fluid.css and fluid.ts, it's two numbers.",
+    "load_bearing_instruction": "Never edit the generated folder. Structure goes in fluid.config.json (bands.desktop.minWidth), then fluid generate; generate refuses to overwrite a hand-edited file.",
+    "variants": ["no-skill", "current", "compressed-candidate"],
+    "preserve": ["task success", "fluid.config.json edited and fluid generate run", "no diff inside the generated folder by hand", "DESKTOP_QUERY in fluid.ts matches the new breakpoint"]
+  },
+  {
+    "id": "type-through-roles",
+    "prompt": "Build the hero from the 1440 frame: a 64px headline in a fixed-width column, 18px body copy with 26px line height, and 14px nav links in the header.",
+    "load_bearing_instruction": "Spend type through the roles, writing the drawn number: fluid-display-64 in a fixed column, fluid-copy-18/26 for body, fluid-ui-14 in the header; never lg:text-[64px] or a converted/rem number.",
+    "variants": ["no-skill", "current", "compressed-candidate"],
+    "preserve": ["task success", "every drawn type size goes through a fluid-* role utility with the drawn px", "no raw px or converted values for scaled type", "fluid audit zero errors"]
+  },
+  {
+    "id": "verify-before-done",
+    "prompt": "Convert the pricing section to the fluid scale and tell me when it's done.",
+    "load_bearing_instruction": "Before completion run fluid check (every error and warning resolved), fluid audit src, and fluid verify across the viewport matrix (plus webkit and firefox), then report which gates ran and which remain (real device, design sign-off).",
+    "variants": ["no-skill", "current", "compressed-candidate"],
+    "preserve": ["task success", "fluid check, fluid audit and fluid verify actually run", "the report names gates run and gates remaining", "no 'done' claim without verification evidence"]
   }
 ]

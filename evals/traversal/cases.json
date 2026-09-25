@@ -1,8 +1,74 @@
 [
   {
-    "id": "primary-route",
-    "prompt": "TODO: add a request that selects one reference.",
-    "expected_references": ["references/example.md"],
-    "forbidden_references": []
+    "id": "greenfield-tailwind-sections",
+    "prompt": "New Next 16 + Tailwind v4 marketing site from a 1440x900 Figma frame and a 390 phone frame. Set up the scale and build the hero and a three-column features section so desktop matches the frame at every laptop size.",
+    "expected_references": ["references/preflight.md", "references/section-recipe.md", "references/frame-and-gutter.md", "references/typography.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/stacks.md", "references/ios-safari.md"]
+  },
+  {
+    "id": "safari-toolbar-safe-area",
+    "prompt": "fluid.config.json and FLUID.md already exist. On iPhone the full-height hero's bottom CTA sits under Safari's toolbar, the headline resizes while scrolling, and in landscape the notch overlaps the logo. Fix it.",
+    "expected_references": ["references/ios-safari.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/stacks.md", "references/media.md", "references/tokens-and-theming.md"]
+  },
+  {
+    "id": "blurry-images-2560",
+    "prompt": "Our fluid page is set up. On a 2560x1440 monitor the hero photo and the gallery images look soft and blurry, and Lighthouse complains about oversized images on phones. Fix the images.",
+    "expected_references": ["references/media.md", "references/performance.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/ios-safari.md", "references/tokens-and-theming.md", "references/stacks.md"]
+  },
+  {
+    "id": "existing-shadcn-cn",
+    "prompt": "We ran fluid init on our Next + shadcn/ui app. Button uses cn from src/lib/utils.ts, and className=\"lg:fluid-px-24\" on a Button that already has lg:fluid-px-40 ships both classes. Fix the merge.",
+    "expected_references": ["references/brownfield-migration.md"],
+    "forbidden_references": ["references/media.md", "references/ios-safari.md", "references/tokens-and-theming.md", "references/performance.md"]
+  },
+  {
+    "id": "convert-container-site",
+    "prompt": "Convert our existing Tailwind v4 site (every section wrapped in .container / max-w-7xl, px paddings and text-[64px] headings) onto the fluid scale, route by route, without breaking the pages we haven't converted yet.",
+    "expected_references": ["references/preflight.md", "references/brownfield-migration.md", "references/section-recipe.md", "references/frame-and-gutter.md"],
+    "forbidden_references": ["references/ios-safari.md", "references/media.md"]
+  },
+  {
+    "id": "scss-vite-stack",
+    "prompt": "Set up the fluid scale on a new Vite + plain TypeScript + SCSS site. No Tailwind, no React. We need the band mixins and the unit functions in our partials.",
+    "expected_references": ["references/preflight.md", "references/stacks.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/ios-safari.md", "references/media.md"]
+  },
+  {
+    "id": "stale-stylesheet-diagnosis",
+    "prompt": "After editing globals.css and restarting next dev, the pinned video on / holds its first frame and snaps to the end, and it went full-bleed. What's wrong with the scrub code?",
+    "expected_references": ["references/verification.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/section-recipe.md", "references/stacks.md", "references/media.md", "references/tokens-and-theming.md"]
+  },
+  {
+    "id": "row-over-budget",
+    "prompt": "In an existing fluid section, a row of five logo cards drawn at 1340px total doesn't fit inside the container at 1440 and wraps. Should I shrink the container padding?",
+    "expected_references": ["references/frame-and-gutter.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/ios-safari.md", "references/tokens-and-theming.md", "references/stacks.md"]
+  },
+  {
+    "id": "setting-exact-name",
+    "prompt": "What's the exact setting name and default for how much headings shrink on desktop compared with the layout? I just want to make them shrink less; the project is already set up.",
+    "expected_references": ["references/config.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/section-recipe.md", "references/media.md", "references/ios-safari.md"]
+  },
+  {
+    "id": "header-stops-scaling",
+    "prompt": "The fixed site header keeps growing on 2560 monitors. Stop the header scaling above a 1680 window while the rest of the page keeps scaling, and keep anchor offsets correct.",
+    "expected_references": ["references/fluid-scale.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/media.md", "references/stacks.md", "references/tokens-and-theming.md"]
+  },
+  {
+    "id": "dark-section-tokens",
+    "prompt": "Add a dark 'Security' section to our fluid Tailwind v4 site. The designer wants dark surfaces and light text for that section only; last time someone used dark: and it flipped for half our visitors.",
+    "expected_references": ["references/tokens-and-theming.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/ios-safari.md", "references/media.md", "references/stacks.md"]
+  },
+  {
+    "id": "browser-zoom-text",
+    "prompt": "Cmd+ zoom to 200% on a 27-inch monitor barely grows the text on our fluid site. Is that our bug, and how do we fix it without breaking the layout?",
+    "expected_references": ["references/typography.md", "references/fluid-scale.md"],
+    "forbidden_references": ["references/brownfield-migration.md", "references/media.md", "references/tokens-and-theming.md"]
   }
 ]
