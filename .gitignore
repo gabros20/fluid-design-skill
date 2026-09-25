@@ -6,3 +6,6 @@ dist/
 test-results/
 playwright-report/
 .orchestrate/archive/
+
+# skill-creator eval runs: local only (the definitions live in fluid-design/evals/)
+*-workspace/

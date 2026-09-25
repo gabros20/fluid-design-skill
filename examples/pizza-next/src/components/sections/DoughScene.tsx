@@ -1,5 +1,4 @@
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { FadeOnExit } from '@/motion/components/FadeOnExit'
 import { PullToCentre } from '@/motion/components/PullToCentre'
 import { ScrubStage, type BackdropStop, type CameraConfig } from '@/motion/components/ScrubStage'
@@ -83,7 +82,7 @@ export function DoughScene() {
           leaves so it never competes with the turning render. No background and
           no overflow-hidden on anything riding over the pin. */}
       <section data-header-theme="dark" className="flex h-svh items-start lg:items-center">
-        <div className={cn(FRAME, 'pt-[calc(var(--header-h)+48*var(--fluid))] lg:pt-0')}>
+        <div className={cn('fluid-container', 'pt-[calc(var(--fluid-header-h)+48*var(--fluid))] lg:pt-0')}>
           <FadeOnExit className="max-w-[560px] [--exit-from:0.08] [--exit-to:0.4] lg:fluid-cap-560">
             <Stage trigger="view">
               <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
@@ -119,7 +118,7 @@ export function DoughScene() {
         className="relative flex h-svh items-end fluid-pb-64 lg:items-center lg:pb-0"
       >
         <PullToCentre clamp="[data-scrub-stage]" />
-        <div className={cn(FRAME, 'flex justify-end')}>
+        <div className={cn('fluid-container', 'flex justify-end')}>
           <Stage trigger="view" className="max-w-[560px] lg:fluid-cap-560">
             <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
               <p className={EYEBROW}>The bake</p>

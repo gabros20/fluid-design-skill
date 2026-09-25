@@ -29,7 +29,7 @@ import { ENGAGE_QUERY, MOTION, prefersReducedMotion, registerEases, TRIGGERS } f
  * - `data-stage-repeat` (presence, any value) replays the group each time it
  *   re-enters instead of firing once.
  * - `data-stage-item` marks an element that starts in its CSS-authored
- *   hidden state (`motion.css`, keyed off `data-variant`) and animates to
+ *   hidden state (`animation.gsap.css`, keyed off `data-variant`) and animates to
  *   rest when its stage fires.
  * - `data-variant` — see `MOVEMENT` / `HAS_FADE` below; mirrors
  *   `entranceVariants` in the reference build's `lib/motion/variants.ts`.
@@ -45,7 +45,7 @@ import { ENGAGE_QUERY, MOTION, prefersReducedMotion, registerEases, TRIGGERS } f
 type Variant = 'drop' | 'settle' | 'settleFade' | 'lift' | 'liftFade' | 'growY' | 'growX'
 
 /** The property each variant moves. Distances live in the CSS the hidden
- * state was authored with (`--hero-drop` etc, `motion.css`) — GSAP reads the
+ * state was authored with (`--hero-drop` etc, `animation.gsap.css`) — GSAP reads the
  * element's current computed transform on first tween, so it animates FROM
  * whatever that CSS put there without needing the value repeated in JS. */
 const MOVEMENT: Record<Variant, gsap.TweenVars> = {
@@ -96,7 +96,7 @@ function playItem(el: HTMLElement, reduced: boolean): void {
   const move = MOVEMENT[variant]
 
   if (reduced) {
-    // Movement removed, opacity kept — the same rule `motion.css`'s
+    // Movement removed, opacity kept — the same rule `animation.gsap.css`'s
     // reduced-motion block applies to the pre-hydration hidden state.
     gsap.set(el, move)
   } else {
@@ -120,7 +120,7 @@ function resetItem(el: HTMLElement): void {
   const variant = isVariant(el.dataset.variant) ? el.dataset.variant : 'lift'
   gsap.set(el, { clearProps: 'transform,opacity' })
   // Clearing props drops back to the CSS-authored hidden state for this
-  // variant (motion.css), which is exactly the state a replay should start
+  // variant (animation.gsap.css), which is exactly the state a replay should start
   // from — nothing further to set here.
   void variant
 }

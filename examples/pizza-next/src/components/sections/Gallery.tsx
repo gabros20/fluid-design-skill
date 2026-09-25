@@ -1,8 +1,7 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { InViewLoopVideo } from '@/motion/components/InViewLoopVideo'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
@@ -28,7 +27,7 @@ const PHOTO_BOX = 'relative w-full overflow-clip rounded-[2px] bg-surface-sand'
 export function Gallery() {
   return (
     <section id="story" className="w-full bg-surface-page">
-      <div className={cn(FRAME, 'fluid-py-96 lg:fluid-py-160')}>
+      <div className={cn('fluid-container', 'fluid-py-96 lg:fluid-py-160')}>
         {/* Row 1: the oven, large, left; the dough hands offset down on the right. */}
         <div className="grid grid-cols-1 fluid-gap-48 lg:grid-cols-[minmax(0,780fr)_minmax(0,500fr)] lg:fluid-gap-x-80 lg:fluid-gap-y-0">
           <Stage trigger="view">

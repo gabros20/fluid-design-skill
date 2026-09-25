@@ -1,8 +1,20 @@
 # Typography on the fluid scale
 
-Read when: sizing any text from the breakpoint up, building a type scale, choosing fonts, or when a heading
-wraps differently from the design.
-Skip when: working on mobile-only type, which is ordinary responsive CSS.
+Read when: sizing any text through a `fluid-*` type utility, building a type scale, choosing fonts, or when a
+heading wraps differently from the design.
+Skip when: a size is plain Tailwind (`text-[15px]`, untouched by any `fluid-*` class) — that stays exactly what
+it says at every band, by design (`fluid-scale.md` §13).
+
+## Type units in v2
+
+Every entry in `roles` (default `["display", "copy"]`) gets its own damped unit and a
+`fluid-<role>-N/LH` utility — `fluid-display-*`, `fluid-copy-*`, and a custom role's own family the
+moment you add it to `roles[]` (`fluid-scale.md` §9; no hand-written CSS). `fluid-text-N/LH` is not a
+role — it is type on the plain `--fluid` unit, for a box that scales with the layout instead of
+holding a fixed measure, and it takes a share of browser zoom by size
+(`--fluid-zoom-text-full`/`-none`, settings, §Browser font-size below). `fluid-ui-text-N/LH` is the
+third family: header, nav and footer type, on `--fluid-ui`, which follows width and never shrinks for
+a short window (`fluid-scale.md` §6). All three take the `/lh` modifier.
 
 ## Choosing a unit: ask what the box around the text does
 
@@ -10,7 +22,8 @@ Skip when: working on mobile-only type, which is ordinary responsive CSS.
 Is it type?
 ├─ no  ───────────────────────────────→ --fluid        (fluid-p, fluid-h, fluid-w …)
 └─ yes
-   ├─ Its container is a FIXED width (a text measure, a page column)  → fluid-display-* (large) / fluid-copy-* (small)
+   ├─ Header, nav or footer chrome                                    → fluid-ui-text-*
+   ├─ Its container is a FIXED width (a text measure, a page column)  → fluid-display-* (large) / fluid-copy-* (small) / a custom role
    └─ Its container SCALES on --fluid (fluid-w-*, fluid-size-*, a cqw box) → fluid-text-*
 ```
 
@@ -21,7 +34,9 @@ a fixed `max-w-[753px]` measure is the opposite case and takes the gentle curve.
 
 **Display versus copy is a judgement about size, not role.** Display shrinks at 62% of the layout's rate, copy
 at 33%. Big type can afford to lose more; a 12px label cannot. Above the reference the two are equal,
-so the choice only matters on windows smaller than the reference.
+so the choice only matters on windows smaller than the reference. A third size tier that needs its own
+curve — an eyebrow label, a stat figure — is a third role, not a class-string hack on `copy`
+(`fluid-scale.md` §9); it starts at `copy`'s dampings (mobile 0.6, desktop 0.33) until you tune it.
 
 **Padding derived from a line box follows that line box.** A button is an 18px line box plus 16/24
 padding, so its padding spends `--fluid-copy` like its label does. On `--fluid` the label crowds its own
@@ -30,7 +45,10 @@ padding on a short window, where the two units diverge by up to 27%.
 ## The `/lh` modifier
 
 `lg:fluid-display-64/72` is 64px type on a 72px line box, both scaled by the same unit. Omit the modifier and
-only `font-size` is emitted. A unitless `leading-[1.2]` also works, and follows the size for free. Keep line
+only `font-size` is emitted. The modifier is drawn px like every number here, bare in 0.25 steps or
+bracketed (`/[26.5]`): `/1.2` is a 1.2px line box, not a ratio (`fluid audit` flags it as
+`fluid-leading-ratio`). For a ratio, a unitless `leading-[1.2]` next to the size works, and follows
+the size for free. Keep line
 boxes pinned to the drawn value when the font's natural metrics differ from the drawing. A body face
 that was once substituted (a wider, looser font) is why every run of type on the reference build pins its
 leading; after the correct face shipped, the pins simply agree with it.
@@ -58,13 +76,17 @@ Line-by-line entrances split at these authored breaks: see the `scroll-animation
 
 ## Type that must hold a drawn line count in an over-budget column
 
-Use `cqw` on the content box (`frame-and-gutter.md` §2): `64/1200 = 5.3333cqw`. That is exact at the canvas and
-keeps both lines at 1440, where `fluid-display-64` would give four lines.
+Use `cqw` on the content box (`frame-and-gutter.md` §2): `64/1200 = 5.3333cqw`. That is exact at the
+container's content box and keeps both lines at 1440, where `fluid-display-64` would give four lines.
 
 ## Variable-driven title ladders (mobile) plus fluid (desktop)
 
-For display type that must fit a phone width exactly, drive the size from a custom property per
-breakpoint and let the breakpoint rule take the fluid value:
+Since `bands.phone` is on by default, prefer plain `fluid-display-*` at the phone band's own drawn
+number over a hand-rolled ladder — that already covers 320–430 continuously (`fluid-scale.md` §13).
+Reach for this pattern only when a single width needs a number that is not the band's proportional
+value — a long word that would otherwise overflow at one exact breakpoint. For display type that must
+fit a phone width exactly, drive the size from a custom property per breakpoint and let the
+breakpoint rule take the fluid value:
 
 ```tsx
 className="text-[length:var(--title)] [--title:36px] min-[390px]:[--title:40px]
@@ -107,20 +129,29 @@ in `em` so it tracks the ink, and never on the chip, which would move the backgr
 These are two different things.
 
 - **The default font-size setting** (Settings → Appearance → Font size). The type units resolve in px
-  from the breakpoint up, so they ignore it there. This is deliberate: the composition's proportions
-  are the point. Do not add a rem-anchored twin. Mobile type, below the breakpoint, is ordinary CSS
-  and can use rem.
+  from a band's breakpoint up, so they ignore it there. This is deliberate: the composition's proportions
+  are the point. Do not add a rem-anchored twin. Mobile type, below the desktop breakpoint (with
+  `bands.phone: false`), is ordinary CSS and can use rem.
 - **Browser zoom** (Cmd/Ctrl +). This one must work: it is what WCAG 1.4.4 tests. Viewport-derived
-  type cancels zoom on its own, so the type units read a `--fluid-zoom` factor that
-  `assets/runtime/fluid-zoom.js` measures (`fluid-scale.md` §12, Browser zoom). Install the script,
-  and draw mobile body copy no smaller than its desktop reference size. Display and copy zoom fully;
-  `fluid-text-*` zooms fully up to 24px drawn and not at all from 48px (`zoomTextRange`), so a big
-  title in a scaled box holds its box while reading-size copy beside it still zooms.
+  type cancels zoom on its own, so the type units read a `--fluid-zoom` factor that the generated
+  `runtime/zoom.js` (from `assets/runtime/fluid-zoom.js`) measures (`fluid-scale.md` §12, Browser
+  zoom). Wire it up with `FluidHead`/`fluidPlugin` (`output.integration`) or `runtime/zoom.classic.js`
+first in `<head>`, and
+  draw mobile body copy no smaller than its desktop reference size. Display, copy and any custom role
+  zoom fully; `fluid-text-*` zooms fully up to `--fluid-zoom-text-full` drawn (default 24) and not at
+  all from `--fluid-zoom-text-none` (default 48) — both are live settings, so a project can tune the
+  share without a regenerate — so a big title in a scaled box holds its box while reading-size copy
+  beside it still zooms.
 
 ## Traps
-- [ ] The unit follows the container: `fluid-text-*` inside scaling boxes, never display type.
+- [ ] The unit follows the container: `fluid-text-*` inside scaling boxes, `fluid-ui-text-*` for
+  header/nav chrome, never display type for either.
 - [ ] Tracking in `em`; line boxes via `/lh` or unitless ratios.
 - [ ] `text-*` before `leading-*` in merged class strings; no `leading-*` in a cva base.
 - [ ] Hard breaks are breakpoint-scoped (or block spans); never trust the rendered wrap for a drawn break.
 - [ ] Shared atoms own their height contract; fluid is an opt-in prop.
-- [ ] `fluid-zoom.js` is inlined in `<head>`, and the verifier's zoom row passes.
+- [ ] The browser-zoom script (`FluidHead`/`fluidPlugin`/inline `runtime/zoom.js`) is wired up in
+  `<head>`, and `fluid verify <url>`'s zoom row passes.
+- [ ] A band's type damping is tuned as a setting (`--fluid-<band>-<role>-damping`), not by hand-typing
+  a different drawn number per breakpoint — each band already shrinks less than the layout on its own
+  curve (`fluid-scale.md` §13).

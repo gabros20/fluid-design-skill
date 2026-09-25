@@ -1,7 +1,6 @@
 import Image from 'next/image'
 
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { CountUp } from '@/motion/components/CountUp'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
@@ -30,7 +29,7 @@ const STATS = [
 export function CraftNumbers() {
   return (
     <section className="relative w-full overflow-clip bg-surface-sand">
-      <div className={cn(FRAME, 'relative fluid-pt-96 fluid-pb-160 lg:fluid-pt-160 lg:fluid-pb-240')}>
+      <div className={cn('fluid-container', 'relative fluid-pt-96 fluid-pb-160 lg:fluid-pt-160 lg:fluid-pb-240')}>
         {/* Decorations: behind the copy, never read by assistive tech. */}
         <Image
           src={scoop}

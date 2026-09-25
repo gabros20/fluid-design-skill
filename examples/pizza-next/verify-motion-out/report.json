@@ -1,0 +1,120 @@
+{
+  "url": "http://localhost:4317",
+  "generatedAt": "2026-09-24T20:19:33.436Z",
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "mobile": false,
+      "checks": {
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "scenes": {
+          "pass": true,
+          "total": 1,
+          "scenes": [
+            {
+              "index": 0,
+              "base": {
+                "top": 1564,
+                "range": 2700
+              },
+              "steps": [
+                {
+                  "progress": 0,
+                  "motionState": "tail",
+                  "scrollY": 4265,
+                  "screenshot": "scene-0-progress-0.png"
+                },
+                {
+                  "progress": 0.25,
+                  "motionState": "tail",
+                  "scrollY": 4263,
+                  "screenshot": "scene-0-progress-0.25.png"
+                },
+                {
+                  "progress": 0.5,
+                  "motionState": "tail",
+                  "scrollY": 4263,
+                  "screenshot": "scene-0-progress-0.5.png"
+                },
+                {
+                  "progress": 0.75,
+                  "motionState": "tail",
+                  "scrollY": 4263,
+                  "screenshot": "scene-0-progress-0.75.png"
+                },
+                {
+                  "progress": 1,
+                  "motionState": "tail",
+                  "scrollY": 4264,
+                  "screenshot": "scene-0-progress-1.png"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mobile": true,
+      "checks": {
+        "reveal": {
+          "pass": true,
+          "total": 54,
+          "hidden": []
+        },
+        "scenes": {
+          "pass": true,
+          "total": 1,
+          "scenes": [
+            {
+              "index": 0,
+              "base": {
+                "top": 1332.65625,
+                "range": 2532
+              },
+              "steps": [
+                {
+                  "progress": 0,
+                  "motionState": "tail",
+                  "scrollY": 3865,
+                  "screenshot": "scene-0-progress-0.png"
+                },
+                {
+                  "progress": 0.25,
+                  "motionState": "tail",
+                  "scrollY": 3865,
+                  "screenshot": "scene-0-progress-0.25.png"
+                },
+                {
+                  "progress": 0.5,
+                  "motionState": "tail",
+                  "scrollY": 3865,
+                  "screenshot": "scene-0-progress-0.5.png"
+                },
+                {
+                  "progress": 0.75,
+                  "motionState": "tail",
+                  "scrollY": 3865,
+                  "screenshot": "scene-0-progress-0.75.png"
+                },
+                {
+                  "progress": 1,
+                  "motionState": "tail",
+                  "scrollY": 3865,
+                  "screenshot": "scene-0-progress-1.png"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

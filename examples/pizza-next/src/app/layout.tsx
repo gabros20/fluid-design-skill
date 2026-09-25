@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Jost } from 'next/font/google'
 import type { ReactNode } from 'react'
 
-import { FLUID_ZOOM_INLINE } from '@/lib/fluid-zoom.js'
 import { MotionProvider } from '@/motion/components/MotionProvider'
+import { FluidHead } from '@/styles/fluid/integrations/next'
 
 import './globals.css'
 
@@ -23,9 +23,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${jost.variable} ${dmSans.variable}`}>
       <head>
-        {/* Browser zoom compensation for the fluid type units (fluid-scale.md §12). Inline in
-            <head> so a zoomed page's first paint already has the right type size. */}
-        <script dangerouslySetInnerHTML={{ __html: FLUID_ZOOM_INLINE }} />
+        {/* Browser-zoom compensation for fluid type: first in <head>, before first paint. */}
+        <FluidHead />
         {/* The reveal safety net: every StageItem is SSR'd hidden. Without JS nothing reveals it. */}
         <noscript>
           <style>{`[data-stage-item]{opacity:1!important;transform:none!important}[data-stage-veil]{display:none!important}`}</style>

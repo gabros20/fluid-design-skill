@@ -48,46 +48,80 @@ unique rule per element (CSS-in-JS generating one class per instance, inline sty
 nine times more style recalculation, a whole frame per step. Scrolling costs nothing either way.
 Evidence and harness: the repository's `docs/review-2026-09/`.
 
+**WebKit, and why the unit mirrors don't inherit.** `fluidPx(n, unit, el)` reads a unit at an
+element through a registered `<length>` mirror (`--_fluid-m-<unit>`) that the engine sets on
+`:root` and every scope. Its value depends on the viewport. Registered with `inherits: true`, it
+made WebKit re-resolve it on every element on every resize. Measured on a 2,000-element page with
+50 limit scopes, main-thread time per resize step:
+
+| Mirrors | WebKit (width / height) | Chromium |
+|---|--:|--:|
+| inherited (before) | 44.9 / 58.9 ms | about 5 ms |
+| not inherited (now) | 11.3 / 9.5 ms | about 5 ms |
+| none at all | 10.3 / 8.6 ms | about 5 ms |
+
+A non-inherited property costs nothing on elements that don't declare it, so the mirrors are
+`inherits: false` with `initial-value: 0px`, and `fluidPx` walks up from `el` to the first ancestor
+whose mirror is non-zero: one `getComputedStyle` per ancestor, on that call path only. Cache the
+result per frame, not per tween tick.
+
+**Registered intermediates.** Every private parameter that doesn't depend on the viewport is
+registered as a `<number>`: the band mapping (`--_fluid-base-w`, `--_fluid-min`, the dampings, the
+knee…) and the limit and `off` arithmetic (`--_fluid-min-x`, `--_fluid-max-x`…). Each one computes
+once to a plain number where it's declared, on `:root` or a scope. The long unit formulas then carry
+numbers instead of re-expanding every parameter on every element that spends a unit. It's the
+opposite of the mirrors: these never change on resize, so being inherited costs nothing. The page
+is the same 2,000 elements (30 classes × 4 declarations), timed per resize step:
+
+| Intermediates | WebKit | Chromium |
+|---|--:|--:|
+| unregistered | 9.8–10.2 ms | 7.7–7.9 ms |
+| registered `<number>` (now) | 7.8–8.4 ms | 5.0–5.1 ms |
+
+`scripts/test/resize-perf.mjs` guards both findings in WebKit and Chromium. It checks that 50 limit
+scopes cost at most 1.6× the same page without them (the inherited mirrors measured 2.2× there), and
+it runs in `npm run test:browsers` and CI.
+
 ## 2. No `dvh` thrash
 
 `dvh` tracks the mobile toolbar's collapse animation live. Anything sized or scaled in `dvh`
 re-lays-out on every frame of that animation, and if the scale itself were on `dvh`, every
 `fluid-*` value on the page (type included) would resize while the reader scrolls. The scale is on
 `svh` for exactly this reason (`fluid-scale.md` §3, invariant 3). Full-height boxes use `svh`, or
-`lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/audit.mjs` flags `dvh-on-scaled`.
+`lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/tools/audit.mjs` flags `dvh-on-scaled`.
 
 ## 3. Image `sizes` on a page that grows
 
 A fixed-width site can describe an image slot with a px cap. A fluid page cannot: above the
-reference the frame grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), so every slot inside
-it grows too. A `sizes` value written against the drawn canvas tells the browser the slot is smaller
+reference the container grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), so every slot inside
+it grows too. A `sizes` value written against the drawn container tells the browser the slot is smaller
 than it is, the browser picks a smaller candidate, and the image renders upscaled and soft on
 exactly the large displays the scale was built for.
 
-Worked numbers at the defaults (canvas 1680, gutter 80, reference 1440×900, no ceiling), for an
-image drawn at half the frame:
+Worked numbers at the defaults (container 1680, padding 80, reference 1440×900, no ceiling), for an
+image drawn at half the container:
 
-| Viewport | f | Frame (≤ viewport) | Half-frame slot | `sizes` of `840px` says | `50vw` says |
+| Viewport | f | Container (≤ viewport) | Half-container slot | `sizes` of `840px` says | `50vw` says |
 |---|---|---|---|---|---|
 | 1440×900 | 1.00 | 1440 | 720 | 840 (fine) | 720 |
 | 1680×900 | 1.00 | 1680 | 840 | 840 | 840 |
 | 2560×1440 | 1.60 | 2560 | 1280 | 840: **1.5× short** | 1280 |
-| a window wide enough to hold the grown frame, f = 1.6 | 1.60 | 2688 (1680·1.6) | **1344** | 840: **1.6× short** | ≥ 1344 |
-| 2560×700 (short, wide) | 0.78 | 1680 (the cap never shrinks) | 840 | 840 | 1280 (over, costs bytes only) |
+| a window wide enough to hold the grown container, f = 1.6 | 1.60 | 2688 (1680·1.6) | **1344** | 840: **1.6× short** | ≥ 1344 |
+| 2560×700 (short, wide) | 0.78 | 1680 (the max-width never shrinks) | 840 | 840 | 1280 (over, costs bytes only) |
 
 So a half-width image at f = 1.6 is about **1344px** wide in CSS pixels, and about 2688 device
 pixels on a 2× display. That is where the "re-export at about 3000 wide" advice in
 `preflight.md` §5 comes from.
 
-- **Write `sizes` in `vw` above the engage breakpoint**, as the fraction of the viewport the slot
-  occupies when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The frame is never wider than
+- **Write `sizes` in `vw` above the desktop band's breakpoint**, as the fraction of the viewport the slot
+  occupies when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The container is never wider than
   the viewport, so `vw` is always at least the slot; it overestimates only when height binds,
-  which costs bytes, never sharpness. Subtract the gutter only if the bytes matter
-  (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled gutter is `80·f`).
+  which costs bytes, never sharpness. Subtract the padding only if the bytes matter
+  (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled padding is `80·f`).
 - **`sizes` cannot read `var(--fluid)`.** It is parsed before any stylesheet, so custom properties
   and the `fluid-*` utilities mean nothing there. Express the slot in `vw` and `px` only.
-- **Ship candidates up to twice the largest slot**, or set a `ceiling` (`fluid-scale.md` §7). With
-  `ceiling: 1.5` the half-frame slot stops at 1260.
+- **Ship candidates up to twice the largest slot**, or set `--fluid-desktop-scale-max`
+  (`fluid-scale.md` §7). At 1.5 the half-container slot stops at 1260.
 - Framework image components (`next/image` and friends) take the same `sizes` string; the default
   `100vw` is only correct for a full-bleed image.
 - Reserve every image's box so the scale's own resize never shifts content: see `media.md` §2.
@@ -134,7 +168,7 @@ Enforceable numeric targets, worth wiring into CI rather than trusting review to
 
 ## Traps
 
-- ★ A `sizes` px cap written against the drawn canvas: the slot is 1.5–1.6× larger at 2560 and the
+- ★ A `sizes` px cap written against the drawn container: the slot is 1.5–1.6× larger at 2560 and the
   image renders soft (§3).
 - ★ `content-visibility: auto` on anything that is measured zeroes its geometry (§5).
 - `var(--fluid)` inside `sizes`: it is never resolved there (§3).

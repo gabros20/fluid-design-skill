@@ -2,11 +2,11 @@
 // DISTANCE: a GSAP tween's x, a ScrollTrigger end, a canvas font size, a
 // Motion transform. CSS spends the units through calc(); script cannot,
 // because --fluid is an unregistered custom property and getPropertyValue
-// returns its formula text ("max(0.58px, min(…))"), not a number.
+// returns its formula text, not a number.
 //
 //   fluidPx(600)             600 drawn px on --fluid, in CSS px right now
-//   fluidPx(24, 'copy')      on --fluid-copy (display, copy, chrome too)
-//   fluidUnits()             { fluid, display, copy, chrome } px per drawn px
+//   fluidPx(24, 'copy')      on --fluid-copy (any role, or 'ui')
+//   fluidUnits()             { fluid, display, copy, ui, … } px per drawn px
 //   onFluidChange(cb)        cb(units) whenever any unit changes; returns unsubscribe
 //
 // How it reads them: one hidden, fixed-position probe per unit, sized
@@ -19,7 +19,10 @@
 //
 // Without the fluid-design stylesheet every unit reads 1 (`var(--fluid, 1px)`
 // fallbacks), and on the server (no document) too, so distances stay plain
-// reference px rather than NaN.
+// reference px rather than NaN. Changing a setting (--fluid-phone-scale-min,
+// …) resizes the probes, so onFluidChange fires for that too.
+//
+// `fluid generate` writes this file with UNITS set to the project's roles.
 //
 // With GSAP, pass FUNCTIONS so ScrollTrigger re-reads them on refresh
 // (which it already does on resize):
@@ -28,16 +31,18 @@
 // With Motion, the scroll-animation skill's useFluidUnit() wraps this in a
 // MotionValue. Both skills' references/fluid-interop.md have the recipes.
 
-var UNITS = ['fluid', 'display', 'copy', 'chrome']
-var VARS = {
-  fluid: 'var(--fluid, 1px)',
-  display: 'var(--fluid-display, var(--fluid, 1px))',
-  copy: 'var(--fluid-copy, var(--fluid, 1px))',
-  chrome: 'var(--fluid-chrome, var(--fluid, 1px))'
+var UNITS = ['fluid', 'display', 'copy', 'ui'] // @fluid-units
+var VARS = {}
+var ONE = {}
+for (var u = 0; u < UNITS.length; u++) {
+  VARS[UNITS[u]] = UNITS[u] === 'fluid' ? 'var(--fluid, 1px)' : 'var(--fluid-' + UNITS[u] + ', var(--fluid, 1px))'
+  ONE[UNITS[u]] = 1
 }
-var ONE = { fluid: 1, display: 1, copy: 1, chrome: 1 }
+// v1 name for the ui unit.
+var ALIASES = { chrome: 'ui' } // @fluid-aliases
 
 var probes = null
+var observer = null
 var cache = null
 var dirty = true
 var listeners = new Set()
@@ -61,12 +66,15 @@ function ensureProbes() {
   dirty = true
 
   if (typeof ResizeObserver !== 'undefined') {
-    var ro = new ResizeObserver(function () {
-      var before = cache
-      measure()
-      if (!before || changed(before, cache)) notify()
-    })
-    for (var j = 0; j < UNITS.length; j++) ro.observe(els[UNITS[j]])
+    // One observer: probes rebuilt (a framework replaced <body>) re-use it.
+    if (observer) observer.disconnect()
+    else
+      observer = new ResizeObserver(function () {
+        var before = cache
+        measure()
+        if (!before || changed(before, cache)) notify()
+      })
+    for (var j = 0; j < UNITS.length; j++) observer.observe(els[UNITS[j]])
   }
   if (!resizeWired) {
     resizeWired = true
@@ -84,7 +92,7 @@ function measure() {
     var w = p.els[UNITS[i]].getBoundingClientRect().width / 1000
     next[UNITS[i]] = w > 0 && isFinite(w) ? w : 1
   }
-  cache = next
+  cache = Object.freeze(next)
   dirty = false
   return cache
 }
@@ -100,17 +108,33 @@ function notify() {
   })
 }
 
-/** Every unit in CSS px per drawn px: { fluid, display, copy, chrome }. */
+/** Every unit in CSS px per drawn px: { fluid, display, copy, ui, … }. */
 export function fluidUnits() {
   if (typeof document === 'undefined') return ONE
   ensureProbes()
   return dirty || !cache ? measure() : cache
 }
 
-/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport. */
-export function fluidPx(n, unit) {
+/** `n` drawn px on `unit` (default 'fluid'), in CSS px at the current viewport.
+ * Pass `el` to read the unit as it applies AT that element: inside a limit or
+ * a scope (fluid-grow-until-1680, fluid-off, fluid-scope, an SCSS mixin
+ * scope) the units differ from the page's. The engine sets a registered,
+ * NON-inherited length (--_fluid-m-<unit>, 0px elsewhere) on :root and every
+ * scope, so this walks up from `el` to the first element that has one: one
+ * getComputedStyle per ancestor, so cache it per frame, not per tween tick.
+ * Without @property (Firefox < 128) the mirror is never a length, and this
+ * falls back to the page's units. */
+export function fluidPx(n, unit, el) {
   if (n === undefined) n = 1
-  return n * fluidUnits()[unit || 'fluid']
+  var key = ALIASES[unit] || unit || 'fluid'
+  if (UNITS.indexOf(key) < 0) throw new Error('fluid-units: unknown unit "' + unit + '" (known: ' + UNITS.join(', ') + ')')
+  if (el && typeof getComputedStyle !== 'undefined') {
+    for (var e = el; e && e.nodeType === 1; e = e.parentElement) {
+      var v = parseFloat(getComputedStyle(e).getPropertyValue('--_fluid-m-' + key))
+      if (v > 0 && isFinite(v)) return (n * v) / 1000
+    }
+  }
+  return n * fluidUnits()[key]
 }
 
 /** Call `cb(units)` whenever any unit changes. Returns an unsubscribe function. */

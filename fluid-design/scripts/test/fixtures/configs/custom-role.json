@@ -1,0 +1,1 @@
+{ "$schema": "../../../assets/fluid.config.schema.json", "version": 2, "roles": ["display", "copy", "caption"] }

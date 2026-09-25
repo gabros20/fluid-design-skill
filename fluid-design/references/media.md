@@ -18,7 +18,7 @@ viewport units a full-bleed picture uses.
 
 ## 1. Size media in fluid units; CSS owns width and height
 
-Media drawn in the frame is drawn geometry like anything else: write the drawn number through a
+Media drawn in the container is drawn geometry like anything else: write the drawn number through a
 fluid utility (`lg:fluid-w-512`, `lg:fluid-h-46`, `lg:fluid-size-24`), or give it a fraction of a
 scaling box. A logo, icon or photo frozen at its px size while the gaps around it scale changes the
 drawing's proportions (`section-recipe.md` checklist item 6).
@@ -45,7 +45,7 @@ budget ≤ 0.1, `performance.md` §6), and a one-screen section's fit changes un
 
 - `sizes` must allow for growth above the reference, and cannot read `var(--fluid)`: write it in
   `vw`. Worked numbers are in `performance.md` §3 (a half-width image at f = 1.6 is about 1344px wide).
-- Ship candidates up to about twice the largest slot, or set a `ceiling` (`fluid-scale.md` §7). A
+- Ship candidates up to about twice the largest slot, or set `--fluid-desktop-scale-max` (`fluid-scale.md` §7). A
   1920-wide raster upscales about 1.3× on a 27" 5K.
 - Art direction (a different crop per breakpoint) is `<picture>` with `<source media>`; it
   re-evaluates on resize, unlike a video's `<source media>`.
@@ -110,7 +110,7 @@ sizes correctly in Chromium. Drop `width`/`height` attributes from the SVG sourc
 size it from a CSS class (paired with an `aspect-[W/H]` utility matching the `viewBox`, so
 `h-* w-auto` resolves the width correctly in every engine) rather than fighting layer order.
 
-`scripts/audit.mjs` flags `<img src="….svg">` (`img-svg`).
+`scripts/tools/audit.mjs` flags `<img src="….svg">` (`img-svg`).
 
 ## 5. The video element: rendering only
 
@@ -191,7 +191,7 @@ video (§1), so the two register exactly at every scale.
   whole graphic to nothing (§4.1).
 - An SVG's own `width`/`height` attributes beat a layered utility class sizing it in Safari — strip
   them at import time (§4.4).
-- A `sizes` px cap written against the canvas: the image renders soft above the reference (§3).
+- A `sizes` px cap written against the container: the image renders soft above the reference (§3).
 - Media with no reserved box: layout shift, and a one-screen section that overflows until it loads (§2).
 - A video without `muted playsInline` goes fullscreen or refuses to start on iOS (§5.1).
 - A poster pulled from the pre-encode master, not the delivered file, visibly mismatches the decoded

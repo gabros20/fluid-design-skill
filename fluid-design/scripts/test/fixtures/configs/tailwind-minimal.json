@@ -1,0 +1,1 @@
+{ "$schema": "../../../assets/fluid.config.schema.json", "version": 2, "prefix": "fd", "aliases": true, "tailwind": { "variants": false, "breakpoints": "none", "utilities": { "negative": false, "logical": false, "basis": false, "scroll": false, "space": false, "rounded": false } } }

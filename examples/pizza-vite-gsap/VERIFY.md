@@ -11,7 +11,7 @@ because they are large and reproducible.
   and 96.4 kB of JS (37.5 kB gzip, mostly GSAP).
 
 ## 2. Audit: 1 error, a false positive in the skill's generated file (see SKILL-FEEDBACK #10)
-`node ../../fluid-design/scripts/audit.mjs src` → `verify-out/audit-src.txt`:
+`node ../../fluid-design/scripts/tools/audit.mjs src` → `verify-out/audit-src.txt`:
 one `length-times-unit` error at `src/styles/fluid/scss/_fluid.scss:39`. That line is the
 generator's own `@error "…64px * var(--fluid)…"` message string, in a do-not-edit generated
 file. No hand-written file has a finding. Scanning the project root (which adds `index.html`)
@@ -91,13 +91,13 @@ disjoint files to split.
 Brought onto the post-review system (`docs/REVIEW-2026-09.md`):
 - `fluid.config.json`: `zoomCompensation: true`, `zoomTextRange: [24, 48]`; `src/styles/fluid/`
   regenerated (SCSS layer and the render-only `shared/base.css`).
-- `src/motion/motion-base.css` (from the `scroll-animation` skill) carries the motion half the old
+- `src/styles/animation/animation.css` + `animation.gsap.css` (from the `scroll-animation` skill) carries the motion half the old
   `base.css` held; imported right after it in `src/main.ts`.
 - `src/lib/fluid-zoom.js` (+ `.d.ts`) inlined at the top of `<head>` by a small Vite plugin in
   `vite.config.ts` (`transformIndexHtml`), because a `<script type="module">` is deferred and a
   zoomed page would paint small type first.
 
-`verify-matrix.mjs` on `vite preview`: full matrix PASS (including the ceiling viewport), zoom row
+`verify.mjs` on `vite preview`: full matrix PASS (including the ceiling viewport), zoom row
 with `--zoom-selector 'main p'` (the hero copy, `fluid-type(16, 22, text)`):
 
 | Window | 125% | 150% | 200% |
@@ -171,3 +171,25 @@ column); landscape tablets (1024+) take the desktop design. `fluid.config.json` 
 See it: DevTools device mode, then iPhone SE → 15 → Pro Max (same composition, slightly larger),
 rotate to landscape (a touch larger, centred), iPad Air portrait (larger still, centred column),
 iPad landscape (the desktop design).
+
+## fluid-design v2, added 2026-09-24
+
+Migrated with `fluid migrate --write`, then `fluid generate --stack scss`. `fluid.config.json` is
+now the v2 shape (`version: 2`, `bands`, `output: { stack: "scss", integration: "vite" }`); the
+three non-default numbers this build carries (container width/padding, growth ceiling) moved from
+`fluid.config.json` (`canvas`, `ceiling`) to three `--fluid-desktop-*` CSS variables set in
+`main.scss`'s own `:root`. The generated SCSS layer moved from `src/styles/fluid/scss/_fluid.scss`
+(`@use 'fluid/scss/fluid' as fd`) plus a hand-copied `shared/base.css` to one generated folder,
+`src/styles/fluid/` (`@use 'fluid' as fd`, with `src/styles` on the Sass `loadPaths`), imported
+once from `main.ts` (`import './styles/fluid/fluid.css'`). `fd.fluid-up` is now `fd.fluid-desktop`
+(`fluid-up` still works as an alias). Browser-zoom inlining moved from a hand-written Vite plugin
+reading `src/lib/fluid-zoom.js` to `fluidPlugin()` (`src/styles/fluid/integrations/vite`). No
+visual or behavioural change was intended by the migration; the checks below confirm none
+happened.
+
+- **verify-matrix:** PASS in Chromium, WebKit and Firefox, including the real-zoom row.
+- **Geometry:** identical to the pre-migration (v1) build at 9 of 10 verified viewports. The
+  exception is 320×568, where type differs by 0.3% — v1 rounded its phone floor to 2 decimals,
+  v2's knee computes it exactly (`fluid-design/references/config.md`, "The engine"). Not a
+  regression; the more precise number is v2's.
+- **verify-motion:** `--reveal --scenes --anchors` PASS.

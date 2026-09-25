@@ -1,0 +1,51 @@
+{
+  "name": "fluid-design-cli",
+  "version": "2.0.0",
+  "description": "Viewport-fluid design scale for any site: one small JSON for structure, every tuning number a CSS variable. Generates for Tailwind v4, CSS, SCSS and StyleX. The `fluid` CLI of the fluid-design agent skill.",
+  "keywords": [
+    "fluid",
+    "responsive",
+    "viewport",
+    "design-system",
+    "tailwindcss",
+    "css",
+    "scss",
+    "stylex",
+    "typography",
+    "agent-skill"
+  ],
+  "homepage": "https://github.com/gabros20/fluid-design-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabros20/fluid-design-skill.git",
+    "directory": "fluid-design"
+  },
+  "bugs": "https://github.com/gabros20/fluid-design-skill/issues",
+  "license": "MIT",
+  "author": "Tamás Gábor",
+  "type": "module",
+  "bin": {
+    "fluid": "bin/fluid"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "!scripts/test",
+    "!scripts/dev",
+    "!scripts/lib/v1-math.mjs",
+    "!scripts/README.md",
+    "assets",
+    "references",
+    "SKILL.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node scripts/dev/generate-fluid.mjs --check && node scripts/test/cli.mjs && node scripts/tools/audit.mjs --selftest && node scripts/test/zoom-detect.mjs",
+    "test:browsers": "cd ../examples/pizza-next && node ../../fluid-design/scripts/test/engine-matrix.mjs && node ../../fluid-design/scripts/test/tailwind-compile.mjs && node ../../fluid-design/scripts/test/explain-live.mjs && node ../../fluid-design/scripts/test/resize-perf.mjs && cd ../pizza-vite-gsap && node ../../fluid-design/scripts/test/scss-browser.mjs",
+    "generate": "node scripts/dev/generate-fluid.mjs",
+    "build:bin": "node scripts/dev/build-bin.mjs --smoke"
+  }
+}

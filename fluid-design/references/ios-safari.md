@@ -15,7 +15,7 @@ real device or the matching iOS Simulator; see `verification.md` §3–§4.
 ## Contents
 
 1. [`svh` vs `lvh` vs `dvh`](#1-svh-vs-lvh-vs-dvh)
-2. [`--browser-bar` and safe areas](#2---browser-bar-and-safe-areas)
+2. [`--fluid-browser-bar` and safe areas](#2---fluid-browser-bar-and-safe-areas)
 3. [The iOS 26 toolbar tint — current policy and what's superseded](#3-the-ios-26-toolbar-tint--current-policy-and-whats-superseded)
 4. [No body background, no forced theme-color](#4-no-body-background-no-forced-theme-color)
 5. [The hero overshoot](#5-the-hero-overshoot)
@@ -60,28 +60,30 @@ so it covers the whole physical screen, while the content wrapper *inside* it pa
 own height so copy still lands in the visible area:
 
 ```css
-:root { --browser-bar: calc(100lvh - 100svh); }   /* 0 on desktop — every rule below is then a no-op */
+/* emitted by the engine (§2): 0 on desktop, so every rule below is then a no-op */
+--fluid-browser-bar: calc(100lvh - 100svh);
 ```
 
 ```tsx
 <section className="relative min-h-[100lvh] overflow-hidden">
   <Image fill className="object-cover" … />
   <div className="relative z-10 flex h-full flex-col
-                  pt-[calc(58px+var(--safe-top))]
-                  pb-[calc(24px+var(--browser-bar)+var(--safe-bottom))]">
+                  pt-[calc(58px+var(--fluid-safe-top))]
+                  pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom))]">
     …
   </div>
 </section>
 ```
 
-## 2. `--browser-bar` and safe areas
+## 2. `--fluid-browser-bar` and safe areas
+
+The engine emits these on `:root` and every scope (namespaced, so a site's own `--safe-top` is left
+alone; the un-prefixed names exist only as aliases with `aliases: true`):
 
 ```css
-:root {
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --browser-bar: calc(100lvh - 100svh);
-}
+--fluid-safe-top: env(safe-area-inset-top, 0px);
+--fluid-safe-bottom: env(safe-area-inset-bottom, 0px);
+--fluid-browser-bar: calc(100lvh - 100svh);
 ```
 
 **`env()` needs a fallback inside `calc()`, always.** An `env()` reference the engine doesn't
@@ -95,12 +97,12 @@ with no `env()` support at all — where the padding silently disappears rather 
 
 **Safe-area insets describe the screen (notch, home indicator), not the browser chrome.** The
 collapsible toolbar is not a safe-area inset, so `env(safe-area-inset-bottom)` alone does not clear
-it — content that must sit above the URL bar needs `--browser-bar` too. A footer padded only by
+it — content that must sit above the URL bar needs `--fluid-browser-bar` too. A footer padded only by
 `safe-area-inset-bottom` still sits its last line under the URL bar on a phone.
 
 A `position: fixed` element inset from an edge (a header at `top: 24px`) is 24px from the
 **physical** screen edge once `viewport-fit: cover` is active — inside the status bar, not below it.
-The inset wanted is *below the chrome*: `top: calc(24px + var(--safe-top))`. If that element carries
+The inset wanted is *below the chrome*: `top: calc(24px + var(--fluid-safe-top))`. If that element carries
 a full-bleed backdrop, pull the backdrop up by the same term so it still reaches the physical top, or
 page content shows through the gap above it.
 
@@ -212,8 +214,8 @@ entirely:
 <section className="relative min-h-[100lvh] overflow-hidden
     max-lg:supports-[-webkit-touch-callout:none]:min-h-[calc(100lvh+60px)]">
   <Image fill className="object-cover" … />
-  <div className="… pb-[calc(24px+var(--browser-bar)+var(--safe-bottom))]
-      max-lg:supports-[-webkit-touch-callout:none]:pb-[calc(24px+var(--browser-bar)+var(--safe-bottom)+60px)]">
+  <div className="… pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom))]
+      max-lg:supports-[-webkit-touch-callout:none]:pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom)+60px)]">
     …
   </div>
 </section>
@@ -242,8 +244,9 @@ with zero scroll range on the visible axis: when one axis is set non-visible, th
 silently behaves as `static`. Use `overflow-x: clip` on ancestors; it suppresses the same overflow
 without the side effect. A root-level `overflow-x: hidden` on `<html>` itself is safe, because
 nothing sits above it to be turned into an intermediate scroll container — the trap is specifically
-an *ancestor between the root and the sticky element*. That is why `assets/styles/shared/base.css`
-puts the guard on `html` and never on `body`.
+an *ancestor between the root and the sticky element*. That is why the generated `base.css` — written
+into your fluid output folder (`output.dir`) by `fluid generate`, and imported by `fluid.css` as
+`layer(base)` when `output.base` is on — puts the guard on `html` and never on `body`.
 
 Sticky is also fragile to ancestor `transform` and to anything else that creates a containing block
 — audit every ancestor. **The render-safe sticky rule: never put `transform` or `overflow-x: hidden`
@@ -278,39 +281,10 @@ per-component one — set it once on the document root (`base.css` does).
 
 ## 9. The stale stylesheet
 
-**This is almost always the actual cause of "the scroll-driven video/pin is broken" or "the layout
-lost its sizes" reports, and it's worth checking before touching any scrub or layout code.** A dev server pushes CSS over its HMR socket;
-restarting the server kills that socket, and a tab that was already open does **not** reliably
-re-fetch the stylesheet on reconnect — it keeps serving the previous one from memory. **Safari holds
-this hardest of any engine:** a plain reload (⌘R-equivalent) often re-runs the page against the
-*cached* CSS, so the reload appears not to work, while simply closing the tab and opening a new one
-fixes it instantly.
-
-**The trigger is always the same pair:** the stylesheet changed on disk **and** the server restarted
-while a tab stayed open.
-
-**Why the symptom looks exactly like a motion/pin bug rather than a stylesheet bug:** any
-framework-specific utility class defined via an at-rule (Tailwind v4's `@utility`, for instance) is
-still present in the rendered HTML with no rule behind it once the stylesheet goes stale — the class
-name is there, the CSS that gives it meaning isn't. A missing size/height utility on a pinned scene's
-frame produces exactly the symptom "the pin holds the first frame, then snaps to the last" (near-zero
-travel because the section collapsed to `height: auto`), which reads like a scroll-math bug and sends
-a debugging session into the wrong file entirely.
-
-**The check**, before reading any scroll-math code: read back a CSS custom property from the fluid
-scale (or any similarly recently-touched stylesheet variable) via `getComputedStyle` in the console.
-A fresh, correctly-formed value (matching the current source) means keep debugging elsewhere; an
-empty string or an older/different form of the same expression means stop — the stylesheet is stale,
-not the code.
-
-**The fix:** close the tab, open a fresh one. If the symptom survives that, `rm -rf .next` (or the
-framework's equivalent build cache) and restart the dev server. **Closing the tab fixing it is proof
-the underlying code was fine all along** — a genuine logic bug doesn't care which tab is open.
-
-**After any change to a global stylesheet:** restart the dev server and open a fresh tab before
-judging what's on screen. Utility definitions declared via at-rules specifically only exist in a
-freshly rebuilt stylesheet — there's no partial-HMR path for them the way there sometimes is for
-plain property values.
+Safari is where it shows hardest: after a CSS edit and a dev-server restart, a plain reload often
+re-runs the page against the cached stylesheet, and a pinned scene or a sized section looks broken
+while the code is fine. The mechanism, the `--fluid-build` check and the fix (close the tab, then
+`rm -rf .next` and restart) are in `verification.md` §6. Rule it out before debugging anything here.
 
 ## 10. Verification discipline
 
@@ -343,6 +317,6 @@ plain property values.
 - The iOS overshoot applied to a plain layout container, or without the matching 60px padback (§5).
 - `maximumScale: 1` flipped in or out without recording which trade-off it solved (§7).
 - A restarted dev server plus an already-open tab is stale CSS, not a scroll-math or layout bug —
-  check `getComputedStyle` before debugging (§9).
+  check the build stamp before debugging (`verification.md` §6).
 - SVG traps (`<img src=*.svg>`, duplicate `clipPath` ids, `<g transform>`, width/height attributes)
   are in `media.md` §SVG.

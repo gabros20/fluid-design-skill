@@ -1,9 +1,10 @@
-// Order matters: the stack-agnostic base layer, then the motion layer's
-// pre-JS resting states, then the page.
-import './styles/fluid/shared/base.css'
-// The motion half of the old base.css, from the scroll-animation skill since the split.
-import './motion/motion-base.css'
-import './motion/motion.css'
+// Order matters: fluid-design (units, settings, base layer), then the motion
+// layer's pre-JS resting states, then the page.
+import './styles/fluid/fluid.css'
+// The scroll-animation skill's CSS, one folder beside styles/fluid: the base
+// (both engines), then the GSAP engine's pre-JS resting states.
+import './styles/animation/animation.css'
+import './styles/animation/animation.gsap.css'
 import './styles/main.scss'
 
 import gsap from 'gsap'

@@ -1,19 +1,46 @@
 {
   "$schema": "./fluid.config.schema.json",
+  "version": 2,
   "prefix": "fluid",
-  "reference": { "width": 1440, "height": 900 },
-  "canvas": { "width": 1680, "gutter": 80 },
-  "engageAt": 1024,
-  "heightAxis": true,
-  "units": {
-    "fluid": { "floor": 0.58 },
-    "display": { "damping": 0.62, "floor": "auto" },
-    "copy": { "damping": 0.33, "floor": "auto" },
-    "chrome": { "enabled": true }
+  "bands": {
+    "phone": {
+      "enabled": true
+    },
+    "tablet": {
+      "enabled": true,
+      "minWidth": 600
+    },
+    "landscape": {
+      "enabled": true,
+      "maxHeight": 500
+    },
+    "desktop": {
+      "minWidth": 1024
+    }
   },
-  "ceiling": null,
-  "mobile": { "enabled": false, "reference": 390, "min": 0.85, "max": 1.25 },
-  "utilities": { "negative": true, "logical": true, "basis": true, "scroll": true, "space": true, "rounded": true },
-  "zoomCompensation": true,
-  "zoomTextRange": [24, 48]
+  "roles": [
+    "display",
+    "copy"
+  ],
+  "ui": true,
+  "zoom": true,
+  "output": {
+    "dir": "src/styles/fluid",
+    "stack": "tailwind-v4",
+    "base": true,
+    "integration": "none"
+  },
+  "tailwind": {
+    "breakpoints": "ladder",
+    "variants": true,
+    "utilities": {
+      "negative": true,
+      "logical": true,
+      "basis": true,
+      "scroll": true,
+      "space": true,
+      "rounded": true
+    }
+  },
+  "aliases": false
 }

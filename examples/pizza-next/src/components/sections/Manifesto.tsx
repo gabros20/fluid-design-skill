@@ -1,5 +1,4 @@
-import { FRAME } from '@/lib/frame'
-import { cn } from '@/lib/cn'
+import { cn } from '@/styles/fluid/cn'
 import { Stage, StageItem } from '@/motion/components/Stage'
 
 /**
@@ -20,7 +19,7 @@ const LINES = [
 export function Manifesto() {
   return (
     <section className="w-full bg-surface-cream">
-      <div className={cn(FRAME, 'fluid-py-96 lg:fluid-py-180')}>
+      <div className={cn('fluid-container', 'fluid-py-96 lg:fluid-py-180')}>
         <Stage trigger="view" className="mx-auto max-w-[1120px] text-center">
           <StageItem variant="liftFade" className="[--hero-lift:16px] lg:[--hero-lift:24px]">
             <p className="fluid-copy-11 font-medium tracking-[0.24em] text-text-accent-ink uppercase lg:fluid-copy-12/16">

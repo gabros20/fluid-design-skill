@@ -1,19 +1,24 @@
 // Forno Aurelia — page styles on the fluid scale (SCSS stack).
 //
 // Every drawn desktop number goes through a unit function inside
-// `fd.fluid-up`: fluid() for layout, fluid-text() for type whose box scales,
-// fluid-display()/fluid-copy() for type in a fixed measure, fluid-chrome()
+// `fd.fluid-desktop`: fluid() for layout, fluid-text() for type whose box scales,
+// fluid-display()/fluid-copy() for type in a fixed measure, fluid-ui()
 // for the header and footer. Mobile (< engageAt) spends the same unit
 // functions, drawn at the 390px phone frame's numbers (the mobile arm,
 // fluid-scale.md §13). Off the scale on purpose: borders, radii, em
 // tracking, fixed text measures, entrance distances.
 
-@use 'fluid/scss/fluid' as fd;
+@use 'fluid' as fd;
 @use 'tokens';
 
-// ── Units ─────────────────────────────────────────────────────────────
+// ── Fluid settings ────────────────────────────────────────────────────
+// The units themselves come from fluid/fluid.css (imported in main.ts).
+// This site's desktop container is 1600 wide with 64 padding, and the scale
+// stops growing at 1.6×. Every setting: fluid/settings.reference.css.
 :root {
-  @include fd.fluid-units;
+  --fluid-desktop-scale-max: 1.6;
+  --fluid-desktop-container-width: 1600;
+  --fluid-desktop-container-padding: 64;
 }
 
 // ── The frame ─────────────────────────────────────────────────────────
@@ -22,7 +27,7 @@
 // and gutter at the breakpoint. The border-box reset it relies on ships in
 // shared/base.css, imported ahead of this file in main.ts.
 .frame {
-  @include fd.fluid-frame;
+  @include fd.fluid-container;
 }
 
 body {
@@ -60,7 +65,7 @@ em {
   text-transform: uppercase;
   color: var(--text-accent);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(13, 16, copy);
   }
 
@@ -70,7 +75,7 @@ em {
 }
 
 // ── Load veil ─────────────────────────────────────────────────────────
-// motion.css positions it and holds it opaque; the colour is ours.
+// animation.gsap.css positions it and holds it opaque; the colour is ours.
 .veil {
   background: var(--surface-light);
 }
@@ -83,7 +88,7 @@ em {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
-  padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
+  padding-top: calc(#{fd.fluid(24)} + var(--fluid-safe-top));
   color: var(--header-ink, var(--text-heading));
   transition: color 0.3s linear;
   pointer-events: none;
@@ -92,8 +97,8 @@ em {
     --header-ink: var(--text-inverse);
   }
 
-  @include fd.fluid-up {
-    padding-top: calc(#{fd.fluid(24)} + var(--safe-top));
+  @include fd.fluid-desktop {
+    padding-top: calc(#{fd.fluid(24)} + var(--fluid-safe-top));
   }
 }
 
@@ -101,36 +106,36 @@ em {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: fd.fluid-chrome(34);
+  height: fd.fluid-ui(34);
   pointer-events: auto;
 
-  @include fd.fluid-up {
-    height: fd.fluid-chrome(48);
-    gap: fd.fluid-chrome(40);
+  @include fd.fluid-desktop {
+    height: fd.fluid-ui(48);
+    gap: fd.fluid-ui(40);
   }
 }
 
 .wordmark {
-  font-size: fd.fluid-chrome(20);
+  font-size: fd.fluid-ui(20);
   line-height: 1;
   font-weight: 500;
   letter-spacing: -0.02em;
   text-decoration: none;
 
-  @include fd.fluid-up {
-    font-size: fd.fluid-chrome(24);
+  @include fd.fluid-desktop {
+    font-size: fd.fluid-ui(24);
   }
 }
 
 .site-nav {
   display: none;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     display: flex;
-    gap: fd.fluid-chrome(40);
+    gap: fd.fluid-ui(40);
     margin-left: auto;
-    font-size: fd.fluid-chrome(15);
-    line-height: fd.fluid-chrome(20);
+    font-size: fd.fluid-ui(15);
+    line-height: fd.fluid-ui(20);
 
     a {
       text-decoration: none;
@@ -139,17 +144,17 @@ em {
 }
 
 .site-header__cta {
-  font-size: fd.fluid-chrome(14);
-  line-height: fd.fluid-chrome(18);
-  padding: fd.fluid-chrome(7) fd.fluid-chrome(16);
+  font-size: fd.fluid-ui(14);
+  line-height: fd.fluid-ui(18);
+  padding: fd.fluid-ui(7) fd.fluid-ui(16);
   border: 1px solid currentColor;
   border-radius: 999px;
   text-decoration: none;
 
-  @include fd.fluid-up {
-    font-size: fd.fluid-chrome(15);
-    line-height: fd.fluid-chrome(20);
-    padding: fd.fluid-chrome(10) fd.fluid-chrome(22);
+  @include fd.fluid-desktop {
+    font-size: fd.fluid-ui(15);
+    line-height: fd.fluid-ui(20);
+    padding: fd.fluid-ui(10) fd.fluid-ui(22);
   }
 }
 
@@ -165,7 +170,7 @@ em {
   // Mobile: the SCREEN is the height, in svh, with a landscape floor.
   min-height: max(640px, 100svh);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     min-height: 0;
     height: fd.fluid(900);
   }
@@ -178,10 +183,10 @@ em {
   align-items: center;
   gap: fd.fluid(24);
   min-height: max(640px, 100svh);
-  padding-top: calc(var(--header-h) + #{fd.fluid(40)});
+  padding-top: calc(var(--fluid-header-h) + #{fd.fluid(40)});
   padding-bottom: fd.fluid(48);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     display: block;
     min-height: 0;
     height: 100%;
@@ -203,7 +208,7 @@ em {
   // scale by rule; a percentage radius is not a length to scale).
   border-radius: 50% 50% 0 0 / 100% 100% 0 0;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     width: fd.fluid(1120);
     height: fd.fluid(560);
     max-height: none;
@@ -219,7 +224,7 @@ em {
   text-align: center;
   color: var(--text-heading);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     position: absolute;
     top: fd.fluid(118);
     left: 0;
@@ -247,7 +252,7 @@ em {
     filter: drop-shadow(0 18px 24px rgb(60 30 10 / 0.25));
   }
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     position: absolute;
     left: 50%;
     top: fd.fluid(300);
@@ -279,7 +284,7 @@ em {
   text-align: center;
   color: var(--text-body);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     position: absolute;
     bottom: fd.fluid(96);
     width: fd.fluid(272);
@@ -313,7 +318,7 @@ em {
 
   // A control: its label AND the padding derived from its line box spend
   // --fluid-copy together, or the label crowds its padding on a short window.
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     position: absolute;
     top: fd.fluid(352);
     right: fd.fluid(64);
@@ -328,7 +333,7 @@ em {
   background: var(--surface-light);
   padding-block: fd.fluid(96);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     padding-block: fd.fluid(160) fd.fluid(180);
   }
 }
@@ -341,7 +346,7 @@ em {
   gap: fd.fluid(20);
   max-width: 1100px;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     max-width: fd.fluid-cap(1100);
     gap: fd.fluid(28);
   }
@@ -357,7 +362,7 @@ em {
     display: block;
   }
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(68, 76, display);
   }
 }
@@ -367,7 +372,7 @@ em {
   background: var(--surface-flour);
   padding-block: fd.fluid(80);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     padding-block: fd.fluid(140);
   }
 }
@@ -378,7 +383,7 @@ em {
   gap: fd.fluid(16);
   margin-bottom: fd.fluid(40);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(20);
     margin-bottom: fd.fluid(64);
   }
@@ -390,7 +395,7 @@ em {
   letter-spacing: -0.03em;
   color: var(--text-heading);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(64, 72, display);
   }
 }
@@ -412,7 +417,7 @@ em {
   // Stating the grid's own width on --fluid (the drawn 1472 content width,
   // clamped to the frame) keeps both sides of the comparison on one scale
   // (SKILL-FEEDBACK.md #6).
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     width: fd.fluid(1472);
     max-width: 100%;
     grid-template-columns: repeat(auto-fill, minmax(min(#{fd.fluid(296)}, 100%), 1fr));
@@ -426,7 +431,7 @@ em {
   flex-direction: column;
   gap: fd.fluid(10);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(12);
   }
 }
@@ -446,7 +451,7 @@ em {
     filter: drop-shadow(0 10px 14px rgb(60 30 10 / 0.18));
   }
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     margin-bottom: fd.fluid(8);
   }
 }
@@ -457,7 +462,7 @@ em {
   align-items: baseline;
   gap: fd.fluid(12);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(12);
   }
 }
@@ -468,7 +473,7 @@ em {
   letter-spacing: -0.01em;
   color: var(--text-heading);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(22, 28, text);
   }
 }
@@ -478,7 +483,7 @@ em {
   color: var(--text-accent);
   font-variant-numeric: tabular-nums;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(18, 28, text);
   }
 }
@@ -487,7 +492,7 @@ em {
   @include fd.fluid-type(15, 22, copy);
   color: var(--text-muted);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(15, 22, text);
   }
 }
@@ -498,7 +503,7 @@ em {
   color: var(--text-inverse);
   padding-block: fd.fluid(96);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     padding-block: fd.fluid(160);
   }
 }
@@ -519,7 +524,7 @@ em {
   gap: fd.fluid(40) fd.fluid(20);
   margin-top: fd.fluid(40);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     width: fd.fluid(1312);
     max-width: 100%;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -535,7 +540,7 @@ em {
   padding-top: fd.fluid(16);
   border-top: 1px solid var(--border-inverse);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(16);
     padding-top: fd.fluid(24);
   }
@@ -550,7 +555,7 @@ em {
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(8);
     @include fd.fluid-type(128, 120, text);
   }
@@ -562,7 +567,7 @@ em {
   letter-spacing: 0;
   color: var(--text-accent-inverse);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     font-size: fd.fluid-text(24);
   }
 }
@@ -571,7 +576,7 @@ em {
   @include fd.fluid-type(14, 20, copy);
   color: var(--text-muted-inverse);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     width: fd.fluid(240);
     max-width: 100%;
     @include fd.fluid-type(16, 22, text);
@@ -579,7 +584,7 @@ em {
 }
 
 // ── 5. The scroll scene ───────────────────────────────────────────────
-// motion.css owns the pin (sticky, 100lvh) and the -100lvh cancel on the
+// animation.gsap.css owns the pin (sticky, 100lvh) and the -100lvh cancel on the
 // content wrapper. Nothing here may put a transform, overflow or
 // content-visibility on the scene or its ancestors.
 .scene {
@@ -611,7 +616,7 @@ em {
 .act__frame {
   padding-block: fd.fluid(96);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     padding-block: fd.fluid(120);
   }
 }
@@ -622,7 +627,7 @@ em {
   gap: fd.fluid(16);
   max-width: 560px;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     gap: fd.fluid(20);
     max-width: fd.fluid-cap(640);
   }
@@ -633,7 +638,7 @@ em {
   font-weight: 300;
   letter-spacing: -0.03em;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     @include fd.fluid-type(60, 66, display);
   }
 }
@@ -643,14 +648,19 @@ em {
   color: var(--text-muted-inverse);
   max-width: 440px;
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     max-width: fd.fluid-cap(460);
     @include fd.fluid-type(18, 28, copy);
   }
 }
 
-// ── 6. Footer (site chrome, --fluid-chrome) ───────────────────────────
+// ── 6. Footer (site chrome, --fluid-ui) ───────────────────────────────
+// The footer's ui stops growing past a 1920 window (the page keeps scaling
+// to its 1.6 ceiling): the mixin makes .footer a scope, so fd.fluid-ui()
+// inside it reads the limited unit. A subtree limit, not :root, because
+// only the footer should hold.
 .footer {
+  @include fd.fluid-ui-grow-until(1920);
   background: var(--surface-dark);
   color: var(--text-inverse);
   border-top: 1px solid var(--border-inverse);
@@ -659,78 +669,78 @@ em {
 .footer__frame {
   display: flex;
   flex-direction: column;
-  gap: fd.fluid-chrome(48);
-  padding-block: fd.fluid-chrome(72) fd.fluid-chrome(32);
+  gap: fd.fluid-ui(48);
+  padding-block: fd.fluid-ui(72) fd.fluid-ui(32);
 
-  @include fd.fluid-up {
-    gap: fd.fluid-chrome(80);
-    padding-block: fd.fluid-chrome(112) fd.fluid-chrome(40);
+  @include fd.fluid-desktop {
+    gap: fd.fluid-ui(80);
+    padding-block: fd.fluid-ui(112) fd.fluid-ui(40);
   }
 }
 
 .footer__cols {
   display: grid;
   grid-template-columns: 1fr;
-  gap: fd.fluid-chrome(32);
+  gap: fd.fluid-ui(32);
 
-  @include fd.fluid-up {
+  @include fd.fluid-desktop {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: fd.fluid-chrome(32);
+    gap: fd.fluid-ui(32);
   }
 }
 
 .footer__col {
   display: flex;
   flex-direction: column;
-  gap: fd.fluid-chrome(10);
-  font-size: fd.fluid-chrome(15);
-  line-height: fd.fluid-chrome(22);
+  gap: fd.fluid-ui(10);
+  font-size: fd.fluid-ui(15);
+  line-height: fd.fluid-ui(22);
   color: var(--text-muted-inverse);
 
   a {
     text-decoration: none;
   }
 
-  @include fd.fluid-up {
-    gap: fd.fluid-chrome(12);
-    font-size: fd.fluid-chrome(16);
-    line-height: fd.fluid-chrome(24);
+  @include fd.fluid-desktop {
+    gap: fd.fluid-ui(12);
+    font-size: fd.fluid-ui(16);
+    line-height: fd.fluid-ui(24);
   }
 }
 
 .footer__heading {
-  font-size: fd.fluid-chrome(12);
-  line-height: fd.fluid-chrome(16);
+  font-size: fd.fluid-ui(12);
+  line-height: fd.fluid-ui(16);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-accent-inverse);
 
-  @include fd.fluid-up {
-    font-size: fd.fluid-chrome(13);
-    line-height: fd.fluid-chrome(16);
+  @include fd.fluid-desktop {
+    font-size: fd.fluid-ui(13);
+    line-height: fd.fluid-ui(16);
   }
 }
 
 .footer__mark {
-  font-size: fd.fluid-chrome(64);
+  font-size: fd.fluid-ui(64);
   line-height: 1;
   font-weight: 300;
   letter-spacing: -0.05em;
   color: var(--text-inverse);
 
-  @include fd.fluid-up {
-    font-size: fd.fluid-chrome(200);
+  @include fd.fluid-desktop {
+    font-size: fd.fluid-ui(200);
   }
 }
 
 .footer__small {
-  font-size: fd.fluid-chrome(12);
-  line-height: fd.fluid-chrome(16);
+  font-size: fd.fluid-ui(12);
+  line-height: fd.fluid-ui(16);
   color: var(--text-muted-inverse);
 
-  @include fd.fluid-up {
-    font-size: fd.fluid-chrome(13);
-    line-height: fd.fluid-chrome(18);
+  @include fd.fluid-desktop {
+    font-size: fd.fluid-ui(13);
+    line-height: fd.fluid-ui(18);
   }
 }
