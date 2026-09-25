@@ -30,8 +30,8 @@
 // (which it already does on resize):
 //   gsap.to(el, { x: () => fluidPx(600), scrollTrigger: { scrub: true, invalidateOnRefresh: true,
 //                 end: () => '+=' + fluidPx(1800) } })
-// With Motion, the scroll-animation skill's useFluidUnit() wraps this in a
-// MotionValue. Both skills' references/fluid-interop.md have the recipes.
+// With Motion, wrap fluidPx() in a MotionValue and update it from
+// onFluidChange. references/fluid-scale.md §11 has the details.
 
 var UNITS = ['fluid', 'display', 'copy', 'ui'] // @fluid-units
 var VARS = {}

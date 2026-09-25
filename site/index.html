@@ -429,10 +429,6 @@
   .bound ul{margin:0; padding-left:18px; font-size:13.5px; color:var(--muted); line-height:1.6}
   .bound ul b{color:var(--ink)}
   @media (max-width:720px){ .bound{grid-template-columns:1fr} }
-  .meet{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px}
-  .meet div{border:1px dashed var(--accent); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--muted); background:var(--panel)}
-  .meet b{display:block; font-family:ui-monospace,Menlo,monospace; color:var(--ink); font-size:12.5px; margin-bottom:2px}
-  @media (max-width:720px){ .meet{grid-template-columns:1fr} }
 
   /* details / appendix */
   details.disc{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:0; margin-top:14px}
@@ -1064,7 +1060,7 @@ const s = stylex.create({
       <dt class="reflabel"><svg class="lu" aria-hidden="true"><use href="#lu-ruler"/></svg>the model<span class="ct">2</span></dt>
       <dd class="refchips">
         <span class="ref"><code><a href="https://github.com/gabros20/fluid-design-skill/blob/main/skills/fluid-design/references/fluid-scale.md">fluid-scale.md</a></code><span class="d">the unit and its arms, the knee, ui, scopes and limits, zoom, the bands</span></span>
-        <span class="ref"><code><a href="https://github.com/gabros20/fluid-design-skill/blob/main/skills/fluid-design/references/contract.md">contract.md</a></code><span class="d">the checked vocabulary: browser floor, utilities, <code>fluid.ts</code> exports, the <code>scroll-animation</code> interface</span></span>
+        <span class="ref"><code><a href="https://github.com/gabros20/fluid-design-skill/blob/main/skills/fluid-design/references/contract.md">contract.md</a></code><span class="d">the checked vocabulary: browser floor, utilities, <code>fluid.ts</code> exports, what motion code reads</span></span>
       </dd>
     </div>
     <div class="refrow" id="r-section">
@@ -1177,16 +1173,9 @@ README.md · CHANGELOG.md · LICENSE</div>
       </ul></div>
     <div class="side no"><h3><svg class="lu" aria-hidden="true"><use href="#lu-ban"/></svg>not this skill</h3>
       <ul>
-        <li><b>Motion</b>: triggered entrances, pinned and scrubbed scenes, scroll wells, video playback, GSAP and Lenis coexistence. That is <a href="https://github.com/gabros20/scroll-animation-skill">scroll-animation</a>.</li>
         <li><b>A breakpoint ladder with <code>clamp()</code> type</b> (Utopia-style "make it responsive"): a different model, one pair per property.</li>
         <li><b>A colour system or a component library.</b> The tokens reference covers only where tokens live next to the settings and the traps that compile clean.</li>
       </ul></div>
-  </div>
-  <p style="margin-top:18px">Each works alone. Together they meet at three points, all owned here (<a href="https://github.com/gabros20/fluid-design-skill/blob/main/skills/fluid-design/references/contract.md#7-the-interface-with-scroll-animation">contract.md §7</a>):</p>
-  <div class="meet">
-    <div><b>DESKTOP_QUERY</b>the desktop breakpoint, <code>bands.desktop.minWidth</code>, imported from the generated <code>fluid.ts</code>, never retyped</div>
-    <div><b>--fluid-header-h</b>the fixed header's resting height: anchor offsets, sticky tops and header-ink probes read it</div>
-    <div><b>translate</b><code>fluid-translate-*</code> writes <code>translate</code>, so Motion's <code>transform</code> composes with it; drawn travel scales through <code>fluidPx()</code></div>
   </div>
 </section>
 

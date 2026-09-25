@@ -6,8 +6,7 @@ overscroll, and device verification discipline.
 **Read when:** anything full-height, sticky or edge-to-edge is about to ship, or a device report
 says "it looks wrong on iPhone."
 **Skip when:** the change is desktop-only and doesn't touch layout. SVG rules live in `media.md`;
-anything that moves (a pin's scroll maths, video playback, a mask sweep) lives in the
-`scroll-animation` skill, `references/ios-safari-motion.md`.
+anything that moves (a pin's scroll maths, video playback, a mask sweep) is outside this skill.
 **Inputs:** the full-height, sticky or edge-to-edge elements, the viewport meta tag, and any device
 report.
 **Produces:** unit and structure choices that render right on iPhone, and the checks only a real
@@ -48,8 +47,7 @@ bar collapses and expands on scroll.
 
 **Ordinary one-screen sections, and the fluid scale's own height arm (`fluid-scale.md` §3), stay on
 `svh`** — a scroll mid-gesture must not resize their type. A pinned scene's sticky box is the
-exception and uses `lvh` with a matching `lvh` negative margin: see the `scroll-animation` skill,
-`references/scroll-scenes.md` §The pin pattern. `dvh` is right for almost nothing in this system: it
+exception and uses `lvh` with a matching `lvh` negative margin. `dvh` is right for almost nothing in this system: it
 tracks the toolbar animation live, which is a layout thrash on exactly the surfaces (a pinned
 render, a scaled type ramp) that can least afford one.
 
@@ -191,8 +189,8 @@ useEffect(() => {
 Fastest way to prove the mechanism is wired correctly before trusting it: temporarily set the strips
 to `height: 40px; background: red`, confirm red shows in the actual chrome on a device, then revert.
 
-A full-viewport sticky **pinned scene** is a different case with a device-verified negative result
-(do not re-chase it): see the `scroll-animation` skill, `references/ios-safari-motion.md`.
+A full-viewport sticky **pinned scene** is a different case with a device-verified negative result:
+its toolbar tint is accepted as it is. Do not re-chase it.
 
 ## 4. No body background, no forced theme-color
 
@@ -201,7 +199,7 @@ unrelated: under the current policy (§3a), **nothing** paints a global `body`/`
 **nothing** sets a global `theme-color`. If a future change needs the toolbar tinted for a specific
 route or section again, reach for the scoped overlay pattern (§3b) or a per-route/per-section CSS
 variable driven by whatever already resolves the page's dominant colour (a header-theme probe, if
-the `scroll-animation` skill installed one, is a natural signal to reuse) — never reintroduce a
+the project has one, is a natural signal to reuse) — never reintroduce a
 blanket global background as the first move.
 
 ## 5. The hero overshoot
@@ -257,8 +255,8 @@ into your fluid output folder (`output.dir`) by `fluid generate`, and imported b
 
 Sticky is also fragile to ancestor `transform` and to anything else that creates a containing block
 — audit every ancestor. **The render-safe sticky rule: never put `transform` or `overflow-x: hidden`
-on a sticky ancestor.** (The stricter animation form, "nothing animates a transform on a sticky,
-scene or video ancestor", is the `scroll-animation` skill's.)
+on a sticky ancestor.** (Motion code has a stricter form: nothing animates a transform on a sticky,
+scene or video ancestor.)
 
 ## 7. `maximumScale` vs. the 16px input rule
 
@@ -281,9 +279,9 @@ solving for.
 
 `overscroll-behavior: none` on the root element kills the rubber-band/elastic overscroll effect at
 scroll boundaries. The render reason, which is this skill's: with no `body` background (§4), a
-rubber-band bounce would expose the bare canvas past the page edge as a gap; `none` removes it. The
-second reason (momentum bouncing past a boundary feeds jitter into whatever reads scroll position
-for a pin or a latch) is the `scroll-animation` skill's. This is a global layout decision, not a
+rubber-band bounce would expose the bare canvas past the page edge as a gap; `none` removes it. It also
+stops momentum bouncing past a boundary from feeding jitter into whatever reads scroll position
+for a pin or a latch. This is a global layout decision, not a
 per-component one — set it once on the document root (`base.css` does).
 
 ## 9. The stale stylesheet
@@ -307,8 +305,6 @@ while the code is fine. The mechanism, the `--fluid-build` check and the fix (cl
   2560px) on any change to the fluid scale or a full-height section's geometry — several of the bugs in this
   document are invisible at or below the design reference width and only appear once a viewport
   exceeds it.
-- Device discipline for video compositing and scroll behaviour (play watchdog, toolbar-collapse
-  feedback into scroll maths) is in the `scroll-animation` skill, `references/ios-safari-motion.md`.
 
 ## Traps
 

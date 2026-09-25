@@ -8,7 +8,7 @@ description: >-
   screen", "match the Figma at every size", fluid type, clamp()/vw/svh sizing, fluid Tailwind, CSS,
   SCSS or StyleX tokens, iOS Safari viewport bugs, media sizing, browser zoom, or a page that looks
   broken after a CSS edit and a dev-server restart (a stale stylesheet), even if nobody says
-  "fluid". Not for animation: use scroll-animation.
+  "fluid". Not for animation.
 ---
 
 # Fluid design
@@ -25,15 +25,11 @@ This skill is extracted from a production marketing site. Most of its rules were
 bug, and the reference files say which one. When a rule seems fussy, read its why before bending
 it; the cheap-looking alternative has usually already been tried and removed.
 
-This skill contains no animation. It makes the page the right size; the companion
-`scroll-animation` skill makes it move: triggered entrances, pinned and scrubbed scenes, scroll
-wells, video playback, header ink, motion performance and verification, coexistence with GSAP,
-Lenis and header scripts. Each works alone. Recommend `scroll-animation` when the request needs
-motion; do not invoke it silently. The two meet at three points, all owned here
-([contract.md](references/contract.md) §7):
+This skill contains no animation: it makes the page the right size. Motion code in the project
+reads three things from it, all owned here ([contract.md](references/contract.md) §7):
 
 - **The desktop breakpoint.** `bands.desktop.minWidth`, emitted as `DESKTOP_QUERY` in the generated
-  `fluid.ts`. `scroll-animation` imports it rather than keeping its own number.
+  `fluid.ts`. Motion code imports it rather than keeping its own number.
 - **`--fluid-header-h`.** The fixed header's resting height (header settings). Anchor offsets, sticky
   tops and header-ink probes read it (`--header-h` is its v1 name, emitted only with `aliases: true`).
 - **The `translate` property.** `fluid-translate-*` writes `translate`, so Motion's per-frame
@@ -59,7 +55,7 @@ motion; do not invoke it silently. The two meet at three points, all owned here
 | Colour and semantic tokens, stack traps | [tokens-and-theming.md](references/tokens-and-theming.md) | tokens in `globals.css`, the traps that compile clean and render wrong |
 | Converting an existing site, or a v1 fluid-design project | [brownfield-migration.md](references/brownfield-migration.md) | `fluid migrate`, route-by-route conversion, an existing `cn` |
 | Tailwind v4 vs CSS, SCSS, StyleX and CSS Modules | [stacks.md](references/stacks.md) | the authoring surface per stack |
-| Browser floor per stack; exact emitted names, utilities, variants, `fluid.ts` exports, `data-*` attributes, the `scroll-animation` interface | [contract.md](references/contract.md) | the checked vocabulary |
+| Browser floor per stack; exact emitted names, utilities, variants, `fluid.ts` exports, `data-*` attributes, what motion code reads | [contract.md](references/contract.md) | the checked vocabulary |
 | Any image, SVG or `<video>` element: sizing, reserving, Safari SVG rules, posters | [media.md](references/media.md) | media sized and reserved in fluid units |
 | Anything mobile, Safari, full-height, sticky, or the toolbar tint | [ios-safari.md](references/ios-safari.md) | iOS render fixes and the device-only checks |
 | Before shipping: image `sizes` on a growing page, fonts, budgets | [performance.md](references/performance.md) | the render budget |
@@ -109,8 +105,8 @@ default; ask only where the codebase does not already answer it and the choice m
 - **Growth ceiling**: none by default (`--fluid-desktop-scale-max`). Set one if assets cannot survive upscaling.
 - **Browser zoom**: compensated (default). Needs one head script (`output.integration: next | vite` generates it).
 
-Installed motion libraries (Motion, GSAP, Lenis, a header script) are noted in `FLUID.md` for the
-`scroll-animation` skill and left alone here. Record the decisions in `fluid.config.json` and a
+Installed motion libraries (Motion, GSAP, Lenis, a header script) are noted in `FLUID.md` and left
+alone. Record the decisions in `fluid.config.json` and a
 short `FLUID.md` decision log.
 
 ### 2. Install
@@ -211,7 +207,7 @@ Semantic tokens (surface, text, border, icon roles) alias a brand ramp, inline i
 components use the roles, never the ramp. [tokens-and-theming.md](references/tokens-and-theming.md)
 has the traps that compile cleanly and render wrong. Media: [media.md](references/media.md) (Safari
 SVG rules, reserving boxes, posters) and [performance.md](references/performance.md) (`sizes` on a
-page that grows past the artboard). How a video *plays* is the `scroll-animation` skill.
+page that grows past the artboard). How a video *plays* is out of scope.
 
 ### 6. Verify at a matrix of viewports, never one
 
@@ -262,9 +258,8 @@ Verify at a matrix of viewports, never one:
   zoom row. Run it again with `--browser webkit` and `--browser firefox`.
 - At 1440×900 the page must match the design pixel for pixel. That point is the calibration check.
 - iOS toolbar tint, `lvh` shortfall and safe areas can only be verified on a real device.
-- Reveal, scene and anchor checks are the `scroll-animation` skill's `verify-motion`.
 
 Before completion, report which gates ran and which remain (a real device, a design sign-off), and
-record decisions and open questions in `FLUID.md`. When motion work follows, hand off to
-`scroll-animation` with `fluid.config.json`, `FLUID.md` and the three meeting points above
-(`DESKTOP_QUERY`, `--fluid-header-h`, the `translate` property) rather than restating them.
+record decisions and open questions in `FLUID.md`. When motion work follows, point it at
+`fluid.config.json`, `FLUID.md` and the three points above (`DESKTOP_QUERY`, `--fluid-header-h`,
+the `translate` property) rather than restating them.

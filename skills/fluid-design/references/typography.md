@@ -93,7 +93,7 @@ headline read three lines on one laptop and hung "ON" off the first line on anot
 
 Use a breakpoint-scoped hard break for drawn line breaks: `<br className="hidden lg:inline" />`, or
 author each drawn line as a block span. Never rely on the rendered wrap to reproduce a drawn break.
-Line-by-line entrances split at these authored breaks: see the `scroll-animation` skill.
+Line-by-line entrances split at these authored breaks.
 
 ## Type that must hold a drawn line count in an over-budget column
 

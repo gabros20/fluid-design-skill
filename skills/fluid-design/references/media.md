@@ -5,7 +5,7 @@ SVG rendering rules, and posters.
 **Read when:** placing any image, inline SVG, logo, icon set or `<video>` on a fluid page, or a
 graphic renders empty, clipped, at the wrong size or soft in one engine only.
 **Skip when:** the question is how a video *plays* (scrubbing, loops, preload tiers, autoplay,
-tab-sleep, encoding for scrub or loops). That is the `scroll-animation` skill, `references/video.md`.
+tab-sleep, encoding for scrub or loops). That is outside this skill.
 **Inputs:** the media elements, their intrinsic sizes, and how the stack imports SVG.
 **Produces:** media sized in fluid units with reserved dimensions, Safari-safe SVG, and video
 element markup with a poster.
@@ -120,14 +120,14 @@ size it from a CSS class (paired with an `aspect-[W/H]` utility matching the `vi
 ## 5. The video element: rendering only
 
 How a video plays (scrubbing, loops, preload tiers, IntersectionObserver gating, autoplay policy,
-tab-sleep rehydrate, all-intra and loop encoding) is the `scroll-animation` skill,
-`references/video.md`. What stays here is how the element renders and sizes on a fluid page.
+tab-sleep rehydrate, all-intra and loop encoding) is outside this skill. What stays here is how the
+element renders and sizes on a fluid page.
 
 ### 5.1 Inline playback on iOS
 
 Any video that plays without a click needs `muted` and `playsInline` (`playsinline` in HTML). Without
 `playsInline`, iOS Safari takes the video fullscreen on play; without `muted`, no browser will start
-it. Give it a deliberate `preload` too; the tiers are the `scroll-animation` skill's.
+it. Give it a deliberate `preload` too.
 
 ### 5.2 Size it like any other media
 
@@ -155,8 +155,7 @@ A `translateZ(0)` (or `translate3d(...)`) inside a video's transform is a load-b
 compositing anchor that keeps the video's own layer from being demoted. It is the one standing
 exception to "no `will-change`, no forced compositing", and it is deliberately permanent: do not
 "clean it up" as part of an unrelated refactor. When a scene writes the video's transform per frame,
-the anchor lives inside that same composed string, not as a separate declaration: see the
-`scroll-animation` skill, `references/video.md`.
+the anchor lives inside that same composed string, not as a separate declaration.
 
 ### 5.5 Posters
 

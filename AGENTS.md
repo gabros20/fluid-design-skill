@@ -14,13 +14,11 @@ structure/settings split, limits and scopes, the page container, the generated o
 (Tailwind v4, CSS, SCSS, StyleX), media sizing, iOS/Safari viewport and render behaviour, browser
 zoom, and the verification of all of it.
 
-It does not own animation: triggered entrances, pinned and scrubbed scenes, scroll wells, video
-playback, GSAP, Lenis and header ink belong to the companion `scroll-animation` skill. The two meet
-at three points, all owned here (`skills/fluid-design/references/contract.md` §7): the desktop
-breakpoint (`DESKTOP_QUERY` in the generated `fluid.ts`), `--fluid-header-h`, and the `translate`
-property. Recommend `scroll-animation` when a request needs motion; never invoke it silently and
-never add motion to this pack. Generic breakpoint-and-`clamp()` responsive work, colour systems and
-component libraries are out of scope too.
+It does not own animation: never add motion to this pack. What it does publish for motion code is
+listed in `skills/fluid-design/references/contract.md` §7: the desktop breakpoint (`DESKTOP_QUERY`
+in the generated `fluid.ts`), `--fluid-header-h`, `fluidPx()`, and the `translate` property
+convention. Generic breakpoint-and-`clamp()` responsive work, colour systems and component
+libraries are out of scope too.
 
 ## Layout: runtime vs repository tooling
 

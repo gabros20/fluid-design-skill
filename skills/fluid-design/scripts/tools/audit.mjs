@@ -595,7 +595,7 @@ const rules = [
       while ((m = re.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout under the reader\'s thumb — the worst possible surface for a resize (fluid-scale.md §2; if the scroll-animation skill is also installed, this is worst of all over a pinned or scrubbed section).',
+          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout under the reader\'s thumb — the worst possible surface for a resize (fluid-scale.md §2), and worst of all over a pinned or scrubbed section.',
           fix: 'Use svh for the fluid scale itself, or lvh specifically for a pin that must not shrink under a collapsing toolbar.'
         })
       }
@@ -621,7 +621,7 @@ const rules = [
         }
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'overflow-x:hidden on an ancestor makes the other axis compute to auto, turning that ancestor into a scroll container with zero range — it silently kills every position: sticky element beneath it (SKILL.md\'s invariants; if the scroll-animation skill is also installed, this includes its pinned scroll scenes).',
+          why: 'overflow-x:hidden on an ancestor makes the other axis compute to auto, turning that ancestor into a scroll container with zero range — it silently kills every position: sticky element beneath it (SKILL.md\'s invariants), pinned scroll scenes included.',
           fix: 'Use overflow-x: clip instead (or overflow: clip on both axes), and keep overflow-x:hidden reserved for the root html rule only.'
         })
       }

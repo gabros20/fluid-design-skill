@@ -129,7 +129,7 @@ to the design.
      will fight the new scale; they are removed per section as that section migrates, never globally first.
    - The shared atoms (button, chip, eyebrow, CTA, card) and their call-site counts.
    - Motion libraries and scroll hijacks (GSAP, Lenis, locomotive, a header script). Note them in
-     `FLUID.md` for the `scroll-animation` skill; do not touch them during this migration.
+     `FLUID.md`; do not touch them during this migration.
    - `overflow-x: hidden` on `body` or wrappers. This is often why `position: sticky` "doesn't work" (`ios-safari.md`).
 2. **Decide with the user** (`preflight.md`): the stack, the desktop artboard (1440×900 by default)
    and the desktop container width/padding (1680/80 by default, or today's container max-width if
@@ -155,7 +155,7 @@ to the design.
    take over only sizing**: the row height, inset, type and gaps move onto `--fluid-ui` (or the
    `fluid-ui-*` utilities) and `--fluid-header-h`; the script that hides, shows or re-inks the header stays
    as it is. Two writers on one property fight, so do not add a second one here. Changing that
-   behaviour is a `scroll-animation` decision.
+   behaviour is out of scope for this migration.
 
 ### Converting a container
 
@@ -205,7 +205,7 @@ where the site looks right today (usually 1024 / 1440).
 - [ ] One reference route, fully verified, before the rest.
 - [ ] `output.base: false` (or its individual rules) gets a visual check against the project's own reset.
 - [ ] Header migration changes sizing only; its existing animation and colour logic are untouched.
-- [ ] Motion libraries are noted for `scroll-animation`, not removed.
+- [ ] Motion libraries are noted in `FLUID.md`, not removed.
 - [ ] A v1 migration runs `fluid migrate --write` before anything else touches `fluid.config.json`,
       and keeps `aliases: true` until every v1 name (`--header-h`, `--fluid-chrome`,
       `--fluid-column`, `.fluid-frame`, `fluid-up`, `ENGAGE_*`) has moved.

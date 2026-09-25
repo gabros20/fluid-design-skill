@@ -109,10 +109,9 @@ and not an edit to thirty components.
 
 ## Header ink and `--fluid-header-h`
 
-Header ink that follows the section underneath (`data-header-theme`, the scroll probe, the shared
-colour transition) is scroll behaviour: see the `scroll-animation` skill, `references/header-theme.md`.
-This skill owns only the header's size: `--fluid-header-h` (`section-recipe.md` §Heroes under a fixed,
-floating header), which that skill reads.
+Header ink that follows the section underneath (a scroll probe, a shared colour transition) is
+scroll behaviour, outside this skill. This skill owns only the header's size: `--fluid-header-h`
+(`section-recipe.md` §Heroes under a fixed, floating header), which header scripts read.
 
 ## Small hit targets in a drawn row
 

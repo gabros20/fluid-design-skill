@@ -33,23 +33,22 @@ runs on (`config.md`, `contract.md` §1):
 - **Settings** — a number inside those rules. Goes in the project's own `:root`, next to its
   tokens, as a `--fluid-*` CSS variable. Live, no regenerate. `fluid.config.json` never holds one.
 
-This skill makes no animation decisions. Engine choice, scroll-driven scenes, header behaviour on
-scroll and what to do with existing motion code belong to the companion `scroll-animation` skill,
-which has its own preflight.
+This skill makes no animation decisions: engine choice, scroll-driven scenes, header behaviour on
+scroll and what to do with existing motion code are outside it.
 
 ## Detection pass (about two minutes, read-only)
 
 | Look at | Tells you |
 |---|---|
 | `package.json` deps | framework (next, astro, vite, remix, sveltekit, nuxt), `tailwindcss` version, `sass`, `@stylexjs/*` |
-| `package.json` motion deps: `motion` / `framer-motion`, `gsap`, `lenis`, `locomotive-scroll` | nothing for this skill. Note them in `FLUID.md` for the `scroll-animation` skill; do not remove or rewire them here |
+| `package.json` motion deps: `motion` / `framer-motion`, `gsap`, `lenis`, `locomotive-scroll` | nothing for this skill. Note them in `FLUID.md`; do not remove or rewire them here |
 | CSS entry (`globals.css`, `app.css`, `main.scss`) | `@import 'tailwindcss'` means v4; `@tailwind base` means v3; an existing `@theme`, custom breakpoints, `clamp()` / `vw` type |
 | `tailwind.config.*` | v3 (see the v3 note in `stacks.md`) |
 | an existing `fluid.config.json` with no `"version": 2"` | a v1 project — route to `brownfield-migration.md` §"From fluid-design v1" instead of this preflight |
 | container classes | `.container`, `max-w-7xl mx-auto px-*`, a hand-rolled wrapper: that is your current container width and padding |
 | breakpoints in use | the one where the desktop layout starts is your `bands.desktop.minWidth` candidate. Custom `--breakpoint-*` in `@theme`: `fluid init` keeps them (`tailwind.breakpoints: "none"`), and `--breakpoint-lg` must then equal the desktop band |
 | existing `vw`/`clamp` type | a prior fluid attempt; inventory it before replacing it (`brownfield-migration.md`) |
-| `<video>` count, sticky/pinned sections | the media rendering work (`media.md`); any scene or playback work is for the `scroll-animation` skill |
+| `<video>` count, sticky/pinned sections | the media rendering work (`media.md`); any scene or playback work is outside this skill |
 | Figma links or exported frames in the repo | the artboard's width and height |
 | a phone frame in Figma | whether the mobile bands should stay on at their default 390 width, or be re-tuned |
 | a `cn` / `twMerge` of the project's own (shadcn's `src/lib/utils.ts`, `lib/cn.ts`: any file importing `tailwind-merge`) | keep it; after install, add `withFluid` to it (§13). Never generate a second `cn` beside it or rewrite it |
@@ -89,8 +88,8 @@ Default: **1024** (Tailwind `lg`). Below it, either the mobile bands scale a pho
 default in v2) or, with them off, every unit is a flat 1px and mobile is plain responsive CSS.
 - It must equal the breakpoint where the desktop composition begins. Two separate numbers here
   produce a band where desktop layout runs at mobile sizes.
-- If the `scroll-animation` skill is also in use, it reads this same number from the generated
-  `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`), so record it only here.
+- Motion code reads this same number from the generated `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`),
+  so record it only here.
 - Ask when: the desktop layout starts somewhere else (768, 1280).
 
 ### 4. Height axis (setting: `--fluid-desktop-fit-height`, 1 or 0)
@@ -210,8 +209,7 @@ Default: **reuse the project's `cn`** when one exists; the generated `cn` only w
 `fluid.config.schema.json` after `fluid init`) holds the structure. `FLUID.md` holds the reasons:
 the stack, the artboard and container numbers (even though they live in `:root`, not the config,
 `FLUID.md` is where the "why" for a setting belongs too), anything that differs from the defaults
-and why, the routes in scope, and any motion libraries found (noted for the `scroll-animation`
-skill). A few lines each. Both files are the handoff to the next session.
+and why, the routes in scope, and any motion libraries found. A few lines each. Both files are the handoff to the next session.
 
 ## Phrasing the questions
 
@@ -231,8 +229,8 @@ Batch the questions, give each one its default, and let the user answer only the
 - Recording the desktop breakpoint in more than one place. Two copies of one number drift — import
   `DESKTOP_QUERY`/`DESKTOP_PX` from the generated `fluid.ts` instead of hand-typing it again.
 - Treating "ignores the browser font-size setting" as covering zoom. They are different; zoom must work.
-- Removing or rewiring an installed motion library during preflight. That decision belongs to the
-  `scroll-animation` skill; here you only note it.
+- Removing or rewiring an installed motion library during preflight. That decision is outside this
+  skill; here you only note it.
 - Assuming mobile is flat by default. v2 defaults the mobile bands **on** — ask before turning them
   off, not before turning them on.
 - Running this preflight against a project that already has a v1 `fluid.config.json`. Route to
