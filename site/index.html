@@ -257,6 +257,9 @@
   .dims output{color:var(--ink); min-width:4.5ch; text-align:right}
   input[type=range]{accent-color:var(--accent); width:100%; min-width:0}
   @media (max-width:560px){ .dims{grid-template-columns:1fr} }
+  .fit{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--ink); cursor:pointer; width:max-content; max-width:100%}
+  .fit input{accent-color:var(--accent); width:16px; height:16px; margin:0}
+  .fit span{color:var(--muted); font-size:11.5px}
   .livebody{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:16px; align-items:start}
   @media (max-width:980px){ .livebody{grid-template-columns:1fr} }
   .stage{position:relative; background:repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--line) 45%, transparent) 7px 8px), var(--code-bg); border:1px solid var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; padding:14px; min-height:200px; overflow:hidden}
@@ -709,13 +712,30 @@
   <p class="pcap"><b>Rare case:</b> the designer put a 1440 layout in the middle of an extra-wide
   1680 canvas. Measure the layout, not the canvas: base 1440×900, and
   <code>--fluid-desktop-container-width: 1680</code>. That is what the defaults already are.</p>
+  <h3 class="sub" id="fit-height">Follow the height, or only the width</h3>
+  <p>On desktop the unit also watches the window's height, so a section drawn 900 tall always fits
+  one screen. One setting turns that off, and the page follows the width only. It applies live,
+  like every setting. Try it with the <b>follow the height</b> switch in the <a href="#live">demo</a>.</p>
+  <div class="term">:root {
+  <span class="c">/* 1 = also fit the height (default) */</span>
+  <span class="v">--fluid-desktop-fit-height</span>: 0;
+}</div>
+  <div class="tblwrap"><table>
+    <tr><th>window (frame)</th><th>height on: 1, default</th><th>height off: 0</th></tr>
+    <tr><td class="dim">1440×700 <span class="d">(1440×900)</span></td><td>0.78×, the 900-tall hero fits the screen</td><td>1×, the hero is 900px and scrolls</td></tr>
+    <tr><td class="dim">2000×1013 <span class="d">(1680×1050)</span></td><td>0.96×, the page shrinks to the height and leaves side margins</td><td>1.19×, the page fills the width</td></tr>
+    <tr><td class="dim">pick it for</td><td>sections drawn to fill one screen: a hero, a pinned scroll scene</td><td>pages where nothing has to fit one screen</td></tr>
+  </table></div>
+  <p class="pcap">Phones, tablets and landscape always follow the width only. Height never squashes
+  text: it scales the font size and the line height by the same number. If lines look cramped after
+  a change, hard-reload first, because a stale stylesheet looks exactly like broken spacing.</p>
 </section>
 
 <section id="live">
   <h2><svg class="lu" aria-hidden="true"><use href="#lu-scaling"/></svg>Try it: the real engine, in a frame</h2>
   <p>The frame below is a small page drawn once at 1440×900 and once at 390, written only as
   drawn number × unit through the pack's own generated <code>fluid.css</code> (the CSS stack at the
-  defaults, copied byte for byte). Pick a window or drag the corner. The readout is measured inside
+  defaults, copied byte for byte). Pick a window, drag the corner, or switch off <b>follow the height</b>. The readout is measured inside
   the frame, next to what <code>fluid explain</code> prints for the same window.</p>
   <div class="live" id="livebox">
     <div class="presets" role="group" aria-label="window presets" id="presets">
@@ -731,6 +751,7 @@
       <label>width <input type="range" id="rw" min="320" max="2560" step="1" value="1440" aria-label="frame width in CSS pixels"><output id="ow" for="rw">1440</output></label>
       <label>height <input type="range" id="rh" min="320" max="1600" step="1" value="900" aria-label="frame height in CSS pixels"><output id="oh" for="rh">900</output></label>
     </div>
+    <label class="fit"><input type="checkbox" id="fit" checked> follow the height <span>--fluid-desktop-fit-height: <b id="fitv">1</b></span></label>
     <div class="livebody">
       <div class="stage" id="stage">
         <span class="scl" id="scl" aria-hidden="true">shown at 100%</span>
@@ -1352,7 +1373,17 @@ README.md · CHANGELOG.md · LICENSE</div>
   // ── the live frame ──
   (function () {
     // what `fluid explain <W>x<H>` prints for each preset (assets/fluid.config.json, defaults)
-    var CLI = {
+    // fluid explain at the defaults; CLI_OFF adds --set --fluid-desktop-fit-height=0
+    var CLI_OFF = {
+      "1280x800":  ["desktop", 0.8889, 0.9311, 0.9633, 0.8889, 1680.0, 71.1, 64.0],
+      "1440x900":  ["desktop", 1, 1, 1, 1, 1680.0, 80.0, 72.0],
+      "1440x700":  ["desktop", 1, 1, 1, 1, 1680.0, 80.0, 72.0],
+      "1920x1080": ["desktop", 1.3333, 1.3333, 1.3333, 1.3333, 2240.0, 106.7, 96.0],
+      "2560x1440": ["desktop", 1.7778, 1.7778, 1.7778, 1.7778, 2986.7, 142.2, 128.0],
+      "390x844":   ["phone", 1, 1, 1, 1, 560.0, 24.0, 58.0],
+      "844x390":   ["landscape", 1.0821, 1.0821, 1.0821, 1.0821, 1108.0, 34.6, 60.0]
+    };
+    var CLI_ON = {
       "1280x800":  ["desktop", 0.8889, 0.9311, 0.9633, 0.8889, 1680.0, 71.1, 64.0],
       "1440x900":  ["desktop", 1, 1, 1, 1, 1680.0, 80.0, 72.0],
       "1440x700":  ["desktop", 0.7778, 0.8622, 0.9267, 1, 1680.0, 62.2, 66.7],
@@ -1362,6 +1393,8 @@ README.md · CHANGELOG.md · LICENSE</div>
       "844x390":   ["landscape", 1.0821, 1.0821, 1.0821, 1.0821, 1108.0, 34.6, 60.0]
     };
     var KEYS = ["fluid", "display", "copy", "ui", "cw", "pad", "hh"];
+    var fitOn = true;
+    function cli(k) { return (fitOn ? CLI_ON : CLI_OFF)[k]; }
     var frame = document.getElementById("frame"), fbox = document.getElementById("fbox"), stage = document.getElementById("stage");
     var rw = document.getElementById("rw"), rh = document.getElementById("rh"), ow = document.getElementById("ow"), oh = document.getElementById("oh");
     var grip = document.getElementById("grip"), scl = document.getElementById("scl");
@@ -1384,7 +1417,7 @@ README.md · CHANGELOG.md · LICENSE</div>
     function fmtU(v) { return v == null ? "—" : (Math.round(v * 1e4 + 1e-6) / 1e4).toFixed(4); }
     function fmtPx(v) { return v == null ? "—" : v.toFixed(1); }
     function paintCli() {
-      var c = CLI[W + "x" + H];
+      var c = cli(W + "x" + H);
       for (var i = 0; i < KEYS.length; i++) {
         var el = $("c-" + KEYS[i]);
         el.textContent = c ? (i < 4 ? fmtU(c[i + 1]) : fmtPx(c[i + 1])) : "—";
@@ -1432,6 +1465,7 @@ README.md · CHANGELOG.md · LICENSE</div>
         var wa = r.w / 1440, ha = r.h / 900;
         if (Math.abs(r.fluid - 1) < 1e-4 && r.w === 1440 && r.h === 900) return "At the design frame every unit is exactly 1: one drawn px is one CSS px.";
         if (r.fluid <= 0.5801) return "Held at the 0.58 floor (--fluid-desktop-scale-min).";
+        if (!fitOn) return "Height is off: the unit follows the width only (" + wa.toFixed(4) + "). The 900-tall hero is " + Math.round(900 * r.fluid) + "px in a " + r.h + "px window" + (900 * r.fluid > r.h + 0.5 ? ", so it scrolls." : ".");
         return (ha < wa ? "Height is tighter: the 900-tall hero is exactly " + r.h + "px, one screen." : wa < ha ? "Width is tighter: the hero is " + Math.round(900 * r.fluid) + "px, shorter than the " + r.h + "px window." : "Both axes agree: the hero fills the window exactly.") +
           (r.ui > r.fluid + 1e-4 ? " --fluid-ui stays at " + r.ui.toFixed(2) + ": the nav does not shrink for a short window." : "");
       },
@@ -1446,7 +1480,7 @@ README.md · CHANGELOG.md · LICENSE</div>
       $("v-fluid").textContent = fmtU(r.fluid); $("v-display").textContent = fmtU(r.display);
       $("v-copy").textContent = fmtU(r.copy); $("v-ui").textContent = fmtU(r.ui);
       $("v-cw").textContent = fmtPx(r.cw); $("v-pad").textContent = fmtPx(r.pad); $("v-hh").textContent = fmtPx(r.hh);
-      var c = CLI[r.w + "x" + r.h];
+      var c = cli(r.w + "x" + r.h);
       // match within the engine's own precision (the ×1000 form): 2e-4 on a unit, 0.15px on a length
       for (var i = 0; i < KEYS.length; i++) {
         var v = r[KEYS[i]], ok = !!c && v != null && Math.abs(v - c[i + 1]) <= (i < 4 ? 2e-4 : 0.15);
@@ -1460,6 +1494,13 @@ README.md · CHANGELOG.md · LICENSE</div>
     onTheme(function (t) {
       try { frame.contentWindow.postMessage({ type: "theme", theme: t }, location.origin === "null" ? "*" : location.origin); } catch (e) {}
     });
+    var fitBox = $("fit");
+    fitBox.addEventListener("change", function () {
+      fitOn = fitBox.checked; $("fitv").textContent = fitOn ? "1" : "0";
+      paintCli();
+      try { frame.contentWindow.postMessage({ type: "fit-height", on: fitOn }, location.origin === "null" ? "*" : location.origin); } catch (e) {}
+    });
+    frame.addEventListener("load", function () { if (!fitOn) fitBox.dispatchEvent(new Event("change")); });
     frame.src = "demo/?theme=" + theme();
     set(1440, 900);
   })();

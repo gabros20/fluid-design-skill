@@ -67,8 +67,14 @@ band where the desktop layout runs at mobile sizes. Motion code imports it (`DES
 when the desktop layout starts elsewhere (768, 1280).
 
 ### 4. Height axis (setting: `--fluid-desktop-fit-height`)
-Default: **1** (what makes "one screen tall" possible). `0` for docs, blogs, dashboards: there the
-height axis only shrinks things on a short window without buying a fit (`--fluid-ui` then follows width only too).
+Default: **1** (what makes "one screen tall" possible). `0` when no section is designed to fill one
+screen (marketing pages without a one-screen hero, docs, blogs, dashboards): there the height axis
+only shrinks things on a short window without buying a fit, and on a wide, short monitor it shrinks
+the page to the height and leaves empty side margins (a 1680×1050 frame at 2000×1013 renders 0.96×
+instead of 1.19×). `--fluid-ui` then follows width only too.
+- Height never squashes text: font size and line height share the unit. Cramped lines after a
+  change are usually a stale stylesheet; hard-reload before touching this setting.
+- Ask when: the design has no one-screen section, or the user reports side margins on wide screens.
 
 ### 5. Growth ceiling and limits (setting: `--fluid-desktop-scale-max`)
 Default: **no ceiling**. The real limit is asset resolution: a 1920-wide render upscales about 1.3×

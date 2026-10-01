@@ -71,6 +71,19 @@ Forget to set it and the base stays at 1440×900: the 1680 design renders 17% to
 1680 canvas. Measure the layout, not the canvas: base 1440×900, container width 1680, which are
 the defaults.
 
+**Height on or off.** On desktop the unit also follows the window's height by default, so a
+section drawn as tall as the frame always fits one screen. `--fluid-desktop-fit-height: 0` makes it
+follow the width only:
+
+| Window (frame) | Height on, `1` (default) | Height off, `0` |
+|---|---|---|
+| 1440×700 (1440×900) | 0.78×, the 900-tall hero fits the screen | 1×, the hero is 900px and scrolls |
+| 2000×1013 (1680×1050) | 0.96×, the page leaves empty side margins | 1.19×, the page fills the width |
+
+Keep it on for one-screen sections (a hero, a pinned scroll scene); turn it off when nothing has to
+fit one screen. The mobile bands always follow the width only. Height scales the font size and the
+line height together, so it never squashes text.
+
 Then init:
 
 - writes `fluid.config.json`, with `$schema` pointing at the published schema

@@ -153,6 +153,15 @@ frames is 402 wide, not the default 390), the content box's widest size
 wrong frame size raises no error; the page is just the wrong size everywhere (numbers from a 1680
 frame on a 1440 base render 17% too big).
 
+**Follow the height, or only the width.** On desktop the unit also watches the window's height, so
+a section drawn 900 tall always fits one screen. Turn that off with `--fluid-desktop-fit-height: 0`
+and the page follows the width only: a short laptop shows the design at full size and scrolls more,
+and a wide, short monitor fills its width instead of shrinking to the height with empty side
+margins. Keep it on when sections are designed to fill one screen (a hero, a pinned scroll scene).
+Turn it off for pages where nothing has to fit one screen. Phones, tablets and landscape always
+follow the width only. Height never squashes text: it scales the font size and the line height by
+the same number, so cramped lines have another cause (a stale stylesheet is the usual one).
+
 **Tablet and landscape run full width by default**, with a 32px gutter, because most designs have no
 frame for them, and the phone design held to a narrow column reads as a phone floating on a big
 screen. To keep the column, set

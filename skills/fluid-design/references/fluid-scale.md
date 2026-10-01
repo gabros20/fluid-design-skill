@@ -124,7 +124,11 @@ hand-written one must too. The engine uses only `min()`/`max()`/`calc()` (no `cl
 - **`--fluid-desktop-scale-min: 0.58`** was chosen ("structure stops compressing at a 522px-tall
   section"), not derived, and is nearly unreachable: at 1024 wide the width term is already 0.711.
 - **`--fluid-desktop-fit-height: 0`** makes desktop width-only. The mobile bands are width-only by
-  construction: a phone frame has no one-screen guarantee to keep.
+  construction: a phone frame has no one-screen guarantee to keep. The trade: with height on, a
+  wide, short window (2000×1013 on a 1680×1050 frame) scales to the height, 0.96×, and the page
+  sits centred with side margins; with it off the page scales 1.19× and fills the width, and a
+  one-screen section scrolls on a short window. Height scales font size and line height by the
+  same factor, so it never changes line spacing.
 
 Below the desktop breakpoint (`bands.desktop.minWidth`, 1024) the phone, tablet and landscape bands
 each scale their own frame the same way (`bands.md`); with `bands.phone: false` the unit is a flat `1px` there.

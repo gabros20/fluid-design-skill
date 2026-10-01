@@ -183,6 +183,10 @@
     if (e.source !== parent || !e.data) return;
     if (e.data.type === "theme") root.setAttribute("data-theme", e.data.theme);
     if (e.data.type === "ping") report();
+    if (e.data.type === "fit-height") {
+      root.style.setProperty("--fluid-desktop-fit-height", e.data.on ? "1" : "0");
+      requestAnimationFrame(report);
+    }
   });
 })();
 </script>
