@@ -15,6 +15,7 @@ Produces: authoring in the right surface for the stack, scopes and limits includ
 - SCSS
 - StyleX
 - Choosing
+- Same job in every stack: role boxes and bleed
 - Traps
 - Scopes and limits per stack
 
@@ -46,31 +47,26 @@ breakpoint ladder, the band `@custom-variant`s, the engine and the full `@utilit
 - Values: bare numbers in 0.25 steps, anything else bracketed (`fluid-p-[8.3]`); the `/lh`
   modifier is drawn px (`fluid-copy-18/[26.5]`), not a ratio (`contract.md` §3).
 - Arbitrary values spend the units directly when no utility fits:
-  `lg:grid-cols-[1fr_calc(512*var(--fluid))]`, `lg:px-[calc(24*var(--fluid-copy))]`.
+  `lg:grid-cols-[1fr_calc(512*var(--fluid))]`. When one does fit, use it: `fluid-copy-px-24`, not
+  `px-[calc(24*var(--fluid-copy))]` (`cn` merges the utility; audit rule `arbitrary-fluid-calc`
+  points at the hand-written form).
 - Register the families with tailwind-merge — the generated `cn.ts` already does this for every
   utility `fluid.css` emits, including the opt-in families that are on.
 - `tailwind.breakpoints: "ladder"` (default) makes `--breakpoint-lg` in `@theme` equal
   `bands.desktop.minWidth`; do not redeclare any `--breakpoint-*` yourself — `fluid check` errors on
   one next to the ladder. `fluid init` finds a site's own `--breakpoint-*` and sets
   `tailwind.breakpoints: "none"` instead, keeping them.
-- **`fluid.css` defines the whole breakpoint ladder in px, never `lg` alone, when
-  `tailwind.breakpoints` is `"ladder"`.** Tailwind v4 has no `tailwind.config` to read a breakpoint
-  order from — only whatever `--breakpoint-*` tokens a project's `@theme` defines, with Tailwind's
-  own rem defaults filling in anything left undefined. It then emits variants in min-width order by
-  comparing breakpoint LENGTHS, and a px value is not comparable against a rem one. Overriding only
-  `--breakpoint-lg` (in px) and leaving `sm`/`md`/`xl`/`2xl` on the rem defaults sorts the whole
-  `lg:` block before `sm:` regardless of pixel width — measured, `sm:text-[64px]` beat
-  `lg:fluid-display-112` even though 1024px is wider than the 40rem `sm` breakpoint. It compiles
-  clean and looks like a design mistake, not a units bug. `lg: 64rem` instead of `1024px` is not
-  the fix either: a rem media query follows the visitor's browser font-size setting, while the
-  engine's `(min-width: 1024px)` band query does not — the two would silently disagree for any
-  visitor whose default font size is not 16px. (Browser zoom is not the cause: it scales px and em
-  media queries alike.) `scripts/lib/emit/tailwind.mjs`'s `breakpointLadder()` builds it
-  (`sm 640, md 768, lg = bands.desktop.minWidth, xl 1280, 2xl 1536px`, nudged to stay monotonic if
-  the desktop band collides with a default rung, with a note comment in the generated CSS when it
-  does); `tailwind.breakpoints: "none"` opts out and leaves `@theme` breakpoints to the project —
-  `fluid check` then verifies any project-owned `--breakpoint-lg` still equals
-  `bands.desktop.minWidth`.
+- **`fluid.css` defines the whole breakpoint ladder in px, never `lg` alone** (with
+  `tailwind.breakpoints: "ladder"`). Tailwind v4 orders variants by comparing breakpoint lengths
+  and cannot compare px with rem: overriding only `--breakpoint-lg` in px, with the other rungs on
+  Tailwind's rem defaults, sorts the whole `lg:` block before `sm:`. Measured: `sm:text-[64px]` beat
+  `lg:fluid-display-112`. It compiles clean and looks like a design mistake. `lg: 64rem` is not the
+  fix: a rem query follows the visitor's browser font-size setting, the engine's px band query does
+  not, so the two disagree for anyone not on 16px. `breakpointLadder()` in
+  `scripts/lib/emit/tailwind.mjs` emits `sm 640, md 768, lg = bands.desktop.minWidth, xl 1280, 2xl
+  1536px`, nudged to stay in order (with a note comment) if the desktop breakpoint hits a default
+  rung. `tailwind.breakpoints: "none"` leaves `@theme` breakpoints to the project; `fluid check` then
+  verifies its `--breakpoint-lg` still equals `bands.desktop.minWidth`.
 
 **Tailwind v3**: there is no functional `@utility`. Either upgrade, or set `output.stack: "css"`
 and write arbitrary values `lg:py-[calc(120*var(--fluid))]`. That works, but it is verbose and easy
@@ -79,10 +75,10 @@ the css stack with a note.
 
 ## Vanilla CSS and CSS Modules
 
-`output.stack: "css"`. `<output.dir>/fluid.css` provides the units, `--fluid-header-h` and one class,
-`.fluid-container` (the page container — `width: 100%; margin-inline: auto; max-width:
-var(--fluid-container-width); padding-inline: var(--fluid-container-padding)`). Author per
-component inside each band's media query:
+`output.stack: "css"`. `<output.dir>/fluid.css` provides the units, `--fluid-header-h` and two
+classes: `.fluid-container` (the page container — `width: 100%; margin-inline: auto; max-width:
+var(--fluid-container-width); padding-inline: var(--fluid-container-padding)`) and `.fluid-bleed-x`.
+Author per component inside each band's media query:
 
 ```css
 .hero { padding: 80px 24px 40px; }
@@ -113,7 +109,7 @@ units, settings and base styles live there, not in `_index.scss`):
 `fd.fluid($n)`, `fd.fluid-<role>($n)` per role, `fd.fluid-ui($n)` (`ui: true`), `fd.fluid-text($n,
 $size: $n)`, `fd.fluid-cap($n)`, the mixin `fd.fluid-type($size, $lh, $unit: <first role>)`, band
 mixins `fd.fluid-phone`, `fd.fluid-tablet`, `fd.fluid-landscape`, `fd.fluid-desktop` (one per
-enabled band, mutually exclusive), and `fd.fluid-container`. The
+enabled band, mutually exclusive), `fd.fluid-container` and `fd.fluid-bleed-x`. The
 functions `@error` on a number that already has a unit, which turns the silent
 `64px * var(--fluid)` failure into a build error. That is a genuine improvement over the Tailwind
 arbitrary-value path. Full list: `contract.md` §4.
@@ -139,6 +135,25 @@ global CSS (`fluid.css`, imported once) and StyleX only gets typed `calc()`-stri
 | uses CSS Modules or plain CSS | `css` |
 | uses StyleX | `stylex` |
 | mixes several | the one owning the section being built; the units and `fluid.ts` are shared, so mixing is safe |
+
+## Same job in every stack: role boxes and bleed
+
+**A box on a type role.** A button, chip or icon sized on its label's unit keeps its proportion to
+the label at every size (copy shrinks more gently than layout, so a box on `--fluid` would squeeze
+the label). Example: a 56px-tall button with 24px side padding around 14/20 copy.
+
+| Stack | Spelling |
+|---|---|
+| Tailwind | `fluid-copy-14/20 fluid-copy-h-56 fluid-copy-px-24` (`fluid-<role>-{p,px,py,gap,w,h,size}-*`) |
+| SCSS | `height: fd.fluid-copy(56); padding-inline: fd.fluid-copy(24);` (works on any property) |
+| StyleX | `height: fluidCopy(56), paddingInline: fluidCopy(24)` |
+| CSS | `height: calc(56 * var(--fluid-copy)); padding-inline: calc(24 * var(--fluid-copy));` |
+
+**Bleed to the window edges.** A strip inside a `fluid-container` that reaches the window's edges
+but keeps its content aligned with the container (a carousel track): Tailwind `fluid-bleed-x`, CSS
+class `.fluid-bleed-x`, SCSS `@include fd.fluid-bleed-x`. StyleX has no helper; write the same two
+declarations (`contract.md` §3 has the formula). The `html` overflow guard in `base.css` clips the
+half-scrollbar overshoot; with `output.base: false`, keep your own.
 
 ## Traps
 

@@ -16,7 +16,9 @@ sections, and the `withFluid` change to an existing `cn`.
 ## Contents
 
 - From fluid-design v1
+- Updating a v2 project to 2.1: tablet and landscape width, `$schema`
 - Converting a container-based site (never on fluid-design before)
+- Bridging old gutter and container tokens
 - Traps
 - A project that already has `cn` (shadcn and friends)
 
@@ -25,9 +27,10 @@ sections, and the `withFluid` change to an existing `cn`.
 Run `fluid migrate [--write]` at the project root (`scripts/lib/model.mjs`'s `migrateV1`). Without
 `--write` it is a dry run: it prints what moved and the `fluid.config.json` (v2) it would write.
 With `--write` it backs up the old file as `fluid.config.v1.json`, writes the v2
-`fluid.config.json` and `fluid.config.schema.json`, and prints the `:root` snippet of every v1
-number that was not already a v2 default — paste that into your globals.css `:root`, next to your
-tokens, then run `fluid generate`.
+`fluid.config.json` (its `$schema` points at the published schema, so a local
+`fluid.config.schema.json` can be deleted), and prints the `:root` snippet of every v1 number that
+was not already a v2 default. Paste that into your globals.css `:root`, next to your tokens, then
+run `fluid generate`.
 
 `fluid check`, `generate`, `settings` and an offline `explain` refuse a v1 config and tell you to run
 `fluid migrate --write`; `fluid calc`, `fluid verify` and `fluid explain --url` migrate it in
@@ -51,21 +54,14 @@ memory, so they work before you do. `fluid init --force` over a v1 config also k
   Tailwind). It re-emits every v1 name as a thin wrapper around its v2 equivalent, so existing call
   sites keep working the moment you regenerate (table below). Turn it off once every call site has
   moved.
-- **The one import.** v1 projects typically had several: `fluid.css`, `base.css`,
-  `tokens.example.css`, plus hand-copied `cn.ts` and runtime files. Delete all of those imports and
-  replace them with the single line `fluid init`/`fluid migrate` points at:
-  `@import '<output.dir>/fluid.css';` (after `@import 'tailwindcss';` on the Tailwind stack). It
-  now carries the base layer (`output.base`), the breakpoints, the band variants and every utility
-  — there is nothing else to import for the styles.
-- **Delete the hand-copied files.** v1 had you copy `assets/runtime/fluid-zoom.js` /
-  `fluid-units.js` into your own `src/lib` (or similar), copy `assets/styles/tailwind-v4/cn.ts` by
-  hand, and hand-write the `FRAME`/`.fluid-frame` class string. In v2, `fluid generate` writes
-  `runtime/units.js(+.d.ts)`, `runtime/zoom.js(+.d.ts)` and `cn.ts` into `output.dir` itself — they
-  are generated, not copied. Delete your hand-copied versions and update imports to point at the
-  generated ones (`<output.dir>/fluid.ts`, `<output.dir>/cn.ts`, `<output.dir>/runtime/…`). Same
-  for a hand-written `fluid.config.ts` (`ENGAGE_PX`/`ENGAGE_QUERY`): delete it, the generated
-  `fluid.ts` exports `DESKTOP_PX`/`DESKTOP_QUERY`, plus those same v1 names while `aliases` is on
-  (`contract.md` §5, §7).
+- **One import.** Replace v1's several (`fluid.css`, `base.css`, `tokens.example.css`) with
+  `@import '<output.dir>/fluid.css';` (after `@import 'tailwindcss';` on Tailwind). It carries the
+  base layer (`output.base`), the breakpoints, the band variants and every utility.
+- **Delete the hand-copied files.** v1 had you copy `fluid-zoom.js`, `fluid-units.js` and `cn.ts`
+  into your source and hand-write `.fluid-frame` and a `fluid.config.ts` (`ENGAGE_PX`). v2 generates
+  `runtime/units.js`, `runtime/zoom.js`, `cn.ts` and `fluid.ts` (`DESKTOP_PX`/`DESKTOP_QUERY`, plus
+  the v1 names while `aliases` is on) into `output.dir`. Delete the copies and import the generated
+  files (`contract.md` §5, §7, "Generated files").
 
 ### v1 names and their v2 equivalents
 
@@ -97,18 +93,14 @@ Config and concept names that changed (no alias; `fluid migrate` carries the val
 Everything else is geometry-identical to v1 (verified: `v1 parity 47,616 checks`, 0 failures beyond
 what is listed here). Two things are intentionally different:
 
-1. **Floor rounding.** v1's `floor: "auto"` rounded the type floor to 2 decimals; v2 replaces the
-   "auto" floor with the **knee** — an exact, live value (`bands.desktop.minWidth / base-width` on
-   desktop) that needs no rounding, because it follows your settings instead of being computed once
-   at generate time. It is the same expression: v1's `d · engageAt/W + (1 − d)` is v2's
-   `d · knee + (1 − d)` with `knee = engageAt/W`. Measured across the examples, the only place this changes anything is at
-   320×568, where type sits about 0.3% larger or smaller than it did under v1's rounded floor.
+1. **Floor rounding.** v1's `floor: "auto"` rounded the type floor to 2 decimals. v2 uses the
+   **knee** instead (type holds its size below the desktop breakpoint): the same expression,
+   `d · knee + (1 − d)` with `knee = bands.desktop.minWidth / base-width`, but exact and live. Across
+   the examples it changes only 320×568, by about 0.3%.
 2. **`--fluid-ui` under `fit-height: 0`** (v1 `heightAxis: false`). v1's `--fluid-chrome` still read
-   the height arm even with `heightAxis: false`, so a short, wide window kept the header at its full
-   size while the rest of the layout kept shrinking by width alone. v2's `--fluid-ui` now ignores
-   height too when `fit-height` is `0`, so the header scales with the same single axis as everything
-   else. If your header noticeably held its size on a short window under v1, expect it to shrink a
-   little more now — that is this fix, not a regression.
+   the window height, so on a short, wide window the header kept its full size while the layout
+   shrank by width. v2's `--fluid-ui` ignores height too, so a header that held its size on a short
+   window under v1 now shrinks a little. That is the fix, not a regression.
 
 ### If the mobile arm was off in v1
 
@@ -117,16 +109,45 @@ the mobile arm off. v2's flat mode (`bands.phone: false`) uses one `--fluid-phon
 (default 24) below desktop, with no step. Add your own `sm:` padding override if the step mattered
 to the design.
 
+## Updating a v2 project to 2.1: tablet and landscape width, `$schema`
+
+**Tablet and landscape now run full width by default.** `--fluid-tablet-container-width` and
+`--fluid-landscape-container-width` default to the desktop breakpoint (1024, wider than any window
+in those bands) and their `container-padding` to 32. Before, they fell back to the phone's 560
+column and 24 padding, which read as a phone floating on a tablet. The defaults are only for a
+design with no tablet or landscape frame. To keep the old column, set it in your `:root`:
+
+```css
+--fluid-tablet-container-width: 560;    --fluid-tablet-container-padding: 24;
+--fluid-landscape-container-width: 560; --fluid-landscape-container-padding: 24;
+```
+
+A v1 project keeps its look: `fluid migrate` writes v1's column and gutter (560 and 24, or
+`mobile.column`) as these four settings. Check the tablet cells (820×1180, 834×1194) and landscape
+cells (844×390, 932×430) with `fluid verify` either way.
+
+**The container padding never drops below the safe-area inset** (`contract.md` §2). A
+per-component `padding-inline: max(…, env(safe-area-inset-left))` rule written for a landscape
+notch can go once its section sits in a `fluid-container`.
+
+**`$schema`.** A project with a local `fluid.config.schema.json` can point `$schema` at the published
+schema, `https://unpkg.com/fluid-design-cli@2/skills/fluid-design/assets/fluid.config.schema.json`,
+and delete the copy. New projects get that URL from `fluid init`.
+
+**The `fluid` script.** A project set up before `fluid init` added it can add
+`"fluid": "npx fluid-design-cli@2"` to `package.json` scripts, so the team and CI run
+`npm run fluid -- check` without the skill installed.
+
 ## Converting a container-based site (never on fluid-design before)
 
 1. **Inventory, read-only.** Run `node <skill>/scripts/tools/audit.mjs src --json > fluid-audit.json`. Record:
-   - The container: max-width, horizontal padding per breakpoint. That is today's container width
-     and padding (`--fluid-desktop-container-width` / `-padding` once migrated).
+   - The container: max-width and side padding per breakpoint (`--fluid-desktop-container-width` /
+     `-padding` once migrated), and any gutter or max-width token (bridge it, below).
    - The breakpoint where the desktop layout starts. That is `bands.desktop.minWidth`.
-   - Existing fluid attempts (`clamp()`, `vw` font sizes, a `--scale` var, and the agency pattern of a
-     viewport-driven root font size, `html { font-size: calc(100vw / 1440 * 10) }` with everything in
-     `rem`, common in Webflow and Awwwards-style builds). Each is a second ladder that
-     will fight the new scale; they are removed per section as that section migrates, never globally first.
+   - Existing fluid attempts (`clamp()`, `vw` font sizes, a `--scale` var, or a viewport-driven root
+     font size, `html { font-size: calc(100vw / 1440 * 10) }` with everything in `rem`). Each is a
+     second ladder that fights the new scale: remove it per section as that section migrates, never
+     globally first.
    - The shared atoms (button, chip, eyebrow, CTA, card) and their call-site counts.
    - Motion libraries and scroll hijacks (GSAP, Lenis, locomotive, a header script). Note them in
      `FLUID.md`; do not touch them during this migration.
@@ -135,12 +156,11 @@ to the design.
    and the desktop container width/padding (1680/80 by default, or today's container max-width if
    there is no design file).
 3. **`fluid init --brownfield`.** It writes `fluid.config.json` and generates `output.dir` with
-   `output.base: false` (the base layer's box-sizing/overflow/focus rules are skipped, since the
-   project already has its own reset — review each rule against the existing CSS if you want a
-   piece of it) and **prints** the one import and a settings starter instead of editing your
-   `globals.css` for you — brownfield CSS entry points are too varied to guess safely. Add the
-   printed `@import` line yourself, after the project's own reset/tokens. Adding units and
-   utilities changes nothing until a class uses them.
+   `output.base: false` (the project has its own reset; compare the base rules against it, including
+   the `html` overflow guard `fluid-bleed-x` relies on). It **prints** the import and a settings
+   starter instead of editing `globals.css`, because brownfield entry points vary too much to guess.
+   Add the `@import` after the project's own reset and tokens. Nothing changes until a class uses
+   the units.
 4. **Make the shared atoms opt-in fluid.** Add `fluid?: boolean` to each atom, with a compound variant
    carrying the scaled geometry. Default `false`. Migrated and unmigrated routes can then coexist, and
    an atom never flips under a route that has not moved.
@@ -150,12 +170,10 @@ to the design.
 6. **Pick one reference route** (usually the home page) and migrate it section by section with
    `section-recipe.md`. Verify the matrix after each section, not at the end.
 7. **Queue the remaining routes.** Track per route: migrated, verified at the matrix, verified at 2560.
-8. **Header and footer last,** on `--fluid-ui`. The header/footer unit is shared by every route, so it
-   moves once all routes can take it. **Keep any existing header animation and colour logic, and
-   take over only sizing**: the row height, inset, type and gaps move onto `--fluid-ui` (or the
-   `fluid-ui-*` utilities) and `--fluid-header-h`; the script that hides, shows or re-inks the header stays
-   as it is. Two writers on one property fight, so do not add a second one here. Changing that
-   behaviour is out of scope for this migration.
+8. **Header and footer last,** on `--fluid-ui`: every route shares them, so they move once all
+   routes can take it. **Take over sizing only**: row height, inset, type and gaps move onto
+   `--fluid-ui` (`fluid-ui-*`) and `--fluid-header-h`; the script that hides, shows or re-inks the
+   header stays as it is, because two writers on one property fight.
 
 ### Converting a container
 
@@ -199,7 +217,29 @@ where the site looks right today (usually 1024 / 1440).
 | A band-only tweak is ignored at some widths, or wins where it shouldn't | a band variant (`fluid-tablet:`) and a breakpoint (`md:`) on one property: the band variant always wins (`contract.md` §3) |
 | The site's own `--breakpoint-*` reorder `lg:` | they compete with the generated px ladder: `tailwind.breakpoints: "none"` (what `fluid init` sets when it finds them) |
 
+## Bridging old gutter and container tokens
+
+A site rarely migrates every route at once, and its old gutter token keeps its fixed value. In the
+production site, `--spacing-gutter: 72px` (used as `px-gutter`) and hard-coded `lg:px-18` stayed at
+72px when the team later widened `--fluid-desktop-container-padding` to 108: migrated sections moved,
+old ones did not. Point the old token at the fluid unit while routes migrate:
+
+```css
+@theme inline {
+  --spacing-gutter: var(--fluid-container-padding);   /* was 72px */
+}
+```
+
+Bridge an old max-width token to `--fluid-container-width` the same way. `inline` writes the
+`var()` into each utility, so it resolves on the element and follows a scope's settings too. Every
+`px-gutter` then follows the active band's padding, notch clearance included, and one setting moves
+old and new routes together. Hard-coded gutters (`lg:px-18`, `px-[72px]`) don't follow a
+token: replace them route by route with `fluid-container` on the section's inner wrapper, and grep
+for them before calling a route done. Remove the bridge once nothing uses the old token.
+
 ## Traps
+- [ ] Old gutter and container tokens point at `--fluid-container-padding` / `-width` while routes
+      migrate; hard-coded gutters are replaced route by route.
 - [ ] Old `clamp`/`vw` ladders are removed per section as it migrates, never left alongside.
 - [ ] Atoms are opt-in fluid and registered with `cn.ts` first.
 - [ ] One reference route, fully verified, before the rest.

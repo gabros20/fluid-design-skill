@@ -3,25 +3,20 @@
 **Purpose:** The checked vocabulary this skill ships: browser floor per stack, config keys, emitted
 custom properties, utilities and band variants, the SCSS and StyleX API, `fluid.ts` exports, DOM
 attributes, and what motion code reads.
-**Read when:** you need the exact vocabulary this skill ships — a `fluid.config.json` key, an
-emitted custom property, a `fluid-*` utility name, a `data-*` attribute the verifier reads, or a
-name motion code depends on — and you want the name checked against
-what actually ships, not remembered from a planning doc.
-**Skip when:** you already know the name and just need the *why* behind it — that lives in
-`fluid-scale.md` (units/config), `stacks.md` (per-stack authoring surface) or `tokens-and-theming.md`
-(design tokens, a separate vocabulary from this one). For the full settings table with every
-default and doc string, read `config.md` (generated) — this page names the settings, it does not
-repeat their values. Motion attributes and constants (entrance curves, scene state) are not
-part of this skill.
+**Read when:** you need an exact shipped name — a `fluid.config.json` key, an emitted custom
+property, a `fluid-*` utility, a generated file, a `data-*` attribute the verifier reads, or a name
+motion code depends on — checked against what ships, not remembered.
+**Skip when:** you know the name and need the *why*: `fluid-scale.md` and `units.md` (units), `stacks.md` (per-stack
+authoring), `tokens-and-theming.md` (design tokens). Every setting's default and description is in
+`config.md` (generated); this page names settings, it does not repeat their values.
 **Inputs:** the name, key, utility, attribute or export in question, and the project's stack.
 **Produces:** the exact shipped name and what it does, or the browser floor for a stack.
-**Depends on:** nothing. This is the leaf reference every other doc in this skill cites for exact
-names, which is also why it exists on its own rather than folded into one of them.
+**Depends on:** nothing. Every other reference cites this page for exact names.
 
 Every name below was checked against `scripts/lib/spec.mjs`, `scripts/lib/model.mjs`,
-`scripts/lib/emit/{engine,tailwind,stacks,project}.mjs` and `scripts/tools/verify.mjs`, as of the
-version of this skill you are reading. If a name here ever stops matching the code, the code is
-the source of truth — file that as a doc bug against this page.
+`scripts/lib/emit/{engine,tailwind,stacks,project}.mjs`, `scripts/tools/{verify,audit}.mjs` and the
+reference output in `assets/styles/<stack>/`. If a name stops matching the code, the code wins:
+file a doc bug against this page.
 
 ## Contents
 
@@ -34,6 +29,8 @@ the source of truth — file that as a doc bug against this page.
 6. DOM attributes this skill reads
 7. For motion code
 8. Traps
+- Class merging (`cn.ts`)
+- Generated files
 
 ## 0. Browser support
 
@@ -64,16 +61,19 @@ Every structure key and every setting, with its default and doc string, is in `c
   never a `--fluid*` custom property.
 - **Settings** are CSS variables, `--fluid-<band>-<key>` or a global `--fluid-<key>`, registered
   with `@property`, set in the project's own `:root` (or a scope, §3), live. At the default
-  structure there are 43: 30 registered, 13 optional (unset by default). Per band:
+  structure there are 43: 34 registered, 9 optional (unset by default). Per band:
   `base-width`, `base-height` and `fit-height` (desktop only), `scale-min`, `scale-max` (optional on
   desktop), `<role>-damping`, `<role>-floor` (desktop only, optional), `container-width`,
-  `container-padding`, `header-height`; the tablet and landscape container and header settings are
-  optional and fall back to the phone's ("set mobile once"). Global: `header-inset`, the limits
-  `grow-until`, `shrink-until`, `ui-grow-until` (with `ui: true`) and `off`, and
-  `zoom-text-full` / `zoom-text-none` (with `zoom: true`, on stacks that have `fluid-text`: not the
-  css stack).
-- `fluid settings` prints the generated `settings.reference.css`; `fluid explain <W>x<H>` shows what
-  each resolves to and where the value came from (default or `file:line`).
+  `container-padding`, `header-height`. The tablet and landscape `container-width` default to the
+  desktop breakpoint (full width) and `container-padding` to 32; only their `header-height` is
+  optional and falls back to the phone's. Global: `header-inset`, the limits `grow-until`,
+  `shrink-until`, `ui-grow-until` (with `ui: true`) and `off`, and `zoom-text-full` /
+  `zoom-text-none` (with `zoom: true`, on stacks that have `fluid-text`: not the css stack).
+- `fluid settings` prints every setting with its default (`--json` too); `fluid explain <W>x<H>`
+  shows what each resolves to and where the value came from (default or `file:line`).
+- **`$schema`**: `fluid init` and `fluid migrate` point it at the published schema
+  (`https://unpkg.com/fluid-design-cli@2/skills/fluid-design/assets/fluid.config.schema.json`); no
+  copy is written into the project.
 - **Your own `--fluid-*` tokens.** `fluid check` treats an unknown `--fluid-*` name as an error only
   when it is within two edits of a real setting (a typo) or is an engine-owned name (`--fluid`,
   `--fluid-ui`, `--fluid-header-h`, …, which would override the engine). Anything else is an info
@@ -81,10 +81,8 @@ Every structure key and every setting, with its default and doc string, is in `c
 
 ## 2. Emitted custom properties
 
-Fixed names — `scripts/lib/spec.mjs`'s `unitNames()` and `scripts/lib/emit/engine.mjs`'s
-`formulas()` are the single source, and every stack generator (`tailwind-v4`, `css`, `scss`,
-`stylex`) calls the same engine rather than re-deriving these strings. Only utility/class *names*
-move with `prefix`; these do not.
+Fixed names from one source (`spec.mjs`'s `unitNames()`, `engine.mjs`'s `formulas()`), shared by
+every stack. `prefix` never renames them.
 
 ```
 --fluid                    the layout unit: max(scale-min, min(height arm, width arm, scale-max))
@@ -94,7 +92,9 @@ move with `prefix`; these do not.
                             max(B, d·max(B, knee) + (1−d), floor)   where B = --fluid-z (or --fluid if zoom: false)
 --fluid-ui                  [only with ui: true] follows width, never shrinks for a short window
 --fluid-container-width     always emitted: the page container's max-width (grows, never narrows below the setting)
---fluid-container-padding   always emitted: the page container's side padding
+--fluid-container-padding   always emitted: the page container's side padding,
+                            max(padding × --fluid, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)):
+                            never inside a notch under viewport-fit=cover (insets are 0 elsewhere)
 --fluid-header-h           calc(header-inset * var(--fluid) + var(--fluid-safe-top) + <row>)
                             row: header-height (CSS px, unscaled) below desktop; header-height * var(--fluid-ui)
                             (or var(--fluid) if ui: false) at desktop
@@ -139,18 +139,34 @@ The exact `@utility` set is generated by `scripts/lib/emit/tailwind.mjs`'s `util
 - translate: `fluid-translate-x/y-*` (writes the `translate` property, not `transform`, so it
   composes with Motion's `transform`. **Not with GSAP on the same element**: GSAP folds
   `translate` into its own transform and freezes a px/`calc()` value at load size; put the offset
-  on a child or wrapper GSAP does not tween, `fluid-scale.md` §11)
+  on a child or wrapper GSAP does not tween, `fluid-scale.md` §7)
 - `fluid-container`: the page container — `width: 100%; margin-inline: auto; max-width:
   var(--fluid-container-width); padding-inline: var(--fluid-container-padding)`. Apply once per
   section, to that section's own inner wrapper.
 - `fluid-cap-*`: `max-width: max(Npx, N*var(--fluid))` — grow-only
+- `fluid-bleed-x`: from inside a `fluid-container`, reaches the window's edges and pads back in by
+  the same amount, so content still lines up with the container (a carousel track, an edge-to-edge
+  strip). Negative `margin-inline` and matching `padding-inline` of
+  `--fluid-container-padding + max(0px, (100vw − --fluid-container-width) / 2)`. `100vw` counts a
+  desktop scrollbar, so it overshoots by half a scrollbar per side; the `html` overflow guard in
+  `base.css` clips that (with `output.base: false`, keep your own `overflow-x` guard on `html`).
+  The css stack emits the `.fluid-bleed-x` class, SCSS `@mixin fd.fluid-bleed-x`; StyleX has no
+  helper (write the two declarations).
 
 Type utilities: `fluid-<role>-*` (one family per entry in `roles`: `fluid-display-*`,
 `fluid-copy-*`, and a custom role's own `fluid-<role>-*`) spends `--fluid-<role>`; `fluid-text-*`
 spends the base unit blended toward the zoomed one. Both take the `/lh` modifier
 (`fluid-display-64/72`).
 
-With `ui: true`, the ui unit gets its own small family (header/nav/footer boxes and their type):
+**Role box utilities:** `fluid-<role>-{p,px,py,gap,w,h,size}-*` (`fluid-copy-h-56`,
+`fluid-display-px-24`) size a box on the role's unit, so a control keeps its proportion to the
+label inside it: `fluid-copy-14/20` text in a `fluid-copy-h-56 fluid-copy-px-24` button. One family
+per role, Tailwind only (SCSS `fd.fluid-<role>($n)` and StyleX `fluid<Role>(n)` work on any property).
+`cn` puts each in its property's group (`fluid-copy-h-*` with `h-*` and `fluid-h-*`), and the audit's
+band-variant rule treats them as the same property. Audit rule `arbitrary-fluid-calc` (info, not
+in `fluid check`) points a hand-written `h-[calc(56*var(--fluid-copy))]` at `fluid-copy-h-56`.
+
+With `ui: true`, the ui unit gets the same family (header/nav/footer boxes and their type):
 `fluid-ui-{p,px,py,gap,w,h,size}-*`, `fluid-ui-text-*`.
 
 Values are always the unitless drawn number. Bare numbers work in 0.25 steps (`fluid-p-24`,
@@ -185,15 +201,11 @@ breakpoint can't say: an exclusive band, and orientation plus height. The deskto
 `fluid-desktop:` variant; it was byte-for-byte `lg:` (audit rule `fluid-desktop-variant`).
 
 **Band variants vs breakpoints.** Tailwind v4 emits every custom variant after every breakpoint
-variant, and nothing lets one sort between them. So on one property a band variant always beats a
-breakpoint, whatever the widths say: `fluid-tablet:p-4 md:p-8` stays at `p-4` on an 800px tablet,
-and `fluid-phone:hidden sm:block` stays hidden on a 500px phone.
-
-- Don't mix a band variant with `sm:`, `md:` or a `max-*:` breakpoint on one property. Use one
-  system for it: the band variants alone, or breakpoints alone (`max-lg:`, `md:max-lg:`).
-- `lg:`, `xl:` and `2xl:` are fine next to a band variant: they start at the desktop band, where no
-  band variant matches.
-- Audit rule `band-variant-with-breakpoint` (also run by `fluid check`) flags the mix.
+variant, so on one property a band variant always beats a breakpoint, whatever the widths:
+`fluid-tablet:p-4 md:p-8` stays `p-4` on an 800px tablet. Don't mix a band variant with `sm:`, `md:`
+or `max-*:` on one property; use the band variants alone or breakpoints alone. `lg:`, `xl:` and
+`2xl:` are fine beside one (no band variant matches at desktop). Audit rule
+`band-variant-with-breakpoint` (also in `fluid check`) flags the mix.
 
 **Scopes and limits.** A scope is an element the engine re-declares its formulas on, so settings set
 there apply to its subtree only. An element is a scope when it has class `<prefix>-scope`, attribute
@@ -212,17 +224,19 @@ the children, and neither is a scope (audit rule `limit-on-children`).
 
 `W` is a whole number of window px (bare, or `[1680]`); a limit applies in the band containing W.
 The same four are settings (`config.md`), usable on `:root`. Autocomplete suggests common widths
-(375 … 2560). `fluid-scale.md` §10 has the semantics and the `--fluid-header-h` trap.
+(375 … 2560). `limits-and-scopes.md` §2 has the semantics and the `--fluid-header-h` trap.
 
 **Autocomplete.** Every value utility resolves through a suggestion scale first
 (`@theme inline reference { --fluid-step-*: … }`, which emits no CSS), then any number or bracketed
 number — so Tailwind IntelliSense lists `fluid-p-24`, `fluid-display-64/72` and the rest, and
 `fluid-p-37.5` and `fluid-p-[8.3]` still work.
-Settings complete in CSS files through `fluid.css-data.json` (VS Code `css.customData`; `fluid init`
-wires it).
+Settings complete in CSS files through `fluid.css-data.json` (VS Code `css.customData`), written
+only with `output.editor: true`; `fluid init` turns that on and wires it only in a project that
+already has `.vscode/settings.json`.
 
 Other stacks: vanilla CSS and CSS Modules spend the same custom properties directly in `calc()`,
-with no per-value helper classes (`stacks.md`).
+with no per-value helper classes; the only classes are `.fluid-container` and `.fluid-bleed-x`
+(`stacks.md`).
 
 ## 4. SCSS and StyleX API
 
@@ -236,7 +250,7 @@ globally):
 - `fd.fluid-cap($n)` — grow-only max-width
 - `@mixin fd.fluid-type($size, $lh, $unit: <first role>)` — font-size + line-height together;
   `$unit` is one of the roles, `text`, or `ui`
-- `@mixin fd.fluid-container` — the page container
+- `@mixin fd.fluid-container` — the page container; `@mixin fd.fluid-bleed-x` — §3's bleed
 - Band mixins, one per enabled band: `@include fd.fluid-phone { }`, `fd.fluid-tablet`,
   `fd.fluid-landscape`, `fd.fluid-desktop`. Exactly one matches at any viewport (the upper edges
   are nested `@media not all and (…)`, classic syntax)
@@ -339,3 +353,26 @@ the group of the property it sets, and gives the limits groups of their own), `t
 keeps it and adds the plugin: `extendTailwindMerge(withFluid)`, or
 `extendTailwindMerge({ extend: … }, withFluid)` when it already extends tailwind-merge. Tested with
 both shapes in the repository's `tests/tailwind-compile.mjs`.
+
+## Generated files
+
+`fluid generate` writes into `output.dir` (never edit inside it):
+
+| File | When |
+|---|---|
+| `fluid.css` | always: the one import (base layer, engine; on Tailwind also the theme, variants and utilities) |
+| `base.css` | `output.base: true` (default): box-sizing, the `html` overflow guard, focus ring |
+| `fluid.ts` | always (§5) |
+| `cn.ts` | `tailwind-v4` |
+| `_index.scss` | `scss` |
+| `fluid.stylex.ts` | `stylex` |
+| `runtime/units.js` (+`.d.ts`) | always |
+| `runtime/zoom.js` (+`.d.ts`) | `zoom: true` (default) |
+| `runtime/zoom.classic.js` | `zoom: true` with `output.integration: "none"` |
+| `integrations/next.tsx` / `integrations/vite.ts` | `output.integration: "next"` / `"vite"` |
+| `settings.reference.css`, `fluid.css-data.json` | only `output.editor: true` |
+| `README.md`, `.gitattributes`, `.fluid.lock.json` | always (the lock is how `fluid check` spots hand edits) |
+
+At the project root: `fluid.config.json` and the team's `FLUID.md` decision log. `fluid init` also
+adds `"fluid": "npx fluid-design-cli@2"` to `package.json` scripts when absent, so the team and CI
+run `npm run fluid -- check` without the skill.

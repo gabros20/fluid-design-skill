@@ -1,179 +1,143 @@
 # iOS Safari: render fixes
 
-**Purpose:** iOS Safari render fixes for a fluid page: `svh`/`lvh`/`dvh`, `--fluid-browser-bar` and
-safe areas, the iOS 26 toolbar tint policy, the hero overshoot, sticky killers, input zoom,
-overscroll, and device verification discipline.
-**Read when:** anything full-height, sticky or edge-to-edge is about to ship, or a device report
-says "it looks wrong on iPhone."
+**Purpose:** iOS Safari render fixes for a fluid page: `svh`/`lvh`/`dvh`, `--fluid-browser-bar`,
+safe areas and the notch, the iOS 26 toolbar tint, the hero overshoot, sticky killers, input zoom,
+overscroll, hydration errors Safari causes, and what only a real device can check.
+**Read when:** anything full-height, sticky or edge-to-edge is about to ship, or a report says "it
+looks wrong on iPhone."
 **Skip when:** the change is desktop-only and doesn't touch layout. SVG rules live in `media.md`;
 anything that moves (a pin's scroll maths, video playback, a mask sweep) is outside this skill.
-**Inputs:** the full-height, sticky or edge-to-edge elements, the viewport meta tag, and any device
+**Inputs:** the full-height, sticky or edge-to-edge elements, the viewport meta tag, any device
 report.
-**Produces:** unit and structure choices that render right on iPhone, and the checks only a real
-device can do.
+**Produces:** unit and structure choices that render right on iPhone, and the device-only checks.
 **Depends on:** `performance.md` for the render budget; `fluid-scale.md` §3 for why the scale's
 height arm is `svh`.
 
-Chrome DevTools' device emulation **cannot** reproduce most of what's in this document — several of
-these are Safari/WebKit sampling and rendering behaviours with no emulated equivalent. Verify on a
-real device or the matching iOS Simulator; see `verification.md` §3–§4.
+Chrome DevTools' device emulation cannot reproduce most of this: they are WebKit sampling and
+rendering behaviours with no emulated equivalent. Check on a real device or the iOS Simulator
+(`verification.md` §3–§4).
 
 ## Contents
 
 1. [`svh` vs `lvh` vs `dvh`](#1-svh-vs-lvh-vs-dvh)
-2. [`--fluid-browser-bar` and safe areas](#2---fluid-browser-bar-and-safe-areas)
-3. [The iOS 26 toolbar tint — current policy and what's superseded](#3-the-ios-26-toolbar-tint--current-policy-and-whats-superseded)
-4. [No body background, no forced theme-color](#4-no-body-background-no-forced-theme-color)
+2. [`--fluid-browser-bar`, safe areas and the notch](#2---fluid-browser-bar-safe-areas-and-the-notch)
+3. [The iOS 26 toolbar tint](#3-the-ios-26-toolbar-tint)
+4. [No global body background; per-page colour](#4-no-global-body-background-per-page-colour)
 5. [The hero overshoot](#5-the-hero-overshoot)
 6. [Sticky: `overflow-x: hidden` and `transform` on an ancestor](#6-sticky-overflow-x-hidden-and-transform-on-an-ancestor)
 7. [`maximumScale` vs. the 16px input rule](#7-maximumscale-vs-the-16px-input-rule)
-8. [Overscroll / rubber-band](#8-overscroll--rubber-band)
-9. [The stale stylesheet](#9-the-stale-stylesheet)
-10. [Verification discipline](#10-verification-discipline)
-11. [Traps](#traps)
+8. [Overscroll](#8-overscroll)
+9. [Hydration errors from Safari](#9-hydration-errors-from-safari)
+10. [When the bug is not the page](#10-when-the-bug-is-not-the-page)
+11. [Verification](#11-verification)
+12. [Traps](#traps)
 
 ## 1. `svh` vs `lvh` vs `dvh`
 
 | Unit | Meaning | Use for |
 | --- | --- | --- |
-| `svh` | **Small** viewport — toolbar expanded | ordinary full-height sections; the default choice |
-| `lvh` | **Large** viewport — toolbar collapsed | a pin's sticky box (see below) |
-| `dvh` | tracks the *current* toolbar state live | almost nothing here — it resizes mid-scroll |
-| `vh` | legacy; behaves like `lvh` on iOS | avoid for anything full-height |
+| `svh` | small viewport: toolbar expanded | ordinary full-height sections (the default) |
+| `lvh` | large viewport: toolbar collapsed | a pin's sticky box (with a matching `lvh` negative margin); a full-bleed picture's box |
+| `dvh` | follows the toolbar live | almost nothing: it resizes mid-scroll |
+| `vh` | legacy; acts like `lvh` on iOS | avoid for anything full-height |
 
-`100vh` (and any percentage height resolved against the initial containing block) on iOS includes
-the area behind the collapsible URL bar, so a full-height section sized with it visibly jumps as the
-bar collapses and expands on scroll.
+`100vh` on iOS includes the area behind the collapsible URL bar, so a section sized with it jumps as
+the bar collapses and expands.
 
-**Ordinary one-screen sections, and the fluid scale's own height arm (`fluid-scale.md` §3), stay on
-`svh`** — a scroll mid-gesture must not resize their type. A pinned scene's sticky box is the
-exception and uses `lvh` with a matching `lvh` negative margin. `dvh` is right for almost nothing in this system: it
-tracks the toolbar animation live, which is a layout thrash on exactly the surfaces (a pinned
-render, a scaled type ramp) that can least afford one.
+**Ordinary sections and the scale's own height arm stay on `svh`**: a scroll must not resize their
+type. `dvh` re-lays-out on every frame of the toolbar animation, the worst cost for a pinned render
+or a scaled type ramp.
 
-**`svh` did not hold still on iOS Safari 16.4–17.3.** WebKit bug 261185: with the tab bar hidden,
-`svh` computed like `dvh`, so everything sized in `svh` (the fluid height arm included) resized as the
-toolbar collapsed. Fixed in Safari 17.4 (March 2024; WebKit commits 270516, 270652). The choice of
-`svh` still stands, since `dvh` moves on every version, but a report of "type resizing while I scroll"
-from an older iPhone is this bug, not the code. Check the iOS version before debugging.
+**`svh` moved on iOS Safari 16.4–17.3** (WebKit bug 261185: with the tab bar hidden, `svh` computed
+like `dvh`). Fixed in 17.4 (March 2024). `svh` is still right, since `dvh` moves on every version,
+but "type resizes while I scroll" on an older iPhone is this bug, not the code. Check the iOS version
+first.
 
-**A full-bleed picture is a third case, distinct from a layout container.** `100svh` on a
-picture/video hero ends exactly where the toolbar begins, so the band behind the toolbar shows
-whatever comes *next* — not the hero. The fix is not "use `lvh` and accept content hiding behind the
-bar" — it's sizing the **box** and the **content** separately: the section (the art) takes `100lvh`
-so it covers the whole physical screen, while the content wrapper *inside* it pads by the toolbar's
-own height so copy still lands in the visible area:
-
-```css
-/* emitted by the engine (§2): 0 on desktop, so every rule below is then a no-op */
---fluid-browser-bar: calc(100lvh - 100svh);
-```
+**A full-bleed picture sizes the box and the content separately.** `100svh` on a photo or video hero
+ends where the toolbar starts, so the band behind the toolbar shows the *next* section. Give the
+section (the art) `100lvh` so it covers the screen, and pad the content inside by the toolbar's
+height so copy lands in the visible area:
 
 ```tsx
 <section className="relative min-h-[100lvh] overflow-hidden">
   <Image fill className="object-cover" … />
   <div className="relative z-10 flex h-full flex-col
                   pt-[calc(58px+var(--fluid-safe-top))]
-                  pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom))]">
-    …
-  </div>
+                  pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom))]">…</div>
 </section>
 ```
 
-## 2. `--fluid-browser-bar` and safe areas
+## 2. `--fluid-browser-bar`, safe areas and the notch
 
-The engine emits these on `:root` and every scope (namespaced, so a site's own `--safe-top` is left
-alone; the un-prefixed names exist only as aliases with `aliases: true`):
+The engine sets these on `:root` and every scope (namespaced, so a site's own `--safe-top` is left
+alone; the short names exist only with `aliases: true`):
 
 ```css
 --fluid-safe-top: env(safe-area-inset-top, 0px);
 --fluid-safe-bottom: env(safe-area-inset-bottom, 0px);
---fluid-browser-bar: calc(100lvh - 100svh);
+--fluid-browser-bar: calc(100lvh - 100svh);   /* 0 on desktop, so rules using it are no-ops there */
 ```
 
-**`env()` needs a fallback inside `calc()`, always.** An `env()` reference the engine doesn't
-recognise, with no second argument, resolves to *nothing* — not `0px` — which makes the whole
-`calc()` **invalid**, and the entire declaration is dropped rather than degrading gracefully.
-Measured: `calc(10px + env(safe-area-inset-top))` computes fine (Safari knows this token, resolves
-absent insets to 0), but `calc(10px + env(unknown-token))` drops the declaration entirely and
-`calc(10px + env(unknown-token, 0px))` correctly falls back to `10px`. Any engine new enough to
-support `env()` at all ships `safe-area-inset-*` alongside it, so this specifically bites engines
-with no `env()` support at all — where the padding silently disappears rather than degrading.
+**Always give `env()` a fallback inside `calc()`.** An `env()` the engine doesn't know, with no
+fallback, makes the whole `calc()` invalid and the declaration is dropped, not degraded. Measured:
+`calc(10px + env(unknown-token))` drops the declaration; `calc(10px + env(unknown-token, 0px))` gives
+`10px`. Safari knows `safe-area-inset-*` (absent insets are 0), so this bites engines with no `env()`
+support, where the padding silently disappears.
 
-**Safe-area insets describe the screen (notch, home indicator), not the browser chrome.** The
-collapsible toolbar is not a safe-area inset, so `env(safe-area-inset-bottom)` alone does not clear
-it — content that must sit above the URL bar needs `--fluid-browser-bar` too. A footer padded only by
-`safe-area-inset-bottom` still sits its last line under the URL bar on a phone.
+**Safe-area insets describe the screen (notch, home indicator), not the browser toolbar.** A footer
+padded only by `safe-area-inset-bottom` still sits its last line under the URL bar; add
+`--fluid-browser-bar`.
 
-A `position: fixed` element inset from an edge (a header at `top: 24px`) is 24px from the
-**physical** screen edge once `viewport-fit: cover` is active — inside the status bar, not below it.
-The inset wanted is *below the chrome*: `top: calc(24px + var(--fluid-safe-top))`. If that element carries
-a full-bleed backdrop, pull the backdrop up by the same term so it still reaches the physical top, or
-page content shows through the gap above it.
+**Fixed elements under `viewport-fit=cover`.** A header at `top: 24px` is 24px from the *physical*
+edge, inside the status bar. Write `top: calc(24px + var(--fluid-safe-top))`. If it has a full-bleed
+backdrop, pull the backdrop up by the same amount, or content shows through the gap above it.
 
-## 3. The iOS 26 toolbar tint — current policy and what's superseded
+**The notch in landscape is handled by the container.** `--fluid-container-padding` is
+`max(drawn padding × unit, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))`. With
+`viewport-fit=cover`, a phone on its side keeps content in `fluid-container` (and `fluid-bleed-x`,
+which reads the same padding) clear of the notch, with no per-component `env()` rules. Elsewhere the
+insets are 0 and nothing changes. Only elements outside the container need their own inset.
 
-Pre-iOS-26, `<meta name="theme-color">` tinted the status bar and URL bar directly. **Safari 26
-("Liquid Glass") ignores `theme-color`** for this purpose and instead **samples the background
-colour of `position: fixed`/`sticky` elements near the viewport edges** (falling back to `<body>`,
-then an opaque OS default — white). The sampling heuristic: the sampled element must be **100% wide
-and at least 6px tall**.
+## 3. The iOS 26 toolbar tint
 
-**This is where an earlier, plausible-looking playbook gets superseded, so read this part
-carefully.** The historically documented fix — two invisible 12px fixed edge strips feeding the
-sampler, plus a forced dark `<body>` background and a forced `theme-color` — genuinely works to
-force a tint, and it is preserved below because it remains the *only* correct pattern for one
-narrower case (§3b). But **the reference build's current, shipped policy is the opposite: no forced
-tint, anywhere, on ordinary pages.**
+Before iOS 26, `<meta name="theme-color">` tinted the status and URL bars. **Safari 26 ("Liquid
+Glass") ignores `theme-color`** and samples the background of `position: fixed`/`sticky` elements
+near the top and bottom edges, falling back to `<body>`, then to an opaque OS default (white). A
+sampled element must be **100% wide and at least 6px tall**.
 
-**Why it was reverted.** Forcing a single tint assumes one colour is right for the whole page. It
-isn't, on any page whose top and bottom aren't the same colour — a light-hero page under a
-globally-forced dark strip gets a hard, wrong-coloured bar above a light hero. Rather than
-special-case every route or reintroduce per-section edge strips for ordinary scrolling, the current
-policy removes the forced tint entirely and lets Safari's native sampler read whatever is actually
-painted at the edges — which, for a page with no `body` background and no `theme-color`, is the
-page's own content glassing naturally through the translucent chrome.
-
-**The two removals travel together — this is the part that's easy to get half-right.** `theme-color`
-and the forced `body`/`html` background steer the exact same outcome from two different code paths.
-Removing only one leaves the survivor still steering the colour (the `body` background alone still
-feeds the sampler's fallback), so the fix is not "delete the strips" — it's deleting `theme-color`
-**and** the body background **in the same change**.
-
-### 3a. Current policy (do this)
+**Policy: no forced tint on ordinary pages.** An older fix (two invisible 12px fixed edge strips, a
+forced dark `body` background and a forced `theme-color`) does force a tint, and was reverted: one
+colour is wrong on any page whose top and bottom differ (a light hero under a forced dark bar). With
+no `body` background and no `theme-color`, Safari samples the page's own edges, which glass through
+the toolbar naturally.
 
 - No `theme-color` meta / `viewport.themeColor` export.
-- No `body`/`html` `background-color`.
-- `viewport-fit: cover` **stays** — it's what gives Safari real page pixels at the edges to sample,
-  independent of whether anything forces a colour.
-- Each section paints its own surface as normal; nothing needs to "reach" the chrome.
+- No global `body`/`html` `background-color` (§4).
+- Keep `viewport-fit: cover`: it gives Safari real page pixels at the edges to sample.
+- Each section paints its own surface.
 
-### 3b. The strips pattern is still correct — but only for a full-viewport overlay
+**Remove `theme-color` and the body background in the same change.** They steer the same outcome by
+two paths; the survivor keeps steering it (the body background still feeds the sampler's fallback).
 
-A **full-viewport `fixed`/`sticky` element** (a full-screen menu sheet, a modal) changes what the
-sampler sees the instant it mounts, and native-glass-everywhere breaks down here in a way the
-policy above doesn't cover:
+### 3b. Edge strips: only for a full-viewport overlay
+
+A full-viewport `fixed`/`sticky` overlay (a menu sheet, a modal) changes what the sampler sees the
+moment it mounts, and the policy above breaks down:
 
 - Safari samples the background **declared on the overlay element itself**. A transparent fixed
-  wrapper around an opaque child samples as transparent → the sampler falls through to an opaque OS
-  default (a solid white slab) — it does **not** fall through to glass-over-content the way a small
-  partial-edge element would.
-- **Children are invisible to the sampler.** Painting colour on a child of the fixed/sticky element
-  does nothing; the colour must be on the element the sampler is actually measuring.
-- **An element animated in from `scaleY(0)` cannot feed the sampler.** At the moment Safari
-  evaluates a newly-mounted overlay it has zero rendered height at the edges, and the tint latches
-  before the animation lands — declaring the colour on the animating panel itself does not work;
-  this was tried and failed on a real device.
-- The sampler re-evaluates on overlay mount/unmount, so a tint can be scoped to exactly the overlay's
-  open lifetime.
+  wrapper around an opaque child samples as transparent and falls through to the white OS default,
+  not to glass over content.
+- **Children are invisible to the sampler.** The colour must be on the measured element.
+- **A panel animated in from `scaleY(0)` cannot feed the sampler**: it has no height at the edges
+  when Safari samples, and the tint latches before the animation lands (tried, failed on device).
+- The sampler re-evaluates on mount and unmount, so the tint can last exactly as long as the overlay.
 
-**Device-verified fix for this one case:** two 12px, never-transformed, `aria-hidden`,
-`pointer-events: none` edge strips mounted *inside the overlay's own subtree* (so they mount and
-unmount with it), plus setting `document.body.style.backgroundColor` inline for the open duration
-and clearing it symmetrically on close:
+**Device-verified fix:** two 12px, never-transformed, `aria-hidden`, `pointer-events: none` strips
+inside the overlay's own subtree (so they mount and unmount with it), plus the body colour set for
+the open duration and cleared on close:
 
 ```tsx
-{/* inside the menu sheet's own subtree, not the root layout */}
+{/* inside the menu sheet's subtree, not the root layout */}
 <div aria-hidden style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 12, background: SHEET_COLOR, pointerEvents: 'none', zIndex: 0 }} />
 <div aria-hidden style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 12, background: SHEET_COLOR, pointerEvents: 'none', zIndex: 0 }} />
 ```
@@ -186,140 +150,171 @@ useEffect(() => {
 }, [open])
 ```
 
-Fastest way to prove the mechanism is wired correctly before trusting it: temporarily set the strips
-to `height: 40px; background: red`, confirm red shows in the actual chrome on a device, then revert.
+To prove the wiring first, set the strips to `height: 40px; background: red`, confirm red in the
+toolbar on a device, then revert.
 
-A full-viewport sticky **pinned scene** is a different case with a device-verified negative result:
-its toolbar tint is accepted as it is. Do not re-chase it.
+A full-viewport sticky **pinned scene** has a device-verified negative result: its toolbar tint is
+accepted as it is. Do not re-chase it.
 
-## 4. No body background, no forced theme-color
+## 4. No global body background; per-page colour
 
-Restated as a standalone rule because it's easy to reintroduce by accident while fixing something
-unrelated: under the current policy (§3a), **nothing** paints a global `body`/`html` background and
-**nothing** sets a global `theme-color`. If a future change needs the toolbar tinted for a specific
-route or section again, reach for the scoped overlay pattern (§3b) or a per-route/per-section CSS
-variable driven by whatever already resolves the page's dominant colour (a header-theme probe, if
-the project has one, is a natural signal to reuse) — never reintroduce a
-blanket global background as the first move.
+Easy to reintroduce while fixing something else: **nothing** paints a global `body`/`html`
+background and **nothing** sets a global `theme-color` (§3). When a route or section needs a colour
+at the edges, use the overlay pattern (§3b) or a per-page signal, never a blanket background.
+
+**The per-page path: overscroll on a page with a coloured header.** On a page whose header and hero
+are coloured (say green), a bounce past the top shows the root background above the header, white
+by default. Set an attribute on `<html>` only on those pages, plus which half of the page is in view,
+and colour the root from both: top half → the header's colour, bottom half → the default under the
+footer.
+
+```ts
+// in the header component, only when this page's header is green
+useEffect(() => {
+  if (!isGreenHeader) return
+  const root = document.documentElement
+  root.dataset.headerTone = 'green'
+  const update = () => {
+    root.dataset.scrollHalf = scrollY < (root.scrollHeight - innerHeight) / 2 ? 'top' : 'bottom'
+  }
+  update()
+  addEventListener('scroll', update, { passive: true })
+  return () => { removeEventListener('scroll', update); delete root.dataset.headerTone; delete root.dataset.scrollHalf }
+}, [isGreenHeader])
+```
+
+```css
+html[data-header-tone='green'][data-scroll-half='top'] { background-color: var(--color-green); }
+```
+
+Every other page keeps no root background, so the §3 policy holds.
 
 ## 5. The hero overshoot
 
-Even with the box/content split in §1, **iOS 26 measures `100lvh` short of the physical screen** on
-some devices — the large-viewport unit stops at the toolbar's *resting* edge rather than the true
-screen edge, so a full-bleed hero sized `min-h-[100lvh]` still ends above the bottom chrome, and the
-next section shows through as a band behind the toolbar. No viewport unit alone fixes this — `svh`,
-`dvh`, `lvh` and `-webkit-fill-available` all miss one state or another.
+Even with the box/content split (§1), **iOS 26 measures `100lvh` short of the physical screen** on
+some devices: it stops at the toolbar's resting edge, so a `min-h-[100lvh]` hero ends above the
+bottom chrome and the next section shows behind the toolbar. No viewport unit fixes it: `svh`,
+`dvh`, `lvh` and `-webkit-fill-available` each miss one state.
 
-**Device-verified fix: overshoot the section by a fixed slack, and pay the exact same slack back
-inside the content box**, scoped to iOS WebKit only via `@supports (-webkit-touch-callout: none)` —
-that property exists only on iOS WebKit, so desktop Safari, Chrome and Firefox all skip the rule
-entirely:
+**Device-verified fix: overshoot the section by a fixed slack and pad the same slack back inside**,
+on iOS WebKit only via `@supports (-webkit-touch-callout: none)` (only iOS WebKit has that property):
 
 ```tsx
 <section className="relative min-h-[100lvh] overflow-hidden
     max-lg:supports-[-webkit-touch-callout:none]:min-h-[calc(100lvh+60px)]">
   <Image fill className="object-cover" … />
   <div className="… pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom))]
-      max-lg:supports-[-webkit-touch-callout:none]:pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom)+60px)]">
-    …
-  </div>
+      max-lg:supports-[-webkit-touch-callout:none]:pb-[calc(24px+var(--fluid-browser-bar)+var(--fluid-safe-bottom)+60px)]">…</div>
 </section>
 ```
 
-- The +60px is deliberate slack, not a measured-to-the-pixel constant — for a full-bleed
-  photo/video hero it's just more artwork below the fold, invisible in normal use. Don't try to
-  compute the exact shortfall; it varies by device and toolbar state, which is precisely how this
-  bug survives "correct" units in the first place.
-- **The content box must pad back the same 60px**, or bottom-anchored copy slides down into the
-  chrome — this is the visible failure mode of applying the overshoot to the section without the
-  matching padback.
-- Scope with `max-lg:` (or the equivalent) — this is a phone-chrome problem; leaving it unscoped
-  costs desktop and iPad nothing but also gains them nothing.
-- Only apply this to sections that are **pictures**. A plain layout container that overshoots by 60px
-  gains 60px of real, scrollable empty space for no reason.
+- 60px is slack, not a measurement: the shortfall varies by device and toolbar state, which is how
+  the bug survives "correct" units. For a photo or video it is just more artwork below the fold.
+- **The content must pad back the same 60px**, or bottom-anchored copy slides into the chrome.
+- Scope it with `max-lg:`: it is a phone-chrome problem.
+- **Pictures only.** A layout container that overshoots gains 60px of real, scrollable empty space.
 
 ## 6. Sticky: `overflow-x: hidden` and `transform` on an ancestor
 
-Specifically an iOS-flavoured trap in practice (sticky sidebars, sticky rails on content pages are
-where it's usually discovered), and the one render rule every pinned layer depends on.
+`overflow-x: hidden` on an ancestor of a sticky element makes that ancestor a scroll container (the
+other axis computes to `auto`) with zero scroll range. The sticky element resolves against it and
+silently behaves as `static`. Use `overflow-x: clip` on ancestors: same clipping, no scroll
+container. On `<html>` itself `hidden` is safe, since nothing above it can become an intermediate
+scroll container; that is why the generated `base.css` puts the guard on `html`, never on `body`.
 
-`overflow-x: hidden` on an *ancestor* of a sticky element makes that ancestor a scroll container
-with zero scroll range on the visible axis: when one axis is set non-visible, the other computes to
-`auto`. The sticky element resolves against that zero-range container instead of the real one — it
-silently behaves as `static`. Use `overflow-x: clip` on ancestors; it suppresses the same overflow
-without the side effect. A root-level `overflow-x: hidden` on `<html>` itself is safe, because
-nothing sits above it to be turned into an intermediate scroll container — the trap is specifically
-an *ancestor between the root and the sticky element*. That is why the generated `base.css` — written
-into your fluid output folder (`output.dir`) by `fluid generate`, and imported by `fluid.css` as
-`layer(base)` when `output.base` is on — puts the guard on `html` and never on `body`.
-
-Sticky is also fragile to ancestor `transform` and to anything else that creates a containing block
-— audit every ancestor. **The render-safe sticky rule: never put `transform` or `overflow-x: hidden`
-on a sticky ancestor.** (Motion code has a stricter form: nothing animates a transform on a sticky,
-scene or video ancestor.)
+A `transform` (or anything else that creates a containing block) on an ancestor breaks sticky too.
+**Never put `transform` or `overflow-x: hidden` on a sticky ancestor**; audit every ancestor. (Motion
+code has a stricter form: nothing animates a transform on a sticky, scene or video ancestor.)
 
 ## 7. `maximumScale` vs. the 16px input rule
 
-iOS Safari auto-zooms the page when a focused form input's font-size is under 16px, and leaves the
-page zoomed after blur. Two fixes, and they trade against each other — pick deliberately and record
-which one, because it's easy for a later change to "fix" one regression by reintroducing the other:
+iOS Safari zooms the page when a focused input's font-size is under 16px, and stays zoomed after
+blur. Two fixes that trade against each other; pick one and record which, so a later change doesn't
+fix one regression by bringing back the other:
 
-- **`maximumScale: 1`** in the viewport meta. One line, stops the auto-zoom — but **disables pinch
-  zoom entirely**, a WCAG 1.4.4 failure: a visitor who needs to magnify the page cannot, at all,
-  anywhere on the site. This is sometimes chosen deliberately for a tightly-controlled app UI (it's
-  a known, precedented trade some production sites make on purpose), but it's an accessibility cost,
-  not a neutral default.
-- **Input `font-size: 16px`** on every input/select/textarea. Removes auto-zoom at its actual source
-  and **preserves pinch-zoom** for the rest of the page. Preferred when the input styling allows it.
+- **`maximumScale: 1`** in the viewport meta: one line, but it **disables pinch zoom everywhere**, a
+  WCAG 1.4.4 failure. Some app-like sites choose it on purpose; it is an accessibility cost, not a
+  neutral default.
+- **`font-size: 16px` on every input, select and textarea**: removes the cause and keeps pinch zoom.
+  Preferred when the design allows it.
 
-Do not silently flip an existing choice either direction without confirming which trade-off it was
-solving for.
+Don't flip an existing choice without confirming which trade-off it solved.
 
-## 8. Overscroll / rubber-band
+## 8. Overscroll
 
-`overscroll-behavior: none` on the root element kills the rubber-band/elastic overscroll effect at
-scroll boundaries. The render reason, which is this skill's: with no `body` background (§4), a
-rubber-band bounce would expose the bare canvas past the page edge as a gap; `none` removes it. It also
-stops momentum bouncing past a boundary from feeding jitter into whatever reads scroll position
-for a pin or a latch. This is a global layout decision, not a
-per-component one — set it once on the document root (`base.css` does).
+`base.css` sets `overscroll-behavior: none` on the root, once for the whole page. With no body
+background (§4), a rubber-band bounce would show the bare canvas past the page edge; `none` removes
+it, and stops momentum past a boundary from feeding jitter into whatever reads scroll position for a
+pin or a latch. Where a bounce still shows the root background on a device, colour it per page (§4),
+not globally.
 
-## 9. The stale stylesheet
+## 9. Hydration errors from Safari
 
-Safari is where it shows hardest: after a CSS edit and a dev-server restart, a plain reload often
-re-runs the page against the cached stylesheet, and a pinned scene or a sized section looks broken
-while the code is fine. The mechanism, the `--fluid-build` check and the fix (close the tab, then
-`rm -rf .next` and restart) are in `verification.md` §6. Rule it out before debugging anything here.
+**Data detectors.** iOS Safari wraps phone numbers, email addresses, addresses and dates in its own
+links before React hydrates, so the DOM no longer matches the server HTML: hydration errors. Turn
+detection off and write real links (`<a href="tel:+36…">`, `<a href="mailto:…">`):
 
-## 10. Verification discipline
+```ts
+// Next.js app/layout.tsx
+export const metadata = {
+  formatDetection: { telephone: false, email: false, address: false, date: false },
+}
+```
 
-- **Only a real device verifies tint.** Chrome DevTools' device emulation cannot reproduce iOS 26's
-  Liquid Glass sampling — not "reproduces it imperfectly," genuinely does not attempt it. A build
-  that "looks right" in emulation says nothing about the actual chrome tint.
-- **Confirm the deployed chunk contains the fix before asking for a device test.** A CDN/build
-  propagation delay of even a minute is enough for a device test to run against the *previous*
-  deployment and produce a false negative — this specific failure mode (testing a build that didn't
-  yet contain the fix) has cost real cycles. Check the deployed asset hash or a visible marker before
-  handing a device over for testing.
-- Run the viewport matrix in `verification.md` (including the well-above-reference width, e.g.
-  2560px) on any change to the fluid scale or a full-height section's geometry — several of the bugs in this
-  document are invisible at or below the design reference width and only appear once a viewport
-  exceeds it.
+Without Next: `<meta name="format-detection" content="telephone=no, email=no, address=no, date=no">`.
+
+**Reduced motion in markup.** A hook that reads `prefers-reduced-motion` on the first client render
+(Motion's `useReducedMotion`, a bare `matchMedia`) differs from the server, which can't know it, so
+markup branched on it fails hydration (a stat rendered its final value against the server's 0). Read
+it with `useSyncExternalStore` and a server snapshot of `false`:
+
+```ts
+const QUERY = '(prefers-reduced-motion: reduce)'
+const subscribe = (cb: () => void) => {
+  const m = matchMedia(QUERY); m.addEventListener('change', cb)
+  return () => m.removeEventListener('change', cb)
+}
+export const usePrefersReducedMotion = () =>
+  useSyncExternalStore(subscribe, () => matchMedia(QUERY).matches, () => false)
+```
+
+## 10. When the bug is not the page
+
+- **A stale stylesheet.** After a CSS edit and a dev-server restart, a plain reload in Safari often
+  runs against the cached stylesheet, and a pinned scene or a sized section looks broken while the
+  code is fine. Rule it out first: the `--fluid-build` check and the fix (close the tab, `rm -rf
+  .next`, restart) are in `verification.md` §6.
+- **A dev-only overlay.** A development script that injects a fixed element (an inspector such as
+  react-grab) can tint the Safari 26 toolbar in development only. Check a production build before
+  chasing a toolbar tint.
+
+## 11. Verification
+
+- **Only a real device verifies the tint.** Emulation doesn't attempt Liquid Glass sampling at all,
+  so "looks right in emulation" says nothing about the toolbar.
+- **Confirm the deployed build contains the fix before a device test.** A minute of CDN or build
+  delay is enough to test the previous deployment and get a false negative; this has cost real
+  cycles. Check the asset hash or a visible marker first.
+- Run the viewport matrix in `verification.md` (including a width well above the reference, e.g.
+  2560) on any change to the scale or a full-height section: several bugs here only appear above the
+  design width.
 
 ## Traps
 
-- ★ Forcing `theme-color` + a body background is the *superseded* iOS 26 tint fix for an ordinary
-  page — the current policy is no forced tint at all (§3, §4). The strips pattern is still correct,
-  but scoped to full-viewport overlays only (§3b).
-- ★ `100svh` on a full-bleed picture/video hero ends at the toolbar, not the physical screen —
-  size the box in `lvh`, pad the content back (§1, §5).
-- ★ `overflow-x: hidden` (or a `transform`) on an ancestor of a sticky element kills its stickiness (§6).
-- `env()` inside `calc()` with no fallback drops the whole declaration on an engine that doesn't
-  recognise the token — always write the fallback (§2).
+- ★ Forcing `theme-color` + a body background is the superseded tint fix for ordinary pages; the
+  policy is no forced tint (§3, §4). Edge strips are for full-viewport overlays only (§3b).
+- ★ `100svh` on a full-bleed picture hero ends at the toolbar: size the box in `lvh`, pad the content
+  back (§1, §5).
+- ★ `overflow-x: hidden` or a `transform` on a sticky ancestor kills sticky (§6).
+- `env()` in `calc()` with no fallback drops the whole declaration on an engine that doesn't know the
+  token (§2).
+- Per-component notch padding inside `fluid-container`: the container padding already clears it (§2).
 - Removing only one of `theme-color` / the body background: the survivor still steers the tint (§3).
-- The iOS overshoot applied to a plain layout container, or without the matching 60px padback (§5).
-- `maximumScale: 1` flipped in or out without recording which trade-off it solved (§7).
-- A restarted dev server plus an already-open tab is stale CSS, not a scroll-math or layout bug —
-  check the build stamp before debugging (`verification.md` §6).
+- The overshoot on a layout container, or without the 60px padback (§5).
+- `maximumScale: 1` flipped without recording which trade-off it solved (§7).
+- Phone numbers or emails left to Safari's detectors, or markup branched on a client-only
+  reduced-motion read: hydration errors (§9).
+- A restarted dev server with an open tab, or a dev-only overlay tinting the toolbar: not a page bug
+  (§10).
 - SVG traps (`<img src=*.svg>`, duplicate `clipPath` ids, `<g transform>`, width/height attributes)
-  are in `media.md` §SVG.
+  are in `media.md` §4.

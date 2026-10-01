@@ -1,17 +1,17 @@
 # Performance: render budget
 
 **Purpose:** The render budget of a page on the scale: units that recompute on resize only, no `dvh`
-thrash, image `sizes` on a page that grows past the artboard, fonts, `content-visibility`, and
+thrash, image `sizes` on a page that grows past the design frame, fonts, `content-visibility`, and
 bundle and asset budgets.
-**Read when:** you're shipping a page on the scale and want it fast to load and cheap to lay out:
-image `sizes`, fonts, below-fold content, asset and bundle budgets.
+**Read when:** shipping a page on the scale that should load fast and lay out cheaply: image
+`sizes`, fonts, below-fold content, asset and bundle budgets.
 **Skip when:** the question is about frame rate while something moves (per-frame writes, springs,
 concurrent scenes, `will-change`, blur, library weight). That is motion performance, outside this
 skill.
 **Inputs:** the page's images, fonts and below-fold content, and the growth ceiling setting.
 **Produces:** correct `sizes` attributes, font-loading choices, and budget checks to pass before
 shipping.
-**Depends on:** `media.md` for how media is sized and reserved; `fluid-scale.md` §7 for the growth
+**Depends on:** `media.md` for how media is sized and reserved; `fluid-scale.md` §5 for the growth
 ceiling; `ios-safari.md` §1 for why the scale is on `svh`.
 
 ## Contents
@@ -27,16 +27,16 @@ ceiling; `ios-safari.md` §1 for why the scale is on `svh`.
 ## 1. The units recompute on resize only
 
 The fluid units are plain CSS: viewport units inside `min()`/`max()`. The browser re-resolves them
-when the viewport changes size and at no other time: never per frame, never during a scroll. That is
-the whole render cost of the scale, and it should stay that way.
+when the window changes size and at no other time: never per frame, never during a scroll. That is
+the whole render cost of the scale; keep it that way. On a production marketing site the generated
+utilities added about 4% to the CSS and no measurable build memory.
 
-- **Do not mirror `--fluid` into JavaScript on scroll.** A script that needs the factor (a canvas, a
-  measured offset) reads it once on `resize`, coalesced to one read per animation frame, and caches
-  it. Reading `getComputedStyle` on every scroll event forces style resolution the page otherwise
-  never pays for.
-- **Do not write the units from JavaScript.** A `resize` listener that sets `--fluid` inline replaces
+- **Don't mirror `--fluid` into JavaScript on scroll.** A script that needs it (a canvas, a measured
+  offset) reads it on `resize`, once per animation frame, and caches it. `getComputedStyle` on every
+  scroll event forces style resolution the page otherwise never pays for.
+- **Don't write the units from JavaScript.** A `resize` listener that sets `--fluid` inline replaces
   one CSS recompute with a script, a style write and the same recompute.
-- A resize still reflows type and remaps any pin. Scrolling never does (`fluid-scale.md` §12).
+- A resize still reflows type and remaps any pin. Scrolling never does (`fluid-scale.md` §8).
 
 **Spend the units through shared classes.** Measured in Chromium (1500 elements, 4 sizing
 declarations each, a 21-step window resize, main-thread time per step against a 16.6ms frame):
@@ -48,17 +48,15 @@ declarations each, a 21-step window resize, main-thread time per step against a 
 | Per-declaration `clamp(…vw…)`, shared classes | 9.22 ms | 0.69 ms |
 | One unique `calc(N * var(--fluid))` rule per element | 16.06 ms | 14.05 ms |
 
-A small set of reused `fluid-*` classes (or SCSS/CSS rules shared across elements) costs about a
-third of a frame per resize step, less than per-declaration `clamp()`. The same unit written as a
-unique rule per element (CSS-in-JS generating one class per instance, inline styles) costs about
-nine times more style recalculation, a whole frame per step. Scrolling costs nothing either way.
-Evidence and harness: the repository's `docs/designs/review-2026-09/`.
+Reused `fluid-*` classes (or shared SCSS/CSS rules) cost about a third of a frame per resize step,
+less than per-declaration `clamp()`. A unique rule per element (CSS-in-JS with one class per
+instance, inline styles) costs about nine times more, a whole frame per step. Scrolling costs nothing
+either way. Evidence and harness: the repository's `docs/designs/review-2026-09/`.
 
-**WebKit, and why the unit mirrors don't inherit.** `fluidPx(n, unit, el)` reads a unit at an
-element through a registered `<length>` mirror (`--_fluid-m-<unit>`) that the engine sets on
-`:root` and every scope. Its value depends on the viewport. Registered with `inherits: true`, it
-made WebKit re-resolve it on every element on every resize. Measured on a 2,000-element page with
-50 limit scopes, main-thread time per resize step:
+**Why the unit mirrors don't inherit (WebKit).** `fluidPx(n, unit, el)` reads a unit through a
+registered `<length>` mirror (`--_fluid-m-<unit>`) set on `:root` and every scope; its value depends
+on the window. With `inherits: true`, WebKit re-resolved it on every element on every resize.
+2,000 elements, 50 limit scopes, main-thread time per resize step:
 
 | Mirrors | WebKit (width / height) | Chromium |
 |---|--:|--:|
@@ -68,41 +66,39 @@ made WebKit re-resolve it on every element on every resize. Measured on a 2,000-
 
 A non-inherited property costs nothing on elements that don't declare it, so the mirrors are
 `inherits: false` with `initial-value: 0px`, and `fluidPx` walks up from `el` to the first ancestor
-whose mirror is non-zero: one `getComputedStyle` per ancestor, on that call path only. Cache the
-result per frame, not per tween tick.
+with a non-zero mirror (one `getComputedStyle` per ancestor, on that call only). Cache the result per
+frame, not per tween tick.
 
-**Registered intermediates.** Every private parameter that doesn't depend on the viewport is
+**Registered intermediates.** Every private parameter that doesn't depend on the window is
 registered as a `<number>`: the band mapping (`--_fluid-base-w`, `--_fluid-min`, the dampings, the
-knee…) and the limit and `off` arithmetic (`--_fluid-min-x`, `--_fluid-max-x`…). Each one computes
-once to a plain number where it's declared, on `:root` or a scope. The long unit formulas then carry
-numbers instead of re-expanding every parameter on every element that spends a unit. It's the
-opposite of the mirrors: these never change on resize, so being inherited costs nothing. The page
-is the same 2,000 elements (30 classes × 4 declarations), timed per resize step:
+knee…) and the limit and `off` arithmetic (`--_fluid-min-x`, `--_fluid-max-x`…). Each computes once
+to a plain number where it's declared, so the unit formulas carry numbers instead of re-expanding
+every parameter on every element. The opposite of the mirrors: these never change on resize, so
+inheriting them is free. Same 2,000 elements (30 classes × 4 declarations), per resize step:
 
 | Intermediates | WebKit | Chromium |
 |---|--:|--:|
 | unregistered | 9.8–10.2 ms | 7.7–7.9 ms |
 | registered `<number>` (now) | 7.8–8.4 ms | 5.0–5.1 ms |
 
-The repository's `tests/resize-perf.mjs` guards both findings in WebKit and Chromium. It checks that 50 limit
-scopes cost at most 1.6× the same page without them (the inherited mirrors measured 2.2× there), and
-it runs in `npm run test:browsers` and CI.
+The repository's `tests/resize-perf.mjs` guards both in WebKit and Chromium (50 limit scopes cost
+at most 1.6× the page without them; the inherited mirrors measured 2.2×), in `npm run test:browsers`
+and CI.
 
 ## 2. No `dvh` thrash
 
-`dvh` tracks the mobile toolbar's collapse animation live. Anything sized or scaled in `dvh`
-re-lays-out on every frame of that animation, and if the scale itself were on `dvh`, every
-`fluid-*` value on the page (type included) would resize while the reader scrolls. The scale is on
-`svh` for exactly this reason (`fluid-scale.md` §3, invariant 3). Full-height boxes use `svh`, or
-`lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/tools/audit.mjs` flags `dvh-on-scaled`.
+`dvh` follows the mobile toolbar's collapse animation live: anything sized in it re-lays-out on
+every frame, and a scale on `dvh` would resize every `fluid-*` value (type included) while the reader
+scrolls. That is why the scale is on `svh` (`fluid-scale.md` §3, invariant 3). Full-height boxes use
+`svh`, or `lvh` for a full-bleed picture (`ios-safari.md` §1). `scripts/tools/audit.mjs` flags
+`dvh-on-scaled`.
 
 ## 3. Image `sizes` on a page that grows
 
 A fixed-width site can describe an image slot with a px cap. A fluid page cannot: above the
-reference the container grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), so every slot inside
-it grows too. A `sizes` value written against the drawn container tells the browser the slot is smaller
-than it is, the browser picks a smaller candidate, and the image renders upscaled and soft on
-exactly the large displays the scale was built for.
+reference the container grows as `max(1680px, 1680·f)` (`frame-and-gutter.md` §1), and every slot
+with it. A `sizes` written against the drawn container under-reports the slot, the browser picks a
+smaller candidate, and the image renders soft on exactly the large displays the scale is for.
 
 Worked numbers at the defaults (container 1680, padding 80, reference 1440×900, no ceiling), for an
 image drawn at half the container:
@@ -115,19 +111,18 @@ image drawn at half the container:
 | a window wide enough to hold the grown container, f = 1.6 | 1.60 | 2688 (1680·1.6) | **1344** | 840: **1.6× short** | ≥ 1344 |
 | 2560×700 (short, wide) | 0.78 | 1680 (the max-width never shrinks) | 840 | 840 | 1280 (over, costs bytes only) |
 
-So a half-width image at f = 1.6 is about **1344px** wide in CSS pixels, and about 2688 device
-pixels on a 2× display. That is where the "re-export at about 3000 wide" advice in
-`preflight.md` §5 comes from.
+So a half-width image at f = 1.6 is about **1344px** wide in CSS pixels, about 2688 device pixels
+at 2×: the source of the "re-export at about 3000 wide" advice in `preflight.md` §5.
 
-- **Write `sizes` in `vw` above the desktop band's breakpoint**, as the fraction of the viewport the slot
-  occupies when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The container is never wider than
-  the viewport, so `vw` is always at least the slot; it overestimates only when height binds,
-  which costs bytes, never sharpness. Subtract the padding only if the bytes matter
-  (`calc(50vw - 80px)` is safe at every f ≥ 1 because the scaled padding is `80·f`).
+- **Write `sizes` in `vw` above the desktop breakpoint**, as the share of the window the slot takes
+  when width binds: `sizes="(min-width: 1024px) 50vw, 100vw"`. The container is never wider than the
+  window, so `vw` is always at least the slot; it overshoots only when height binds, which costs
+  bytes, never sharpness. Subtract the padding only if bytes matter (`calc(50vw - 80px)` is safe at
+  every f ≥ 1, since the scaled padding is `80·f`).
 - **`sizes` cannot read `var(--fluid)`.** It is parsed before any stylesheet, so custom properties
-  and the `fluid-*` utilities mean nothing there. Express the slot in `vw` and `px` only.
+  and `fluid-*` utilities mean nothing there. Use `vw` and `px` only.
 - **Ship candidates up to twice the largest slot**, or set `--fluid-desktop-scale-max`
-  (`fluid-scale.md` §7). At 1.5 the half-container slot stops at 1260.
+  (`fluid-scale.md` §5). At 1.5 the half-container slot stops at 1260.
 - Framework image components (`next/image` and friends) take the same `sizes` string; the default
   `100vw` is only correct for a full-bleed image.
 - Reserve every image's box so the scale's own resize never shifts content: see `media.md` §2.
@@ -145,30 +140,25 @@ The type rules (units, line boxes, faces as tokens) are in `typography.md` §Fon
 
 ## 5. `content-visibility`
 
-`content-visibility: auto` (paired with `contain-intrinsic-size` to avoid layout jump on reveal) is
-correct **only on below-fold, flow-only content sections**. It replaces the section's real height
-with the browser's placeholder estimate until it nears the viewport, which **zeroes the measured
-geometry** of anything that reads `offsetHeight`. This is a strict either/or: a section is either a
-`content-visibility` candidate (ordinary flow content, nothing measuring it) or part of something
-measured, never both. Never apply it inside, or wrapping, a pinned scene's runway or a triggered
+`content-visibility: auto` (with `contain-intrinsic-size`, so nothing jumps on reveal) is right
+**only on below-fold, flow-only sections**. Until a section nears the viewport its real height is
+replaced by a placeholder estimate, which **zeroes the measured geometry** of anything reading
+`offsetHeight`. A section is either a candidate (plain flow, nothing measures it) or part of
+something measured, never both. Never put it inside or around a pinned scene's runway or a triggered
 reveal group: both measure their own geometry.
 
 ## 6. Bundle and asset budgets
 
-Enforceable numeric targets, worth wiring into CI rather than trusting review to catch:
+Numeric targets worth wiring into CI rather than trusting review:
 
 - **Core Web Vitals at p75:** LCP ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1.
-- **Image and video formats:** modern, well-compressed formats sized to their actual display
-  dimensions — never ship a source asset's native resolution to a container a fraction of its size.
-  On this system "actual display dimensions" includes growth above the reference (§3).
-- **A scrub-encoded (all-intra) video re-pays its background texture on every frame.** Budget its
-  size with that in mind.
-- **A stray large asset is a permanent cost in version control**, not just a one-time download —
-  most VCS systems keep every blob forever, so an oversized commit's clone-time cost never comes back
-  once someone "fixes" it later by re-encoding. Catch it before the commit, not after.
-- A CI budget script (asset sizes, bundle size deltas) plus a Lighthouse-class check on preview
-  deployments is the concrete enforcement mechanism worth having; `verification.md` describes the
-  runtime checks this doesn't cover.
+- **Images and video:** modern, well-compressed formats sized to the display slot, never the
+  source's native resolution. Here the slot includes growth above the reference (§3).
+- **A scrub-encoded (all-intra) video re-pays its background texture on every frame.** Budget for it.
+- **A large asset is a permanent cost in version control**: every blob is kept forever, so
+  re-encoding later never wins back the clone size. Catch it before the commit.
+- Enforce with a CI budget script (asset sizes, bundle deltas) plus a Lighthouse-class check on
+  preview deployments; `verification.md` has the runtime checks this doesn't cover.
 
 ## Traps
 
