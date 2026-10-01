@@ -675,19 +675,21 @@
         <li>The default container of 1680 lets a 1440 design spread a little wider on wide windows.</li>
       </ul></div>
   </div>
+  <p style="margin-top:24px"><b>The base is your Figma frame, nothing else.</b> &ldquo;Base&rdquo; just means the size of the desktop frame you measure from. Example: the
+  designer draws on a <b>1680×1050</b> frame, with a <b>48px</b> heading. Set the base to 1680×1050,
+  type <code>48</code>, and this is what the browser shows:</p>
   <div class="tblwrap"><table>
-    <tr><th>window</th><th class="num">base 1440×900 (default)</th><th class="num">base 1680×1050</th></tr>
-    <tr><td class="dim">1440×900</td><td class="num">1.0000</td><td class="num">0.8571</td></tr>
-    <tr><td class="dim">1512×982 <span class="d">14″ MacBook Pro</span></td><td class="num">1.0500</td><td class="num">0.9000</td></tr>
-    <tr><td class="dim">1680×1050</td><td class="num">1.1667</td><td class="num"><b>1.0000</b> <span class="d">pixel-exact to the frame</span></td></tr>
-    <tr><td class="dim">1920×1080</td><td class="num">1.2000</td><td class="num">1.0286</td></tr>
+    <tr><th>browser window</th><th class="num">the 48px heading renders at</th></tr>
+    <tr><td class="dim">1440×900</td><td class="num">41px <span class="d">smaller window, scaled down</span></td></tr>
+    <tr><td class="dim">1512×982 <span class="d">14″ MacBook Pro</span></td><td class="num">43px</td></tr>
+    <tr><td class="dim">1680×1050 <span class="d">same as the frame</span></td><td class="num"><b>48px</b> <span class="ok">exactly as drawn</span></td></tr>
+    <tr><td class="dim">1920×1080</td><td class="num">49px <span class="d">capped by the height</span></td></tr>
   </table></div>
-  <p class="note"><b>Match the base to the frame.</b> Leave it at 1440 while typing numbers from a 1680
-  frame and everything renders 1.1667×, about 17% too big, at every window. It never matches the design.</p>
-  <p class="pcap"><b>One exception:</b> a frame wider than any screen, such as 1680×900 with the
-  content composed in a 1440 column. The base is the screen the content was composed for
-  (1440×900), and the frame's 1680 goes in <code>--fluid-desktop-container-width</code>. That is
-  what the defaults describe.</p>
+  <p class="note"><b>Forgot to set the base?</b> It stays at the 1440×900 default, so a 1680 design
+  comes out 17% too big at every window (the 48px heading is 56px on a 1680 screen).</p>
+  <p class="pcap"><b>Rare case:</b> the designer put a 1440 layout in the middle of an extra-wide
+  1680 canvas. Measure the layout, not the canvas: base 1440×900, and
+  <code>--fluid-desktop-container-width: 1680</code>. That is what the defaults already are.</p>
 </section>
 
 <section id="live">

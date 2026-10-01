@@ -57,11 +57,19 @@ from the project; Enter keeps it:
 | Phone design frame | the phone frame's width: 390, 375, or 402 for iPhone 16 Pro frames |
 | Stops widening at | the content box's widest size, side margins included |
 
-At a window exactly the frame's size, 1 drawn px is 1 CSS px; every other window gets the design
-scaled by `min(width / base-width, height / base-height)`. A wrong frame size raises no error: the
-page is just the wrong size everywhere (numbers from a 1680 frame on a 1440 base render 17% too
-big). One exception: a frame wider than any screen (1680×900, content composed in a 1440 column)
-takes the screen's size as the base (1440×900) and puts 1680 in the container width.
+**The base is your Figma frame's size, nothing else.** Example: a 1680×1050 frame with a 48px
+heading. Set the base to 1680×1050 and type `48`:
+
+| Browser window | The heading renders at |
+|---|---|
+| 1440×900 | 41px (scaled down) |
+| 1680×1050, same as the frame | **48px, exactly as drawn** |
+| 1920×1080 | 49px (capped by the height) |
+
+Forget to set it and the base stays at 1440×900: the 1680 design renders 17% too big everywhere
+(the heading is 56px on a 1680 screen). Rare case: a 1440 layout in the middle of an extra-wide
+1680 canvas. Measure the layout, not the canvas: base 1440×900, container width 1680, which are
+the defaults.
 
 Then init:
 
