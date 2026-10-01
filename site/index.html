@@ -244,7 +244,7 @@
   .rules.two{grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr))}
 
   /* ── the live frame ── */
-  .live{margin-top:20px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; display:grid; gap:14px}
+  .live{--live-w:min(1400px, calc(100vw - 48px)); width:var(--live-w); margin-left:calc(50% - var(--live-w) / 2); margin-top:20px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; display:grid; gap:14px}
   .presets{display:flex; flex-wrap:wrap; gap:6px}
   .presets button{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; border:1px solid var(--line); background:var(--bg); color:var(--muted); border-radius:999px; padding:4px 11px; cursor:pointer}
   .presets button small{font-size:10.5px; color:var(--glyph); margin-left:4px}
@@ -257,8 +257,8 @@
   .dims output{color:var(--ink); min-width:4.5ch; text-align:right}
   input[type=range]{accent-color:var(--accent); width:100%; min-width:0}
   @media (max-width:560px){ .dims{grid-template-columns:1fr} }
-  .livebody{display:grid; grid-template-columns:minmax(0,1fr) 292px; gap:16px; align-items:start}
-  @media (max-width:860px){ .livebody{grid-template-columns:1fr} }
+  .livebody{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:16px; align-items:start}
+  @media (max-width:980px){ .livebody{grid-template-columns:1fr} }
   .stage{position:relative; background:repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--line) 45%, transparent) 7px 8px), var(--code-bg); border:1px solid var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; padding:14px; min-height:200px; overflow:hidden}
   .fbox{position:relative; flex:none}
   .fbox iframe{position:absolute; left:0; top:0; border:0; transform-origin:0 0; background:var(--bg); box-shadow:0 0 0 1px var(--accent), 0 18px 40px -24px rgba(0,0,0,.5); border-radius:2px}
@@ -276,7 +276,6 @@
   .rtab td:first-child{text-align:left; color:var(--tok-dim)}
   .rtab tr:last-child td{border-bottom:none}
   .rtab tr.grp td{color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; text-align:left; padding-top:10px; border-bottom:1px solid var(--line)}
-  .rtab td:first-child{font-size:11.5px; letter-spacing:-.02em}
   .rtab td.lv{color:var(--ink); font-weight:600}
   .rtab td.cli{color:var(--muted)}
   .rtab td.m{color:var(--good)}
@@ -750,8 +749,8 @@
             <tr><td>--fluid-copy</td><td class="lv" id="v-copy">1.0000</td><td class="cli" id="c-copy">1.0000</td></tr>
             <tr><td>--fluid-ui</td><td class="lv" id="v-ui">1.0000</td><td class="cli" id="c-ui">1.0000</td></tr>
             <tr class="grp"><td colspan="3">sizes, in px</td></tr>
-            <tr><td>--fluid-<wbr>container-width</td><td class="lv" id="v-cw">1680.0</td><td class="cli" id="c-cw">1680.0</td></tr>
-            <tr><td>--fluid-<wbr>container-padding</td><td class="lv" id="v-pad">80.0</td><td class="cli" id="c-pad">80.0</td></tr>
+            <tr><td>--fluid-container-width</td><td class="lv" id="v-cw">1680.0</td><td class="cli" id="c-cw">1680.0</td></tr>
+            <tr><td>--fluid-container-padding</td><td class="lv" id="v-pad">80.0</td><td class="cli" id="c-pad">80.0</td></tr>
             <tr><td>--fluid-header-h</td><td class="lv" id="v-hh">72.0</td><td class="cli" id="c-hh">72.0</td></tr>
           </tbody>
         </table>
