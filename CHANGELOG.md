@@ -11,15 +11,67 @@ metadata.
 
 ## [Unreleased]
 
-### Changed
+## [2.1.0] — 2026-10-01
 
+Lessons from the first production site built on v2: what a team actually reached for, what it
+hand-wrote because the pack had no answer, and which defaults it had to override on every band.
+
+### Added
+- **Box sizes on every type role.** `fluid-<role>-h-*`, `-w-*`, `-size-*`, `-p-*`, `-px-*`, `-py-*`
+  and `-gap-*` (Tailwind), on the role's own unit: a button, chip or icon keeps its proportion to the
+  label inside it (`fluid-copy-14/20` text in a `fluid-copy-h-56` button). Before this, buttons were
+  hand-written as `h-[calc(56*var(--fluid-copy))]`. `cn` merges them with their Tailwind groups.
+  SCSS and StyleX already had a function per role that works on any property.
+- **`fluid-bleed-x`** (Tailwind utility, `.fluid-bleed-x` class, SCSS mixin): a strip that reaches
+  the window's edges from inside a `fluid-container` and pads back in, so its content still lines up
+  with the container's (a carousel track).
+- **A `fluid` script.** `fluid init` adds `"fluid": "npx fluid-design-cli@2"` to `package.json`
+  (when there is none), so the whole team and CI run `npm run fluid -- check` without the skill
+  installed.
+- The generated `README.md` is rewritten in plain words: the idea, setup, a *which class for what*
+  table, tuning, the CLI, the bands.
+- **Audit rule `arbitrary-fluid-calc`** (info, Tailwind): an arbitrary value that spells out a
+  generated utility, such as `h-[calc(56*var(--fluid-copy))]`, gets the utility as the fix
+  (`fluid-copy-h-56`). It reads whole files, since class strings often live in constants; on the
+  production site it found 18 hand-written button sizes. The audit also treats `fluid-<role>-h-*`
+  and `fluid-ui-h-*` as the same property as `fluid-h-*`.
+
+### Changed
+- **Tablet and landscape default to full width.** Their container width now defaults to the
+  desktop breakpoint (wider than any window in those bands) with a 32px gutter, instead of holding
+  the phone design to the phone's 560 column, which read as a phone floating on a tablet. The
+  defaults are fallbacks for designs with no tablet or landscape frame. To keep the old look, set
+  `--fluid-tablet-container-width: 560; --fluid-tablet-container-padding: 24;` (and the same for
+  `landscape`).
+- **The container gutter never drops below the safe-area inset.** `--fluid-container-padding` is
+  now `max(drawn padding, env(safe-area-inset-left), env(safe-area-inset-right))`: a phone on its
+  side under `viewport-fit=cover` keeps content clear of the notch, and everything that reads the
+  padding (`fluid-bleed-x`) follows. Without notch insets nothing changes.
+- **Less in the generated folder.** `settings.reference.css` and `fluid.css-data.json` are written
+  only with the new `output.editor: true` (the site never reads them; `fluid settings` prints the
+  same list). `fluid init` turns it on, and wires the autocomplete, only in a project that already
+  keeps `.vscode/settings.json`.
+- **No schema copy in the project.** `fluid init` and `fluid migrate` point `$schema` at the
+  published schema instead of writing `fluid.config.schema.json` next to the config.
+  `fluid generate` in a project set up before 2.1 (a local `$schema`) prints a one-line tip for
+  each upgrade step: the schema URL, and the `fluid` npm script.
+- **`fluid migrate` keeps a v1 site's tablet and landscape look.** v1 held both to the phone's 560
+  column and 24 gutter unless `mobile.column` said otherwise; migrate now writes those as explicit
+  settings, so the new full-width default does not change a migrated site.
+- `fluid init --help` lists `--interactive` and `--force`.
+- **`fluid-scale.md` is split by topic** (about 8,200 tokens down to 3,200): it keeps the model and
+  the base unit; `units.md` (type roles, damping, the ui unit, header height, container units, adding
+  a role), `bands.md`, `limits-and-scopes.md` and `browser-zoom.md` take the rest, each routed
+  directly from `SKILL.md`. Every section link in the references, the CLI messages, the runtime
+  comments and the docs points at the new place; a few CLI messages that pointed at the wrong
+  section before the split are corrected too.
 - The docs, site, video and skill now say where the artboard comes from: it is the desktop frame
   your designer draws on, set as `--fluid-desktop-base-width` / `-base-height` (1440×900 is only
   the default), with `--fluid-desktop-container-width` as the content box's widest size. The skill
   reads the frame size off the design instead of keeping 1440; only a canvas wider than a screen
   (1680×900) keeps the screen size as its base.
-- The setting descriptions in `settings.reference.css`, `fluid.ts` and editor autocomplete use the
-  same wording.
+- The setting descriptions in `fluid settings`, `fluid.ts` and editor autocomplete use the same
+  wording.
 
 ## [2.0.0] — 2026-09-25
 
@@ -87,5 +139,6 @@ adopts the skill-template repository layout.
   browser floor per stack, bracket values in Tailwind utilities, `cn` accepting only classes that
   compile, and `generate --watch` on editors that replace the file.
 
-[Unreleased]: https://github.com/gabros20/fluid-design-skill/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/gabros20/fluid-design-skill/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/gabros20/fluid-design-skill/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/gabros20/fluid-design-skill/releases/tag/v2.0.0

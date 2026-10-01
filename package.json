@@ -1,6 +1,6 @@
 {
   "name": "fluid-design-cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Viewport-fluid design scale for any site: one small JSON for structure, every tuning number a CSS variable. Generates for Tailwind v4, CSS, SCSS and StyleX. The `fluid` CLI of the fluid-design agent skill.",
   "keywords": [
     "fluid",

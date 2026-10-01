@@ -1,12 +1,24 @@
 # Usage: the by-hand guide
 
-This is the path without an agent: you run the `fluid` CLI yourself, commit what it generates, and
-write your design's numbers through the fluid units. An agent with the skill installed runs the same
-commands (see [With an agent](#with-an-agent) at the end).
+This is the path without an agent: you run the `fluid` CLI, commit what it generates, and write
+your design's numbers through the fluid units. An agent with the skill runs the same commands
+([With an agent](#with-an-agent)).
 
-Install the CLI first ([installation.md](installation.md)). In a Node project there is nothing to
-install: prefix each command below with `npx fluid-design-cli@2`. Without Node, the standalone
-binary is `fluid`.
+In a Node project there is nothing to install: run `npx fluid-design-cli@2 init`, and after that
+`npm run fluid -- <command>` (init adds the script). Without Node, install the binary and run
+`fluid <command>` ([installation.md](installation.md)). Below, `fluid` stands for either.
+
+Words used here:
+
+- **design frame** (artboard): the frame the designer draws in, 1440×900 for desktop and 390 wide
+  for phones by default.
+- **`--fluid`**: the unit, 1px at the design frame's size, growing and shrinking with the window.
+- **band**: a range of window sizes with its own design: phone, tablet, landscape (a phone on its
+  side), desktop.
+- **type role**: a size curve that shrinks more gently than the layout: `display` (headlines),
+  `copy` (body text, labels).
+- **structure** is which rules exist (`fluid.config.json`, needs `fluid generate`); **settings** are
+  the numbers in them (CSS variables in your `:root`, live).
 
 ## Contents
 
@@ -14,7 +26,7 @@ binary is `fluid`.
 2. [Use the scale](#2-use-the-scale)
 3. [Limits: stop part of the page scaling](#3-limits-stop-part-of-the-page-scaling)
 4. [Tune: settings are CSS variables](#4-tune-settings-are-css-variables)
-5. [See what a viewport gets: `explain` and `verify`](#5-see-what-a-viewport-gets-explain-and-verify)
+5. [See what a window gets: `explain` and `verify`](#5-see-what-a-window-gets-explain-and-verify)
 6. [Change the structure](#6-change-the-structure)
 7. [Check it in CI](#7-check-it-in-ci)
 8. [Browser support](#browser-support) · [Editor support](#editor-support) · [With an agent](#with-an-agent)
@@ -24,65 +36,52 @@ binary is `fluid`.
 Run it at the project root. On a terminal it asks up to ten questions, each with a default detected
 from the project; Enter keeps it:
 
-```text
-? Styling: tailwind-v4, css, scss or stylex? (tailwind-v4)
-? Framework, for the browser-zoom head script: next, vite or none? (next)
-? Global stylesheet (gets the import and your settings; empty = print them instead) (src/app/globals.css)
-? Does this site already style html and body itself? (y = leave the base layer out) (n)
-? Desktop design frame, width x height (1440x900)
-? The desktop layout starts at this window width (px) (1024)
-? Scale the phone, tablet and landscape layouts too? (n = 1px below desktop) (y)
-? Phone design frame width (390)
-? The page stops widening at (drawn px) (1680)
-? Generated files go in (src/styles/fluid)
-```
-
-What each answer means:
-
 | Question | Becomes | Kind |
 |---|---|---|
-| Styling | `output.stack` in `fluid.config.json`. Tailwind 3 is detected and gets the CSS stack (the utilities need Tailwind 4) | structure |
-| Framework | `output.integration`: `next` generates `<FluidHead />`, `vite` generates `fluidPlugin()`, `none` a classic `zoom.classic.js` script | structure |
-| Global stylesheet | where the import and your settings are written | — |
-| Styles `html`/`body` already | `output.base: false` (the base layer is left out) | structure |
-| Desktop design frame | `--fluid-desktop-base-width` / `--fluid-desktop-base-height` | setting |
-| Desktop starts at | `bands.desktop.minWidth` (and Tailwind's `lg:`) | structure |
-| Scale the mobile layouts | `bands.phone` / `tablet` / `landscape` on, or all off | structure |
-| Phone design frame | `--fluid-phone-base-width` | setting |
-| Stops widening at | `--fluid-desktop-container-width` | setting |
+| Styling: tailwind-v4, css, scss or stylex? | `output.stack` (Tailwind 3 gets `css`: the utilities need Tailwind 4) | structure |
+| Framework: next, vite or none? | `output.integration`: `<FluidHead />`, `fluidPlugin()`, or a classic `zoom.classic.js` | structure |
+| Global stylesheet | where the import and your settings go (empty: print them) | — |
+| Does the site already style `html` and `body`? | `output.base: false` (no base layer) | structure |
+| Desktop design frame, width x height | `--fluid-desktop-base-width` / `-base-height` | setting |
+| The desktop layout starts at | `bands.desktop.minWidth` (and Tailwind's `lg:`) | structure |
+| Scale the phone, tablet and landscape layouts too? | the mobile bands on, or 1px below desktop | structure |
+| Phone design frame width | `--fluid-phone-base-width` | setting |
+| The page stops widening at | `--fluid-desktop-container-width` | setting |
 | Generated files go in | `output.dir` | structure |
 
-**Where the two frame answers come from.** Open the design file and read them off the frames:
+**Read the frame answers off the design file.** The defaults are only fallbacks:
 
-| Answer | Read it from | Setting |
-|---|---|---|
-| Desktop design frame | the desktop frame's width × height (1440×900, 1680×1050…) | `--fluid-desktop-base-width` / `-base-height` |
-| Phone design frame | the phone frame's width (390, 375…) | `--fluid-phone-base-width` |
-| Stops widening at | the content box's widest size, side margins included (the frame's width, or less if the design caps its content) | `--fluid-desktop-container-width` |
+| Answer | Read it from |
+|---|---|
+| Desktop design frame | the desktop frame's width × height (1440×900, 1680×1050…) |
+| Phone design frame | the phone frame's width: 390, 375, or 402 for iPhone 16 Pro frames |
+| Stops widening at | the content box's widest size, side margins included |
 
-The base is where 1 drawn px = 1 CSS px: at a window exactly the frame's size the page matches the
-design, and every other window gets it scaled by `min(width / base-width, height / base-height)`.
-Get it wrong and nothing errors; the page is just the wrong size everywhere (numbers from a 1680
-frame on a 1440 base render 17% too big). One exception: a frame wider than any screen, such as
-1680×900 with the content composed in a 1440 column, takes the screen's size as the base (1440×900)
-and puts the 1680 in the container width.
+At a window exactly the frame's size, 1 drawn px is 1 CSS px; every other window gets the design
+scaled by `min(width / base-width, height / base-height)`. A wrong frame size raises no error: the
+page is just the wrong size everywhere (numbers from a 1680 frame on a 1440 base render 17% too
+big). One exception: a frame wider than any screen (1680×900, content composed in a 1440 column)
+takes the screen's size as the base (1440×900) and puts 1680 in the container width.
 
-Then it:
+Then init:
 
-- writes `fluid.config.json` (and `fluid.config.schema.json` beside it);
-- generates the output folder, with a `.gitattributes` inside so Git's line-ending conversion leaves
-  the generated files byte-exact;
-- adds one import to your stylesheet and writes your setting answers into your `:root` (on a site
-  that already styles `html` and `body`, or with `--brownfield`, it prints both for you to add
-  instead);
-- adds the output folder to `.prettierignore` when you use Prettier (with Biome it prints the
-  `files.ignore` line to add), so a formatter does not rewrite generated files;
-- keeps your own Tailwind `--breakpoint-*` values if it finds any (`"tailwind": { "breakpoints":
-  "none" }`).
+- writes `fluid.config.json`, with `$schema` pointing at the published schema
+  (`https://unpkg.com/fluid-design-cli@2/skills/fluid-design/assets/fluid.config.schema.json`), so
+  no schema copy lives in your project;
+- generates the output folder, with a `.gitattributes` that keeps Git's line-ending conversion off
+  the generated files;
+- adds one import to your stylesheet and writes the settings you changed into your `:root` (on a
+  site that already styles `html` and `body`, or with `--brownfield`, it prints both instead);
+- adds `"fluid": "npx fluid-design-cli@2"` to `package.json` scripts when there is none;
+- adds the output folder to `.prettierignore` with Prettier (with Biome it prints the
+  `files.ignore` line), so a formatter does not rewrite generated files;
+- in a project that already has `.vscode/settings.json`, turns on `output.editor` and wires
+  settings autocomplete ([Editor support](#editor-support));
+- keeps your own Tailwind `--breakpoint-*` values (`"tailwind": { "breakpoints": "none" }`).
 
 It decides everything before writing anything: if the output folder holds hand-edited files, it
-refuses and writes nothing. `--force` overwrites them (and keeps a v1 config as
-`fluid.config.v1.json`). If `fluid.config.json` already exists, init stops and points you at
+refuses and writes nothing (`--force` overwrites them, and keeps a v1 config as
+`fluid.config.v1.json`). If `fluid.config.json` exists, it stops and points you at
 `fluid generate` (or `fluid migrate --write` for a v1 config).
 
 The result, on Tailwind:
@@ -94,13 +93,19 @@ The result, on Tailwind:
 :root {
   --background: white;             /* your tokens, as before */
 
-  /* fluid settings — every one, with its default, is in ../styles/fluid/settings.reference.css */
+  /* fluid settings: `npm run fluid -- settings` lists every one with its default */
   --fluid-desktop-base-width: 1600;
   --fluid-desktop-base-height: 1000;
 }
 ```
 
-**Browser zoom wiring.** Init ends by printing the one line you add yourself:
+The generated folder (Tailwind + Next) holds `fluid.css` (the one import), `base.css`, `fluid.ts`,
+`cn.ts`, `runtime/units.js` and `runtime/zoom.js` (with `.d.ts`), `integrations/next.tsx`,
+`README.md`, `.gitattributes` and `.fluid.lock.json`. SCSS adds `_index.scss`, StyleX
+`fluid.stylex.ts`; with `output.integration: none`, `runtime/zoom.classic.js` replaces the
+integration.
+
+**Browser zoom.** Init ends by printing the one line you add yourself:
 
 - Next: `<FluidHead />` in `<head>`, from `@/styles/fluid/integrations/next`.
 - Vite: `plugins: [fluidPlugin()]`, from `./src/styles/fluid/integrations/vite`.
@@ -111,10 +116,10 @@ Under a strict Content Security Policy, pass your nonce (`<FluidHead nonce={nonc
 `fluidPlugin({ nonce })`, or `nonce` on the script tag), or allow the hash `FLUID_ZOOM_SHA256`
 (exported by `runtime/zoom.js`) in `script-src`.
 
-**Scripts and CI.** Every answer is also a flag, and `--yes` (or no terminal) skips the questions:
+**Scripts and CI.** Every answer is also a flag; `--yes` (or no terminal) skips the questions:
 
 ```bash
-fluid init --yes --desktop 1600x1000 --desktop-at 1200 --max-width 1920 \
+fluid init --yes --desktop 1600x1000 --desktop-at 1200 --phone 402 --max-width 1920 \
   --set --fluid-desktop-scale-max=1.4
 ```
 
@@ -124,14 +129,14 @@ checked against the settings list with a "did you mean" for typos).
 
 ## 2. Use the scale
 
-Write the number from the design file, never a converted one. Each stack spells the same thing:
+Write the number from the design file, never a converted one. Each stack spells it its own way:
 
-| Stack | Layout | Display type |
-|---|---|---|
-| Tailwind v4 | `lg:fluid-py-120` | `lg:fluid-display-64` |
-| CSS, CSS Modules | `calc(120 * var(--fluid))` | `calc(64 * var(--fluid-display))` |
-| SCSS (`@use 'fluid' as fd`) | `fd.fluid(120)` | `fd.fluid-display(64)` |
-| StyleX (`fluid.stylex.ts`) | `fluid(120)` | `fluidDisplay(64)` |
+| Stack | Layout | Display type | A box on the copy role |
+|---|---|---|---|
+| Tailwind v4 | `lg:fluid-py-120` | `lg:fluid-display-64` | `fluid-copy-h-56` |
+| CSS, CSS Modules | `calc(120 * var(--fluid))` | `calc(64 * var(--fluid-display))` | `calc(56 * var(--fluid-copy))` |
+| SCSS (`@use 'fluid' as fd`) | `fd.fluid(120)` | `fd.fluid-display(64)` | `fd.fluid-copy(56)` |
+| StyleX (`fluid.stylex.ts`) | `fluid(120)` | `fluidDisplay(64)` | `fluidCopy(56)` |
 
 ### Tailwind v4
 
@@ -139,6 +144,7 @@ Write the number from the design file, never a converted one. Each stack spells 
 <section class="fluid-container fluid-py-48 lg:fluid-py-120">
   <h1 class="fluid-display-40 lg:fluid-display-64">…</h1>
   <p class="lg:fluid-copy-18/26 lg:fluid-mt-24">…</p>
+  <a class="fluid-copy-14/20 fluid-copy-h-56 fluid-copy-px-24">Book a table</a>
 </section>
 ```
 
@@ -146,16 +152,24 @@ Write the number from the design file, never a converted one. Each stack spells 
   type (`fluid-display-*`, `fluid-copy-*`, `fluid-text-*`). `fluid-ui-*` is for the header, nav and
   footer. The full list is in
   [`contract.md` §3](../skills/fluid-design/references/contract.md#3-utility-vocabulary-and-band-variants-tailwind-v4-every-other-stack-mirrors-the-same-set).
+- **Controls scale with their label.** Every type role has box utilities on its own unit:
+  `fluid-<role>-h-*`, `-w-*`, `-size-*`, `-p-*`, `-px-*`, `-py-*`, `-gap-*`. A button sized with
+  `fluid-copy-h-56` keeps its proportion to `fluid-copy-14/20` text at every window size; sized with
+  `fluid-h-56`, it would follow the layout's curve instead of its label's.
 - Values are bare numbers in 0.25 steps (`fluid-p-24`, `fluid-p-37.5`) or bracketed
   (`fluid-p-[8.3]`).
 - The `/lh` modifier is drawn px too: `fluid-copy-18/26` is 18 on 26. `/1.5` would be 1.5 px, so
   for a ratio put `leading-[1.5]` next to the size class.
 - Band variants: `fluid-phone:`, `fluid-tablet:`, `fluid-landscape:`. The desktop band is `lg:`.
 - `fluid-container` goes once per section, on its inner wrapper.
+- `fluid-bleed-x`, inside a `fluid-container`, reaches the window edges and pads back in, so the
+  content still lines up with the container (a carousel track, an edge-to-edge strip). It uses
+  `100vw`, which counts a desktop scrollbar; the overflow guard on `html` (in `base.css`) clips the
+  half-scrollbar overshoot.
 - Every component that takes `className` needs a `cn` that knows the fluid classes, or two fluid
-  classes for one property both ship and stylesheet order picks the winner. With no `cn` yet, import
-  the generated one (`cn.ts` in the output folder). If the project already has one (shadcn's
-  `src/lib/utils.ts`), keep it and build its `twMerge` with the generated `withFluid`:
+  classes for one property both ship and stylesheet order picks the winner. With no `cn` yet,
+  import the generated one (`cn.ts` in the output folder). If the project already has one
+  (shadcn's `src/lib/utils.ts`), keep it and build its `twMerge` with the generated `withFluid`:
 
   ```ts
   import { extendTailwindMerge } from 'tailwind-merge'
@@ -172,8 +186,8 @@ because they start at the desktop band, where no band variant matches. `fluid ch
 
 ### CSS and CSS Modules
 
-The CSS stack gives you the units, `--fluid-header-h` and one class, `.fluid-container`. Spend the
-units inside each band's media query:
+The CSS stack gives you the units, `--fluid-header-h` and two classes: `.fluid-container` and
+`.fluid-bleed-x`. Spend the units inside each band's media query:
 
 ```css
 .hero { padding: 80px 24px 40px; }
@@ -183,7 +197,7 @@ units inside each band's media query:
 }
 ```
 
-The number is unitless: `64px * var(--fluid)` is invalid CSS and the browser drops the declaration
+The number is unitless: `64px * var(--fluid)` is invalid CSS, and the browser drops the declaration
 silently.
 
 ### SCSS
@@ -198,16 +212,19 @@ Import `fluid.css` once, globally; then use the functions and band mixins:
     @include fd.fluid-type(64, 72);
   }
 }
+.track { @include fd.fluid-bleed-x; }
 ```
 
 The functions `@error` on a number that already has a unit, so the silent `64px * var(--fluid)`
-failure becomes a build error.
+failure becomes a build error. A role function (`fd.fluid-copy(56)`) works on any property, so it
+sizes controls the way the Tailwind box utilities do.
 
 ### StyleX
 
 `fluid.stylex.ts` in the output folder has the typed helpers: `fluid(120)`, one per role
 (`fluidDisplay(64)`, `fluidCopy(18)`), `fluidUi`, `fluidText`, `fluidCap` and `fluidContainer`,
-built on the same custom properties.
+built on the same custom properties. For a full-bleed strip, use the `.fluid-bleed-x` class from
+`fluid.css`.
 
 ### Script
 
@@ -217,7 +234,7 @@ never hand-type it.
 
 ## 3. Limits: stop part of the page scaling
 
-To stop something scaling past a window width, put a limit on the element itself:
+Put a limit on the element itself:
 
 ```html
 <footer class="fluid-ui-grow-until-1920">…</footer>   <!-- this subtree only -->
@@ -234,31 +251,61 @@ To stop something scaling past a window width, put a limit on the element itself
 | `fluid-ui-grow-until-1680` | only `--fluid-ui` stops growing |
 | `fluid-off` | nothing scales: one drawn px is one CSS px |
 
-Widths are window widths. A limit makes its element a scope, and every `fluid-*` class inside
-follows. Behind `*:` or `[&_…]:` it limits nothing, and on `<header>` it drifts from
-`--fluid-header-h` (use the `:root` setting above); `fluid check` warns on both. For any other
-setting on one subtree, add `class="fluid-scope"` and set it there.
+Widths are window widths. A limit makes its element a scope (a part of the page with its own
+settings), and every `fluid-*` class inside follows. Behind `*:` or `[&_…]:` it limits nothing, and
+on `<header>` it drifts from `--fluid-header-h` (use the `:root` setting above); `fluid check` warns
+on both. For any other setting on one subtree, add `class="fluid-scope"` and set it there.
 
 ## 4. Tune: settings are CSS variables
 
-Every number is a CSS variable in your `:root`. It applies immediately, with no regenerate.
-`settings.reference.css` in the output folder lists all of them with their defaults (43 at the
-default structure), and `fluid settings` prints the same list (`--json` for scripts). Tablet and
-landscape reuse the phone's container and header settings unless you set theirs. An invalid value
-(`0.8px`, a typo'd number) falls back to the default instead of breaking the page.
+Every number is a CSS variable in your `:root`. It applies immediately, with no regenerate. `fluid
+settings` prints all of them with their defaults and what each does (43 at the default structure;
+`--json` for scripts). An invalid value (`0.8px`, a typo'd number) falls back to the default
+instead of breaking the page.
 
 ```css
 :root {
-  --fluid-phone-scale-min: 0.8;          /* the smallest phones stop shrinking here */
-  --fluid-desktop-display-damping: 0.7;  /* headings shrink more with the layout */
-  --fluid-desktop-scale-max: 1.4;        /* stop growing on huge screens */
+  --fluid-desktop-container-padding: 108;  /* wider page gutters, on every section at once */
+  --fluid-desktop-scale-max: 1.4;          /* stop growing on huge screens */
+  --fluid-phone-scale-min: 0.8;            /* the smallest phones stop shrinking here */
 }
+```
+
+**Tablet and landscape.** Most designs have no frame for them, so by default both run the phone
+design full width (`--fluid-tablet-container-width` and `--fluid-landscape-container-width` default
+to the desktop breakpoint, 1024, wider than any window in those bands) with a 32px gutter. A phone
+design held to a narrow column read as a phone floating on a big screen. To keep the column:
+
+```css
+:root {
+  --fluid-tablet-container-width: 560;
+  --fluid-tablet-container-padding: 24;
+  --fluid-landscape-container-width: 560;
+  --fluid-landscape-container-padding: 24;
+}
+```
+
+Their header heights still fall back to the phone value. Keep `--fluid-tablet-scale-min` equal to
+`--fluid-phone-scale-max` (both 1.1 by default), so nothing jumps at the 600px switch.
+
+**Notches.** The container gutter is never less than the safe-area inset:
+`--fluid-container-padding` is `max(drawn padding × unit, env(safe-area-inset-left),
+env(safe-area-inset-right))`. With `viewport-fit=cover`, a phone on its side keeps content clear of
+the notch with no per-component safe-area rules, and everything that reads the padding
+(`fluid-bleed-x`) follows. Elsewhere the insets are 0 and nothing changes.
+
+**An existing site.** An old fixed gutter token does not follow a later change of
+`--fluid-desktop-container-padding`. While routes migrate, point the old token at the fluid one,
+then replace hard-coded gutters (`lg:px-18`) route by route:
+
+```css
+@theme { --spacing-gutter: var(--fluid-container-padding); }   /* px-gutter now follows the setting */
 ```
 
 Your own `--fluid-*` tokens are fine: `fluid check` errors only on a near-typo of a setting or a
 name the engine owns (`--fluid`, `--fluid-header-h`, …), and mentions the rest with `--verbose`.
 
-## 5. See what a viewport gets: `explain` and `verify`
+## 5. See what a window gets: `explain` and `verify`
 
 ```bash
 fluid explain 390x844                                    # the band, every unit, where each value came from
@@ -281,17 +328,22 @@ fluid calc budget --widths 400,400,400                   # does a drawn desktop 
 | V1 | a stylesheet with no build stamp against a v2 config | 1 |
 | MISSING | the page does not load the fluid stylesheet | 2 |
 
+When a row is over budget, `calc budget` prints `cqw` widths. If your team avoids container units,
+give direct children of the content box the same fractions as percentages (`lg:w-[28.224%]`);
+[`frame-and-gutter.md`](../skills/fluid-design/references/frame-and-gutter.md) has the deeper
+cases.
+
 STALE almost always means an open tab kept an old stylesheet after a dev-server restart: close the
 tab and open a fresh one ([recipes](recipes.md#debug-a-page-that-broke-after-a-restart)).
 
-`fluid verify` renders a matrix of viewports (desktop widths 1024–2560 × heights 640–1440, plus the
-phone, tablet and landscape sizes) and a real browser-zoom row, and checks horizontal overflow, the
-unit maths, one-screen fit (`[data-fit=screen]`), grid column counts and screenshots:
+`fluid verify` renders a matrix of window sizes (desktop widths 1024–2560 × heights 640–1440, plus
+the phone, tablet and landscape sizes) and a real browser-zoom row, and checks horizontal overflow,
+the unit maths, one-screen fit (`[data-fit=screen]`), grid column counts and screenshots:
 
 ```bash
 npm i -D playwright && npx playwright install chromium
-npx fluid-design-cli@2 verify http://localhost:3000 --screens
-npx fluid-design-cli@2 verify http://localhost:3000 --browser webkit
+npm run fluid -- verify http://localhost:3000 --screens
+npm run fluid -- verify http://localhost:3000 --browser webkit
 ```
 
 `verify`, `explain --url` and `probe` drive a browser through Playwright, so they run under Node;
@@ -305,13 +357,14 @@ the standalone binary prints the `npx` command instead.
 - the type role names (add `"caption"` to `roles` for `--fluid-caption` and `fluid-caption-*`);
 - the prefix;
 - `ui` and `zoom` on or off;
-- the output folder and stack.
+- the output folder and stack, and `output.editor` (the editor aids).
 
 After an edit, run `fluid generate`, or keep `fluid generate --watch` running next to your dev
 server: it regenerates on every save, and an invalid save prints the error and keeps watching.
 `fluid generate --dry` shows what would change. Your editor completes and validates the file
-through `fluid.config.schema.json`; `skills/fluid-design/references/config.md` lists every key and
-setting with its default.
+through the published schema in `$schema`;
+[`config.md`](../skills/fluid-design/references/config.md) lists every key and setting with its
+default.
 
 Never edit the generated folder. `generate` refuses to overwrite a hand edit (use `--force` once
 you have moved the change into a setting or the config). A formatter's rewrite (whitespace, quotes)
@@ -327,25 +380,26 @@ sets `aliases: true` so the v1 names keep working.
 ## 7. Check it in CI
 
 ```bash
-fluid check     # exit 1 when anything is wrong
+npm run fluid -- check     # exit 1 when anything is wrong
 ```
 
 It fails on a config error, a mistyped or out-of-range setting (with a suggestion), generated files
 that are stale or hand-edited, a breakpoint that disagrees with the bands, a `--breakpoint-*` of
-your own next to the generated px ladder, and a leftover `fluid-desktop:` variant (removed: it was
-`lg:`). It warns on a `tailwind-merge` that does not know the fluid classes, a limit that will not do
-what you meant (on `<header>`, or behind `*:`), a band variant mixed with a breakpoint, a `/1.5`
-line-height ratio, a formatter's rewrite of the generated files, and output generated by a different
-version of the CLI. `--verbose` adds info notes.
+your own next to the generated px ladder, and a leftover `fluid-desktop:` variant (removed: it is
+`lg:`). It warns on a `tailwind-merge` that does not know the fluid classes, a limit that will not
+do what you meant (on `<header>`, or behind `*:`), a band variant mixed with a breakpoint, a `/1.5`
+line-height ratio, a formatter's rewrite of the generated files, and output generated by a
+different version of the CLI. `--verbose` adds info notes.
 
 ```yaml
 # .github/workflows/ci.yml
-- run: npx fluid-design-cli@2 check
+- run: npm run fluid -- check
 ```
 
-Pin one version across the team: the same `@2` (or an exact `@2.0.0`) in CI and in scripts, and the
-same binary release on every laptop. `fluid audit src` runs the static source scan on its own
-(`--json` for tooling).
+Pin one version across the team: the script's `@2` (or an exact `@2.1.0`) in CI and locally, and
+the same binary release on every laptop. `fluid audit src` runs the full static source scan
+(`--json` for tooling); beyond what `check` runs, it points out hand-written values such as
+`h-[calc(56*var(--fluid-copy))]` and names the utility that replaces them (`fluid-copy-h-56`).
 
 ## Browser support
 
@@ -365,9 +419,13 @@ fluid type does not grow with zoom until the page falls through to the mobile la
 ## Editor support
 
 - **Class autocomplete:** the Tailwind CSS IntelliSense extension lists every `fluid-*` utility.
-- **Settings autocomplete** in CSS files comes from `fluid.css-data.json` in the output folder. In
-  VS Code, `init` adds it to `.vscode/settings.json` (`"css.customData"`) when that file exists, and
-  prints the line otherwise.
+- **Config autocomplete:** `$schema` in `fluid.config.json` points at the published schema.
+- **Settings autocomplete** in CSS files needs `"output": { "editor": true }`, which also writes
+  `fluid.css-data.json` and `settings.reference.css` (every setting with its default) into the
+  output folder. Init turns it on and adds the data file to `css.customData` only when the project
+  already has `.vscode/settings.json`. Elsewhere, set it yourself and add
+  `"css.customData": ["src/styles/fluid/fluid.css-data.json"]` to your VS Code settings; or skip it
+  and run `fluid settings`, which prints the same list.
 - **Zed:** the Tailwind language server gives the same class autocomplete. For the settings file,
   Zed's CSS server takes `dataPaths` in `lsp.vscode-css-language-server.initialization_options`.
   This is unverified in Zed; [DISTRIBUTION.md](designs/DISTRIBUTION.md) has the snippet.
@@ -375,8 +433,7 @@ fluid type does not grow with zoom until the page falls through to the mobile la
 ## With an agent
 
 Install the skill ([installation.md](installation.md)) and describe the outcome. The agent runs the
-same CLI from the skill folder (`node <skill>/bin/fluid …`), settles the preflight decisions from
-your project, records them in `fluid.config.json` and a `FLUID.md` decision log, converts section by
-section and runs the verification gates. For the method behind every number, start at
-[`SKILL.md`](../skills/fluid-design/SKILL.md) and
+same CLI from the skill folder (`node <skill>/bin/fluid …`), reads the frame sizes off your
+design, records its decisions in `fluid.config.json` and a `FLUID.md` decision log, converts section by section and runs the verification gates. For the
+method behind every number, start at [`SKILL.md`](../skills/fluid-design/SKILL.md) and
 [`fluid-scale.md`](../skills/fluid-design/references/fluid-scale.md).

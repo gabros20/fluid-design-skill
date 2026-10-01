@@ -8,9 +8,9 @@ runtime method lives in the skill itself: [`SKILL.md`](../skills/fluid-design/SK
 
 | Document | Purpose |
 |---|---|
-| [Installation](installation.md) | The three channels (agent skill, npm, standalone binary), prerequisites, pinning, upgrade, uninstall |
-| [Usage](usage.md) | The by-hand guide: `fluid init`, using the scale per stack, limits, tuning, `explain` and `verify`, structure changes, CI, browser and editor support |
-| [Recipes](recipes.md) | Common tasks with a prompt and the commands: a Figma frame, a 5K header, an existing `cn`, SCSS on Vite, a site without Node, CI, a stale stylesheet, a custom type role, a landscape tweak |
+| [Installation](installation.md) | The three channels (agent skill, npm, standalone binary), prerequisites, pinning, upgrading (including 2.0 to 2.1), uninstall |
+| [Usage](usage.md) | The by-hand guide: `fluid init`, using the scale per stack (role box utilities, `fluid-bleed-x`), limits, tuning (tablet and landscape, notches, an existing site's gutter), `explain` and `verify`, structure changes, CI, browser and editor support |
+| [Recipes](recipes.md) | Common tasks with a prompt and the commands: a Figma frame, a button sized with its label, a carousel to the window edge, named type styles, the page gutter, an old gutter token, the old tablet column, a 5K header, an existing `cn`, SCSS on Vite, a site without Node, CI, a stale stylesheet, a custom type role, a landscape tweak |
 
 ## For maintainers
 

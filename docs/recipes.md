@@ -2,10 +2,19 @@
 
 Common tasks, each with a prompt for an agent and the commands to do it by hand. The prompts use
 Codex's `$fluid-design` form; use `/fluid-design`, an `@` mention or plain language in other
-clients. The commands are written as `fluid …`: in a Node project, prefix them with
-`npx fluid-design-cli@2`.
+clients. The commands are written as `fluid …`. In a Node project `fluid init` adds a `fluid` script
+to `package.json`, so run them as `npm run fluid -- check` (or `npx fluid-design-cli@2 check`).
+
+Settings are the numbers you tune: CSS variables in your own `:root`, applied live with no
+regenerate. `fluid settings` lists every one with its default.
 
 - [Match your Figma frame at every laptop size](#match-your-figma-frame-at-every-laptop-size)
+- [Size a button with its label](#size-a-button-with-its-label)
+- [A carousel that runs to the window edge](#a-carousel-that-runs-to-the-window-edge)
+- [Named type styles](#named-type-styles)
+- [Widen the page gutter later](#widen-the-page-gutter-later)
+- [Bridge an old gutter token while you migrate](#bridge-an-old-gutter-token-while-you-migrate)
+- [Keep the old tablet column](#keep-the-old-tablet-column)
 - [Stop the header growing on a 5K display](#stop-the-header-growing-on-a-5k-display)
 - [Keep an existing shadcn `cn`](#keep-an-existing-shadcn-cn)
 - [An SCSS project on Vite](#an-scss-project-on-vite)
@@ -17,9 +26,11 @@ clients. The commands are written as `fluid …`: in a Node project, prefix them
 
 ## Match your Figma frame at every laptop size
 
-Use when the design is drawn on one desktop frame and the build should be pixel-exact there and a
-proportional copy everywhere else. First read the frame's size off the design file: 1440×900,
-1680×1050, whatever the designer used.
+Use when the design is drawn on one desktop frame (the artboard) and the build should be
+pixel-exact there and a proportional copy everywhere else. First read the frame sizes off the design
+file: 1440×900, 1680×1050, whatever the designer used, and the phone frame's width too (402 for an
+iPhone 16 Pro frame, not the 390 default). The defaults are only fallbacks for a frame the design
+doesn't have.
 
 ```text
 Use $fluid-design to make this landing page match our 1680×1050 Figma frame at every laptop size,
@@ -29,7 +40,7 @@ with the hero exactly one screen tall.
 By hand:
 
 ```bash
-fluid init --desktop 1680x1050             # the frame's size; 1440x900 is only the default
+fluid init --desktop 1680x1050 --phone 402 # the frames' sizes; 1440x900 and 390 are only defaults
 fluid explain 1512x982                     # what a 14" MacBook Pro gets: --fluid 0.9000
 fluid calc budget --widths 400,400,400     # does the widest drawn row fit the container?
 ```
@@ -56,6 +67,137 @@ everywhere. Numbers from a 1680 frame on the default 1440 base come out 17% too 
 
 A row over budget is a drawing problem (or a `cqw` one), never a smaller padding: see
 [`frame-and-gutter.md`](../skills/fluid-design/references/frame-and-gutter.md).
+
+## Size a button with its label
+
+Use when a button, chip or icon should keep its proportion to the text inside it. The label is
+`copy` text, which shrinks more gently than the layout; a box sized in plain `fluid-h-*` would shrink
+faster than its label and squeeze it.
+
+```text
+Use $fluid-design to size our primary button so it scales with its label.
+```
+
+Size the box on the label's own unit with the role box utilities (`fluid-<role>-h-*`, `-w-*`,
+`-size-*`, `-p-*`, `-px-*`, `-py-*`, `-gap-*`):
+
+```html
+<a href="/contact"
+   class="inline-flex items-center fluid-copy-h-56 fluid-copy-px-24 fluid-copy-gap-8 fluid-copy-14/20">
+  Get in touch <ArrowRight class="fluid-copy-size-16" />
+</a>
+```
+
+The numbers are as drawn: a 56px button with 24px side padding and 14/20 text. They replace
+hand-written `h-[calc(56*var(--fluid-copy))]`. `cn` merges them with their Tailwind groups, so
+`cn('fluid-copy-h-56', 'fluid-copy-h-48')` keeps the last. A headline-sized control uses
+`fluid-display-h-*` and so on; a custom role gets its own set. SCSS and StyleX use the role function on
+any property: `height: fd.fluid-copy(56)`, `fluidCopy(56)`.
+
+## A carousel that runs to the window edge
+
+Use when a slider track or a strip should run to both window edges while its first item still lines
+up with the page content.
+
+```text
+Use $fluid-design to let the testimonials carousel bleed to the window edges, aligned with the container.
+```
+
+Keep it inside the section's `fluid-container` and add `fluid-bleed-x` to the track:
+
+```html
+<section class="fluid-container">
+  <h2 class="fluid-display-40/48">What clients say</h2>
+  <ul class="fluid-bleed-x flex snap-x overflow-x-auto fluid-gap-24">…</ul>
+</section>
+```
+
+It pulls the track out to the window edges with a negative margin and pads it back in by the same
+amount, so the first slide starts at the container's edge and later slides scroll past it. In CSS
+it is the `.fluid-bleed-x` class; in SCSS `@include fd.fluid-bleed-x`. On a desktop with a visible
+scrollbar `100vw` counts the scrollbar, so the strip overshoots by half a scrollbar on each side; the
+overflow guard on `html` clips it.
+
+## Named type styles
+
+Use when the design system names its text styles (H1, H2, Body M…) and the team wants one class per
+style instead of repeating sizes. Not generated: define them once in your CSS, on the role units.
+
+```css
+@utility type-h2 {
+  font-size: calc(32 * var(--fluid-display));
+  line-height: var(--tw-leading, 1.25);
+  letter-spacing: var(--tw-tracking, -0.02em);
+}
+@utility type-body-md {
+  font-size: calc(16 * var(--fluid-copy));
+  line-height: var(--tw-leading, 1.5);
+}
+```
+
+`<h2 class="type-h2">` then scales like `fluid-display-32`. The line height is a ratio and the
+tracking is in `em`, so both follow the size. Writing them as `var(--tw-leading, …)` and
+`var(--tw-tracking, …)` keeps `leading-*` and `tracking-*` working as overrides on one element. A
+style whose size changes per band takes a band prefix where it is used (`type-body-md lg:type-h2`).
+
+## Widen the page gutter later
+
+Use when the designer changes the side margin after sections are built.
+
+```text
+Use $fluid-design to widen the desktop page margins from 80 to 108.
+```
+
+It is one setting in your `:root`:
+
+```css
+:root { --fluid-desktop-container-padding: 108; }
+```
+
+Every section on `fluid-container` (and every `fluid-bleed-x` strip, which reads the same padding)
+moves at once. Sections with hard-coded gutters (`lg:px-18`, a fixed gutter token) do not: find them
+first, or bridge them (next recipe). Preview with
+`fluid explain 1440x900 --set --fluid-desktop-container-padding=108`. The phone, tablet and
+landscape bands have their own `--fluid-<band>-container-padding`.
+
+## Bridge an old gutter token while you migrate
+
+Use in an existing site that has its own fixed gutter (`--spacing-gutter: 72px` behind `px-gutter`)
+and moves to `fluid-container` one route at a time. Left alone, the old token stays 72 when the
+fluid padding changes, and migrated and unmigrated pages disagree.
+
+```css
+@theme inline {
+  --spacing-gutter: var(--fluid-container-padding);   /* was 72px; now the fluid gutter */
+}
+```
+
+`inline` makes `px-gutter` read the fluid padding where it is used, so it follows the band, scopes
+and the setting above. The old token now changes below desktop too, so check pages that used it on
+phones. Replace hard-coded gutters (`lg:px-18`) route by route, and delete the bridge when no route
+uses it. [`brownfield-migration.md`](../skills/fluid-design/references/brownfield-migration.md) has
+the full migration.
+
+## Keep the old tablet column
+
+Use when the design has no tablet or landscape frame and the team prefers the earlier look: the phone
+design held to a 560 column instead of full width.
+
+By default the tablet and landscape bands run the phone design full width with a 32px gutter, which
+reads as a layout rather than a phone floating on a big screen. To go back:
+
+```css
+:root {
+  --fluid-tablet-container-width: 560;
+  --fluid-tablet-container-padding: 24;
+  --fluid-landscape-container-width: 560;
+  --fluid-landscape-container-padding: 24;
+}
+```
+
+Check it with `fluid explain 820x1180` and `fluid explain 844x390`. Whatever you choose, keep
+`--fluid-tablet-scale-min` equal to `--fluid-phone-scale-max` (both 1.1 by default) so nothing jumps
+at the 600px switch. If the design does have a tablet frame, build that instead.
 
 ## Stop the header growing on a 5K display
 
@@ -181,21 +323,21 @@ known-bad pattern.
 
 ```yaml
 # .github/workflows/ci.yml
-- run: npx fluid-design-cli@2 check
+- run: npm run fluid -- check   # the script fluid init added; or: npx fluid-design-cli@2 check
 ```
 
 Without Node in CI, install a pinned binary first:
 
 ```yaml
-- run: curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.sh | FLUID_VERSION=v2.0.0 sh
+- run: curl -fsSL https://raw.githubusercontent.com/gabros20/fluid-design-skill/main/install-cli.sh | FLUID_VERSION=v2.1.0 sh
 - run: ~/.local/bin/fluid check
 ```
 
 `fluid check` exits 1 on a config error, a mistyped or out-of-range setting, stale or hand-edited
 generated files, a breakpoint that disagrees with the bands, or a leftover `fluid-desktop:` variant,
 and warns on the other source rules (a `cn` without `withFluid`, a limit on `<header>` or behind
-`*:`, a band variant mixed with a breakpoint, a `/1.5` line-height ratio). Use the same version in CI as on every laptop; `check` warns
-when the generated folder came from a different one.
+`*:`, a band variant mixed with a breakpoint, a `/1.5` line-height ratio). Use the same version in
+CI as on every laptop; `check` warns when the generated folder came from a different one.
 
 ## Debug a page that broke after a restart
 

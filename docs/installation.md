@@ -9,8 +9,10 @@ All three run the same `fluid` CLI and generate the same files, so pick by who d
 | A developer in a Node project | the npm package `fluid-design-cli` | [npm](#npm-fluid-design-cli) |
 | A developer without Node (Rails, Django, Laravel, Phoenix, Hugo, plain HTML) | the standalone binary | [The standalone binary](#the-standalone-binary) |
 
-A project needs the CLI only when it changes the structure (`fluid.config.json`) and in CI. The
-generated files are committed, and nothing is added to the project's dependencies.
+A project needs the CLI only to change the structure (`fluid.config.json`) and in CI. The
+generated files are committed, and nothing is added to the project's dependencies: in a Node
+project `fluid init` adds a `fluid` script (`npx fluid-design-cli@2`) to `package.json`, so every
+teammate and CI runs `npm run fluid -- check` without installing anything.
 
 ## Prerequisites
 
@@ -80,9 +82,10 @@ npx fluid-design-cli@2 init
 npx fluid-design-cli@2 check
 ```
 
-The package's command is `fluid`, so a project that adds it as a dev dependency
-(`npm i -D fluid-design-cli@2`) can run `npx fluid …` or call `fluid` from its `package.json`
-scripts.
+After `init`, the project's `fluid` script runs the same thing: `npm run fluid -- check`,
+`npm run fluid -- explain 390x844`, `npm run fluid -- settings`. The package's command is `fluid`,
+so a project that prefers a dev dependency (`npm i -D fluid-design-cli@2`) can set the script to
+`fluid` instead.
 
 ## The standalone binary
 
@@ -104,7 +107,7 @@ refuses to install on a mismatch. It installs to `~/.local/bin/fluid` (Windows:
 
 | Variable | Default | Effect |
 |---|---|---|
-| `FLUID_VERSION` | the latest release | a release tag to install, e.g. `v2.0.0` |
+| `FLUID_VERSION` | the latest release | a release tag to install, e.g. `v2.1.0` |
 | `FLUID_INSTALL_DIR` | `~/.local/bin` (Windows: `%LOCALAPPDATA%\fluid`) | where the binary goes |
 | `FLUID_DOWNLOAD_BASE` | the GitHub release | a mirror to download from (`install-cli.sh` only) |
 
@@ -120,8 +123,9 @@ equivalent `npx fluid-design-cli@2 …` command. Everything else (`init`, `gener
 ## Pinning and upgrades
 
 - **Pin one version across the team.** `fluid check` warns when the generated folder was written by
-  a different version of the CLI. Use the same `npx fluid-design-cli@2` (or an exact `@2.0.0`) in CI
-  and in scripts, and install the same binary release (`FLUID_VERSION=v2.0.0`) on every laptop.
+  a different version of the CLI. Use the same `npx fluid-design-cli@2` (or an exact `@2.1.0`) in
+  the `fluid` script and CI, and install the same binary release (`FLUID_VERSION=v2.1.0`) on every
+  laptop.
 - **Upgrade the npm channel** by changing the version in the command; `npx` fetches it.
 - **Upgrade the binary** by running the installer again; it replaces the old binary.
 - **Upgrade the skill** from the clone:
@@ -135,6 +139,14 @@ equivalent `npx fluid-design-cli@2 …` command. Everything else (`init`, `gener
   or run `npx skills add gabros20/fluid-design-skill` again.
 - **After any upgrade,** run `fluid generate` in each project and commit the regenerated folder;
   then `fluid check`.
+- **From 2.0 to 2.1:** `fluid generate` removes `settings.reference.css` and
+  `fluid.css-data.json` from the generated folder unless you set `"output": { "editor": true }`
+  (`fluid settings` prints the same list). Delete the `fluid.config.schema.json` copy next to your
+  config and point `$schema` at
+  `https://unpkg.com/fluid-design-cli@2/skills/fluid-design/assets/fluid.config.schema.json`. Add
+  `"fluid": "npx fluid-design-cli@2"` to your `package.json` scripts. Tablet and landscape now run
+  full width by default; to keep the old 560 column, see
+  [usage.md](usage.md#4-tune-settings-are-css-variables).
 - **From fluid-design v1:** `fluid migrate --write` (see [usage.md](usage.md#6-change-the-structure)).
 
 Version history: [CHANGELOG.md](../CHANGELOG.md) and the

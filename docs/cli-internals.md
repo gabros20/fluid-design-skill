@@ -55,8 +55,9 @@ test runs in process.
 
 - **`init`** — detects the stack and framework from `package.json` (or, with
   none, from the stylesheet: Rails, Phoenix, Hugo and plain-HTML paths are
-  searched), writes a minimal `fluid.config.json` + `fluid.config.schema.json`,
-  runs `generate`, and adds the one `@import` plus the settings into the
+  searched), writes a minimal `fluid.config.json` whose `$schema` is
+  `SCHEMA_URL` (the schema the npm package publishes, read through unpkg; no
+  local copy is written), runs `generate`, and adds the one `@import` plus the settings into the
   project's existing `:root` (or `--css`). On a terminal it asks the preflight
   questions (stack, framework, stylesheet, brownfield, desktop frame, desktop
   breakpoint, mobile bands, phone frame, max width, output folder), each with
@@ -78,7 +79,12 @@ test runs in process.
   the `files.ignore` line to add. Everything is decided in memory first and
   the hand-edit guard runs on the target folder before anything is written,
   so a refusal writes nothing. Refuses to run twice without `--force`;
-  `--force` over a v1 config keeps it as `fluid.config.v1.json`.
+  `--force` over a v1 config keeps it as `fluid.config.v1.json`. Two steps
+  are gated on what the project already has: with `.vscode/settings.json`
+  it sets `output.editor: true` and adds `fluid.css-data.json` to
+  `css.customData` (without it, neither); with a `package.json` and no
+  `fluid` script, it adds `"fluid": "npx fluid-design-cli@2"` (an existing
+  `fluid` script is left alone).
 - **`generate`** — writes `output.dir` from the current `fluid.config.json`,
   plus a `.gitattributes` (`* -text`) so Git's CRLF conversion leaves the
   files byte-exact. Compares against `.fluid.lock.json` first, with line
@@ -108,8 +114,9 @@ test runs in process.
   lock records the CLI version that generated the folder), so a teammate's
   binary and CI's `npx` can't silently disagree. Info notes print only with
   `--verbose`. Non-zero exit on any error.
-- **`settings [--json]`** — prints `settings.reference.css` (every setting,
-  commented, with its default), or with `--json` the same as structured data.
+- **`settings [--json]`** — prints `settingsReferenceCss()` (every setting,
+  commented, with its default: the text `output.editor` writes to
+  `settings.reference.css`), or with `--json` the same as structured data.
 - **`explain <W>x<H> [--zoom z] [--url http://… [--brief]]`** — the band a
   viewport falls in, every resolved unit, and where each setting in play came
   from (default, or `file:line` in the project's CSS). With `--url` it loads
@@ -129,7 +136,8 @@ test runs in process.
   `--width`/`--height`). Kept as an alias.
 - **`migrate [--write]`** — converts a v1 `fluid.config.json` to v2: prints
   what moved, the new config, and a `:root` snippet of every v1 number that
-  differed from its v2 default (nothing to carry over prints instead).
+  differed from its v2 default (nothing to carry over prints instead). The
+  new config's `$schema` is `SCHEMA_URL`; no schema file is written.
   `--write` replaces the config (keeping the v1 file as
   `fluid.config.v1.json`) and turns the top-level `aliases` setting on, so a
   brownfield migration keeps emitting the v1 names (`--header-h`,
@@ -179,7 +187,7 @@ sets at the top level (`lib/context.mjs`'s `loadContext`, the same scan
   `min`, `max`, or `flat` below the desktop band with the mobile bands off).
   `--w`/`--h` are zipped index-wise into one row per pair when they're the
   same length (the default 11-viewport list is what reproduces
-  `fluid-scale.md` §5's "Resolved factors" table); otherwise it's a full
+  `units.md` §1's "Resolved factors" table); otherwise it's a full
   width × height cross product. `--raw` continues the desktop formula past
   `bands.desktop.minWidth` instead of flattening below it — useful for seeing
   the curve's shape, not what actually ships below the desktop band.
@@ -189,7 +197,9 @@ sets at the top level (`lib/context.mjs`'s `loadContext`, the same scan
   budget at the artboard (`min(base-width, container-width) − 2 ×
   container-padding`). PASS if it fits; on OVER it suggests `cqw` fractions of
   the container's content box (`N / (container-width − 2×padding)`) per
-  `fluid-scale.md` §4.1's container-query escape.
+  the container-query escape in `references/frame-and-gutter.md`, which also
+  has the form without `cqw` for a team that avoids newer CSS; the tool only
+  prints the `cqw` form.
 
 Exit codes: `0` ok / budget PASS, `1` budget OVER, `2` usage error.
 
@@ -288,6 +298,11 @@ above), `length-times-unit` (error), `dvh-on-scaled` (warn),
 (info), `tw-breakpoint-units` (error — a mixed-unit or partial
 `--breakpoint-*` set, the Tailwind v4 variant-ordering trap), `img-svg`
 (warn), `double-fluid-same-prop` (warn), `type-unit-mismatch` (info),
+`arbitrary-fluid-calc` (info, Tailwind stack only — an arbitrary value that
+spells out a generated utility, `h-[calc(56*var(--fluid-copy))]` →
+`fluid-copy-h-56`; it scans whole markup and script files, since class
+strings often live in constants, and only suggests pairs the generator
+emits: a box family on `ui` or a role, any core family on `--fluid`),
 `header-limit` (warn — a limit class on `<header>`: `--fluid-header-h` would
 not follow), `cn-without-withfluid` (warn), `band-variant-with-breakpoint`
 (warn — a band variant and a `sm:`/`md:`/`max-*:` breakpoint on one
@@ -322,7 +337,8 @@ regenerates everything in the skill itself that is derived from
 `lib/spec.mjs`, so none of it can drift from that one source:
 
 - `assets/fluid.config.json` / `assets/fluid.config.schema.json` — the
-  example config at every default, and its JSON Schema.
+  example config at every default, and its JSON Schema (the file
+  `SCHEMA_URL` points at once the npm package is published).
 - `assets/styles/{tailwind-v4,css,scss,stylex}/…` — the reference output for
   each stack at the defaults (`runtime/` excluded; its source is
   `assets/runtime/`).
@@ -346,7 +362,9 @@ suite; `npm run verify` runs `scripts/check-sync` first.
 - **`spec.mjs`** — the one place every structure key and setting name,
   default, doc string and constraint lives (`STRUCTURE`, `settingsSpec()`,
   `jsonSchema()`, `structureDefaults()`, `RESERVED_ROLE_NAMES`,
-  `didYouMean()`). `references/config.md`, the JSON Schema, every
+  `didYouMean()`, and `SCHEMA_URL`, the published schema's unpkg address that
+  `init` and `migrate` write as `$schema`). `output.editor` (default `false`)
+  gates the editor aids. `references/config.md`, the JSON Schema, every
   `@property` default and the settings lint all trace back to this file —
   nothing duplicates a default anywhere else.
 - **`model.mjs`** — `normaliseStructure()` (validate + fill defaults),
@@ -383,22 +401,41 @@ suite; `npm run verify` runs `scripts/check-sync` first.
   `min()`/`max()` result to 1/60px) and the knee (the desktop damping curve
   read at `bands.desktop.minWidth / base-width` instead of a v1-style rounded
   "auto floor"). `min()`/`max()`/`calc()` only — no `clamp()`, no `round()`.
+  `--fluid-container-padding` is `max(calc(var(--_fluid-pad) * var(--fluid)),
+  env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))`: never
+  less than either inset, on both sides, so a landscape phone under
+  `viewport-fit=cover` clears the notch and the gutter stays symmetric (and
+  right in RTL). Everything that reads the padding (`fluid-bleed-x`)
+  follows; without insets it is the drawn padding.
 - **`emit/tailwind.mjs`** — the `@theme` breakpoint ladder (the whole sm–2xl
   ladder in px, because Tailwind v4 cannot sort a px override against its own
   rem defaults), `@custom-variant` band variants, the `@utility` vocabulary,
   and `cn.ts` (a `tailwind-merge` config that knows the fluid utility groups).
-- **`emit/stacks.mjs`** — the non-Tailwind outputs: plain CSS classes, SCSS
-  (`_index.scss`: functions + band mixins, `@use 'fluid' as fd`), StyleX
-  helpers, and `fluid.ts` (typed constants + `SETTINGS` table +
+  `BOX_FAMILY` (`p`, `px`, `py`, `gap`, `w`, `h`, `size`) is the small box set
+  a unit other than `--fluid` gets: the `ui` unit (`UI_FAMILY` is the same
+  list) and every type role (`fluid-<role>-h-*`, …, on `--fluid-<role>`), so
+  a control keeps its proportion to its label. `cnTs()` puts each role box
+  utility in its Tailwind group (`fluid-copy-h` with `h`). It also emits
+  `fluid-bleed-x`: `--_fluid-bleed` = the container padding plus half of
+  `max(0px, 100vw − container width)`, as a negative `margin-inline` and an
+  equal `padding-inline`.
+- **`emit/stacks.mjs`** — the non-Tailwind outputs: plain CSS classes
+  (`.fluid-container`, `.fluid-bleed-x`, in `fluid.css` for the CSS, SCSS and
+  StyleX stacks), SCSS (`_index.scss`: functions + band mixins, including
+  `fluid-bleed-x`, `@use 'fluid' as fd`), StyleX helpers, and `fluid.ts` (typed constants + `SETTINGS` table +
   `setFluidSetting()`, shared by every stack).
 - **`emit/project.mjs`** — `buildOutput()`: assembles everything `fluid
-  generate` writes into `output.dir` (`fluid.css`, `base.css`,
-  `settings.reference.css`, `fluid.ts`, plus the stack-specific file,
-  `runtime/`, `integrations/`, `README.md`), deterministic and content-hashed
-  for the hand-edit guard.
-- **`emit/readme.mjs`** — the generated output folder's own `README.md`
-  (install, tuning, bands, units, why, file list) — what a developer reads
-  standing in `output.dir`, not this file.
+  generate` writes into `output.dir` (`fluid.css`, `base.css` with
+  `output.base`, `fluid.ts`, the stack-specific file, `runtime/`,
+  `integrations/`, `README.md`, `.gitattributes`), deterministic and
+  content-hashed for the hand-edit guard. `settings.reference.css` and
+  `fluid.css-data.json` are written only with `output.editor`; turning it
+  off makes them orphans, which `generate` deletes when unedited.
+  `settingsReferenceCss()` is also what `fluid settings` prints.
+- **`emit/readme.mjs`** — the generated output folder's own `README.md`, in
+  plain words: the idea, setup, a *which class for what* table, tuning, the
+  CLI, the bands and the file list — what a developer reads standing in
+  `output.dir`, not this file.
 - **`tests/lib/v1-math.mjs`** (repository only) — the FROZEN v1 maths (`factors()`, `mergeConfig()`,
   `resolveFloors()`, `resolveBandFloors()`), used ONLY by `tests/parity.mjs`
   to check v2 reproduces v1's numbers. Never imported by the generator or the
@@ -428,7 +465,12 @@ Run from the repository root unless noted. `generate-fluid.mjs --check` runs
   on, keeps the v1 file, then `generate` writes the SCSS module and the Vite
   plugin). It also covers a flag-driven `init` (bands, artboard, `--set`
   as declarations, defaults left out, typos and bad values rejected),
-  `init --interactive` with scripted answers, a Rails-style project with no
+  `init --interactive` with scripted answers, the 2.1 output (no editor aids
+  by default, `$schema` at the published schema with no local copy, the
+  `fluid` script added once and an existing one kept, role box utilities and
+  `fluid-bleed-x` generated and merged by `cn`, the safe-area container
+  padding, the full-width tablet and landscape defaults, and `output.editor`
+  wired when `.vscode/settings.json` exists), a Rails-style project with no
   `package.json` (css stack, output beside the stylesheet, the classic zoom
   script), `explain --set`, a version-mismatched lock, and
   `generate --watch`. And the September regressions: CRLF line endings, a
@@ -441,8 +483,9 @@ Run from the repository root unless noted. `generate-fluid.mjs --check` runs
 - **`tests/engine-matrix.mjs`** — the generated engine CSS against
   `model.evaluate()`, in real browsers. For each of a set of structures
   (defaults, flat below desktop, zoom off, ui off, a custom role, no
-  tablet/landscape, width-only + ceiling, floors set, desktop at a moved
-  `minWidth`) plus every migrated v1 fixture, it renders a probe page and
+  tablet/landscape, width-only + ceiling, floors set, the phone container set
+  with the landscape header falling back to it, the tablet and landscape
+  containers set to the old 560/24 column, desktop at a moved `minWidth`) plus every migrated v1 fixture, it renders a probe page and
   measures every unit at a viewport × zoom grid. Then, on the defaults: a
   live setting override, an invalid value falling back to its default, the
   same numbers with `@property` stripped, and every kind of scope (limit
@@ -454,7 +497,9 @@ Run from the repository root unless noted. `generate-fluid.mjs --check` runs
   `cd examples/pizza-next && node ../../tests/engine-matrix.mjs`.
 - **`tests/tailwind-compile.mjs`** — the generated Tailwind layer through the
   real Tailwind v4 compiler (`@tailwindcss/postcss`): band variants (and no
-  `fluid-desktop:`), every utility family, a custom role, the container,
+  `fluid-desktop:`), every utility family, a custom role, role box utilities
+  on the role unit (and not read as the role's text utility), `fluid-bleed-x`,
+  the container,
   negatives, bracket values and modifiers (`fluid-p-[8.3]`,
   `fluid-copy-18/[26.5]`) all compile to the expected CSS, and `cn` accepts
   exactly what compiles. Then in a browser: exactly one band variant matches
