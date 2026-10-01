@@ -18,6 +18,13 @@ export function vanillaClassesCss(structure) {
    Apply once per section, to that section's own inner wrapper. */
 .${p}-container {
   ${container}
+}
+/* Full bleed out of the container: reaches the window's edges and pads back in,
+   so the content still lines up with the container's (a carousel track). */
+.${p}-bleed-x {
+  --_fluid-bleed: calc(var(--fluid-container-padding) + max(0px, (100vw - var(--fluid-container-width)) / 2));
+  margin-inline: calc(var(--_fluid-bleed) * -1);
+  padding-inline: var(--_fluid-bleed);
 }${structure.aliases ? `
 /* v1 name (aliases). */
 .${p}-frame {
@@ -130,6 +137,14 @@ ${structure.ui ? `@mixin ${p}-ui-grow-until($w) {
   margin-inline: auto;
   max-width: var(--fluid-container-width);
   padding-inline: var(--fluid-container-padding);
+}
+
+// Full bleed out of the container: reaches the window's edges and pads back
+// in, so the content still lines up with the container's (a carousel track).
+@mixin ${p}-bleed-x {
+  --_fluid-bleed: calc(var(--fluid-container-padding) + max(0px, (100vw - var(--fluid-container-width)) / 2));
+  margin-inline: calc(var(--_fluid-bleed) * -1);
+  padding-inline: var(--_fluid-bleed);
 }
 ${structure.aliases ? `
 // v1 names (aliases).

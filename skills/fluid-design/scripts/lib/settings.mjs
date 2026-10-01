@@ -96,7 +96,7 @@ export function lintSettings(structure, decls) {
   const at = (d) => ({ file: d.file, line: d.line })
   for (const d of decls) {
     if (d.name.startsWith('--_fluid')) {
-      findings.push({ level: 'warn', ...at(d), message: `${d.name} is a private engine variable; set the public setting it reads instead (see settings.reference.css)` })
+      findings.push({ level: 'warn', ...at(d), message: `${d.name} is a private engine variable; set the public setting it reads instead (run fluid settings for the list)` })
       continue
     }
     const spec = byName.get(d.name)
@@ -108,12 +108,12 @@ export function lintSettings(structure, decls) {
         continue
       }
       if (owned.has(d.name)) {
-        findings.push({ level: 'error', ...at(d), message: `${d.name} is owned by the engine, not a setting: declaring it replaces the engine's value. Change the settings it is built from instead (see settings.reference.css).` })
+        findings.push({ level: 'error', ...at(d), message: `${d.name} is owned by the engine, not a setting: declaring it replaces the engine's value. Change the settings it is built from instead (run fluid settings for the list).` })
         continue
       }
       const hint = nearest(d.name, settingNames)
       if (hint) {
-        findings.push({ level: 'error', ...at(d), message: `${d.name} is not a fluid setting — did you mean ${hint}? (as written it does nothing; see settings.reference.css)` })
+        findings.push({ level: 'error', ...at(d), message: `${d.name} is not a fluid setting — did you mean ${hint}? (as written it does nothing; run fluid settings for the list)` })
         continue
       }
       findings.push({ level: 'info', ...at(d), message: `${d.name} is not a fluid-design setting; fine if it's your own token (consider another prefix, since --fluid-* is where fluid-design's settings live)` })

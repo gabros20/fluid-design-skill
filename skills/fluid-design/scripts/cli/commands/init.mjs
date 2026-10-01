@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
 import { dirname, join, relative, resolve as resolvePath } from 'node:path'
 import { createInterface } from 'node:readline'
-import { normaliseStructure, settingsSpec, jsonSchema, structureDefaults, CONFIG_VERSION, STACKS, INTEGRATIONS } from '../../lib/spec.mjs'
+import { normaliseStructure, settingsSpec, structureDefaults, CONFIG_VERSION, SCHEMA_URL, STACKS, INTEGRATIONS } from '../../lib/spec.mjs'
 import { readJson, isV1 } from '../../lib/model.mjs'
 import { buildOutput } from '../../lib/emit/project.mjs'
 import { findImportInsertion, findRootBlock, hasBaseRules } from '../../lib/css-scan.mjs'
@@ -112,15 +112,19 @@ export async function cmdInit(flags) {
     console.log('')
   }
   const brownfield = !!a.brownfield
+  // Editor aids only where they get wired: a project that already keeps VS Code settings.
+  const vscodeSettings = join(root, '.vscode/settings.json')
+  const editor = existsSync(vscodeSettings)
   const structure = {
-    $schema: './fluid.config.schema.json',
+    $schema: SCHEMA_URL,
     version: CONFIG_VERSION,
     bands: a.mobile ? { desktop: { minWidth: a.desktopAt } } : { phone: false, tablet: false, landscape: false, desktop: { minWidth: a.desktopAt } },
     output: {
       dir: a.out ?? (a.css && !['src/app', 'app', '.'].includes(dirname(a.css)) ? `${dirname(a.css)}/fluid` : det.outDir),
       stack: a.stack,
       base: !brownfield,
-      integration: a.integration
+      integration: a.integration,
+      ...(editor ? { editor: true } : {})
     },
     // The site's own --breakpoint-* stay; the px ladder would compete with them.
     ...(a.stack === 'tailwind-v4' && det.ownBreakpoints.length ? { tailwind: { breakpoints: 'none' } } : {})
@@ -156,7 +160,6 @@ export async function cmdInit(flags) {
   }
   const { $schema, ...rest } = structure
   writeFileSync(configPath, prettyJson({ $schema, ...minimalStructure(rest) }) + '\n')
-  writeFileSync(join(root, 'fluid.config.schema.json'), JSON.stringify(jsonSchema(), null, 2) + '\n')
   console.log(`${c.green('✓')} fluid.config.json (${structure.output.stack}, ${structure.output.integration === 'none' ? 'no framework integration' : structure.output.integration}${brownfield ? ', brownfield: base off' : ''}${a.mobile ? '' : ', flat below desktop'}${structure.tailwind ? ', your own breakpoints kept' : ''})`)
   if (structure.tailwind) {
     const lg = det.ownBreakpoints.find(([k]) => k === 'lg')
@@ -170,10 +173,9 @@ export async function cmdInit(flags) {
   const tw = p.structure.output.stack === 'tailwind-v4'
   const globalsPath = a.css ? resolvePath(root, a.css) : null
   const importPath = globalsPath ? toImport(relative(dirname(globalsPath), join(p.outDir, 'fluid.css'))) : `./${p.structure.output.dir}/fluid.css`
-  const refPath = toImport(relative(globalsPath ? dirname(globalsPath) : root, join(p.outDir, 'settings.reference.css')))
   const settingLines = settings.map(([k, v]) => `  ${k}: ${num(v)};`)
   const starterLines = [
-    `  /* fluid settings — every one, with its default, is in ${refPath} */`,
+    '  /* fluid settings: `npm run fluid -- settings` lists every one with its default */',
     ...settingLines,
     ...(settingLines.length ? [] : ['  /* --fluid-phone-scale-min: 0.82; */', '  /* --fluid-desktop-display-damping: 0.62; */'])
   ]
@@ -229,20 +231,32 @@ export async function cmdInit(flags) {
     }
   }
 
-  // Editor autocomplete for the settings in CSS files (VS Code custom data).
-  const vsc = join(root, '.vscode/settings.json')
-  const dataRel = toImport(relative(root, join(p.outDir, 'fluid.css-data.json'))).replace(/^\.\//, '')
-  if (existsSync(vsc)) {
+  // Settings autocomplete in CSS files (VS Code custom data), when the project keeps VS Code settings.
+  if (editor) {
+    const dataRel = toImport(relative(root, join(p.outDir, 'fluid.css-data.json'))).replace(/^\.\//, '')
     try {
-      const cur = JSON.parse(readFileSync(vsc, 'utf8'))
-      const list = new Set([...(cur['css.customData'] ?? []), dataRel])
-      cur['css.customData'] = [...list]
-      writeFileSync(vsc, JSON.stringify(cur, null, 2) + '\n')
+      const cur = JSON.parse(readFileSync(vscodeSettings, 'utf8'))
+      cur['css.customData'] = [...new Set([...(cur['css.customData'] ?? []), dataRel])]
+      writeFileSync(vscodeSettings, JSON.stringify(cur, null, 2) + '\n')
       console.log(`${c.green('✓')} .vscode/settings.json: settings autocomplete (css.customData)`)
     } catch {
       console.log(c.dim(`  (could not parse .vscode/settings.json; add "css.customData": ["${dataRel}"] for settings autocomplete)`))
     }
-  } else console.log(c.dim(`  settings autocomplete in VS Code: add "css.customData": ["${dataRel}"] to .vscode/settings.json`))
+  }
+  // One script runs every command, for the whole team and CI: npm run fluid -- check.
+  const pkgPath = join(root, 'package.json')
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+      if (!pkg.scripts?.fluid) {
+        pkg.scripts = { ...pkg.scripts, fluid: 'npx fluid-design-cli@2' }
+        writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+        console.log(`${c.green('✓')} package.json: "fluid" script (npm run fluid -- check · explain 390x844 · settings · generate)`)
+      }
+    } catch {
+      console.log(c.dim('  (could not parse package.json; add "fluid": "npx fluid-design-cli@2" to its scripts)'))
+    }
+  }
   if (p.structure.zoom) {
     console.log('')
     console.log(c.bold('Browser zoom:'))
@@ -251,5 +265,5 @@ export async function cmdInit(flags) {
     else console.log(`  first thing in <head>:  <script src="/…/${p.structure.output.dir}/runtime/zoom.classic.js"></script>  (served from wherever your static files live; a classic script, not a module, so a page opened zoomed paints right the first time)`)
   }
   console.log('')
-  console.log(`Then: ${c.bold('fluid check')} · ${c.bold('fluid explain 390x844')} · change a structure key and ${c.bold('fluid generate')} (or keep ${c.bold('fluid generate --watch')} running)`)
+  console.log(`Then: ${c.bold('fluid check')} · ${c.bold('fluid explain 390x844')} · ${c.bold('fluid settings')} · change a structure key and ${c.bold('fluid generate')} (or keep ${c.bold('fluid generate --watch')} running)`)
 }

@@ -160,7 +160,11 @@ function formulas(structure, specs, aliases) {
     out.push(['--fluid-ui', `calc(max(calc(var(--_fluid-ui-min-x) * ${S}px), min(var(--_fluid-w), max(${S}px, var(--_fluid-h)), calc(var(--_fluid-ui-max) * ${S}px))) / ${S})`])
   }
   out.push(['--fluid-container-width', 'max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)))'])
-  out.push(['--fluid-container-padding', 'calc(var(--_fluid-pad) * var(--fluid))'])
+  // Never less than the safe-area inset: on a phone on its side under
+  // viewport-fit=cover the notch takes ~60px of one edge. Both insets on both
+  // sides keeps the gutter symmetric (and right in RTL); everywhere else they
+  // are 0 and this is the drawn padding.
+  out.push(['--fluid-container-padding', 'max(calc(var(--_fluid-pad) * var(--fluid)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))'])
   // Namespaced: a site's own --header-h or --safe-top is left alone.
   out.push(['--fluid-safe-top', 'env(safe-area-inset-top, 0px)'])
   out.push(['--fluid-safe-bottom', 'env(safe-area-inset-bottom, 0px)'])
@@ -248,7 +252,7 @@ export function engineCss(structure, opts = {}) {
   })
   return `/* Settings: every tuning number. Each one with a default is registered with it;
    the optional ones stay unregistered, so unset means off (or falls back).
-   Override any of them in your own :root (see settings.reference.css) — no
+   Override any of them in your own :root (\`fluid settings\` lists them) — no
    regenerate. */
 ${properties}
 

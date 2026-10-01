@@ -39,9 +39,28 @@ try {
   expect(/:root \{\n  --background: white;\n\n  \/\* fluid settings/.test(css), 'init puts the settings starter inside the existing :root')
   const cfg = JSON.parse(readFileSync(join(g, 'fluid.config.json'), 'utf8'))
   expect(cfg.version === 2 && cfg.output?.integration === 'next', 'init detects Next and writes a minimal v2 config', JSON.stringify(cfg))
-  for (const f of ['fluid.css', 'base.css', 'settings.reference.css', 'fluid.ts', 'cn.ts', 'runtime/units.js', 'runtime/zoom.js', 'integrations/next.tsx', '.fluid.lock.json']) {
+  for (const f of ['fluid.css', 'base.css', 'fluid.ts', 'cn.ts', 'runtime/units.js', 'runtime/zoom.js', 'integrations/next.tsx', '.fluid.lock.json']) {
     expect(existsSync(join(g, 'src/styles/fluid', f)), `generated ${f}`)
   }
+  expect(!existsSync(join(g, 'src/styles/fluid/settings.reference.css')) && !existsSync(join(g, 'src/styles/fluid/fluid.css-data.json')), 'the editor aids are not written by default (output.editor)')
+  expect(cfg.$schema?.startsWith('https://') && !existsSync(join(g, 'fluid.config.schema.json')), 'init points $schema at the published schema and writes no local copy', JSON.stringify(cfg))
+  expect(JSON.parse(readFileSync(join(g, 'package.json'), 'utf8')).scripts?.fluid === 'npx fluid-design-cli@2', 'init adds a "fluid" script to package.json')
+  const gfluid = readFileSync(join(g, 'src/styles/fluid/fluid.css'), 'utf8')
+  expect(gfluid.includes('@utility fluid-copy-h-*') && gfluid.includes('@utility fluid-display-px-*'), 'every type role gets the box family (fluid-copy-h-*, fluid-display-px-*)')
+  expect(gfluid.includes('@utility fluid-bleed-x'), 'fluid-bleed-x is generated')
+  expect(gfluid.includes('env(safe-area-inset-left, 0px)'), 'the container padding never drops below the safe-area inset')
+  expect(/@property --fluid-tablet-container-width \{[^}]*initial-value: 1024;/.test(gfluid) && /@property --fluid-landscape-container-padding \{[^}]*initial-value: 32;/.test(gfluid), 'tablet and landscape run full width by default, with their own padding')
+  expect(readFileSync(join(g, 'src/styles/fluid/cn.ts'), 'utf8').includes("fluid('fluid-copy-h')"), 'cn merges the role box family with h')
+  // a project that keeps VS Code settings gets the editor aids, wired
+  const e = join(root, 'editor')
+  mkdirSync(join(e, 'src/app'), { recursive: true })
+  mkdirSync(join(e, '.vscode'))
+  writeFileSync(join(e, '.vscode/settings.json'), '{}')
+  writeFileSync(join(e, 'package.json'), JSON.stringify({ dependencies: { next: '16', tailwindcss: '4' }, scripts: { fluid: 'fluid' } }))
+  writeFileSync(join(e, 'src/app/globals.css'), `@import 'tailwindcss';\n`)
+  r = run(e, 'init', '--yes')
+  expect(r.code === 0 && existsSync(join(e, 'src/styles/fluid/fluid.css-data.json')) && existsSync(join(e, 'src/styles/fluid/settings.reference.css')) && JSON.parse(readFileSync(join(e, '.vscode/settings.json'), 'utf8'))['css.customData']?.length === 1, 'with .vscode/settings.json, init turns output.editor on and wires the custom data', r.out)
+  expect(JSON.parse(readFileSync(join(e, 'package.json'), 'utf8')).scripts.fluid === 'fluid', 'init leaves an existing "fluid" script alone')
   r = run(g, 'check')
   expect(r.code === 0, 'check passes on a fresh project', r.out)
 

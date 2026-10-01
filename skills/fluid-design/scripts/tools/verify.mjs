@@ -132,7 +132,7 @@ converts it to physical size (CSS px × zoom). It passes when the text grows at 
 proportionally (>= 0.9 × zoom, capped at the WCAG target of 2×, against the same window at
 100%) with no horizontal overflow.
 Pure vw/svh type fails this on wide windows unless assets/runtime/fluid-zoom.js is installed
-(fluid-scale.md §12). Needs Playwright's full Chromium (npx playwright install chromium): the
+(browser-zoom.md). Needs Playwright's full Chromium (npx playwright install chromium): the
 headless shell ignores the zoom preference, and the row is skipped with a note without it.
 
 Exit codes: 0 = every check passed, 1 = at least one failed, 2 = usage / invocation error
@@ -440,7 +440,7 @@ function printZoomRow(zoom, strict) {
     const mobileTextFails = failed.filter((r) => !r.engaged && !r.textPass)
     if (engagedTextFails.some((r) => r.fluidZoom === '')) {
       console.log('  -> --fluid-zoom is unset: the zoom runtime is not installed on this page. Render <FluidHead/> (Next),')
-      console.log('     add fluidPlugin() (Vite), or inline FLUID_ZOOM_INLINE from runtime/zoom.js in <head> (fluid-scale.md §12).')
+      console.log('     add fluidPlugin() (Vite), or inline FLUID_ZOOM_INLINE from runtime/zoom.js in <head> (browser-zoom.md §3).')
     } else if (engagedTextFails.some((r) => r.fluidZoom === '1')) {
       console.log('  -> fluid-zoom.js is installed but detected no zoom. Check it runs in the top window and that')
       console.log('     fluid.config.json has zoom: true (the type units must read var(--fluid-zoom, 1)).')
@@ -451,7 +451,7 @@ function printZoomRow(zoom, strict) {
     if (mobileTextFails.length > 0) {
       console.log('  -> mobile handover: at these zoom levels the CSS viewport dropped below engageAt and the page uses')
       console.log('     its mobile type, which is smaller than the desktop type had grown to on this window. Draw mobile')
-      console.log('     body copy no smaller than the desktop reference size (fluid-scale.md §12, "The mobile handover").')
+      console.log('     body copy no smaller than the desktop reference size (browser-zoom.md §5, "The mobile handover").')
     }
     if (failed.some((r) => !r.overflow.pass)) {
       console.log('  -> horizontal overflow at zoom is a reflow bug (WCAG 1.4.10): a fixed width that the larger text broke out of.')

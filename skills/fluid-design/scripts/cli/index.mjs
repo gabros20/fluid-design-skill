@@ -50,8 +50,11 @@ const HELP = `fluid ${SKILL_VERSION} — fluid-design
   fluid init [--yes] [--brownfield] [--stack tailwind-v4|css|scss|stylex] [--integration next|vite|none]
              [--css path/to/globals.css] [--out dir] [--desktop 1440x900] [--desktop-at 1024]
              [--no-mobile] [--phone 390] [--max-width 1680] [--set --fluid-<setting>=<n> …]
-      write fluid.config.json, generate, and wire the one import + your settings. Asks on a
-      terminal (Enter keeps each default); --yes, or no terminal, takes the defaults and flags.
+             [--interactive] [--force]
+      write fluid.config.json, generate, and wire the one import, your settings and a "fluid"
+      npm script. Asks on a terminal (Enter keeps each default); --yes, or no terminal, takes the
+      defaults and flags; --interactive asks even without one (answers from stdin); --force
+      replaces an existing config and hand-edited output.
   fluid generate [--dry] [--force] [--watch]
                                         write output.dir from fluid.config.json (--watch: on every save)
   fluid check [--verbose]               config, generated files, settings lint, source rules — non-zero on problems (CI)

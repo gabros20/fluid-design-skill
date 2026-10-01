@@ -2,12 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/gabros20/fluid-design-skill/fluid.config.schema.json",
   "title": "fluid-design structure config (v2)",
-  "description": "Structure only: which bands exist, their breakpoints, type roles, output. Every tuning number is a CSS variable (settings.reference.css).",
+  "description": "Structure only: which bands exist, their breakpoints, type roles, output. Every tuning number is a CSS variable (`fluid settings` lists them).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "$schema": {
-      "description": "Path to fluid.config.schema.json, for editor autocomplete.",
+      "description": "Where the JSON Schema lives, for editor autocomplete (fluid init points it at the published schema).",
       "type": "string"
     },
     "version": {
@@ -233,6 +233,11 @@
             "vite"
           ],
           "default": "none"
+        },
+        "editor": {
+          "description": "Also write the editor aids: fluid.css-data.json (settings autocomplete in VS Code, wired through .vscode/settings.json) and settings.reference.css (every setting with its default). Off by default: `fluid settings` prints the same list.",
+          "type": "boolean",
+          "default": false
         }
       }
     },

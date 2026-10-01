@@ -56,7 +56,7 @@
   {
     "id": "header-stops-scaling",
     "prompt": "The fixed site header keeps growing on 2560 monitors. Stop the header scaling above a 1680 window while the rest of the page keeps scaling, and keep anchor offsets correct.",
-    "expected_references": ["references/fluid-scale.md"],
+    "expected_references": ["references/limits-and-scopes.md"],
     "forbidden_references": ["references/brownfield-migration.md", "references/media.md", "references/stacks.md", "references/tokens-and-theming.md"]
   },
   {
@@ -68,7 +68,7 @@
   {
     "id": "browser-zoom-text",
     "prompt": "Cmd+ zoom to 200% on a 27-inch monitor barely grows the text on our fluid site. Is that our bug, and how do we fix it without breaking the layout?",
-    "expected_references": ["references/typography.md", "references/fluid-scale.md"],
+    "expected_references": ["references/typography.md", "references/browser-zoom.md"],
     "forbidden_references": ["references/brownfield-migration.md", "references/media.md", "references/tokens-and-theming.md"]
   }
 ]

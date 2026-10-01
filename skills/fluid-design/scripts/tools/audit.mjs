@@ -410,7 +410,8 @@ function propKey(base, opts) {
     b = b.slice(pre.length)
     const fam = b.replace(VALUE_TAIL, '')
     if (fam === 'text' || fam === 'ui-text' || opts.roles.includes(fam)) return 'text'
-    b = b.replace(/^ui-/, '')
+    // A box on another unit (fluid-ui-h-48, fluid-copy-h-56) sets the same property as fluid-h-*.
+    b = b.replace(new RegExp(`^(?:ui|${opts.roles.map(esc).join('|')})-`), '')
   }
   return b.replace(VALUE_TAIL, '')
 }
@@ -473,7 +474,7 @@ const rules = [
       while ((m = allow.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'info',
-          why: 'Deliberately off the fluid scale: border/stroke widths, tracking and max-w-* text measures are excluded per fluid-scale.md §4.',
+          why: 'Deliberately off the fluid scale: border/stroke widths, tracking and max-w-* text measures are excluded on purpose (section-recipe.md, the checklist).',
           fix: 'No action needed unless this value was meant to scale — if so it belongs on a different property family.'
         })
       }
@@ -562,7 +563,7 @@ const rules = [
       while ((m = literalRe.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
-          why: 'A length (has a unit) multiplied by another length inside calc() is invalid CSS. The custom property goes guaranteed-invalid and the declaration silently reverts to its initial value (fluid-scale.md §4).',
+          why: 'A length (has a unit) multiplied by another length inside calc() is invalid CSS. The custom property goes guaranteed-invalid and the declaration silently reverts to its initial value (fluid-scale.md §2).',
           fix: 'The multiplied number must be unitless: store it as a bare number custom property (e.g. --mark-h-n: 64;) and multiply that, not a px/rem/em length.'
         })
       }
@@ -578,7 +579,7 @@ const rules = [
         if (assign) {
           pushFinding(acc, {
             rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'error',
-            why: `${varName} is assigned a px/rem/em length elsewhere in this file, so this multiplication is a length times a length — invalid, and the declaration silently goes guaranteed-invalid (fluid-scale.md §4, the footer compliance-row bug).`,
+            why: `${varName} is assigned a px/rem/em length elsewhere in this file, so this multiplication is a length times a length — invalid, and the declaration silently goes guaranteed-invalid (fluid-scale.md §2, the footer compliance-row bug).`,
             fix: `Store ${varName} as a bare unitless number (drop the ${assign[2]}) if it is only ever multiplied by a fluid unit, or keep two tokens — one px twin for below-lg, one bare-number twin for the multiplication.`
           })
         }
@@ -595,7 +596,7 @@ const rules = [
       while ((m = re.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout under the reader\'s thumb — the worst possible surface for a resize (fluid-scale.md §2), and worst of all over a pinned or scrubbed section.',
+          why: 'dvh resizes mid-scroll as mobile chrome collapses/expands, which recomputes type and layout under the reader\'s thumb — the worst possible surface for a resize (fluid-scale.md §3), and worst of all over a pinned or scrubbed section.',
           fix: 'Use svh for the fluid scale itself, or lvh specifically for a pin that must not shrink under a collapsing toolbar.'
         })
       }
@@ -643,7 +644,7 @@ const rules = [
       while ((m = re.exec(content))) {
         pushFinding(acc, {
           rule: this.id, file, content, index: m.index, matchLen: m[0].length, severity: 'warn',
-          why: 'No @custom-variant dark is declared anywhere in this project\'s CSS, so dark: silently becomes a prefers-color-scheme media query that fires for any visitor on a dark system theme rather than a deliberate dark mode (fluid-scale.md tokens trap list).',
+          why: 'No @custom-variant dark is declared anywhere in this project\'s CSS, so dark: silently becomes a prefers-color-scheme media query that fires for any visitor on a dark system theme rather than a deliberate dark mode (tokens-and-theming.md trap list).',
           fix: 'Declare @custom-variant dark in the stylesheet if a real dark mode is intended, or remove the dark: variant if it was not.'
         })
       }
@@ -700,7 +701,7 @@ const rules = [
           if (hits.length < 2) continue
           pushFinding(acc, {
             rule: this.id, file, content, index: cls.index, matchLen: cls.value.length, severity: 'warn',
-            why: `Two ${opts.desktopVariant}:${opts.prefix}-${family}-* classes appear in one className string literal (${hits.join(', ')}...). A plain string never passes through cn(), so stylesheet order — not intent — decides which wins (fluid-scale.md §8.6).`,
+            why: `Two ${opts.desktopVariant}:${opts.prefix}-${family}-* classes appear in one className string literal (${hits.join(', ')}...). A plain string never passes through cn(), so stylesheet order — not intent — decides which wins (frame-and-gutter.md §5).`,
             fix: `Keep one ${opts.desktopVariant}:${opts.prefix}-${family}-* per className literal, or route the value through cn() so the later call wins deterministically.`
           })
         }
@@ -767,7 +768,7 @@ const rules = [
         if (!new RegExp(`(?<![\\w-])${p}-(w|size)-`).test(cls.value)) continue
         pushFinding(acc, {
           rule: this.id, file, content, index: cls.index, matchLen: cls.value.length, severity: 'info',
-          why: `${opts.prefix}-display-* (the gentle-damping type unit) sits on an element whose own box is also on ${opts.prefix}-w-*/${opts.prefix}-size-* (the base unit). The container already scales, so the type inside it can use the steeper ${opts.prefix}-text-* unit instead (fluid-scale.md §5).`,
+          why: `${opts.prefix}-display-* (the gentle-damping type unit) sits on an element whose own box is also on ${opts.prefix}-w-*/${opts.prefix}-size-* (the base unit). The container already scales, so the type inside it can use the steeper ${opts.prefix}-text-* unit instead (typography.md, choosing a unit).`,
           fix: `If this box genuinely scales with the layout, prefer ${opts.prefix}-text-* for the type inside it; keep ${opts.prefix}-display-* only for type inside a fixed-width container.`
         })
       }
@@ -893,6 +894,37 @@ const rules = [
             fix: `Put the limit on the element itself (${cls.base} on each child), or add ${opts.prefix}-scope to the children as well.`
           })
         }
+      }
+    }
+  },
+
+  {
+    // An arbitrary value that spells out a unit the generated vocabulary
+    // already has: h-[calc(56*var(--fluid-copy))] is fluid-copy-h-56. The
+    // utility is the same CSS, but cn() merges it with its family and editors
+    // autocomplete it; a hand-written calc() does neither.
+    id: 'arbitrary-fluid-calc',
+    ext: (e) => MARKUP_EXT.has(e) || ['.ts', '.js', '.mjs'].includes(e),
+    run(content, file, ctx, acc, opts) {
+      if (opts.stack && opts.stack !== 'tailwind-v4') return
+      const box = new Set(['p', 'px', 'py', 'gap', 'w', 'h', 'size'])
+      const negatable = new Set(['m', 'mx', 'my', 'mt', 'mb', 'ml', 'mr', 'inset', 'top', 'right', 'bottom', 'left'])
+      const props = PROP_FAMILIES.filter((f) => f !== 'text').sort((a, b) => b.length - a.length).map(esc).join('|')
+      const units = ['ui', ...opts.roles].map(esc).join('|')
+      // Anywhere in the file, not only className/cn(): class strings often live
+      // in constants (const SIZES = { md: 'h-[calc(56*var(--fluid-copy))] …' }).
+      // The shape is specific enough that nothing else matches it.
+      const re = new RegExp(`(?<![\\w\\-\\[])((?:[\\w-]+:)*)(-?)(${props})-\\[calc\\((\\d+(?:\\.\\d+)?)_?\\*_?var\\(--fluid(?:-(${units}))?\\)\\)\\]`, 'g')
+      let m
+      while ((m = re.exec(content))) {
+        const [raw, variants, neg, prop, n, unit] = m
+        // Only pairs the generator emits: a box family on ui or a role, any core family on --fluid.
+        if (unit ? !box.has(prop) || neg : neg && !negatable.has(prop)) continue
+        pushFinding(acc, {
+          rule: this.id, file, content, index: m.index, matchLen: raw.length, severity: 'info',
+          why: `${raw} spells out a unit the generated utilities already cover.`,
+          fix: `Use ${variants}${neg}${opts.prefix}-${unit ? `${unit}-` : ''}${prop}-${n}: the same value, merged by cn() and autocompleted.`
+        })
       }
     }
   },

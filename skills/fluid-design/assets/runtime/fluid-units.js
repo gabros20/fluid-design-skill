@@ -29,7 +29,7 @@
 //   gsap.to(el, { x: () => fluidPx(600), scrollTrigger: { scrub: true, invalidateOnRefresh: true,
 //                 end: () => '+=' + fluidPx(1800) } })
 // With Motion, wrap fluidPx() in a MotionValue and update it from
-// onFluidChange. references/fluid-scale.md §11 has the details.
+// onFluidChange. references/fluid-scale.md §7 has the details.
 
 var UNITS = ['fluid', 'display', 'copy', 'ui'] // @fluid-units
 var VARS = {}

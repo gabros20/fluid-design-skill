@@ -46,7 +46,8 @@ const cases = [
   ['no tablet, no landscape', { bands: { tablet: false, landscape: false } }, {}],
   ['width only + ceiling', {}, { '--fluid-desktop-fit-height': 0, '--fluid-desktop-scale-max': 1.4 }],
   ['floors set', {}, { '--fluid-desktop-display-floor': 0.95, '--fluid-desktop-copy-floor': 1.02 }],
-  ['tablet container falls back to phone', {}, { '--fluid-phone-container-width': 480, '--fluid-phone-container-padding': 20, '--fluid-landscape-header-height': 40 }],
+  ['phone container set; landscape header falls back', {}, { '--fluid-phone-container-width': 480, '--fluid-phone-container-padding': 20, '--fluid-landscape-header-height': 40 }],
+  ['tablet and landscape containers set', {}, { '--fluid-tablet-container-width': 560, '--fluid-tablet-container-padding': 24, '--fluid-landscape-container-width': 560, '--fluid-landscape-container-padding': 24 }],
   ['base-width 0 guarded', {}, { '--fluid-desktop-base-width': 0, '--fluid-phone-base-width': 0 }],
   ['desktop at 1280', { bands: { desktop: { minWidth: 1280 } } }, {}],
   // Limits (window px): each applies only in the band that contains its width.

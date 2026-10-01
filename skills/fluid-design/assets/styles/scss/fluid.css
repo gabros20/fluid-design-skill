@@ -1,13 +1,13 @@
-/* fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+/* fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
    fluid.css — import this once, globally:
      @import './fluid/fluid.css';
-   Then set any setting you want to change in your own :root (settings.reference.css). */
+   Then set any setting you want to change in your own :root (`fluid settings` lists them). */
 
 @import './base.css' layer(base);
 
 /* Settings: every tuning number. Each one with a default is registered with it;
    the optional ones stay unregistered, so unset means off (or falls back).
-   Override any of them in your own :root (see settings.reference.css) — no
+   Override any of them in your own :root (`fluid settings` lists them) — no
    regenerate. */
 @property --fluid-phone-base-width { syntax: '<number>'; inherits: true; initial-value: 390; }
 @property --fluid-phone-scale-min { syntax: '<number>'; inherits: true; initial-value: 0.82; }
@@ -22,11 +22,15 @@
 @property --fluid-tablet-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.3; }
 @property --fluid-tablet-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.85; }
 @property --fluid-tablet-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --fluid-tablet-container-width { syntax: '<number>'; inherits: true; initial-value: 1024; }
+@property --fluid-tablet-container-padding { syntax: '<number>'; inherits: true; initial-value: 32; }
 @property --fluid-landscape-base-width { syntax: '<number>'; inherits: true; initial-value: 780; }
 @property --fluid-landscape-scale-min { syntax: '<number>'; inherits: true; initial-value: 1; }
 @property --fluid-landscape-scale-max { syntax: '<number>'; inherits: true; initial-value: 1.2; }
 @property --fluid-landscape-display-damping { syntax: '<number>'; inherits: true; initial-value: 0.85; }
 @property --fluid-landscape-copy-damping { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --fluid-landscape-container-width { syntax: '<number>'; inherits: true; initial-value: 1024; }
+@property --fluid-landscape-container-padding { syntax: '<number>'; inherits: true; initial-value: 32; }
 @property --fluid-desktop-base-width { syntax: '<number>'; inherits: true; initial-value: 1440; }
 @property --fluid-desktop-base-height { syntax: '<number>'; inherits: true; initial-value: 900; }
 @property --fluid-desktop-fit-height { syntax: '<number>'; inherits: true; initial-value: 1; }
@@ -87,7 +91,7 @@
 [class*=":!fluid-off "],
 [class$=":!fluid-off"],
 [class*="[--fluid-"] {
-  --fluid-build: "2.0.0+fd2f2a59";
+  --fluid-build: "2.1.0+174db8f4";
   --_fluid-lo: 0;
   --_fluid-hi: 600;
   --_fluid-base-w: max(1, var(--fluid-phone-base-width, 390));
@@ -142,7 +146,7 @@
   --_fluid-ui-min-x: calc(var(--_fluid-ui-min-l) + (1 - var(--_fluid-ui-min-l)) * var(--fluid-off, 0));
   --fluid-ui: calc(max(calc(var(--_fluid-ui-min-x) * 1000px), min(var(--_fluid-w), max(1000px, var(--_fluid-h)), calc(var(--_fluid-ui-max) * 1000px))) / 1000);
   --fluid-container-width: max(calc(var(--_fluid-cw) * var(--_fluid-cw-grow) * 1px), calc(var(--_fluid-cw) * var(--fluid)));
-  --fluid-container-padding: calc(var(--_fluid-pad) * var(--fluid));
+  --fluid-container-padding: max(calc(var(--_fluid-pad) * var(--fluid)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   --fluid-safe-top: env(safe-area-inset-top, 0px);
   --fluid-safe-bottom: env(safe-area-inset-bottom, 0px);
   --fluid-browser-bar: calc(100lvh - 100svh);
@@ -178,8 +182,8 @@
     --_fluid-max: var(--fluid-tablet-scale-max, 1.3);
     --_fluid-display-d: var(--fluid-tablet-display-damping, 0.85);
     --_fluid-copy-d: var(--fluid-tablet-copy-damping, 0.6);
-    --_fluid-cw: var(--fluid-tablet-container-width, var(--fluid-phone-container-width, 560));
-    --_fluid-pad: var(--fluid-tablet-container-padding, var(--fluid-phone-container-padding, 24));
+    --_fluid-cw: var(--fluid-tablet-container-width, 1024);
+    --_fluid-pad: var(--fluid-tablet-container-padding, 32);
     --_fluid-header-row: calc(var(--fluid-tablet-header-height, var(--fluid-phone-header-height, 34)) * 1px);
   }
 }
@@ -209,8 +213,8 @@
     --_fluid-max: var(--fluid-landscape-scale-max, 1.2);
     --_fluid-display-d: var(--fluid-landscape-display-damping, 0.85);
     --_fluid-copy-d: var(--fluid-landscape-copy-damping, 0.6);
-    --_fluid-cw: var(--fluid-landscape-container-width, var(--fluid-phone-container-width, 560));
-    --_fluid-pad: var(--fluid-landscape-container-padding, var(--fluid-phone-container-padding, 24));
+    --_fluid-cw: var(--fluid-landscape-container-width, 1024);
+    --_fluid-pad: var(--fluid-landscape-container-padding, 32);
     --_fluid-header-row: calc(var(--fluid-landscape-header-height, var(--fluid-phone-header-height, 34)) * 1px);
   }
 }
@@ -263,4 +267,11 @@
   margin-inline: auto;
   max-width: var(--fluid-container-width);
   padding-inline: var(--fluid-container-padding);
+}
+/* Full bleed out of the container: reaches the window's edges and pads back in,
+   so the content still lines up with the container's (a carousel track). */
+.fluid-bleed-x {
+  --_fluid-bleed: calc(var(--fluid-container-padding) + max(0px, (100vw - var(--fluid-container-width)) / 2));
+  margin-inline: calc(var(--_fluid-bleed) * -1);
+  padding-inline: var(--_fluid-bleed);
 }

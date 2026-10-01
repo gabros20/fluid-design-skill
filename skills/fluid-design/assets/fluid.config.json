@@ -28,7 +28,8 @@
     "dir": "src/styles/fluid",
     "stack": "tailwind-v4",
     "base": true,
-    "integration": "none"
+    "integration": "none",
+    "editor": false
   },
   "tailwind": {
     "breakpoints": "ladder",

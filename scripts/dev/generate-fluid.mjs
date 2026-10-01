@@ -101,7 +101,8 @@ Two kinds of configuration, split by one rule:
   \`fluid generate\`.
 - **Settings** change a number inside those rules. They are CSS variables with
   registered defaults, set in your own \`:root\` (next to your tokens), live, no
-  regenerate. The generated \`settings.reference.css\` lists them for a project.
+  regenerate. \`fluid settings\` lists them for a project (and \`output.editor\`
+  writes them to \`settings.reference.css\`).
 
 ## Structure: \`fluid.config.json\`
 

@@ -1,8 +1,8 @@
 // migrate.mjs — fluid migrate [--write]: a v1 config to v2.
 
 import { writeFileSync, copyFileSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
-import { jsonSchema, CONFIG_VERSION } from '../../lib/spec.mjs'
+import { dirname, relative } from 'node:path'
+import { CONFIG_VERSION, SCHEMA_URL } from '../../lib/spec.mjs'
 import { readJson, isV1, migrateV1 } from '../../lib/model.mjs'
 import { num } from '../../lib/emit/engine.mjs'
 import { c, fail, prettyJson } from '../ui.mjs'
@@ -26,7 +26,7 @@ export function cmdMigrate(flags) {
   }
   const det = detectProject(dirname(path))
   const structure = { ...m.structure, output: { dir: det.outDir, stack: det.stack, integration: det.integration } }
-  const out = { $schema: './fluid.config.schema.json', ...minimalStructure(structure) }
+  const out = { $schema: SCHEMA_URL, ...minimalStructure(structure) }
   const text = prettyJson(out) + '\n'
   const settings = Object.entries(m.settings)
   const snippet = settings.length ? `:root {\n${settings.map(([k, v]) => `  ${k}: ${num(v)};`).join('\n')}\n}` : null
@@ -44,8 +44,7 @@ export function cmdMigrate(flags) {
     const backup = path.replace(/\.json$/, '.v1.json')
     copyFileSync(path, backup)
     writeFileSync(path, text)
-    writeFileSync(join(dirname(path), 'fluid.config.schema.json'), JSON.stringify(jsonSchema(), null, 2) + '\n')
-    console.log(`${c.green('✓')} wrote ${relative(process.cwd(), path)} (v1 kept as ${relative(process.cwd(), backup)}) and fluid.config.schema.json`)
+    console.log(`${c.green('✓')} wrote ${relative(process.cwd(), path)} (v1 kept as ${relative(process.cwd(), backup)}); its $schema points at the published schema, so a local fluid.config.schema.json can go`)
     console.log(`Next: add the settings above to your CSS, run ${c.bold('fluid generate')}, and replace your old fluid imports with the one ${c.bold("@import './fluid/fluid.css'")}.`)
   } else console.log(c.dim('Dry run. Re-run with --write to replace fluid.config.json (the v1 file is kept as fluid.config.v1.json).'))
 }

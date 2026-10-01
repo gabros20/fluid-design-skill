@@ -10,8 +10,11 @@
 // reference, fluid.ts's SETTINGS table, the settings lint and the docs
 // table. `fluid check` fails if any of those drift from it.
 
-export const SKILL_VERSION = '2.0.0'
+export const SKILL_VERSION = '2.1.0'
 export const CONFIG_VERSION = 2
+// The published JSON Schema: a project's fluid.config.json points here, so
+// editors autocomplete the config without a copy of the schema in the repo.
+export const SCHEMA_URL = 'https://unpkg.com/fluid-design-cli@2/skills/fluid-design/assets/fluid.config.schema.json'
 
 export const BAND_NAMES = ['phone', 'tablet', 'landscape', 'desktop']
 export const MOBILE_BANDS = ['phone', 'tablet', 'landscape']
@@ -41,7 +44,7 @@ const px = (doc, dflt, extra = {}) => ({ type: 'number', min: 1, integer: true, 
 export const STRUCTURE = {
   type: 'object',
   props: {
-    $schema: { type: 'string', optional: true, doc: 'Path to fluid.config.schema.json, for editor autocomplete.' },
+    $schema: { type: 'string', optional: true, doc: 'Where the JSON Schema lives, for editor autocomplete (fluid init points it at the published schema).' },
     version: { type: 'const', value: CONFIG_VERSION, default: CONFIG_VERSION, doc: 'Config format version. A file without it is read as v1 and migrated (`fluid migrate`).' },
     prefix: { type: 'string', pattern: '^[a-z][a-z0-9-]*$', default: 'fluid', doc: 'Utility, class, variant and Sass function prefix. Custom-property names never change with it.' },
     bands: {
@@ -89,7 +92,8 @@ export const STRUCTURE = {
         dir: { type: 'string', default: 'src/styles/fluid', doc: 'Output folder, relative to this config file. Generated; never edit inside it.' },
         stack: { type: 'string', enum: STACKS, default: 'tailwind-v4', doc: 'Styling stack.' },
         base: { type: 'boolean', default: true, doc: 'Include base.css (box-sizing, overflow guard, focus ring) in fluid.css as layer(base). Brownfield: often false.' },
-        integration: { type: 'string', enum: INTEGRATIONS, default: 'none', doc: 'Emit a head-script integration for browser zoom: next (<FluidHead/>) or vite (fluidPlugin()).' }
+        integration: { type: 'string', enum: INTEGRATIONS, default: 'none', doc: 'Emit a head-script integration for browser zoom: next (<FluidHead/>) or vite (fluidPlugin()).' },
+        editor: { type: 'boolean', default: false, doc: 'Also write the editor aids: fluid.css-data.json (settings autocomplete in VS Code, wired through .vscode/settings.json) and settings.reference.css (every setting with its default). Off by default: `fluid settings` prints the same list.' }
       }
     },
     tailwind: {
@@ -282,7 +286,7 @@ export function jsonSchema() {
     $schema: 'http://json-schema.org/draft-07/schema#',
     $id: 'https://github.com/gabros20/fluid-design-skill/fluid.config.schema.json',
     title: 'fluid-design structure config (v2)',
-    description: 'Structure only: which bands exist, their breakpoints, type roles, output. Every tuning number is a CSS variable (settings.reference.css).',
+    description: 'Structure only: which bands exist, their breakpoints, type roles, output. Every tuning number is a CSS variable (`fluid settings` lists them).',
     ...schemaOf(STRUCTURE),
     required: ['version']
   }
@@ -301,8 +305,13 @@ const ROLE_DAMPING = {
 
 const BAND_DEFAULTS = {
   phone: { 'base-width': 390, 'scale-min': 0.82, 'scale-max': 1.1, 'container-width': 560, 'container-padding': 24, 'header-height': 34 },
-  tablet: { 'base-width': 700, 'scale-min': 1.1, 'scale-max': 1.3, 'container-width': 560, 'container-padding': 24, 'header-height': 34 },
-  landscape: { 'base-width': 780, 'scale-min': 1, 'scale-max': 1.2, 'container-width': 560, 'container-padding': 24, 'header-height': 34 },
+  // Tablet and landscape have no design frame of their own in most files, so
+  // their defaults are the fallback that reads as a layout: the phone design
+  // runs full width (the container width defaults to the desktop breakpoint,
+  // wider than any window in these bands) with a wider gutter. Holding it to
+  // the phone's 560 column left a phone floating in the middle of a tablet.
+  tablet: { 'base-width': 700, 'scale-min': 1.1, 'scale-max': 1.3, 'container-padding': 32, 'header-height': 34 },
+  landscape: { 'base-width': 780, 'scale-min': 1, 'scale-max': 1.2, 'container-padding': 32, 'header-height': 34 },
   desktop: { 'base-width': 1440, 'base-height': 900, 'fit-height': 1, 'scale-min': 0.58, 'container-width': 1680, 'container-padding': 80, 'header-height': 48 }
 }
 
@@ -351,14 +360,14 @@ export function settingsSpec(structure) {
       // could only bind above scale-min, which the damping says better.
       if (!mobile) add(band, `${role}-floor`, { role, default: null, optional: true, min: 0.01, doc: `optional hard minimum for ${role} type, as a scale factor (unset = none; the damping already holds type up)` })
     }
-    // Tablet and landscape share the phone's container and header unless
-    // set: optional there, falling back to the phone value.
+    // Tablet and landscape have their own container (full width by default,
+    // see BAND_DEFAULTS) but share the phone's header row unless it is set.
     const shared = band === 'tablet' || band === 'landscape'
     const sh = (spec) => (shared ? { ...spec, default: null, optional: true, fallback: `--fluid-phone-${spec.key}`, doc: `${spec.doc} (unset = the phone value)` } : spec)
-    const addS = (key, spec) => add(band, key, sh({ key, ...spec }))
-    addS('container-width', { default: d['container-width'], min: 0, doc: mobile ? 'the content box\'s widest size, side margins included, drawn px (holds the phone design to a column on wide screens)' : 'the content box\'s widest size, side margins included, drawn px (grows with the unit, never below this in CSS px)' })
-    addS('container-padding', { default: d['container-padding'], min: 0, doc: 'page container side padding, drawn px' })
-    addS('header-height', { default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` })
+    const containerWidth = shared ? s.bands.desktop.minWidth : d['container-width']
+    add(band, 'container-width', { default: containerWidth, min: 0, doc: band === 'phone' ? 'the content box\'s widest size, side margins included, drawn px (holds the phone design to a column on wide screens)' : shared ? 'the content box\'s widest size, side margins included, drawn px (default: the desktop breakpoint, so the phone design runs full width)' : 'the content box\'s widest size, side margins included, drawn px (grows with the unit, never below this in CSS px)' })
+    add(band, 'container-padding', { default: d['container-padding'], min: 0, doc: 'page container side padding, drawn px (never less than the safe-area inset, so content clears a notch in landscape)' })
+    add(band, 'header-height', sh({ key: 'header-height', default: d['header-height'], min: 0, doc: mobile ? 'header row height, CSS px (not scaled on mobile)' : `header row height, drawn px (scaled by ${s.ui ? '--fluid-ui' : '--fluid'})` }))
   }
   add(null, 'header-inset', { default: 24, min: 0, doc: 'space above the header row, drawn px (plus the safe-area inset)' })
   // Limits, in WINDOW px. Usually set on an element by a utility

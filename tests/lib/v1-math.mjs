@@ -193,7 +193,7 @@ export function textZoomFactor(cfg, n) {
 }
 
 /** The unit a fluid-text size of drawn `n` px is multiplied by: --fluid,
- * --fluid-z (the zoom-compensated base, fluid-scale.md §12), or a blend by
+ * --fluid-z (the zoom-compensated base, browser-zoom.md), or a blend by
  * the size's share of the zoom. Blending the two bases, not multiplying
  * --fluid by the zoom, keeps it exact where the floor or ceiling binds. */
 export function textUnitExpr(cfg, n) {
@@ -248,7 +248,7 @@ export function round2(n) {
  */
 /** The type floors below engageAt when the mobile arm is on: the damped
  * curve read at mobile.min, the same derivation as the desktop floors read
- * at engageAt (fluid-scale.md §5). */
+ * at engageAt (units.md §1). */
 // The mobile bands damp type with mobile.damping, not the desktop dampings:
 // across the narrow phone range (0.82-1.10) the desktop 0.62/0.33 leave type
 // nearly static (body 16 -> 15.1 at 320), so phones use 0.85/0.60 by default.
@@ -404,7 +404,7 @@ export function cssUnits(cfg) {
   }
   const fluidExpr = desktopBase(false)
 
-  // The type units read the zoom-compensated base (fluid-scale.md §12): each
+  // The type units read the zoom-compensated base (browser-zoom.md): each
   // resolves to the CSS px it had at 100% and renders z times larger, so text
   // zooms 1:1. Layout (`--fluid`), chrome and `fluid-text-*` (by size) stay
   // uncompensated on purpose: they keep fitting the zoomed viewport.
@@ -423,10 +423,10 @@ export function cssUnits(cfg) {
 
   // Below engageAt: a flat 1px, or with the mobile arm a width-only scale off
   // the phone frame, clamped so a small phone stops shrinking and a tablet
-  // stops growing (fluid-scale.md §13). Height never enters: below the
+  // stops growing (bands.md). Height never enters: below the
   // breakpoint sections stack and scroll, so there is nothing to fit.
   // Below engageAt: a flat 1px, or with the mobile arm the phone design
-  // scaled off its own frame, in up to three bands (fluid-scale.md §13):
+  // scaled off its own frame, in up to three bands (bands.md):
   //   phone     (default)                               100vw / reference
   //   tablet    (width >= tablet.from)                  the phone design, scaled up a bit
   //   landscape (orientation: landscape, short height)  the phone design, scaled a bit

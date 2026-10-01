@@ -116,7 +116,13 @@ export function migrateV1(v1) {
     set('--fluid-phone-scale-max', mo.max, 'mobile.max')
     for (const band of ['phone', 'tablet', 'landscape']) {
       for (const role of ['display', 'copy']) set(`--fluid-${band}-${role}-damping`, mo.damping?.[role], `mobile.damping.${role}`)
-      if (band !== 'phone' && mo.column !== undefined) set(`--fluid-${band}-container-width`, mo.column === null ? canvas.width ?? 1680 : mo.column, 'mobile.column')
+      // v1 held tablet and landscape to the phone's column and gutter (560, 24)
+      // unless mobile.column said otherwise; v2.1 defaults them to full width.
+      // Carry the v1 look over explicitly so a migrated site does not change.
+      if (band !== 'phone') {
+        set(`--fluid-${band}-container-width`, mo.column === undefined ? 560 : mo.column === null ? canvas.width ?? 1680 : mo.column, mo.column === undefined ? 'v1 phone column (default)' : 'mobile.column')
+        set(`--fluid-${band}-container-padding`, 24, 'v1 phone gutter (default)')
+      }
     }
     for (const band of ['tablet', 'landscape']) {
       const b = mo[band] ?? {}

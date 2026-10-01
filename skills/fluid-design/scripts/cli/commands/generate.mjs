@@ -1,8 +1,8 @@
 // generate.mjs — fluid generate [--dry] [--force] [--watch]
 
-import { writeFileSync, mkdirSync, rmSync, watchFile } from 'node:fs'
+import { writeFileSync, mkdirSync, rmSync, watchFile, existsSync, readFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
-import { ConfigError, SKILL_VERSION } from '../../lib/spec.mjs'
+import { ConfigError, SKILL_VERSION, SCHEMA_URL } from '../../lib/spec.mjs'
 import { buildOutput, fileHash } from '../../lib/emit/project.mjs'
 import { c, CliError, fail } from '../ui.mjs'
 import { LOCK, findConfig, project, diffOutput, formatterHint } from '../project.mjs'
@@ -36,6 +36,24 @@ export function cmdGenerate(flags) {
   writeFileSync(join(p.outDir, LOCK), JSON.stringify(lock, null, 2) + '\n')
   const out = relative(process.cwd(), p.outDir) || '.'
   console.log(`${c.green('✓')} ${out}: ${Object.keys(files).length} files (${changed.length} changed) · build ${buildId}`)
+  upgradeHints(p)
+}
+
+/** One-line nudges for a project set up before 2.1 (a local schema copy, no npm script). */
+function upgradeHints(p) {
+  let schema
+  try {
+    schema = JSON.parse(readFileSync(p.path, 'utf8')).$schema
+  } catch {}
+  // A local $schema is the mark of a project set up before 2.1; only then nudge.
+  if (typeof schema !== 'string' || /^https?:/.test(schema)) return
+  console.log(c.dim(`  tip: point "$schema" at ${SCHEMA_URL} and delete the local ${schema.replace(/^\.\//, '')} copy`))
+  const pkg = join(p.dir, 'package.json')
+  if (existsSync(pkg)) {
+    try {
+      if (!JSON.parse(readFileSync(pkg, 'utf8')).scripts?.fluid) console.log(c.dim('  tip: add "fluid": "npx fluid-design-cli@2" to package.json scripts, so the team and CI can run npm run fluid -- check'))
+    } catch {}
+  }
 }
 
 

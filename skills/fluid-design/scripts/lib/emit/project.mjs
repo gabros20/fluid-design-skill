@@ -3,8 +3,8 @@
 //   fluid.css                the ONE import: base (layer), engine, and for
 //                            Tailwind the theme + utilities too
 //   base.css                 box-sizing, overflow guard, focus ring (output.base)
-//   settings.reference.css   every setting, commented, with its default (never imported)
-//   fluid.css-data.json      editor autocomplete for the settings (VS Code css.customData)
+//   settings.reference.css   every setting, commented, with its default (never imported; output.editor)
+//   fluid.css-data.json      editor autocomplete for the settings (VS Code css.customData; output.editor)
 //   fluid.ts                 typed structure + SETTINGS + fluidPx re-export
 //   cn.ts                    tailwind-merge groups (tailwind-v4)
 //   _index.scss              functions + band mixins (scss): @use 'fluid' as fd
@@ -172,7 +172,7 @@ function fluidCss(structure, buildId) {
   const importLine = tw ? `@import 'tailwindcss';\n     @import './fluid/fluid.css';` : `@import './fluid/fluid.css';`
   return `${cssHeader(structure, `fluid.css — import this once, globally:
      ${importLine}
-   Then set any setting you want to change in your own :root (settings.reference.css).`)}${parts.join('\n\n')}\n`
+   Then set any setting you want to change in your own :root (\`fluid settings\` lists them).`)}${parts.join('\n\n')}\n`
 }
 
 // ── runtime + integrations ──────────────────────────────────────────────
@@ -286,8 +286,12 @@ export function buildOutput(structure) {
   const files = {}
   files['fluid.css'] = fluidCss(structure, buildId)
   if (structure.output.base) files['base.css'] = baseCss(structure)
-  files['settings.reference.css'] = settingsReferenceCss(structure)
-  files['fluid.css-data.json'] = cssCustomData(structure)
+  // Editor aids are opt-in: the site never reads them, and `fluid settings`
+  // prints the same list on demand.
+  if (structure.output.editor) {
+    files['settings.reference.css'] = settingsReferenceCss(structure)
+    files['fluid.css-data.json'] = cssCustomData(structure)
+  }
   files['fluid.ts'] = fluidTs(structure, tsHeader(structure, 'fluid.ts — the structure as typed constants.'))
   if (stack === 'tailwind-v4') files['cn.ts'] = cnTs(structure, tsHeader(structure, 'cn.ts — class merging that knows the fluid utilities.'))
   if (stack === 'scss') files['_index.scss'] = scss(structure, `// ${stamp(structure)}\n// _index.scss — functions and band mixins: @use 'fluid' as fd;\n\n`)

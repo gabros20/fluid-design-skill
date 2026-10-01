@@ -84,9 +84,12 @@ export const EXTRA_FAMILIES = {
 }
 const NEGATABLE = ['m', 'mx', 'my', 'mt', 'mb', 'ml', 'mr', 'inset', 'top', 'right', 'bottom', 'left']
 const NEGATABLE_LOGICAL = ['ms', 'me', 'start', 'end', 'inset-x', 'inset-y']
-// The ui unit gets a small family of its own: the header, nav and footer
-// are a handful of boxes and their type.
-export const UI_FAMILY = [['p', 'padding'], ['px', 'padding-inline'], ['py', 'padding-block'], ['gap', 'gap'], ['w', 'width'], ['h', 'height'], ['size', ['width', 'height']]]
+// The small box family a unit other than --fluid gets: the ui unit (the
+// header, nav and footer are a handful of boxes and their type) and every
+// type role (a button, chip or icon that keeps its proportion to the label
+// inside it: fluid-copy-14 text in a fluid-copy-h-56 button).
+export const BOX_FAMILY = [['p', 'padding'], ['px', 'padding-inline'], ['py', 'padding-block'], ['gap', 'gap'], ['w', 'width'], ['h', 'height'], ['size', ['width', 'height']]]
+export const UI_FAMILY = BOX_FAMILY
 
 export function extraFamilies(u) {
   return [...(u.logical ? EXTRA_FAMILIES.logical : []), ...(u.basis ? EXTRA_FAMILIES.basis : []), ...(u.scroll ? EXTRA_FAMILIES.scroll : []), ...(u.rounded ? EXTRA_FAMILIES.rounded : [])]
@@ -151,6 +154,19 @@ ${structure.roles.map((r) => `@utility ${p}-${r}-* { font-size: calc(${V} * var(
   font-size: calc(${V} * ${text});
   line-height: calc(${M} * ${text});
 }`)
+  out.push(`/* Boxes on a type unit: ${p}-${structure.roles[1] ?? structure.roles[0]}-h-56 sizes a control on the same curve as its
+   label (${p}-${structure.roles[1] ?? structure.roles[0]}-14/20), so the two keep their proportion at every size. */
+${structure.roles.flatMap((r) => BOX_FAMILY.map(([n, props]) => util(`${p}-${r}-${n}-*`, props, `calc(${V} * var(--fluid-${r}))`))).join('\n')}`)
+  out.push(`/* Full bleed out of a ${p}-container: the element reaches the window's edges and
+   pads back in by the same amount, so its content still lines up with the
+   container's (a carousel track, an edge-to-edge strip). 100vw counts a desktop
+   scrollbar, so the bleed runs half a scrollbar past each edge; the overflow
+   guard on html (base.css) clips it. */
+@utility ${p}-bleed-x {
+  --_fluid-bleed: calc(var(--fluid-container-padding) + max(0px, (100vw - var(--fluid-container-width)) / 2));
+  margin-inline: calc(var(--_fluid-bleed) * -1);
+  padding-inline: var(--_fluid-bleed);
+}`)
   if (structure.ui) {
     out.push(`/* The ui unit (header, nav, footer): follows the width, never shrinks for a short window. */
 ${UI_FAMILY.map(([n, props]) => util(`${p}-ui-${n}-*`, props, `calc(${V} * var(--fluid-ui))`)).join('\n')}
@@ -189,7 +205,8 @@ export function cnTs(structure, header) {
   const key = (g) => (/^[a-z]+$/.test(g) ? g : `'${g}'`)
   const groups = []
   const add = (group, ...names) => groups.push(`      ${key(group)}: [${names.map((n) => `fluid('${p}-${n}')`).join(', ')}]`)
-  for (const [n] of CORE) add(n === 'size' ? 'size' : n, n, ...(structure.ui && UI_FAMILY.some(([x]) => x === n) ? [`ui-${n}`] : []))
+  const boxed = (n) => BOX_FAMILY.some(([x]) => x === n)
+  for (const [n] of CORE) add(n === 'size' ? 'size' : n, n, ...(boxed(n) ? [...(structure.ui ? [`ui-${n}`] : []), ...structure.roles.map((r) => `${r}-${n}`)] : []))
   add('max-w', 'cap')
   add('font-size', 'text', ...structure.roles, ...(structure.ui ? ['ui-text'] : []))
   add('translate-x', 'translate-x')
