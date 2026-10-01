@@ -228,6 +228,8 @@
   td.dim{font-weight:600; font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--tok-dim); white-space:nowrap}
   td.num,th.num{text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:13px; white-space:nowrap}
   td .d{color:var(--muted)}
+  h3.sub{font-family:inherit; font-size:17px; font-weight:650; margin:28px 0 6px}
+  .ratio .pick{display:inline-block; padding:1px 7px; margin:-1px -7px; border-radius:5px; background:var(--amber-bg); color:var(--ink); font-weight:700; box-shadow:inset 0 0 0 1px var(--amber)}
   td.win-w{color:var(--tok-dim); font-weight:600} td.win-h{color:var(--good); font-weight:600}
   td .bad{color:var(--bad); font-weight:600} td .ok{color:var(--good); font-weight:600}
 
@@ -632,24 +634,27 @@
       <div><small>StyleX</small><code>fluid(120)</code></div>
     </div>
   </div>
-  <p style="margin-top:14px">With the default 1440×900 frame. Each window below is a real
-  <code>fluid explain</code> run; the coloured column is the tighter axis, the one that sets the unit.</p>
-  <div class="tblwrap"><table>
-    <tr><th>window</th><th class="num">W / 1440</th><th class="num">H / 900</th><th class="num">--fluid</th><th>a 900-tall section</th></tr>
-    <tr><td class="dim">1440×900</td><td class="num">1.0000</td><td class="num">1.0000</td><td class="num"><b>1.0000</b></td><td>900px, the calibration point: pixel-exact</td></tr>
-    <tr><td class="dim">1280×800</td><td class="num win-w">0.8889</td><td class="num win-h">0.8889</td><td class="num"><b>0.8889</b></td><td>800px, exactly one screen</td></tr>
-    <tr><td class="dim">1440×700</td><td class="num">1.0000</td><td class="num win-h">0.7778</td><td class="num"><b>0.7778</b></td><td>700px, exactly one screen</td></tr>
-    <tr><td class="dim">1024×900</td><td class="num win-w">0.7111</td><td class="num">1.0000</td><td class="num"><b>0.7111</b></td><td>640px, width binds: shorter than the window</td></tr>
-    <tr><td class="dim">1920×1080</td><td class="num">1.3333</td><td class="num win-h">1.2000</td><td class="num"><b>1.2000</b></td><td>1080px, exactly one screen</td></tr>
-    <tr><td class="dim">2560×1440</td><td class="num">1.7778</td><td class="num win-h">1.6000</td><td class="num"><b>1.6000</b></td><td>1440px, exactly one screen</td></tr>
+  <h3 class="sub">Six windows, one rule: the smaller ratio wins</h3>
+  <p>Divide the window's width by 1440 and its height by 900. The smaller number becomes
+  <code>--fluid</code>, so the design always fits. These are real <code>fluid explain</code> runs at
+  the default 1440×900 frame.</p>
+  <div class="tblwrap"><table class="ratio">
+    <tr><th>window</th><th class="num">width ÷ 1440</th><th class="num">height ÷ 900</th><th class="num">--fluid</th><th>a hero drawn 900 tall</th></tr>
+    <tr><td class="dim">1440×900</td><td class="num"><span class="pick">1.0000</span></td><td class="num"><span class="pick">1.0000</span></td><td class="num"><b>1.0000</b></td><td>900px, exactly as drawn</td></tr>
+    <tr><td class="dim">1280×800</td><td class="num"><span class="pick">0.8889</span></td><td class="num"><span class="pick">0.8889</span></td><td class="num"><b>0.8889</b></td><td>800px, fills the screen</td></tr>
+    <tr><td class="dim">1440×700</td><td class="num">1.0000</td><td class="num"><span class="pick">0.7778</span></td><td class="num"><b>0.7778</b></td><td>700px, fills the screen</td></tr>
+    <tr><td class="dim">1024×900</td><td class="num"><span class="pick">0.7111</span></td><td class="num">1.0000</td><td class="num"><b>0.7111</b></td><td>640px, shorter than the screen because the width is tighter</td></tr>
+    <tr><td class="dim">1920×1080</td><td class="num">1.3333</td><td class="num"><span class="pick">1.2000</span></td><td class="num"><b>1.2000</b></td><td>1080px, fills the screen</td></tr>
+    <tr><td class="dim">2560×1440</td><td class="num">1.7778</td><td class="num"><span class="pick">1.6000</span></td><td class="num"><b>1.6000</b></td><td>1440px, fills the screen</td></tr>
   </table></div>
+  <h3 class="sub">Six things to know</h3>
   <ul class="rules">
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-scaling"/></svg>purely proportional</b>No offset on either axis, so <code>900 × --fluid = 100svh</code> whenever height is the tighter one. The unit is set by your design frame, not by the container.</li>
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-gauge"/></svg>svh, never dvh</b><code>dvh</code> resizes type while the reader scrolls. Pinned layers use <code>lvh</code>, and the margin that cancels them uses the same unit.</li>
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-layers"/></svg>one scale per page</b>Change how a part scales with a limit or a setting on a scope, never by redeclaring <code>--fluid</code>: the type units would not follow.</li>
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-braces"/></svg>the number is unitless</b><code>64px * var(--fluid)</code> is invalid and drops the declaration silently. Write the drawn number, never a converted one.</li>
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-lock"/></svg>off the scale on purpose</b>Border and stroke widths, <code>em</code> tracking and text measures stay fixed. Radii scale with their box (<code>fluid-rounded-*</code>).</li>
-    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-ban"/></svg>generate, never hand-write</b>The output holds measured numbers (a precision workaround, the point where type stops shrinking, the zoom thresholds). <code>fluid generate</code> refuses to overwrite a hand-edited file.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-scaling"/></svg>nothing added</b>The unit is a pure ratio with no offset. That is why a 900-tall hero is exactly one screen tall whenever the height is the tighter side.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-gauge"/></svg>svh, never dvh</b>On phones, <code>dvh</code> changes as the address bar slides away, so type would jump mid-scroll. <code>svh</code> holds still. Pinned layers use <code>lvh</code>, and so does the margin that offsets them.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-layers"/></svg>one scale per page</b>To make one part scale differently, give it a limit or a scope. Redeclaring <code>--fluid</code> leaves the type units behind.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-braces"/></svg>plain numbers</b>Write <code>64 * var(--fluid)</code>. With <code>64px</code> the CSS is invalid and the browser drops the line without a warning.</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-lock"/></svg>some things stay fixed</b>Borders, strokes, <code>em</code> letter-spacing and max line lengths keep their size. Corner radii grow with their box (<code>fluid-rounded-*</code>).</li>
+    <li><b><svg class="lu" aria-hidden="true"><use href="#lu-ban"/></svg>generate, never hand-edit</b>The output holds measured numbers, such as the size where type stops shrinking and the zoom thresholds. <code>fluid generate</code> won't overwrite a file you edited by hand.</li>
   </ul>
 </section>
 
