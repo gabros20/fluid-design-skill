@@ -222,12 +222,14 @@ export const DesktopPage: React.FC<PageProps> = ({ W, k, u, ui = u, disp = u, fi
   );
 };
 
-/** The phone design (390 artboard); tablet and landscape render it scaled, in a 560-drawn-px column. */
-export const PhonePage: React.FC<PageProps> = ({ W, k, u }) => {
+/** The phone design (390 design frame). The phone band holds it to a 560-drawn-px column with a 24
+ * gutter; tablet and landscape run it full width with a 32 gutter (the 2.1 defaults). */
+export const PhonePage: React.FC<PageProps & { band?: string }> = ({ W, k, u, band = "phone" }) => {
   const t = useTheme();
-  const cw = Math.min(W, 560 * u);
+  const full = band === "tablet" || band === "landscape";
+  const cw = Math.min(W, (full ? 1024 : 560) * u);
   const cx = (W - cw) / 2;
-  const pad = 24 * u;
+  const pad = (full ? 32 : 24) * u;
   const x0 = cx + pad;
   const inner = cw - 2 * pad;
   const px = (v: number) => v * k;

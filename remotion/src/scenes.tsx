@@ -126,14 +126,14 @@ const UnitScene: React.FC = () => {
   const H = b > 0 ? lerp(800, 1200, b) : lerp(900, 800, a);
   const u = unitAt(W, H);
   const k = 0.3;
-  const note = b > 0.5 ? "Bigger window, same proportions." : a > 0.5 ? "Smaller window, same proportions." : "At the artboard: pixel-exact.";
+  const note = b > 0.5 ? "Bigger window, same proportions." : a > 0.5 ? "Smaller window, same proportions." : "At the design frame: pixel-exact.";
   return (
     <Scene dur={UNIT_DUR}>
       <In at={0}>
         <Headline>Every drawn number becomes n × unit.</Headline>
       </In>
       <In at={8}>
-        <Sub>The unit is 1px at the 1440×900 artboard, and it follows the window.</Sub>
+        <Sub>The unit is 1px at the 1440×900 design frame, and it follows the window.</Sub>
       </In>
       <div style={{ display: "flex", gap: 40, marginTop: 36, alignItems: "center", flex: 1 }}>
         <In at={20} style={{ width: 470, display: "flex", flexDirection: "column", gap: 18 }}>
@@ -285,7 +285,7 @@ const FrameScene: React.FC = () => {
   return (
     <Scene dur={FRAME_DUR}>
       <In at={0}>
-        <Headline>The artboard is your design frame.</Headline>
+        <Headline>Your design frame sets the base.</Headline>
       </In>
       <In at={8}>
         <Sub>Copy its size into :root. 1440×900 is only the default.</Sub>
@@ -536,15 +536,15 @@ const Bands: React.FC = () => {
   const t = useTheme();
   const k = 0.26;
   const devices = [
-    { band: "phone", W: 390, H: 844, u: 1.0, desc: "the 390 artboard", phone: true },
-    { band: "tablet", W: 820, H: 1180, u: 1.1714, desc: "phone design, scaled up", phone: true },
-    { band: "landscape", W: 844, H: 390, u: 1.0821, desc: "a phone on its side", phone: true },
-    { band: "desktop", W: 1440, H: 900, u: 1.0, desc: "the 1440×900 artboard", phone: false },
+    { band: "phone", W: 390, H: 844, u: 1.0, desc: "the 390 design frame", phone: true },
+    { band: "tablet", W: 820, H: 1180, u: 1.1714, desc: "phone design, full width", phone: true },
+    { band: "landscape", W: 844, H: 390, u: 1.0821, desc: "on its side, full width", phone: true },
+    { band: "desktop", W: 1440, H: 900, u: 1.0, desc: "the 1440×900 design frame", phone: false },
   ];
   return (
     <Scene dur={BANDS_DUR}>
       <In at={0}>
-        <Headline>Bands: each one scales its own artboard.</Headline>
+        <Headline>Bands: each one scales its own design.</Headline>
       </In>
       <In at={8}>
         <Sub>The phone design is drawn once. No redraw per breakpoint.</Sub>
@@ -555,7 +555,7 @@ const Bands: React.FC = () => {
             <In at={22 + i * 14} style={{ height: 1180 * k, display: "flex", alignItems: "flex-end" }}>
               <BrowserWindow W={d.W} H={d.H} k={k} chrome={false} radius={d.phone && d.band !== "tablet" ? 14 : 10}>
                 {d.phone ? (
-                  <PhonePage W={d.W} H={d.H} k={k} u={d.u} />
+                  <PhonePage W={d.W} H={d.H} k={k} u={d.u} band={d.band} />
                 ) : (
                   <DesktopPage W={d.W} H={d.H} k={k} u={d.u} />
                 )}
@@ -668,7 +668,7 @@ const TypeRoles: React.FC = () => {
           })}
           <In at={60}>
             <Mono size={18} color={t.muted}>
-              dashed line: 1.0000 at the artboard
+              dashed line: 1.0000 at the design frame
             </Mono>
           </In>
         </div>
@@ -914,7 +914,7 @@ export const PROOF_DUR = dur(PROOF.inEnd, PROOF.hold, PROOF.fade);
 const Proof: React.FC = () => {
   const t = useTheme();
   const rows = [
-    { head: "Pixel-exact at the artboard", detail: "1440×900 → --fluid 1.0000: 120 drawn px = 120 px" },
+    { head: "Pixel-exact at the design frame", detail: "1440×900 → --fluid 1.0000: 120 drawn px = 120 px" },
     { head: "Proportional everywhere else", detail: "one unit for the whole page, the tighter axis wins" },
     { head: "Browser zoom still works", detail: "text zooms 1:1 with Cmd/Ctrl + (WCAG 1.4.4)" },
   ];
@@ -965,7 +965,7 @@ const Proof: React.FC = () => {
           }}
         >
           <Mono size={21} weight={700}>
-            18,840 engine checks
+            19,554 engine checks
           </Mono>
           <Mono size={21} color={t.muted}>
             · Chromium · WebKit · Firefox ·

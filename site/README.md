@@ -9,7 +9,7 @@ hero terminal, "Start here", footer, favicon and og composition); this skill's a
 
 | File | What |
 |---|---|
-| `index.html` | the page. Sections: the idea → the unit → try it live → bands → type → limits → structure vs settings → the CLI → stacks → proof → references → start → boundary |
+| `index.html` | the page. Sections: the idea → the unit → your frame → try it live → bands → type → limits → structure vs settings → the CLI → stacks → proof → references → start → boundary |
 | `demo/index.html` | the page framed by `#live`: drawn at 1440×900 and 390, written only as drawn number × unit. It posts its live units to the parent (read from the engine's registered `--_fluid-m-*` mirrors) |
 | `demo/engine/` | `fluid.css` + `base.css`, byte-for-byte copies of `skills/fluid-design/assets/styles/css/`. Never edit; run `demo/refresh-engine.sh` after `npm run generate` |
 | `assets/hero-{light,dark}.mp4`, `-poster.png` | the Remotion hero (`../remotion/`). The page falls back video → poster → the static CSS diagram in `.poster` |
@@ -21,7 +21,8 @@ hero terminal, "Start here", footer, favicon and og composition); this skill's a
 - Every number on the page came from the pack. The `fluid explain` column in `#live` (the `CLI`
   table in the page script) and the unit table in `#unit` are `node skills/fluid-design/bin/fluid
   explain <W>x<H> --config skills/fluid-design/assets/fluid.config.json`; re-run them when a
-  default changes. The damping and limits charts are plotted from the engine's formula at the
+  default changes, and update the band cards in `#bands` and the container notes in `#limits`
+  and the `#live` script's `NOTES` to match. The damping and limits charts are plotted from the engine's formula at the
   defaults (knee = 1024 / 1440). The proof numbers are `npm run test:browsers` output.
 - After a generator change: `demo/refresh-engine.sh`, then check a preset in `#live` turns green.
 
