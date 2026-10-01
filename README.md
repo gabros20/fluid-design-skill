@@ -13,7 +13,13 @@ skill** (Claude Code, Codex, Cursor and other Agent Skills clients), the **npm p
 `fluid-design-cli`, and a **standalone binary** for projects without Node. It generates for
 **Tailwind v4, plain CSS (and CSS Modules), SCSS and StyleX**.
 
+> **Tested on Next.js only, for now.** The scale was built and tuned on a production Next.js (App
+> Router) + Tailwind v4 site. The other stacks and frameworks (Vite, Astro, plain HTML; CSS, SCSS,
+> StyleX) generate correctly and pass the pack's own tests and examples, but no production site
+> runs on them yet. Expect rough edges there, and please report them.
+
 [![npm](https://img.shields.io/npm/v/fluid-design-cli.svg)](https://www.npmjs.com/package/fluid-design-cli)
+[![Tested on Next.js](https://img.shields.io/badge/tested%20on-Next.js-black.svg)](#fluid-design)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Visual guide:** [fluid-design-skill.vercel.app](https://fluid-design-skill.vercel.app) ·
@@ -203,7 +209,8 @@ Use it for "match our Figma frame at every laptop size", "the page floats on a 2
 hero doesn't fit on a 13-inch laptop", "the header is huge on 5K", converting a site to fluid
 scaling, iOS Safari viewport bugs, media sizing, browser zoom, and a page that looks broken after a
 CSS edit and a dev-server restart (a stale stylesheet). It is not for breakpoint-and-`clamp()`
-responsive work, colour systems, component libraries or animation.
+responsive work, colour systems, component libraries or animation. Production use so far is Next.js
++ Tailwind v4; other setups work in the tests but are untested on a live site.
 
 ## Evidence and browser support
 

@@ -93,6 +93,8 @@
   .hosts .hl{font-family:"Avenir Next Condensed","Arial Narrow",system-ui,sans-serif; text-transform:uppercase; letter-spacing:.14em; font-weight:600; font-size:11px; color:var(--muted); margin-right:2px}
   .hosts span:not(.hl){font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--muted); background:var(--code-bg); border-radius:5px; padding:3px 8px; white-space:nowrap}
   .hosts span.ref{color:var(--accent); font-weight:600}
+  .tested{margin:10px 0 0; font-size:13px; color:var(--muted); max-width:72ch}
+  .tested b{color:var(--ink)}
   .lede b{color:var(--ink)}
   p{max-width:68ch}
   p code, li code, .pcap code, .note code{font-size:.86em; background:var(--code-bg); padding:1px 5px; border-radius:4px; white-space:nowrap}
@@ -575,7 +577,8 @@
   design at every window size.</p>
   <div class="term" style="margin-top:22px"><span class="c"># that's the whole start</span>
 <span class="p">/fluid-design</span> make this landing page match our Figma desktop frame at every laptop size</div>
-  <p class="hosts"><span class="hl">runs on</span><span class="ref">Claude Code</span><span>Codex</span><span>Cursor</span><span>Antigravity</span><span>opencode</span><span>Grok Build</span><span>Hermes</span><span class="hl" style="margin-left:10px">generates</span><span>Tailwind v4</span><span>CSS</span><span>SCSS</span><span>StyleX</span></p>
+  <p class="hosts"><span class="hl">runs on</span><span class="ref">Claude Code</span><span>Codex</span><span>Cursor</span><span>Antigravity</span><span>opencode</span><span>Grok Build</span><span>Hermes</span><span class="hl" style="margin-left:10px">generates</span><span>Tailwind v4</span><span>CSS</span><span>SCSS</span><span>StyleX</span><span class="hl" style="margin-left:10px">tested on</span><span class="ref">Next.js</span></p>
+  <p class="tested"><b>Tested on Next.js only, for now.</b> Built and tuned on a production Next.js + Tailwind v4 site. The other stacks and frameworks generate correctly and pass the pack's tests, but no production site runs on them yet.</p>
 
   <div class="vidwrap" id="vidwrap"></div>
   <div class="poster" role="img" aria-label="Diagram: one design drawn on a 1440 by 900 frame, the default design frame, becomes the same composition in three windows. At 1280 by 800 the unit is 0.889 and the drawing fills the window. At 1440 by 700 height binds, the unit is 0.778 and the drawing is exactly one screen tall with margin at the sides. At 2560 by 1440 the unit is 1.6 and the drawing grows to fill the height.">
@@ -1117,6 +1120,7 @@ const s = stylex.create({
     <tr><td>class merging (<code>cn.ts</code>, <code>withFluid</code>) + IntelliSense</td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
     <tr><td>a build error on <code>64px * unit</code></td><td class="n">—</td><td class="n">—</td><td class="y">✓</td><td class="y">✓<small>typed</small></td></tr>
     <tr><td><code>fluid.ts</code>: <code>DESKTOP_QUERY</code>, <code>MEDIA</code>, <code>fluidPx()</code> for motion code</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+    <tr><td>tested on a production site</td><td class="y">✓<small>Next.js</small></td><td class="n">—<small>tests only</small></td><td class="n">—<small>tests only</small></td><td class="n">—<small>tests only</small></td></tr>
     <tr><td>browser floor</td><td><small>Tailwind v4's own</small></td><td colspan="3"><small>Safari 15.4 · Chrome 108 · Firefox 101</small></td></tr>
   </table></div>
   <p class="pcap"><code>fluidPx(n, unit, el)</code> turns a drawn number into CSS px at an element, limits included, for GSAP or Motion
@@ -1276,7 +1280,8 @@ README.md · CHANGELOG.md · LICENSE</div>
 
 <section id="boundary">
   <h2><svg class="lu" aria-hidden="true"><use href="#lu-shield-check"/></svg>What it is, and what it isn't</h2>
-  <p>This skill makes the page the right size. It contains no animation.</p>
+  <p>This skill makes the page the right size. It contains no animation. So far it runs in production
+  on Next.js + Tailwind v4 only; other setups pass the tests but have no live site behind them yet.</p>
   <div class="bound">
     <div class="side yes"><h3><svg class="lu" aria-hidden="true"><use href="#lu-check"/></svg>fluid-design</h3>
       <ul>

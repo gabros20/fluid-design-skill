@@ -8,6 +8,11 @@ Skip when: you are on Tailwind v4 and `fluid.css` is already imported.
 Inputs: `output.stack` or the project's styling stack.
 Produces: authoring in the right surface for the stack, scopes and limits included.
 
+**Tested in production on Next.js + Tailwind v4 only.** The other stacks generate the same units
+and pass the pack's tests and examples, but no live site runs on them yet. On another stack or
+framework, verify in a real browser (`fluid explain <W>x<H> --url …`) before trusting the defaults,
+and tell the user it is the less-travelled path.
+
 ## Contents
 
 - Tailwind v4 (richest)
