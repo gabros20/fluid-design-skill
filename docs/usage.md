@@ -18,7 +18,8 @@ Words used here:
 - **type role**: a size curve that shrinks more gently than the layout: `display` (headlines),
   `copy` (body text, labels).
 - **structure** is which rules exist (`fluid.config.json`, needs `fluid generate`); **settings** are
-  the numbers in them (CSS variables in your `:root`, live).
+  the numbers in them (CSS variables in your `:root`, live). Every option lives in exactly one of
+  the two, so one change never means editing both. A number goes in `:root` only.
 
 ## Contents
 

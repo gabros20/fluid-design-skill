@@ -956,10 +956,18 @@ budget at the design frame: min(base-width 1440, container-width 1680) − 2 × 
 
 <section id="config">
   <h2><svg class="lu" aria-hidden="true"><use href="#lu-split"/></svg>Structure vs settings</h2>
-  <p>Configuration has two halves. <b>Structure</b> is which CSS rules exist: a small JSON file,
-  and a change means regenerating. <b>Settings</b> are the numbers: CSS variables with registered
-  defaults, set in your own <code>:root</code> next to your tokens, live. This is the file
-  <code>fluid init</code> wrote for a Next + Tailwind v4 project, and the <code>:root</code> it edited:</p>
+  <p>There are two places to configure, and <b>every option lives in exactly one of them</b>. You
+  never set the same thing twice. Most changes are numbers, and numbers go in your CSS
+  <code>:root</code> only: the JSON file is not touched and nothing has to run.</p>
+  <div class="tblwrap"><table>
+    <tr><th>you want to change</th><th>edit</th><th>then</th></tr>
+    <tr><td>frame sizes, gutters, container width, how far the scale shrinks or grows, type damping, limits, height on or off</td><td><code>:root</code> in your CSS</td><td><span class="ok">nothing</span>, it applies live</td></tr>
+    <tr><td>where a band starts (the tablet or desktop breakpoint), or turning a band on or off</td><td><code>fluid.config.json</code></td><td><code>fluid generate</code></td></tr>
+    <tr><td>adding a type role (<code>"caption"</code>), the <code>ui</code> or <code>zoom</code> unit on or off, Tailwind options, the class prefix, the stack or output folder</td><td><code>fluid.config.json</code></td><td><code>fluid generate</code></td></tr>
+  </table></div>
+  <p style="margin-top:16px">The JSON decides which CSS rules exist, so changing it means
+  regenerating. The <code>:root</code> variables are the numbers inside those rules. Here is what
+  <code>fluid init</code> wrote for a Next + Tailwind v4 project:</p>
   <div class="split">
     <div class="side"><h3><svg class="lu" aria-hidden="true"><use href="#lu-braces"/></svg>fluid.config.json<em>structure</em></h3>
       <div class="term">{

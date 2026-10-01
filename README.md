@@ -49,6 +49,11 @@ Two kinds of configuration, and one rule for which is which:
 | **Structure** | which CSS rules exist: bands and breakpoints, type role names, prefix, stack, output folder | `fluid.config.json` (about a dozen lines) | edit, then `fluid generate` |
 | **Settings** | numbers inside those rules: frame sizes, scale min and max, damping, container, header | CSS variables in your own `:root` | edit; applies live |
 
+Every option lives in exactly one of the two, so you never edit both for one change. Changing a
+number in `:root` never needs the JSON or a regenerate; only a breakpoint, a band switched on or off,
+a new type role, the `ui` or `zoom` switch, Tailwind options, the prefix, the stack or the
+output folder goes through `fluid.config.json`.
+
 ## Install
 
 | You are | Install | Then |
