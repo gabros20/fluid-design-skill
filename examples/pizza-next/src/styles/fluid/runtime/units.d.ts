@@ -1,4 +1,4 @@
-// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 
 // Types for fluid-units.js. `fluid generate` writes both, with the unit list
 // set to your roles; fluid.ts re-exports them.

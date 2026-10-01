@@ -1,4 +1,4 @@
-// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 
 // fluid-zoom.js — give fluid type back its response to browser zoom.
 //
@@ -7,7 +7,7 @@
 // same factor and type renders at the SAME physical size at every zoom level
 // until the CSS viewport drops below `engageAt` and the mobile CSS takes over.
 // On a 2560-wide display that is 250% zoom, a WCAG 1.4.4 failure
-// (references/fluid-scale.md §12). This script measures the zoom factor and
+// (references/browser-zoom.md). This script measures the zoom factor and
 // writes it to `--fluid-zoom` on :root. With `zoomCompensation` on in
 // fluid.config.json, the generated type units read their base as
 // `--fluid × --fluid-zoom`, which is the unzoomed value, so text zooms 1:1.

@@ -1,4 +1,4 @@
-// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 
 // fluid-units.js — the fluid units as numbers, for code that needs a scaled
 // DISTANCE: a GSAP tween's x, a ScrollTrigger end, a canvas font size, a
@@ -31,7 +31,7 @@
 //   gsap.to(el, { x: () => fluidPx(600), scrollTrigger: { scrub: true, invalidateOnRefresh: true,
 //                 end: () => '+=' + fluidPx(1800) } })
 // With Motion, wrap fluidPx() in a MotionValue and update it from
-// onFluidChange. references/fluid-scale.md §11 has the details.
+// onFluidChange. references/fluid-scale.md §7 has the details.
 
 var UNITS = ['fluid', 'display', 'copy', 'ui'] // @fluid-units
 var VARS = {}

@@ -1,4 +1,4 @@
-// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 // integrations/next.tsx
 
 import { FLUID_ZOOM_INLINE } from '../runtime/zoom.js'

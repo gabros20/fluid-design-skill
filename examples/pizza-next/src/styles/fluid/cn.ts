@@ -1,4 +1,4 @@
-// fluid-design 2.0.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 // cn.ts — class merging that knows the fluid utilities.
 
 import { type ClassValue, clsx } from 'clsx'
@@ -33,9 +33,9 @@ export function withFluid(config: AnyConfig): AnyConfig {
   return mergeConfigs<string>(config, {
     extend: {
       classGroups: {
-        p: [fluid('fluid-p'), fluid('fluid-ui-p')],
-        px: [fluid('fluid-px'), fluid('fluid-ui-px')],
-        py: [fluid('fluid-py'), fluid('fluid-ui-py')],
+        p: [fluid('fluid-p'), fluid('fluid-ui-p'), fluid('fluid-display-p'), fluid('fluid-copy-p')],
+        px: [fluid('fluid-px'), fluid('fluid-ui-px'), fluid('fluid-display-px'), fluid('fluid-copy-px')],
+        py: [fluid('fluid-py'), fluid('fluid-ui-py'), fluid('fluid-display-py'), fluid('fluid-copy-py')],
         pt: [fluid('fluid-pt')],
         pb: [fluid('fluid-pb')],
         pl: [fluid('fluid-pl')],
@@ -47,12 +47,12 @@ export function withFluid(config: AnyConfig): AnyConfig {
         mb: [fluid('fluid-mb')],
         ml: [fluid('fluid-ml')],
         mr: [fluid('fluid-mr')],
-        gap: [fluid('fluid-gap'), fluid('fluid-ui-gap')],
+        gap: [fluid('fluid-gap'), fluid('fluid-ui-gap'), fluid('fluid-display-gap'), fluid('fluid-copy-gap')],
         'gap-x': [fluid('fluid-gap-x')],
         'gap-y': [fluid('fluid-gap-y')],
-        w: [fluid('fluid-w'), fluid('fluid-ui-w')],
-        h: [fluid('fluid-h'), fluid('fluid-ui-h')],
-        size: [fluid('fluid-size'), fluid('fluid-ui-size')],
+        w: [fluid('fluid-w'), fluid('fluid-ui-w'), fluid('fluid-display-w'), fluid('fluid-copy-w')],
+        h: [fluid('fluid-h'), fluid('fluid-ui-h'), fluid('fluid-display-h'), fluid('fluid-copy-h')],
+        size: [fluid('fluid-size'), fluid('fluid-ui-size'), fluid('fluid-display-size'), fluid('fluid-copy-size')],
         'min-w': [fluid('fluid-min-w')],
         'min-h': [fluid('fluid-min-h')],
         'max-h': [fluid('fluid-max-h')],
