@@ -10,7 +10,7 @@
 // reference, fluid.ts's SETTINGS table, the settings lint and the docs
 // table. `fluid check` fails if any of those drift from it.
 
-export const SKILL_VERSION = '2.1.0'
+export const SKILL_VERSION = '2.1.1'
 export const CONFIG_VERSION = 2
 // The published JSON Schema: a project's fluid.config.json points here, so
 // editors autocomplete the config without a copy of the schema in the repo.

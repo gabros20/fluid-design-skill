@@ -1,4 +1,4 @@
-// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 // fluid.stylex.ts — typed helpers.
 
 // Typed helpers that build calc() strings against the fluid units, for

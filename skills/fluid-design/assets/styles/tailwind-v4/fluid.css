@@ -1,4 +1,4 @@
-/* fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+/* fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
    fluid.css — import this once, globally:
      @import 'tailwindcss';
      @import './fluid/fluid.css';
@@ -121,7 +121,7 @@
 [class*=":!fluid-off "],
 [class$=":!fluid-off"],
 [class*="[--fluid-"] {
-  --fluid-build: "2.1.0+174db8f4";
+  --fluid-build: "2.1.1+174db8f4";
   --_fluid-lo: 0;
   --_fluid-hi: 600;
   --_fluid-base-w: max(1, var(--fluid-phone-base-width, 390));

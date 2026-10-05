@@ -1,6 +1,6 @@
 {
   "name": "fluid-design-skill",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Build or convert a website onto a viewport-fluid design scale: one measured unit from both viewport axes, so the desktop composition stays a proportional copy of the design frame at every size and each device band scales its own design. Generates Tailwind v4, CSS, SCSS or StyleX output with the fluid CLI and verifies it across a viewport matrix.",
   "author": {
     "name": "gabros20",

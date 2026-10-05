@@ -1,4 +1,4 @@
-// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 
 // Types for fluid-zoom.js, so TypeScript projects with `allowJs: false`
 // (Next's default template among them) can import it. Copy both files.

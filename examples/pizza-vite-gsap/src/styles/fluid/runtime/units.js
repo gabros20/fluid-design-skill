@@ -1,4 +1,4 @@
-// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 
 // fluid-units.js — the fluid units as numbers, for code that needs a scaled
 // DISTANCE: a GSAP tween's x, a ScrollTrigger end, a canvas font size, a

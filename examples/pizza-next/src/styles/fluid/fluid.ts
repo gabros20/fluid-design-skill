@@ -1,10 +1,10 @@
-// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 // fluid.ts — the structure as typed constants.
 
 // The structure, as typed constants. Numbers you tune (settings) are CSS
 // variables — SETTINGS lists them with their defaults.
 
-export const FLUID_VERSION = '2.1.0'
+export const FLUID_VERSION = '2.1.1'
 
 export type BandName = 'phone' | 'tablet' | 'landscape' | 'desktop'
 export type RoleName = 'display' | 'copy'

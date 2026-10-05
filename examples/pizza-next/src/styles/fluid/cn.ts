@@ -1,4 +1,4 @@
-// fluid-design 2.1.0 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
+// fluid-design 2.1.1 · GENERATED from fluid.config.json — do not edit. Run `fluid generate`.
 // cn.ts — class merging that knows the fluid utilities.
 
 import { type ClassValue, clsx } from 'clsx'

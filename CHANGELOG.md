@@ -11,6 +11,17 @@ metadata.
 
 ## [Unreleased]
 
+## [2.1.1] — 2026-10-05
+
+### Fixed
+- **`fluid check` and the audit skip agent folders and installed skills.** A project that keeps the
+  skill in its repo (`.claude/skills/fluid-design/`, so the whole team's agent loads the same
+  version) failed `check` on the skill's own template CSS: 70 false problems on the first
+  production site. Both scans now skip `.claude`, `.agents`, `.codex`, `.cursor`, `.gemini`,
+  `.opencode`, `.grok`, `.hermes` and any folder with a `SKILL.md`, from one shared list
+  (`scripts/lib/skip-dirs.mjs`, which also ends the two scans' slightly different lists). The skill
+  stays removable: nothing in a project depends on it.
+
 ## [2.1.0] — 2026-10-01
 
 Lessons from the first production site built on v2: what a team actually reached for, what it
@@ -139,6 +150,7 @@ adopts the skill-template repository layout.
   browser floor per stack, bracket values in Tailwind utilities, `cn` accepting only classes that
   compile, and `generate --watch` on editors that replace the file.
 
-[Unreleased]: https://github.com/gabros20/fluid-design-skill/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/gabros20/fluid-design-skill/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/gabros20/fluid-design-skill/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/gabros20/fluid-design-skill/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/gabros20/fluid-design-skill/releases/tag/v2.0.0

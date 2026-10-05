@@ -1,18 +1,18 @@
 {
-  "generator": "fluid-design 2.1.0",
-  "build": "2.1.0+174db8f4",
+  "generator": "fluid-design 2.1.1",
+  "build": "2.1.1+174db8f4",
   "stack": "scss",
   "files": {
-    "fluid.css": "22b64cd4167c5ca1",
-    "base.css": "40412f571fbeebef",
-    "fluid.ts": "a1d7acb271096ab9",
-    "_index.scss": "916ab6c799d30717",
-    "runtime/units.js": "46cd48bb7e58c328",
-    "runtime/units.d.ts": "fa1ce53e1857477b",
-    "runtime/zoom.js": "d706aa79c8744fdc",
-    "runtime/zoom.d.ts": "c377c8ccc553b46e",
-    "integrations/vite.ts": "10e6eacaf761415b",
-    "README.md": "5cc25c530fa104e6",
+    "fluid.css": "6b75a5cb110fb342",
+    "base.css": "1e3377a78953186c",
+    "fluid.ts": "5b5848e5ed9f2f6c",
+    "_index.scss": "286d6d40a2d2c728",
+    "runtime/units.js": "b56be8e8ab370b07",
+    "runtime/units.d.ts": "53e82db91b1cc2c4",
+    "runtime/zoom.js": "a063462f966dba58",
+    "runtime/zoom.d.ts": "08dcf82e743c0018",
+    "integrations/vite.ts": "a5b34ad304ed4238",
+    "README.md": "9ad3159f9e8ad90e",
     ".gitattributes": "00aeeb7b53fd7b02"
   }
 }

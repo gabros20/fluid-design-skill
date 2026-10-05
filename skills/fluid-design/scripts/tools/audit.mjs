@@ -15,9 +15,9 @@
 // same rules `fluid check` runs (CHECK_RULES) with the project's context.
 //
 // srcDir defaults to "." (the current directory / project root) -- walk()
-// already skips node_modules, .git, .next, dist, build, .turbo, .cache and
-// out, so running with no argument from a project root is the normal case,
-// not just "src/".
+// already skips node_modules, .git, .next, dist, build, .turbo, .cache, out,
+// agent folders (.claude, .agents, …) and installed skills (lib/skip-dirs.mjs),
+// so running with no argument from a project root is the normal case, not just "src/".
 //
 // Exit codes: 0 = no error-severity findings, 1 = at least one error-severity
 // finding, 2 = usage/invocation error.
@@ -25,6 +25,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join, relative, extname, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isSkippedDir } from '../lib/skip-dirs.mjs'
 
 const __dirname_ = fileURLToPath(new URL('.', import.meta.url))
 
@@ -74,7 +75,6 @@ function parseArgs(argv) {
 // ── file walking ────────────────────────────────────────────────────────
 
 const SCAN_EXT = new Set(['.tsx', '.jsx', '.ts', '.js', '.mjs', '.css', '.scss', '.html', '.vue', '.astro', '.svelte', '.mdx'])
-const SKIP_DIR = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.turbo', '.cache', 'out', '.vercel', 'coverage'])
 
 function walk(dir, acc = [], skip = null) {
   let entries
@@ -84,10 +84,11 @@ function walk(dir, acc = [], skip = null) {
     return acc
   }
   for (const e of entries) {
-    if (SKIP_DIR.has(e.name)) continue
     const p = join(dir, e.name)
     if (skip && resolvePath(p) === skip) continue
-    if (e.isDirectory()) walk(p, acc, skip)
+    if (e.isDirectory()) {
+      if (!isSkippedDir(e.name, p)) walk(p, acc, skip)
+    }
     else if (e.isFile() && SCAN_EXT.has(extname(e.name))) acc.push(p)
   }
   return acc

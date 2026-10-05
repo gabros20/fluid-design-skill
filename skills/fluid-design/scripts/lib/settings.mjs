@@ -15,6 +15,7 @@
 // own token and gets an info note.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { isSkippedDir } from './skip-dirs.mjs'
 import { join, relative, extname, sep } from 'node:path'
 import { settingsSpec, unitNames } from './spec.mjs'
 import { cssDeclarations } from './css-scan.mjs'
@@ -160,18 +161,17 @@ export function lintSettings(structure, decls) {
   return { findings, overrides, variants }
 }
 
-const SKIP_DIRS = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out', 'coverage', '.turbo', '.vercel', 'verify-out', 'screenshots'])
-
 /** Every .css/.scss/.sass file under `root`, except the generated folder. */
 export function projectStyleFiles(root, generatedDir) {
   const out = []
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
-      if (SKIP_DIRS.has(name)) continue
       const abs = join(dir, name)
       if (generatedDir && abs === generatedDir) continue
       const st = statSync(abs)
-      if (st.isDirectory()) walk(abs)
+      if (st.isDirectory()) {
+        if (!isSkippedDir(name, abs)) walk(abs)
+      }
       else if (['.css', '.scss', '.sass'].includes(extname(name))) out.push(abs)
     }
   }

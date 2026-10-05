@@ -63,6 +63,18 @@ try {
   expect(JSON.parse(readFileSync(join(e, 'package.json'), 'utf8')).scripts.fluid === 'fluid', 'init leaves an existing "fluid" script alone')
   r = run(g, 'check')
   expect(r.code === 0, 'check passes on a fresh project', r.out)
+  // a skill vendored into the repo (and agent config) ships template CSS that is not the project's
+  for (const dir of ['.claude/skills/fluid-design/assets', 'tools/some-skill/assets']) {
+    mkdirSync(join(g, dir), { recursive: true })
+    writeFileSync(join(g, dir, 'fluid.css'), `@theme {\n  --breakpoint-2xl: 1536px;\n}\n:root { --fluid-phone-scle-min: .8; }\n.x { height: calc(56 * var(--fluid-copy)); }\n`)
+  }
+  writeFileSync(join(g, 'tools/some-skill/SKILL.md'), '---\nname: some-skill\n---\n')
+  r = run(g, 'check')
+  expect(r.code === 0, 'check skips agent folders (.claude) and any installed skill (a folder with SKILL.md)', r.out)
+  r = run(g, 'audit', '.', '--json')
+  expect(r.code === 0 && !r.out.includes('.claude/') && !r.out.includes('some-skill'), 'audit skips them too', r.out)
+  rmSync(join(g, '.claude'), { recursive: true })
+  rmSync(join(g, 'tools'), { recursive: true })
 
   appendFileSync(join(g, 'src/app/globals.css'), `:root { --fluid-phone-scle-min: .8; --fluid-tablet-scale-max: 2px; }\n`)
   r = run(g, 'check')
